@@ -1,6 +1,11 @@
 # Daydreams - Loot Survivor Agent
 
-Real quick: Manually (you) start a new adventurer, defeat starter beast, and handle first upgrade screen and item purchases, and then, with that adventurer ID, update eternum-context.ts with the adventurer ID. control-f to find all the current adventurer IDs, and update the one you want to use. Then, `bun dev`. Feel free to reach out to me on twitter if you have any questions. @0xdogwater
+Real quick: Manually (you) start a new adventurer, defeat starter beast, and handle first upgrade screen and item purchases, and then, with that adventurer ID, update eternum-context.ts with the adventurer ID. control-f to find all the current adventurer IDs, and update the one you want to use. Then, `git checkout super-custom` and `bun dev`. Feel free to reach out to me on twitter if you have any questions. @0xdogwater
+
+
+
+
+
 
 Daydreams is a generative agent library for playing anything onchain. It is chain agnostic and can be used to play any onchain game by simply injecting context. Base, Solana, Ethereum, Starknet, etc.
 
