@@ -174,3 +174,102 @@ The Daydreams protocol is intentionally open and modular, enabling easy customiz
 ### Swarm Collaboration
 
 - Other agents subscribe, retrieving the newly shared CoT embedding and integrating it into their memory store, thus spreading successful strategies network-wide.
+
+## 6. Recent Architectural Improvements
+
+### Enhanced Contract Interaction
+- **Smart Response Parsing**: Implemented structured parsing for all contract read and transaction responses based on the ABI, converting hex values to human-readable numbers.
+- **Stateful Context Management**: Added `lastTransactionResult` and `lastContractRead` to track the most recent blockchain interactions with timestamps.
+- **Combat-Aware Logic**: Implemented checks to prevent exploration during active combat, ensuring proper game flow.
+
+### Goal Management System
+- **Hierarchical Goals**: Goals can now have dependencies, sub-goals, and parent-child relationships.
+- **Dynamic Priority**: Combat resolution goals are automatically created with high priority when needed.
+- **State-Aware Blocking**: Goals are properly blocked during combat and unblocked when combat resolves.
+- **Completion Validation**: Added robust validation of goal success criteria against current context.
+
+### Chain of Thought Improvements
+- **Asynchronous Processing**: All blockchain interactions are properly awaited and handled asynchronously.
+- **Step Tracking**: Added detailed step tracking for transactions and contract reads with pending/completed/failed states.
+- **Error Recovery**: Enhanced error handling with specific error conditions and appropriate goal state updates.
+- **Context Updates**: Automatic context merging after successful actions to maintain accurate game state.
+
+### Data Parsing Enhancements
+- **Structured Data**: All contract responses are parsed into structured objects matching the game's data model.
+- **Equipment Handling**: Proper parsing of equipped items, inventory, and item specials.
+- **Stats Management**: Accurate tracking of adventurer stats, health, XP, and available upgrade points.
+- **Combat Data**: Detailed parsing of beast encounters, combat results, and battle rewards.
+
+These improvements ensure more reliable game state management, better decision-making, and smoother gameplay progression while maintaining the system's extensibility and composability.
+
+## 7. Loot Survivor Implementation
+
+### Game Loop Management
+- **Combat Priority System**: Automatically detects and prioritizes combat resolution when a beast is encountered, preventing exploration until combat is resolved.
+- **Resource Tracking**: Precise tracking of adventurer's gold, XP, and stat points to make optimal upgrade decisions.
+- **Inventory Management**: Smart handling of equipment and items, including parsing of item specials and XP for each equipped item.
+
+### State Machine Integration
+- **Adventurer State**: Structured parsing of the `get_adventurer` response into a complete state object:
+  ```typescript
+  {
+    health: number,
+    xp: number,
+    gold: number,
+    beast_health: number,
+    stat_upgrades_available: number,
+    stats: {
+      strength, dexterity, vitality, intelligence,
+      wisdom, charisma, luck
+    },
+    equipment: {
+      weapon, chest, head, waist, foot, hand, neck, ring
+    }
+  }
+  ```
+- **Beast Encounters**: Detailed parsing of `get_attacking_beast` responses:
+  ```typescript
+  {
+    id: number,
+    starting_health: number,
+    combat_spec: {
+      tier: number,
+      item_type: number,
+      level: number,
+      specials: {special1, special2, special3}
+    }
+  }
+  ```
+
+### Action Handling
+- **Combat Actions**: 
+  - `attack`: Tracks damage dealt/taken, beast slain status, XP/gold earned
+  - `flee`: Monitors success status and damage taken
+- **Progression Actions**:
+  - `explore`: Parses discovery types (Beast, Obstacle, Discovery)
+  - `upgrade`: Manages stat point allocation with validation
+  - `equip`: Handles equipment changes with slot tracking
+  - `buy_item`/`buy_potion`: Validates gold availability and manages purchases
+
+### Strategic Decision Making
+- **Combat Strategy**: Evaluates beast tier, level, and specials against adventurer stats to decide between attacking and fleeing
+- **Upgrade Optimization**: Prioritizes stat upgrades based on:
+  - Current health status
+  - Combat performance
+  - Equipment requirements
+- **Resource Management**:
+  - Balances gold spending between potions and market items
+  - Tracks potion prices through `get_potion_price`
+  - Monitors market availability via `get_market`
+
+### Error Prevention
+- **Pre-action Validation**:
+  - Prevents exploration during active combat
+  - Validates sufficient gold before purchases
+  - Checks stat points availability before upgrades
+- **State Consistency**:
+  - Maintains accurate tracking of adventurer state between actions
+  - Prevents invalid action sequences
+  - Handles transaction failures gracefully
+
+This implementation ensures optimal gameplay in Loot Survivor by maintaining accurate state tracking, making informed strategic decisions, and preventing common failure modes that could lead to adventurer death or resource waste.
