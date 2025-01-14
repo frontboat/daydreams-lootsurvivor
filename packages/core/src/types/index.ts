@@ -126,6 +126,16 @@ export interface ChainOfThoughtContext {
       result: string;
     }
   >;
+  lastTransactionResult?: {
+    entrypoint: string;
+    result: any;
+    timestamp: number;
+  };
+  lastContractRead?: {
+    entrypoint: string;
+    result: any;
+    timestamp: number;
+  };
 }
 
 /**
@@ -135,6 +145,7 @@ export interface ChainOfThoughtContext {
 export type CoTActionType =
   | "GRAPHQL_FETCH"
   | "EXECUTE_TRANSACTION"
+  | "READ_CONTRACT"
   | "SYSTEM_PROMPT";
 
 /**
@@ -158,6 +169,12 @@ export interface LLMStructuredResponse {
 }
 
 export interface CoTTransaction {
+  contractAddress: string;
+  entrypoint: string;
+  calldata: any[];
+}
+
+export interface CoTContractRead {
   contractAddress: string;
   entrypoint: string;
   calldata: any[];

@@ -2,16 +2,18 @@ import type { LLMClient } from "./llm-client";
 import type {
   ChainOfThoughtContext,
   CoTAction,
+  CoTContractRead,
   CoTTransaction,
   LLMStructuredResponse,
 } from "../types";
 import { queryValidator } from "./validation";
 import { Logger } from "./logger";
-import { executeStarknetTransaction, fetchData } from "./providers";
+import { executeStarknetTransaction, executeStarknetRead, fetchData } from "./providers";
 import { EventEmitter } from "events";
 import { GoalManager, type HorizonType, type GoalStatus } from "./goalManager";
 import { StepManager, type Step, type StepType } from "./stepManager";
 import { LogLevel } from "../types";
+import { Provider, constants } from "starknet";
 
 // Todo: remove these when we bundle
 import * as fs from "fs";
@@ -376,6 +378,7 @@ export class ChainOfThought extends EventEmitter {
   }
 
   private async handleGoalCompletion(goal: any): Promise<void> {
+    // Mark the goal as completed
     this.goalManager.updateGoalStatus(goal.id, "completed");
 
     // Update context based on goal completion
@@ -389,12 +392,12 @@ export class ChainOfThought extends EventEmitter {
       const parentGoal = this.goalManager.getGoalById(goal.parentGoal);
       if (parentGoal) {
         const siblingGoals = this.goalManager.getChildGoals(parentGoal.id);
-        const allCompleted = siblingGoals.every(
-          (g) => g.status === "completed"
-        );
-
+        const allCompleted = siblingGoals.every(g => g.status === "completed");
         if (allCompleted) {
-          this.goalManager.updateGoalStatus(parentGoal.id, "ready");
+          // Only mark parent as ready if it hasn't been completed
+          if (parentGoal.status !== "completed") {
+            this.goalManager.updateGoalStatus(parentGoal.id, "ready");
+          }
         }
       }
     }
@@ -402,15 +405,20 @@ export class ChainOfThought extends EventEmitter {
     // Update dependent goals
     const dependentGoals = this.goalManager.getDependentGoals(goal.id);
     for (const depGoal of dependentGoals) {
-      if (this.goalManager.arePrerequisitesMet(depGoal.id)) {
+      // Only update if the goal isn't already completed
+      if (depGoal.status !== "completed" && this.goalManager.arePrerequisitesMet(depGoal.id)) {
         this.goalManager.updateGoalStatus(depGoal.id, "ready");
       }
     }
 
+    // Emit completion event
     this.emit("goal:completed", {
       id: goal.id,
-      result: "Goal success criteria met",
+      result: "Goal success criteria met"
     });
+
+    // Stop the current think process
+    this.addStep(`Goal "${goal.description}" completed successfully. Moving to next goal.`, "system", ["goal-completion"]);
   }
 
   private async determineContextUpdates(
@@ -448,20 +456,62 @@ export class ChainOfThought extends EventEmitter {
     }
   }
 
-  private async handleGoalFailure(
-    goal: any,
-    error: Error | unknown
-  ): Promise<void> {
+  private async handleGoalFailure(goal: any, error: Error | unknown): Promise<void> {
+    // Check for specific error conditions
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    if (errorMessage.includes('Cannot explore while in combat')) {
+      // Create a new combat resolution goal with higher priority
+      const combatGoal = this.goalManager.addGoal({
+        description: "Resolve active combat before continuing exploration",
+        success_criteria: ["Beast is defeated or successfully fled from"],
+        priority: 10, // High priority to handle combat first
+        horizon: "short",
+        status: "ready",
+        created_at: Date.now(),
+        dependencies: [] // Initialize with no dependencies
+      });
+
+      // Block the current goal until combat is resolved
+      this.goalManager.updateGoalStatus(goal.id, "blocked");
+      
+      // Add the combat goal as a dependency by updating the blocked goal's status
+      this.goalManager.blockGoalHierarchy(goal.id, "Combat must be resolved first");
+      
+      // Update the goal's dependencies in the goals Map directly
+      const currentGoal = this.goalManager.getGoalById(goal.id);
+      if (currentGoal) {
+        currentGoal.dependencies = [...(currentGoal.dependencies || []), combatGoal.id];
+      }
+
+      this.emit("goal:blocked", {
+        id: goal.id,
+        reason: "Combat must be resolved first"
+      });
+
+      // Emit the new combat goal
+      this.emit("goal:created", {
+        id: combatGoal.id,
+        description: combatGoal.description
+      });
+      
+      return;
+    }
+
+    // Handle other types of failures
     this.goalManager.updateGoalStatus(goal.id, "failed");
 
     // If this was a sub-goal, mark parent as blocked
     if (goal.parentGoal) {
-      this.goalManager.updateGoalStatus(goal.parentGoal, "blocked");
+      const parentGoal = this.goalManager.getGoalById(goal.parentGoal);
+      if (parentGoal && parentGoal.status !== "completed") {
+        this.goalManager.updateGoalStatus(goal.parentGoal, "blocked");
+      }
     }
 
     this.emit("goal:failed", {
       id: goal.id,
-      error,
+      error: errorMessage
     });
   }
 
@@ -699,6 +749,9 @@ export class ChainOfThought extends EventEmitter {
           case "EXECUTE_TRANSACTION":
             return this.runTransaction(action.payload as CoTTransaction);
 
+          case "READ_CONTRACT":
+            return this.readContractAction(action.payload as CoTContractRead);
+
           default:
             this.logger.warn("executeAction", "Unknown action type", {
               actionType: action.type,
@@ -763,27 +816,283 @@ export class ChainOfThought extends EventEmitter {
   private async runTransaction(transaction: CoTTransaction): Promise<string> {
     this.logger.debug("runTransaction", "Running transaction", { transaction });
 
-    // Add step describing the transaction
-
-    const result = await executeStarknetTransaction(transaction);
-
-    const resultStr = `Transaction executed successfully: ${JSON.stringify(
-      result,
-      null,
-      2
-    )}`;
-
-    this.addStep(
-      `Running transaction: ${transaction.contractAddress}`,
+    // Add step to indicate transaction is pending
+    const pendingStep = this.addStep(
+      `Transaction pending: ${transaction.entrypoint}`,
       "action",
-      ["transaction"],
-      {
-        transactionData: transaction.calldata,
-        result: resultStr,
-      }
+      ["transaction", "pending"]
     );
 
-    return resultStr;
+    try {
+      // Check for active combat before allowing explore
+      if (transaction.entrypoint === 'explore') {
+        const beastCheck = await executeStarknetRead({
+          contractAddress: transaction.contractAddress,
+          entrypoint: 'get_attacking_beast',
+          calldata: transaction.calldata.slice(0, 1) // Just the adventurer_id
+        });
+        
+        if (beastCheck && Object.keys(beastCheck).length > 0) {
+          throw new Error('Cannot explore while in combat. Must attack or flee first.');
+        }
+      }
+
+      // Await the transaction result
+      const result = await executeStarknetTransaction(transaction);
+      
+      // Update step to show transaction completed
+      this.stepManager.updateStep(pendingStep.id, {
+        content: `Transaction completed: ${transaction.entrypoint}`,
+        tags: ["transaction", "completed"]
+      });
+
+      // Parse response based on entrypoint
+      let parsedResult;
+      switch (transaction.entrypoint) {
+        case 'explore':
+          if (result?.data) {
+            const exploreResults = [];
+            for (let i = 0; i < result.data.length; i++) {
+              const value = Number(BigInt(result.data[i] || '0x0'));
+              switch (value) {
+                case 0: exploreResults.push('Beast');
+                  break;
+                case 1: exploreResults.push('Obstacle');
+                  break;
+                case 2: exploreResults.push('Discovery');
+                  break;
+              }
+            }
+            parsedResult = {
+              results: exploreResults
+            };
+          }
+          break;
+
+        case 'attack':
+          if (result?.data) {
+            parsedResult = {
+              damage_dealt: Number(BigInt(result.data[0] || '0x0')),
+              damage_taken: Number(BigInt(result.data[1] || '0x0')),
+              beast_slain: result.data[2] === '0x1',
+              xp_earned: Number(BigInt(result.data[3] || '0x0')),
+              gold_earned: Number(BigInt(result.data[4] || '0x0'))
+            };
+          }
+          break;
+
+        case 'flee':
+          if (result?.data) {
+            parsedResult = {
+              success: result.data[0] === '0x1',
+              damage_taken: Number(BigInt(result.data[1] || '0x0'))
+            };
+          }
+          break;
+
+        case 'equip':
+          if (result?.data) {
+            parsedResult = {
+              success: result.data[0] === '0x1',
+              equipped_items: result.data.slice(1).map((item: string) => Number(BigInt(item || '0x0')))
+            };
+          }
+          break;
+
+        case 'upgrade':
+          if (result?.data) {
+            parsedResult = {
+              success: result.data[0] === '0x1',
+              stats: {
+                strength: Number(BigInt(result.data[1] || '0x0')),
+                dexterity: Number(BigInt(result.data[2] || '0x0')),
+                vitality: Number(BigInt(result.data[3] || '0x0')),
+                intelligence: Number(BigInt(result.data[4] || '0x0')),
+                wisdom: Number(BigInt(result.data[5] || '0x0')),
+                charisma: Number(BigInt(result.data[6] || '0x0')),
+                luck: Number(BigInt(result.data[7] || '0x0'))
+              },
+              potions: Number(BigInt(result.data[8] || '0x0')),
+              items: result.data.slice(9).map((item: string, i: number) => ({
+                item_id: Number(BigInt(item || '0x0')),
+                equip: result.data[9 + i + 1] === '0x1'
+              }))
+            };
+          }
+          break;
+      }
+
+      // Update context with transaction result
+      if (parsedResult) {
+        this.mergeContext({
+          lastTransactionResult: {
+            entrypoint: transaction.entrypoint,
+            result: parsedResult,
+            timestamp: Date.now()
+          }
+        });
+        return JSON.stringify(parsedResult, null, 2);
+      }
+
+      // Default case - return raw result
+      return JSON.stringify(result || {}, null, 2);
+
+    } catch (error) {
+      // Update step to show transaction failed
+      this.stepManager.updateStep(pendingStep.id, {
+        content: `Transaction failed: ${error}`,
+        tags: ["transaction", "failed"],
+        meta: { error }
+      });
+      throw error;
+    }
+  }
+
+  private async readContractAction(contractRead: CoTContractRead): Promise<string> {
+    // Add step to indicate read is pending
+    const pendingStep = this.addStep(
+      `Contract read pending: ${contractRead.entrypoint}`,
+      "action",
+      ["contract-read", "pending"]
+    );
+
+    try {
+      // Await the read result
+      const result = await executeStarknetRead(contractRead);
+      
+      // Update step to show read completed
+      this.stepManager.updateStep(pendingStep.id, {
+        content: `Contract read completed: ${contractRead.entrypoint}`,
+        tags: ["contract-read", "completed"]
+      });
+
+      let parsedResult;
+      // Parse response based on entrypoint
+      switch (contractRead.entrypoint) {
+        case 'get_adventurer':
+          if (Array.isArray(result)) {
+            const adventurer = {
+              health: Number(BigInt(result[0] || '0x0')),
+              xp: Number(BigInt(result[1] || '0x0')),
+              gold: Number(BigInt(result[2] || '0x0')),
+              beast_health: Number(BigInt(result[3] || '0x0')),
+              stat_upgrades_available: Number(BigInt(result[4] || '0x0')),
+              stats: {
+                strength: Number(BigInt(result[5] || '0x0')),
+                dexterity: Number(BigInt(result[6] || '0x0')),
+                vitality: Number(BigInt(result[7] || '0x0')),
+                intelligence: Number(BigInt(result[8] || '0x0')),
+                wisdom: Number(BigInt(result[9] || '0x0')),
+                charisma: Number(BigInt(result[10] || '0x0')),
+                luck: Number(BigInt(result[11] || '0x0'))
+              },
+              equipment: {
+                weapon: { id: Number(BigInt(result[12] || '0x0')), xp: Number(BigInt(result[13] || '0x0')) },
+                chest: { id: Number(BigInt(result[14] || '0x0')), xp: Number(BigInt(result[15] || '0x0')) },
+                head: { id: Number(BigInt(result[16] || '0x0')), xp: Number(BigInt(result[17] || '0x0')) },
+                waist: { id: Number(BigInt(result[18] || '0x0')), xp: Number(BigInt(result[19] || '0x0')) },
+                foot: { id: Number(BigInt(result[20] || '0x0')), xp: Number(BigInt(result[21] || '0x0')) },
+                hand: { id: Number(BigInt(result[22] || '0x0')), xp: Number(BigInt(result[23] || '0x0')) },
+                neck: { id: Number(BigInt(result[24] || '0x0')), xp: Number(BigInt(result[25] || '0x0')) },
+                ring: { id: Number(BigInt(result[26] || '0x0')), xp: Number(BigInt(result[27] || '0x0')) }
+              },
+              battle_action_count: Number(BigInt(result[28] || '0x0')),
+              mutated: result[29] === '0x1',
+              awaiting_item_specials: result[30] === '0x1'
+            };
+            parsedResult = adventurer;
+          }
+          break;
+
+        case 'get_attacking_beast':
+          if (Array.isArray(result)) {
+            const beast = {
+              id: Number(BigInt(result[0] || '0x0')),
+              starting_health: Number(BigInt(result[1] || '0x0')),
+              combat_spec: {
+                tier: Number(BigInt(result[2] || '0x0')),
+                item_type: Number(BigInt(result[3] || '0x0')),
+                level: Number(BigInt(result[4] || '0x0')),
+                specials: {
+                  special1: Number(BigInt(result[5] || '0x0')),
+                  special2: Number(BigInt(result[6] || '0x0')),
+                  special3: Number(BigInt(result[7] || '0x0'))
+                }
+              }
+            };
+            parsedResult = beast;
+          }
+          break;
+
+        case 'get_market':
+          if (Array.isArray(result)) {
+            parsedResult = [];
+            for (let i = 0; i < result.length; i++) {
+              parsedResult.push(Number(BigInt(result[i] || '0x0')));
+            }
+          }
+          break;
+
+        case 'get_bag':
+          if (Array.isArray(result)) {
+            const bag = {
+              items: Array.from({length: 15}, (_, i) => ({
+                id: Number(BigInt(result[i*2] || '0x0')),
+                xp: Number(BigInt(result[i*2 + 1] || '0x0'))
+              })),
+              mutated: result[30] === '0x1'
+            };
+            parsedResult = bag;
+          }
+          break;
+
+        case 'get_potion_price':
+          if (Array.isArray(result) && result.length > 0) {
+            parsedResult = Number(BigInt(result[0] || '0x0'));
+          }
+          break;
+
+        case 'get_item_specials':
+          if (Array.isArray(result)) {
+            parsedResult = [];
+            for (let i = 0; i < result.length; i += 2) {
+              parsedResult.push({
+                item_id: Number(BigInt(result[i] || '0x0')),
+                special_power: {
+                  special1: Number(BigInt(result[i + 1] || '0x0')),
+                  special2: Number(BigInt(result[i + 2] || '0x0')),
+                  special3: Number(BigInt(result[i + 3] || '0x0'))
+                }
+              });
+            }
+          }
+          break;
+      }
+
+      // Update context with read result
+      if (parsedResult) {
+        this.mergeContext({
+          lastContractRead: {
+            entrypoint: contractRead.entrypoint,
+            result: parsedResult,
+            timestamp: Date.now()
+          }
+        });
+        return JSON.stringify(parsedResult, null, 2);
+      }
+
+      // Default case - return raw result
+      return JSON.stringify(result || [], null, 2);
+
+    } catch (error) {
+      // Update step to show read failed
+      this.stepManager.updateStep(pendingStep.id, {
+        content: `Contract read failed: ${error}`,
+        tags: ["contract-read", "failed"],
+        meta: { error }
+      });
+      throw error;
+    }
   }
 
   /**
@@ -964,7 +1273,7 @@ ${this.context.availableActions}
 Return a JSON array where each step contains:
 - plan: A short explanation of what you will do
 - meta: A metadata object with requirements for the step. Find this in the context.
-- actions: A list of actions to be executed. You can either use GRAPHQL_FETCH or EXECUTE_TRANSACTION. You must only use these.
+- actions: A list of actions to be executed. You can use GRAPHQL_FETCH, EXECUTE_TRANSACTION, or READ_CONTRACT. You must only use these.
 
 {{output_format_details}}
 
@@ -978,7 +1287,7 @@ Provide a JSON response with the following structure (this is an example only):
         {
           type: "GRAPHQL_FETCH",
           payload: {
-            query: "query GetRealmInfo { eternumRealmModels(where: { realm_id: 42 }) { edges { node { ... on eternum_Realm { entity_id level } } } }",
+            query: "query GetRealmInfo { eternumRealmModels(where: { realm_id: 42 }) { edges { node { ... on eternum_Realm { entity_id level } } }",
           },
         },
         {
@@ -987,6 +1296,13 @@ Provide a JSON response with the following structure (this is an example only):
               contractAddress: "0x1234567890abcdef",
               entrypoint: "execute",
               calldata: [1, 2, 3],
+          },
+        },
+        {
+          type: "READ_CONTRACT",
+          payload: {
+            contractAddress: "0x1234567890abcdef",
+            entrypoint: "get_attacking_beast",
           },
         },
   ]
@@ -1043,7 +1359,7 @@ Make sure the JSON is valid. No extra text outside of the JSON.
       });
 
       // Initialize with user query
-      this.addStep(`User  Query: ${userQuery}`, "task", ["user-query"]);
+      this.addStep(`User Query: ${userQuery}`, "task", ["user-query"]);
 
       let currentIteration = 0;
       let isComplete = false;
@@ -1058,9 +1374,6 @@ Make sure the JSON is valid. No extra text outside of the JSON.
         this.logger.debug("think", "Processing iteration", {
           currentIteration,
         });
-
-        // Add new actions to pending queue
-        pendingActions.push(...llmResponse.actions);
 
         // Process one action at a time
         if (pendingActions.length > 0) {
@@ -1081,13 +1394,15 @@ Make sure the JSON is valid. No extra text outside of the JSON.
           }
 
           try {
+            // Execute action and await result
             const result = await this.executeAction(currentAction);
 
-            const updateContext = this.buildPrompt({
-              result,
-            });
+            // Wait for context to be updated with the result
+            await new Promise(resolve => setTimeout(resolve, 100));
 
-            // Check completion status
+            const updateContext = this.buildPrompt({ result });
+            
+            // Check completion status - await the response
             const completionCheck = await this.llmClient.analyze(
               `
               ${updateContext}
