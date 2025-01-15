@@ -1,0 +1,6 @@
+[package]
+name = "obstacles"
+version = "0.1.0"
+
+[dependencies]
+combat = { path = "../combat" }

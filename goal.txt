@@ -1,0 +1,192 @@
+Goal:
+
+To create a dockerized environment for Loot Survivor that would:
+
+1. Package everything needed to run the game:
+   - Katana (local Starknet node)
+   - Indexer for game state
+   - The game contracts
+   - Our agent system
+
+2. Make it easy for people to:
+   - Spin up their own local environment
+   - Experiment with different agent strategies
+   - Design and test different context files
+   - Run multiple experiments quickly
+
+This would essentially create a "Loot Survivor AI Arena" where people could:
+- Develop and test different AI strategies
+- Compare different approaches
+- Share and iterate on context files
+- Benchmark agent performance
+
+Project Context & Key Concepts:
+1. Game Overview
+   - Loot Survivor is an on-chain game running on Starknet
+   - Players control adventurers who explore, fight beasts, and collect loot
+   - Game state is managed through smart contracts written in Cairo
+   - Actions include: exploring, fighting, upgrading stats, buying/using items
+
+2. System Architecture
+   - Katana: Local Starknet node for development (like Ganache for Ethereum)
+   - MongoDB: Stores indexed game state and events
+   - Redis: Caches frequently accessed data
+   - GraphQL API: Provides structured queries for game state
+   - Indexers: Transform on-chain events into queryable data
+   - Agent System: AI-powered decision making using Chain of Thought
+
+3. Key Components
+   - Chain of Thought: Our core decision-making system
+     - Uses LLM to process game state and make decisions
+     - Guided by context files that define strategy and rules
+     - Executes actions through contract interactions
+   
+   - Context Files: Strategy definitions for agents
+     - Define game rules and mechanics
+     - Specify decision-making priorities
+     - Include parsing logic for game state
+     - Define action validation rules
+
+   - Indexers: Event processors
+     - Listen for contract events
+     - Update MongoDB with game state
+     - Enable efficient querying
+     - Support real-time updates
+
+4. Current State
+   - Basic infrastructure is containerized and running
+   - Services can communicate with each other
+   - Environment variables and networking configured
+   - Missing: Contract deployment, indexer setup, agent integration
+
+5. Development Flow
+   - Contracts deployed to local Katana node
+   - Events captured by indexers and stored in MongoDB
+   - GraphQL API provides query interface
+   - Agents read state and execute actions
+   - All running in isolated Docker environment
+
+Progress Made:
+1. Core Infrastructure Setup ✅
+   - Successfully containerized Katana node with proper permissions
+   - Configured MongoDB for state persistence
+   - Set up GraphQL API for data querying
+   - Implemented Redis for caching
+   - Added indexers for various game aspects (adventurers, items, battles, etc.)
+
+2. Development Environment ✅
+   - Created modular docker-compose setup
+   - Implemented environment variable configuration
+   - Set up proper networking between services
+   - Added volume mounts for data persistence
+
+Requirements & Dependencies:
+1. Game Contract Deployment
+   - Source code for Loot Survivor contracts
+   - Cairo compiler (already in Katana container)
+   - Contract ABIs
+   - Deployment scripts
+   - Initial game parameters
+   - Test accounts and private keys
+
+2. Indexer Integration
+   - Event schemas from contract ABIs
+   - MongoDB schemas for game entities
+   - Python indexer scripts
+   - GraphQL type definitions
+   - Event filters configuration
+   - WebSocket setup for real-time updates
+
+3. Agent System Integration
+   - Daydreams core package
+   - Chain of Thought implementation
+   - Contract interaction utilities
+   - Context file templates
+   - Performance metrics definition
+   - State management utilities
+
+4. Testing & Documentation
+   - Test framework setup
+   - Sample game scenarios
+   - Performance benchmarking tools
+   - Documentation generator
+   - Example configuration files
+   - CI/CD pipeline
+
+5. Development Tools
+   - Contract explorer frontend
+   - GraphQL playground setup
+   - Monitoring stack (Prometheus/Grafana)
+   - Logging infrastructure (ELK/Fluentd)
+   - Development utilities (hot reload, debugging tools)
+
+Next Steps:
+1. Game Contract Deployment
+   - Deploy Loot Survivor contracts to Katana
+   - Verify contract interactions
+   - Set up initial game state
+
+2. Indexer Integration
+   - Configure indexers for game events
+   - Set up data schemas
+   - Implement real-time state updates
+
+3. Agent System Integration
+   - Add agent container to docker-compose
+   - Set up agent-contract interaction
+   - Implement context file mounting
+   - Create agent performance monitoring
+
+4. Testing & Documentation
+   - Create example agent strategies
+   - Write comprehensive documentation
+   - Add benchmarking tools
+   - Create quick-start guide
+
+5. Quality of Life Features
+   - Add development tools (contract explorer, GraphQL playground)
+   - Create monitoring dashboard
+   - Implement logging system
+   - Add sample context files
+
+Critical Challenges:
+
+1. State Synchronization (Highest Priority)
+   - Challenge: Maintaining consistent game state across all components
+     * Contract state must sync with MongoDB
+     * Indexers must process events in correct order
+     * Agent decisions must be based on current state
+     * Multiple agents may act simultaneously
+   
+   - Impact:
+     * Incorrect state = wrong agent decisions
+     * Missing events = incomplete game history
+     * Race conditions = invalid actions
+     * State lag = poor agent performance
+
+   - Mitigation Strategy:
+     * Implement event versioning and ordering
+     * Add state verification checkpoints
+     * Create rollback mechanisms
+     * Build robust error handling
+     * Add state validation between components
+
+2. Secondary Challenges:
+   
+   a. Contract Deployment Reliability
+      - Ensuring consistent contract deployment across fresh environments
+      - Managing contract addresses and configuration
+      - Handling failed deployments and retries
+   
+   b. Agent Performance Optimization
+      - Reducing LLM latency for faster decisions
+      - Optimizing context file processing
+      - Managing memory usage for long games
+   
+   c. Development Experience
+      - Making the system accessible to new developers
+      - Providing clear debugging tools
+      - Creating meaningful error messages
+      - Simplifying the setup process
+
+These challenges are interconnected - solving state synchronization will make other aspects like agent performance and development experience much more manageable.

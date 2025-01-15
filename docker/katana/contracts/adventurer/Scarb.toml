@@ -1,0 +1,12 @@
+[package]
+name = "adventurer"
+version = "0.1.0"
+description = "Adventurer Library"
+homepage = "https://github.com/provable-games/loot-survivor"
+
+[dependencies]
+loot = { path = "../loot" }
+obstacles = { path = "../obstacles" }
+combat = { path = "../combat" }
+market = { path = "../market" }
+beasts = { path = "../beasts" }

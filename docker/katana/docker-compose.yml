@@ -1,0 +1,185 @@
+version: '3.8'
+
+services:
+  katana:
+    build: .
+    container_name: katana_container
+    ports:
+      - "${KATANA_PORT}:5050"
+    volumes:
+      - ./:/app
+    environment:
+      - STARKNET_PRIVATE_KEY=${STARKNET_PRIVATE_KEY}
+      - STARKNET_ACCOUNT_ADDRESS=${STARKNET_ACCOUNT_ADDRESS}
+
+  dna:
+    image: quay.io/apibara/starknet:1.5.0
+    restart: always
+    ports:
+      - "7171:7171"
+    command:
+      - start
+      - --rpc
+      - http://katana:5050
+    depends_on:
+      - katana
+
+  mongo:
+    image: mongo:6.0.8
+    restart: always
+    ports:
+      - "${MONGO_PORT}:27017"
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+
+  etcd:
+    image: docker.io/bitnami/etcd:3.5
+    environment:
+      ALLOW_NONE_AUTHENTICATION: "yes"
+    volumes:
+      - etcd_data:/bitnami/etcd
+
+  adventurers_indexer:
+    image: quay.io/apibara/sink-mongo:0.8.0
+    depends_on:
+      - etcd
+      - mongo
+      - dna
+      - katana
+    restart: always
+    command:
+      - run
+      - --allow-env=/app/.env
+      - /app/indexer/adventurers.ts
+    volumes:
+      - ./:/app
+    environment:
+      PERSIST_TO_ETCD: http://etcd:2379
+      SINK_ID: adventurers
+      MONGO_URL: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017
+
+  battles_indexer:
+    image: quay.io/apibara/sink-mongo:0.8.0
+    depends_on:
+      - etcd
+      - mongo
+      - dna
+      - katana
+    restart: always
+    command:
+      - run
+      - --allow-env=/app/.env
+      - /app/indexer/battles.ts
+    volumes:
+      - ./:/app
+    environment:
+      PERSIST_TO_ETCD: http://etcd:2379
+      SINK_ID: battles
+      MONGO_URL: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017
+
+  beasts_indexer:
+    image: quay.io/apibara/sink-mongo:0.8.0
+    depends_on:
+      - etcd
+      - mongo
+      - dna
+      - katana
+    restart: always
+    command:
+      - run
+      - --allow-env=/app/.env
+      - /app/indexer/beasts.ts
+    volumes:
+      - ./:/app
+    environment:
+      PERSIST_TO_ETCD: http://etcd:2379
+      SINK_ID: beasts
+      MONGO_URL: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017
+
+  discoveries_indexer:
+    image: quay.io/apibara/sink-mongo:0.8.0
+    depends_on:
+      - etcd
+      - mongo
+      - dna
+      - katana
+    restart: always
+    command:
+      - run
+      - --allow-env=/app/.env
+      - /app/indexer/discoveries.ts
+    volumes:
+      - ./:/app
+    environment:
+      PERSIST_TO_ETCD: http://etcd:2379
+      SINK_ID: discoveries
+      MONGO_URL: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017
+
+  items_indexer:
+    image: quay.io/apibara/sink-mongo:0.8.0
+    depends_on:
+      - etcd
+      - mongo
+      - dna
+      - katana
+    restart: always
+    command:
+      - run
+      - --allow-env=/app/.env
+      - /app/indexer/items.ts
+    volumes:
+      - ./:/app
+    environment:
+      PERSIST_TO_ETCD: http://etcd:2379
+      SINK_ID: items
+      MONGO_URL: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017
+
+  scores_indexer:
+    image: quay.io/apibara/sink-mongo:0.8.0
+    depends_on:
+      - etcd
+      - mongo
+      - dna
+      - katana
+    restart: always
+    command:
+      - run
+      - --allow-env=/app/.env
+      - /app/indexer/scores.ts
+    volumes:
+      - ./:/app
+    environment:
+      PERSIST_TO_ETCD: http://etcd:2379
+      SINK_ID: scores
+      MONGO_URL: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017
+
+  graph:
+    build:
+      context: .
+      dockerfile: Dockerfile.graph
+    ports:
+      - "${GRAPHQL_PORT}:8080"
+    depends_on:
+      - mongo
+    environment:
+      MONGO_URL: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017
+
+  redis:
+    image: redis:latest
+    ports:
+      - "${REDIS_PORT}:6379"
+    volumes:
+      - redis_data:/data
+
+networks:
+  default:
+    name: lootsurvivor_network
+    driver: bridge
+
+volumes:
+  etcd_data:
+  mongo_data:
+  redis_data:

@@ -1,0 +1,20 @@
+[package]
+name = "game"
+version = "0.1.0"
+
+[dependencies]
+starknet.workspace = true
+loot = { path = "../loot" }
+adventurer = { path = "../adventurer" }
+market = { path = "../market" }
+obstacles = { path = "../obstacles" }
+pragma_lib = { git = "https://github.com/astraly-labs/pragma-lib", rev = "c4cdeaafbec19d99d740df61afc0301d78975204" }
+openzeppelin = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", tag = "v0.15.1" }
+alexandria_encoding = { git = "https://github.com/keep-starknet-strange/alexandria.git", rev = "7c19379ab6cf0f8b48be3c5b118ffddd7e26a4d2" }
+graffiti = { git = "https://github.com/ponderingdemocritus/graffiti", rev = "bc569531791dbc71c6cd8d9bc154c34eedad31fe" }
+
+[dev-dependencies]
+snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry.git", tag = "v0.27.0" }
+
+[[target.starknet-contract]]
+build-external-contracts = ["openzeppelin::token::erc20::ERC20", "openzeppelin::token::erc721::ERC721", "openzeppelin::tests::mocks::erc20_mocks::DualCaseERC20Mock"]

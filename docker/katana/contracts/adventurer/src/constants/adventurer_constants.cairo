@@ -1,0 +1,59 @@
+// Starting Setting
+const STARTING_GOLD: u8 = 25;
+const STARTING_HEALTH: u8 = 100;
+
+// Adventurer Max Values
+const MAX_ADVENTURER_HEALTH: u16 = 1023; // 10 bits
+const MAX_PACKABLE_BEAST_HEALTH: u16 = 1023; // 10 bits
+const MAX_ADVENTURER_XP: u16 = 32767; // 15 bits
+const MAX_GOLD: u16 = 511; // 9 bits
+const MAX_STAT_UPGRADES_AVAILABLE: u8 = 15; // 4 bits
+const MAX_PACKABLE_BATTLE_ACTION_COUNT: u8 = 255; // 8 bits
+
+const ITEM_MAX_XP: u16 = 400;
+
+// Potion Settings
+const BASE_POTION_PRICE: u8 = 1;
+const POTION_HEALTH_AMOUNT: u8 = 10;
+const MINIMUM_POTION_PRICE: u8 = 1;
+const CHARISMA_POTION_DISCOUNT: u8 = 2;
+
+// Item Settings
+const CHARISMA_ITEM_DISCOUNT: u8 = 1;
+const MINIMUM_ITEM_PRICE: u8 = 1;
+const ITEM_MAX_GREATNESS: u8 = 20;
+const MAX_GREATNESS_STAT_BONUS: u8 = 1;
+const NECKLACE_G20_BONUS_STATS: u8 = 1;
+const SILVER_RING_G20_LUCK_BONUS: u8 = 20;
+
+const SILVER_RING_LUCK_BONUS_PER_GREATNESS: u8 = 1;
+const JEWELRY_BONUS_BEAST_GOLD_PERCENT: u8 = 3;
+const JEWELRY_BONUS_CRITICAL_HIT_PERCENT_PER_GREATNESS: u8 = 3;
+const JEWELRY_BONUS_NAME_MATCH_PERCENT_PER_GREATNESS: u8 = 3;
+const NECKLACE_ARMOR_BONUS: u8 = 3;
+
+// Stat Settings
+const HEALTH_INCREASE_PER_VITALITY: u8 = 15;
+const VITALITY_INSTANT_HEALTH_BONUS: u8 = 15;
+
+// Combat Settings
+const MINIMUM_DAMAGE_TO_BEASTS: u8 = 4;
+const MINIMUM_DAMAGE_FROM_BEASTS: u8 = 2;
+const MINIMUM_DAMAGE_FROM_OBSTACLES: u8 = 2;
+const CRITICAL_HIT_LEVEL_MULTIPLIER: u8 = 3;
+
+// Misc Settings
+const MAX_ADVENTURER_BLOCKS: u16 = 512; // 2^9
+const BEAST_SPECIAL_NAME_LEVEL_UNLOCK: u8 = 19;
+const XP_FOR_DISCOVERIES: u8 = 1;
+
+// controls how much faster items level up compared to the player
+const ITEM_XP_MULTIPLIER_BEASTS: u8 = 2;
+const ITEM_XP_MULTIPLIER_OBSTACLES: u8 = 1;
+
+const TWO_POW_64_NZ: NonZero<u128> = 0x10000000000000000;
+const TWO_POW_32_NZ: NonZero<u64> = 0x100000000;
+const TWO_POW_32: u64 = 0x100000000;
+const TWO_POW_16_NZ: NonZero<u32> = 0x10000;
+const TWO_POW_16: u256 = 0x10000;
+const TWO_POW_8_NZ_U16: NonZero<u16> = 0x100;

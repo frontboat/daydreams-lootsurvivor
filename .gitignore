@@ -177,3 +177,7 @@ dist
 # Logs
 
 logs/app-*.log
+
+scripts/
+
+docker/katana/contracts/target
