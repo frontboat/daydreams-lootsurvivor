@@ -39,6 +39,7 @@ export interface ChainOfThoughtContext {
 export type CoTActionType =
   | "GRAPHQL_FETCH"
   | "EXECUTE_TRANSACTION"
+  | "READ_CONTRACT"
   | "SYSTEM_PROMPT";
 
 /**

@@ -44,7 +44,6 @@ interface StructuredAnalysis {
 export class LLMClient {
   private anthropic?: Anthropic;
   private readonly config: Required<LLMClientConfig>;
-  private currentModel: string;
 
   constructor(config: LLMClientConfig) {
     this.config = {
@@ -59,7 +58,6 @@ export class LLMClient {
       maxDelay: config.maxDelay || 10000,
     };
 
-    this.currentModel = this.config.model;
     this.initializeClient();
   }
 
@@ -118,11 +116,11 @@ export class LLMClient {
   }
 
   public getModelName(): string {
-    return this.currentModel;
+    return this.config.model;
   }
 
   public getModelVersion(): string {
-    const versionMatch = this.currentModel.match(/\d+(\.\d+)*/);
+    const versionMatch = this.config.model.match(/\d+(\.\d+)*/);
     return versionMatch ? versionMatch[0] : "unknown";
   }
 
@@ -130,7 +128,7 @@ export class LLMClient {
     const controller = new AbortController();
     const timeoutId = globalThis.setTimeout(
       () => controller.abort(),
-      this.config.timeout
+      this.config.timeout,
     );
 
     try {
@@ -148,7 +146,7 @@ export class LLMClient {
 
     const response = await this.anthropic.messages.create(
       {
-        model: this.currentModel,
+        model: this.config.model,
         max_tokens: this.config.maxTokens,
         temperature: this.config.temperature,
         messages: [{ role: "user", content: prompt }],
@@ -158,7 +156,7 @@ export class LLMClient {
 
     return {
       text: response.content[0].type === "text" ? response.content[0].text : "",
-      model: this.currentModel,
+      model: this.config.model,
       usage: {
         prompt_tokens: response.usage.input_tokens,
         completion_tokens: response.usage.output_tokens,
@@ -221,12 +219,9 @@ export class LLMClient {
     } = options;
 
     const response = await this.anthropic?.messages.create({
-      model: this.currentModel,
+      model: this.config.model,
+      system: system || "",
       messages: [
-        {
-          role: "assistant",
-          content: system || "",
-        },
         {
           role: "user",
           content: formatResponse

@@ -69,6 +69,15 @@ export const getStarknetAccount = () => {
   );
 };
 
+export const executeStarknetRead = async (call: Call): Promise<any> => {
+  try {
+    call.calldata = CallData.compile(call.calldata || []);
+    return await getStarknetProvider().callContract(call);
+  } catch (error) {
+    return error instanceof Error ? error : new Error("Unknown error occurred");
+  }
+};
+
 export const executeStarknetTransaction = async (call: Call): Promise<any> => {
   try {
     call.calldata = CallData.compile(call.calldata || []);
