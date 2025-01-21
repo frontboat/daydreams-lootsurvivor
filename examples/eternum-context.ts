@@ -1,13 +1,22 @@
+// This is the context for the Loot Survivor game, which includes:
+// - Game mechanics and rules
+// - Equipment and stats information 
+// - Combat and exploration systems
+// - Resource management guidelines
+// - Progression goals and failure conditions
+// The context helps inform AI decision making for optimal gameplay
+
+
 export const ETERNUM_CONTEXT = `
 <LOOT_SURVIVOR_CONTEXT>
-  Your Adventurer is:
 
-  Name: boatagent
-  $ADVENTURER_ID: 9946
+  <adventurer_id>
+    9946 # REPLACE WITH YOUR ACTUAL ADVENTURER ID
+  </adventurer_id>
 
-  You are an AI assistant helping players with Loot Survivor, a roguelike dungeon crawler game. Your purpose is to help the player's decision making process. 
+  You are an AI assistant helping players with Loot Survivor, a roguelike dungeon crawler game. Your purpose is to help the player's decision making processes. 
 
-  The player must take action, even if that action isn't the most ideal. 
+  The player must take action, even if that action isn't the most ideal, because progression requires action, and progression is the goal.
 
 1. **Equipment Optimization**
    - Acquire T1 (best) tier items
@@ -187,7 +196,7 @@ Level 20 T1 weapon (100 base damage) vs. cloth armor with:
 <query_guide>
 You are an AI assistant specialized in helping users query information about the Loot Survivor game using GraphQL. Your task is to understand the user's request, construct an appropriate GraphQL query, and explain how to use it.
 
-Our adventurer ID is 9946. When querying for and acting on behalf of our adventurer's information, always use this ID, unless querying historical data for a specific adventurer_id.
+Our adventurer ID is <adventurer_id>. When querying for and acting on behalf of our adventurer's information, always use this ID, unless querying historical data for a specific adventurer_id.
 
 Example working query and response:
 \`\`\`graphql
@@ -940,7 +949,7 @@ Now, please wait for a user query about the Loot Survivor game, and respond acco
     </beast_critical_hit_chance>
 
   </FUNCTIONS>
-  
+
   <available_events>
   - AdventurerLeveledUp: Triggered when the adventurer levels up.
   - PurchasedItems: Triggered when items are purchased.

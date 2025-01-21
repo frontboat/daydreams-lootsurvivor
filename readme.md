@@ -1,8 +1,10 @@
 ![Daydreams](./banner.png)
 
-# Daydreams
+# Daydreams - Loot Survivor
 
 Daydreams is a generative agent library for playing anything onchain. It is chain agnostic and can be used to perform onchain tasks - including play any onchain game - by simply injecting context. Base, Solana, Ethereum, Starknet, etc
++
+Loot Survivor is a roguelike dungeon crawler game built on Starknet.
 
 It is designed to be as lite as possible. Keep it simple and powerful.
 
@@ -11,13 +13,25 @@ It is designed to be as lite as possible. Keep it simple and powerful.
 You must have bun & Docker installed. Make sure you have the Docker desktop app installed and running.
 
 ```bash
+git clone https://github.com/frontboat/daydreams-lootsurvivor.git
+cd daydreams-lootsurvivor
+
+# Switch to the ls branch
+git checkout loot-survivor
+
+# Install dependencies
 pnpm i
 
+# Copy the .env.example file and create a new .env file
 cp .env.example .env
 
+# Run the docker.sh script to start the Docker containers
 sh ./docker.sh
 
-# Run the goal-based example. This will play mock Eternum with a goal manager and execute tasks.
+# IMPORTANT Open /examples/eternum-context.ts and replace the adventurer_id with YOUR adventurer_id.
+# Save the file
+
+# Run the goal-based example that has been modified to actually play Loot Survivor.
 bun goal
 ```
 
