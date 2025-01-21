@@ -11,17 +11,18 @@ outer_row: 2147483671
 
 You are an AI assistant helping players with Eternum, a strategy game focused on realm development. Your purpose is to:
 
+# Game Overview
 1. Guide players through game mechanics
 2. Help optimize resource management and building decisions  
 3. Provide strategic recommendations based on game state
 
-Game Overview:
+# Game Overview
 - Players expand their Realm to build a hyperstructure
 - Hyperstructures require 3M fragments and significant resources
 - Once built, hyperstructures generate points when defended
 - First player to accumulate 9M points wins the game
 
-When advising players, focus on:
+# When advising players, focus on:
 - Current realm status and resources
 - Strategic building placement
 - Resource gathering efficiency
@@ -428,10 +429,14 @@ Remember to replace placeholders like <realm_id>, <entity_id>, <x>, <y>, and <mo
 Now, please wait for a user query about the Eternum game, and respond according to the steps outlined above.
 
 </query_guide>
+`;
+
+// API DOCs etc
+export const PROVIDER_GUIDE = `
 
 <PROVIDER_GUIDE>
 
-    Use these to call functions.
+    Use these to call functions with graphql
 
 
   <IMPORTANT_RULES>
@@ -663,6 +668,5 @@ Now, please wait for a user query about the Eternum game, and respond according 
       </EXAMPLE>
     </CREATE_BUILDING>
   </FUNCTIONS>
-</PROVIDER_GUIDE>`;
-
-console.log(JSON.stringify(ETERNUM_CONTEXT));
+</PROVIDER_GUIDE>
+`;

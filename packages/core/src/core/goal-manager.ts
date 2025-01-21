@@ -1,43 +1,4 @@
-export type HorizonType = "long" | "medium" | "short";
-export type GoalStatus =
-  | "pending"
-  | "active"
-  | "completed"
-  | "failed"
-  | "ready"
-  | "blocked";
-
-// Add new interfaces for goal management
-export interface Goal {
-  id: string;
-  horizon: HorizonType;
-  description: string;
-  status: GoalStatus;
-  priority: number;
-  dependencies?: string[]; // IDs of goals that must be completed first
-  subgoals?: string[]; // IDs of child goals
-  parentGoal?: string; // ID of parent goal
-  success_criteria: string[];
-  created_at: number;
-  completed_at?: number;
-  progress?: number; // 0-100 to track partial completion
-  meta?: Record<string, any>;
-
-  /**
-   * A numeric measure of how successful this goal was completed.
-   * You can define any scale you like: e.g. 0-1, or 0-100, or a positive/negative integer.
-   */
-  outcomeScore?: number;
-
-  /**
-   * Optional history of scores over time, if you want to track multiple attempts or partial runs.
-   */
-  scoreHistory?: Array<{
-    timestamp: number;
-    score: number;
-    comment?: string;
-  }>;
-}
+import type { Goal, GoalStatus, HorizonType } from "../types";
 
 export class GoalManager {
   private goals: Map<string, Goal> = new Map();

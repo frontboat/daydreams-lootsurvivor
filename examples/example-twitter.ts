@@ -21,8 +21,7 @@ async function main() {
   const roomManager = new RoomManager(vectorDb);
 
   const llmClient = new LLMClient({
-    provider: "anthropic",
-    apiKey: env.ANTHROPIC_API_KEY,
+    model: "deepseek/deepseek-r1", // clutch model!
   });
 
   // Initialize processor with character definition

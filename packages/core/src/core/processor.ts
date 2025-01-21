@@ -102,7 +102,6 @@ export class Processor {
     // Check if this content was already processed
     const contentId = this.generateContentId(content);
 
-    console.log("contentId", contentId);
     const alreadyProcessed = await this.hasProcessedContent(contentId, room);
 
     this.logger.info("Processor.process", "Already processed", {

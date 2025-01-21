@@ -3,31 +3,45 @@ import type {
   ActionHandler,
   ChainOfThoughtContext,
   CoTAction,
-  LLMStructuredResponse,
+  Goal,
+  HorizonType,
 } from "../types";
-import { queryValidator } from "./validation";
+
 import { Logger } from "./logger";
 import { EventEmitter } from "events";
-import {
-  GoalManager,
-  type HorizonType,
-  type GoalStatus,
-  type Goal,
-} from "./goal-manager";
+import { GoalManager } from "./goal-manager";
 import { StepManager, type Step, type StepType } from "./step-manager";
 import { LogLevel } from "../types";
 import { generateUniqueId, injectTags } from "./utils";
 import { systemPromptAction } from "./actions/system-prompt";
 import Ajv from "ajv";
 import type { VectorDB, EpisodicMemory, Documentation } from "./vector-db";
-import { ChromaVectorDB } from "./vector-db";
+
+import { zodToJsonSchema } from "zod-to-json-schema";
 
 // Todo: remove these when we bundle
 import * as fs from "fs";
 import * as path from "path";
 import type { AnySchema, JSONSchemaType } from "ajv";
+import { z } from "zod";
 
 const ajv = new Ajv();
+
+interface RefinedGoal {
+  description: string;
+  success_criteria: string[];
+  priority: number;
+  horizon: "short";
+  requirements: Record<string, any>;
+}
+
+interface LLMValidationOptions<T> {
+  prompt: string;
+  systemPrompt: string;
+  schema: z.ZodSchema<T>;
+  maxRetries?: number;
+  onRetry?: (error: Error, attempt: number) => void;
+}
 
 export class ChainOfThought extends EventEmitter {
   private stepManager: StepManager;
@@ -36,7 +50,7 @@ export class ChainOfThought extends EventEmitter {
   private logger: Logger;
   private contextLogPath: string;
   goalManager: GoalManager;
-  memory: VectorDB;
+  public memory: VectorDB;
 
   private actionRegistry = new Map<string, ActionHandler>();
   private actionExamples = new Map<
@@ -48,22 +62,30 @@ export class ChainOfThought extends EventEmitter {
 
   constructor(
     private llmClient: LLMClient,
+    memory: VectorDB,
     initialContext?: ChainOfThoughtContext,
     config: {
-      chromaUrl?: string;
       logLevel?: LogLevel;
     } = {}
   ) {
     super();
+
+    this.setMaxListeners(50);
+
     this.stepManager = new StepManager();
     this.context = initialContext ?? {
       worldState: "",
     };
     this.snapshots = [];
     this.logger = new Logger({
-      level: LogLevel.ERROR,
+      level: config.logLevel ?? LogLevel.ERROR,
       enableColors: true,
       enableTimestamp: true,
+    });
+
+    // Forward LLM client events
+    this.llmClient.on("trace:tokens", (data) => {
+      this.emit("trace:tokens", data);
     });
 
     this.contextLogPath = path.join(process.cwd(), "logs", "context.log");
@@ -80,14 +102,7 @@ export class ChainOfThought extends EventEmitter {
     this.registerDefaultActions();
 
     // Initialize single memory system
-    this.memory = new ChromaVectorDB("agent_memory", {
-      chromaUrl: config.chromaUrl,
-      logLevel: config.logLevel,
-    });
-  }
-
-  private registerDefaultActions() {
-    this.actionRegistry.set("SYSTEM_PROMPT", systemPromptAction);
+    this.memory = memory;
   }
 
   public async planStrategy(objective: string): Promise<void> {
@@ -95,13 +110,54 @@ export class ChainOfThought extends EventEmitter {
       objective,
     });
 
+    // Fetch relevant documents and experiences related to the objective
+    const [relevantDocs, relevantExperiences] = await Promise.all([
+      this.memory.findSimilarDocuments(objective, 5),
+      this.memory.findSimilarEpisodes(objective, 3),
+    ]);
+
+    this.logger.debug("planStrategy", "Retrieved relevant context", {
+      docCount: relevantDocs.length,
+      expCount: relevantExperiences.length,
+    });
+
+    // Build context from relevant documents
+    const gameStateContext = relevantDocs
+      .map(
+        (doc) => `
+        Document: ${doc.title}
+        Category: ${doc.category}
+        Content: ${doc.content}
+        Tags: ${doc.tags.join(", ")}
+      `
+      )
+      .join("\n\n");
+
+    // Build context from past experiences
+    const experienceContext = relevantExperiences
+      .map(
+        (exp) => `
+        Past Experience:
+        Action: ${exp.action}
+        Outcome: ${exp.outcome}
+        Importance: ${exp.importance}
+        Emotions: ${exp.emotions?.join(", ") || "none"}
+      `
+      )
+      .join("\n\n");
+
     const prompt = `
       <objective>
       "${objective}"
       </objective>
 
       <context>
-      ${JSON.stringify(this.context, null, 2)}
+      ${gameStateContext}
+      
+      <past_experiences>
+      ${experienceContext}
+      </past_experiences>
+
       </context>
 
       <goal_planning_rules>
@@ -110,6 +166,8 @@ export class ChainOfThought extends EventEmitter {
       3. Identify dependencies between goals
       4. Prioritize goals (1-10) based on urgency and impact
       5. Ensure goals are achievable given the current context
+      6. Consider past experiences when setting goals
+      7. Use available game state information to inform strategy
       
       Return a JSON structure with three arrays:
       - long_term: Strategic goals that might take multiple sessions
@@ -121,30 +179,39 @@ export class ChainOfThought extends EventEmitter {
       - success_criteria: Array of specific conditions for completion
       - dependencies: Array of prerequisite goal IDs (empty for initial goals)
       - priority: Number 1-10 (10 being highest)
-
+      - required_resources: Array of resources needed (based on game state)
+      - estimated_difficulty: Number 1-10 based on past experiences
       </goal_planning_rules>
-
-    Return as JSON with this <response_structure>, do not include any other text:
-
-    <response_structure>
-      {
-        "long_term": [{ description, success_criteria[], priority, dependencies[] }],
-        "medium_term": [...],
-        "short_term": [...]
-      }
-    </response_structure>
-
     `;
 
+    const goalSchema = z.object({
+      description: z.string(),
+      success_criteria: z.array(z.string()),
+      dependencies: z.array(z.string()),
+      priority: z.number().min(1).max(10),
+      required_resources: z.array(z.string()),
+      estimated_difficulty: z.number().min(1).max(10),
+    });
+
+    const goalPlanningSchema = z.object({
+      long_term: z.array(goalSchema),
+      medium_term: z.array(goalSchema),
+      short_term: z.array(goalSchema),
+    });
+
     try {
-      const response = await this.llmClient.analyze(prompt, {
-        system:
+      const goals = await this.getValidatedLLMResponse({
+        prompt,
+        systemPrompt:
           "You are a strategic planning system that creates hierarchical goal structures.",
+        schema: goalPlanningSchema,
+        maxRetries: 3,
+        onRetry: (error, attempt) => {
+          this.logger.error("planStrategy", `Attempt ${attempt} failed`, {
+            error,
+          });
+        },
       });
-
-      const goals = JSON.parse(response.toString());
-
-      console.log(goals);
 
       // Create goals in order: long-term first, then medium, then short
       for (const horizon of [
@@ -201,59 +268,104 @@ export class ChainOfThought extends EventEmitter {
     });
   }
 
-  private async canExecuteGoal(
-    goal: Goal
-  ): Promise<{ possible: boolean; reason: string }> {
+  private async canExecuteGoal(goal: Goal): Promise<{
+    possible: boolean;
+    reason: string;
+    missing_requirements: string[];
+  }> {
+    const [relevantDocs, relevantExperiences, blackboardState] =
+      await Promise.all([
+        this.memory.findSimilarDocuments(goal.description, 5),
+        this.memory.findSimilarEpisodes(goal.description, 3),
+        this.getBlackboardState(),
+      ]);
+
     const prompt = `
       <goal_execution_check>
       Goal: ${goal.description}
-      
-      Current Context:
-      ${JSON.stringify(this.context, null, 2)}
+
+      <relevant_context>
+      ${relevantDocs
+        .map((doc) => `Document: ${doc.title}\n${doc.content}`)
+        .join("\n\n")}
+      </relevant_context>
+
+      <relevant_experiences>
+      ${relevantExperiences
+        .map((exp) => `Experience: ${exp.action}\n${exp.outcome}`)
+        .join("\n\n")}
+      </relevant_experiences>
+
+      <current_game_state>
+      ${JSON.stringify(blackboardState, null, 2)}
+      </current_game_state>
       
       Required dependencies:
       ${JSON.stringify(goal.dependencies || {}, null, 2)}
       
       Analyze if this goal can be executed right now. Consider:
-      1. Are all required resources available?
+      1. Are all required resources available in the current game state?
       2. Are environmental conditions met?
       3. Are there any blocking conditions?
+      4. Do we have the necessary game state requirements?
       
-
       </goal_execution_check>
-
-    Return as JSON with this <response_structure>, do not include any other text:
-
-    <response_structure>
-      {
-        "possible": boolean,
-        "reason": string (explanation why possible/not possible)
-      }
-      </response_structure>
-
-      Only return the JSON object, do not include any other text, backticks, or comments.
     `;
 
     try {
-      const response = await this.llmClient.analyze(prompt, {
-        system:
+      const schema = z
+        .object({
+          possible: z.boolean(),
+          reason: z.string(),
+          missing_requirements: z.array(z.string()),
+        })
+        .strict();
+
+      const response = await this.getValidatedLLMResponse<{
+        possible: boolean;
+        reason: string;
+        missing_requirements: string[];
+      }>({
+        prompt,
+        systemPrompt:
           "You are a goal feasibility analyzer that checks if goals can be executed given current conditions.",
+        schema,
+        maxRetries: 3,
+        onRetry: (error, attempt) => {
+          this.logger.warn("canExecuteGoal", `Retry attempt ${attempt}`, {
+            error,
+          });
+        },
       });
 
-      console.log(response);
-
-      return JSON.parse(response.toString());
+      return response;
     } catch (error) {
       this.logger.error(
         "canExecuteGoal",
         "Failed to check goal executability",
         { error }
       );
-      return { possible: false, reason: "Error checking goal executability" };
+      return {
+        possible: false,
+        reason: "Error checking goal executability",
+        missing_requirements: [],
+      };
     }
   }
 
-  private async refineGoal(goal: Goal): Promise<void> {
+  private async refineGoal(goal: Goal, maxRetries: number = 3): Promise<void> {
+    const schema = z.array(
+      z
+        .object({
+          description: z.string(),
+          success_criteria: z.array(z.string()),
+          priority: z.number(),
+          horizon: z.literal("short"),
+          requirements: z.record(z.any()),
+        })
+        .strict()
+    );
+
     const prompt = `
       <goal_refinement>
       Goal to Refine: ${goal.description}
@@ -267,30 +379,29 @@ export class ChainOfThought extends EventEmitter {
       2. Achievable with current resources
       3. Properly sequenced
 
-      </goal_refinement>
+      Return an array of sub-goals, each with:
+      - description: Clear goal statement
+      - success_criteria: Array of specific conditions for completion
+      - priority: Number 1-10 (10 being highest)
+      - horizon: Must be "short" for immediate actions
+      - requirements: Object containing needed resources/conditions
       
-      Return as JSON with this <response_structure>, do not include any other text:
-
-      <response_structure>
-      {
-        "description": string,
-        "success_criteria": string[],
-        "priority": number,
-        "horizon": "short",
-        "requirements": object
-      }
-      </response_structure>
-
-      Only return the JSON object, do not include any other text, backticks, or comments.
+      </goal_refinement>
     `;
 
     try {
-      const response = await this.llmClient.analyze(prompt, {
-        system:
-          "You are a goal refinement system that breaks down complex goals into actionable steps.",
+      const subGoals = await this.getValidatedLLMResponse<RefinedGoal[]>({
+        prompt,
+        systemPrompt:
+          "You are a goal refinement system that breaks down complex goals into actionable steps. Return only valid JSON array matching the schema.",
+        schema,
+        maxRetries,
+        onRetry: (error, attempt) => {
+          this.logger.error("refineGoal", `Attempt ${attempt} failed`, {
+            error,
+          });
+        },
       });
-
-      const subGoals = JSON.parse(response.toString());
 
       // Add sub-goals to goal manager with parent reference
       for (const subGoal of subGoals) {
@@ -298,14 +409,16 @@ export class ChainOfThought extends EventEmitter {
           ...subGoal,
           parentGoal: goal.id,
           status: "pending",
+          created_at: Date.now(),
         });
       }
 
       // Update original goal status
       this.goalManager.updateGoalStatus(goal.id, "active");
     } catch (error) {
-      this.logger.error("refineGoal", "Failed to refine goal", { error });
-      throw error;
+      throw new Error(
+        `Failed to refine goal after ${maxRetries} attempts: ${error}`
+      );
     }
   }
 
@@ -401,6 +514,21 @@ export class ChainOfThought extends EventEmitter {
     const contextUpdate = await this.determineContextUpdates(goal);
     if (contextUpdate) {
       this.mergeContext(contextUpdate);
+
+      // Store relevant state changes in blackboard
+      const timestamp = Date.now();
+      for (const [key, value] of Object.entries(contextUpdate)) {
+        await this.updateBlackboard({
+          type: "state",
+          key,
+          value,
+          timestamp,
+          metadata: {
+            goal_id: goal.id,
+            goal_description: goal.description,
+          },
+        });
+      }
     }
 
     // Check parent goals
@@ -435,12 +563,14 @@ export class ChainOfThought extends EventEmitter {
   private async determineContextUpdates(
     goal: Goal
   ): Promise<Partial<ChainOfThoughtContext> | null> {
+    const blackboardState = await this.getBlackboardState();
+
     const prompt = `
       <context_update_analysis>
       Completed Goal: ${goal.description}
       
       Current Context:
-      ${JSON.stringify(this.context, null, 2)}
+      ${JSON.stringify(blackboardState, null, 2)}
       
       Recent Steps:
       ${JSON.stringify(this.stepManager.getSteps().slice(-5), null, 2)}
@@ -485,6 +615,8 @@ export class ChainOfThought extends EventEmitter {
   }
 
   private async validateGoalSuccess(goal: Goal): Promise<boolean> {
+    const blackboardState = await this.getBlackboardState();
+
     const prompt = `
       <goal_validation>
       Goal: ${goal.description}
@@ -493,7 +625,7 @@ export class ChainOfThought extends EventEmitter {
       ${goal.success_criteria.map((c: string) => `- ${c}`).join("\n")}
       
       Current Context:
-      ${JSON.stringify(this.context, null, 2)}
+      ${JSON.stringify(blackboardState, null, 2)}
       
       Recent Steps:
       ${JSON.stringify(this.stepManager.getSteps().slice(-10), null, 2)}
@@ -809,83 +941,6 @@ export class ChainOfThought extends EventEmitter {
   }
 
   /**
-   * High-level method that:
-   * 1. Builds a prompt from the chain & context
-   * 2. Calls the LLM
-   * 3. Validates and parses the response
-   * 4. Executes or applies the returned plan & actions
-   */
-  public async callAndProcess(
-    query: string,
-    maxRetries: number = 3
-  ): Promise<LLMStructuredResponse> {
-    this.logger.debug("callAndProcess", "Starting LLM call", {
-      maxRetries,
-    });
-
-    let attempts = 0;
-
-    while (attempts < maxRetries) {
-      // 1. Build the prompt
-      const prompt = this.buildPrompt({ query });
-
-      // 2. Send the prompt to the LLM and get a structured response
-      try {
-        const llmRawResponse = await this.callModel(prompt);
-
-        // Parse the response
-        let llmResponse: LLMStructuredResponse;
-        try {
-          llmResponse = JSON.parse(llmRawResponse) as LLMStructuredResponse;
-        } catch (err) {
-          this.logger.error(
-            "callAndProcess",
-            "Failed to parse LLM response as JSON",
-            {
-              error: err instanceof Error ? err.message : String(err),
-              response: llmRawResponse,
-            }
-          );
-          attempts++;
-          continue;
-        }
-
-        // Validate the response structure
-        if (!queryValidator(llmResponse)) {
-          this.logger.error(
-            "callAndProcess",
-            "LLM response failed validation",
-            {
-              response: llmResponse,
-            }
-          );
-          attempts++;
-          continue;
-        }
-
-        // 3. Extract the plan and add it as a step
-        if (llmResponse.plan) {
-          this.addStep(`${llmResponse.plan}`, "planning", ["llm-plan"]);
-        }
-
-        // If we get here, everything worked
-        return llmResponse;
-      } catch (err) {
-        this.logger.error("callAndProcess", "Error in LLM processing", {
-          error: err instanceof Error ? err.message : String(err),
-          attempt: attempts + 1,
-        });
-        attempts++;
-      }
-    }
-
-    // If we get here, we've exhausted all retries
-    const error = `Failed to get valid LLM response after ${maxRetries} attempts`;
-    this.logger.error("callAndProcess", error);
-    throw new Error(error);
-  }
-
-  /**
    * Returns a formatted string listing all available actions registered in the action registry
    */
   private getAvailableActions(): string {
@@ -898,8 +953,6 @@ export class ChainOfThought extends EventEmitter {
   private buildPrompt(tags: Record<string, string> = {}): string {
     this.logger.debug("buildPrompt", "Building LLM prompt");
 
-    // You can control how many steps or which steps to send
-    // For example, let's just send the last few steps:
     const lastSteps = JSON.stringify(this.stepManager.getSteps());
 
     const actionExamplesText = Array.from(this.actionExamples.entries())
@@ -978,59 +1031,10 @@ the "payload" must follow the indicated structure exactly.
 ${actionExamplesText}
 </AVAILABLE_ACTIONS>
 
-{{output_format_details}}
-
-Provide a JSON response with the following structure (this is an example only, use the available actions to determine the structure):
-
-{
-  "plan": "A short explanation of what you will do",
-      "meta": {
-      "requirements": {},
-        "actions": [
-    {
-      "type": "ACTION_TYPE",
-      "payload": { ... }
-    }
-  ]
-
-}
-
-</OUTPUT_FORMAT>
-
-Do NOT include any additional keys outside of "plan" and "actions".
-Make sure the JSON is valid. No extra text outside of the JSON.
-
 </global_context>
 `;
 
     return injectTags(tags, prompt);
-  }
-
-  private async callModel(prompt: string): Promise<string> {
-    this.logger.debug("callModel", "Sending prompt to LLM");
-
-    const response = await this.llmClient.analyze(prompt, {
-      system: `"You are a reasoning system that outputs structured JSON only."`,
-    });
-
-    // Make sure we're dealing with a string
-    let responseStr: string;
-
-    if (typeof response === "string") {
-      responseStr = response;
-    } else if (typeof response === "object") {
-      responseStr = JSON.stringify(response);
-    } else {
-      const error = `Unexpected response type from LLM: ${typeof response}`;
-      this.logger.error("callModel", error);
-      throw new Error(error);
-    }
-
-    this.logger.debug("callModel", "Received LLM response", {
-      response: JSON.parse(responseStr),
-    });
-
-    return responseStr;
   }
 
   public async think(
@@ -1045,12 +1049,6 @@ Make sure the JSON is valid. No extra text outside of the JSON.
         this.memory.findSimilarEpisodes(userQuery, 1),
         this.memory.findSimilarDocuments(userQuery, 1),
       ]);
-
-      // Enhance context with memory insights
-      this.mergeContext({
-        pastExperiences: similarExperiences,
-        relevantKnowledge: relevantDocs,
-      });
 
       this.logger.debug("think", "Retrieved memory context", {
         experienceCount: similarExperiences.length,
@@ -1067,8 +1065,25 @@ Make sure the JSON is valid. No extra text outside of the JSON.
 
       let currentIteration = 0;
       let isComplete = false;
-      const llmResponse = await this.callAndProcess(userQuery);
-      let pendingActions: CoTAction[] = [...llmResponse.actions];
+
+      const llmResponse = await this.getValidatedLLMResponse({
+        prompt: this.buildPrompt({ query: userQuery }),
+        schema: z.object({
+          plan: z.string().optional(),
+          meta: z.any().optional(),
+          actions: z.array(
+            z.object({
+              type: z.string(),
+              payload: z.any(),
+            })
+          ),
+        }),
+        systemPrompt:
+          "You are a reasoning system that outputs structured JSON only.",
+        maxRetries: 3,
+      });
+
+      let pendingActions: CoTAction[] = [...llmResponse.actions] as CoTAction[];
 
       while (
         !isComplete &&
@@ -1080,7 +1095,7 @@ Make sure the JSON is valid. No extra text outside of the JSON.
         });
 
         // Add new actions to pending queue
-        pendingActions.push(...llmResponse.actions);
+        pendingActions.push(...(llmResponse.actions as CoTAction[]));
 
         // Process one action at a time
         if (pendingActions.length > 0) {
@@ -1089,16 +1104,6 @@ Make sure the JSON is valid. No extra text outside of the JSON.
             action: currentAction,
             remainingActions: pendingActions.length,
           });
-
-          // Validate action before execution
-          if (!currentAction.type || !currentAction.payload) {
-            this.logger.error("think", "Invalid action structure", {
-              action: currentAction,
-            });
-            throw new Error(
-              `Invalid action structure: ${JSON.stringify(currentAction)}`
-            );
-          }
 
           try {
             const result = await this.executeAction(currentAction);
@@ -1116,67 +1121,71 @@ Make sure the JSON is valid. No extra text outside of the JSON.
               );
             }
 
-            // const updateContext = this.buildPrompt({
-            //   result,
-            // });
+            const prompt = `
+            ${this.buildPrompt({
+              result,
+            })}
 
-            // Check completion status
-            const completionCheck = await this.llmClient.analyze(
-              `
-              
-             ${JSON.stringify({
-               query: userQuery,
-               currentSteps: this.stepManager.getSteps(),
-               lastAction: currentAction.toString() + " RESULT:" + result,
-             })},
+           ${JSON.stringify({
+             query: userQuery,
+             currentSteps: this.stepManager.getSteps(),
+             lastAction: currentAction.toString() + " RESULT:" + result,
+           })},
 
-             <verification_rules>
-              # Chain of Verification Analysis
+           <verification_rules>
+            # Chain of Verification Analysis
 
-## Verification Steps
-1. Original Query/Goal
-   - Verify exact requirements
-2. All Steps Taken
-   - Verify successful completion of each step
-3. Current Context  
-   - Verify state matches expectations
-4. Last Action Result
-   - Verify correct outcome
-5. Value Conversions
-   - Convert hex values to decimal for verification
+            ## Verification Steps
+            1. Original Query/Goal
+            - Verify exact requirements
+            2. All Steps Taken
+            - Verify successful completion of each step
+            3. Current Context  
+            - Verify state matches expectations
+            4. Last Action Result
+            - Verify correct outcome
+            5. Value Conversions
+            - Convert hex values to decimal for verification
 
-## Verification Process
-- Check preconditions were met
-- Validate proper execution
-- Confirm expected postconditions  
-- Check for edge cases/errors
+            ## Verification Process
+            - Check preconditions were met
+            - Validate proper execution
+            - Confirm expected postconditions  
+            - Check for edge cases/errors
 
-## Determination Criteria
-- Goal Achievement Status
-  - Achieved or impossible? (complete)
-  - Supporting verification evidence (reason)
-- Resource Requirements
-  - Continue if resources available? (shouldContinue)
+            ## Determination Criteria
+            - Goal Achievement Status
+            - Achieved or impossible? (complete)
+            - Supporting verification evidence (reason)
+            - Resource Requirements
+            - Continue if resources available? (shouldContinue)
 
-{
-  "complete": boolean,
-  "reason": "detailed explanation of verification results", 
-  "shouldContinue": boolean,
-  "newActions": [] // Only include if continuing and resources are available and search <global_context> for more details
-}
+            </verification_rules>
 
-Do not include any text outside the JSON object. Do not include backticks, backslashes, markdown formatting, or explanations.
+            <thinking_process>
+            Think in detail here
+            </thinking_process>
+              `;
 
-</verification_rules>
-                `,
-              {
-                system: `You are a goal completion analyzer using Chain of Verification. Your task is to carefully evaluate whether a goal has been achieved or is impossible based on the provided context. Use <verification_rules> to guide your analysis.
-`,
-              }
-            );
+            const completion = await this.getValidatedLLMResponse({
+              prompt,
+              systemPrompt:
+                "You are a goal completion analyzer using Chain of Verification. Your task is to carefully evaluate whether a goal has been achieved or is impossible based on the provided context. Use <verification_rules> to guide your analysis.",
+              schema: z.object({
+                complete: z.boolean(),
+                reason: z.string(),
+                shouldContinue: z.boolean(),
+                newActions: z.array(z.any()),
+              }),
+              maxRetries: 3,
+              onRetry: (error, attempt) => {
+                this.logger.error("planStrategy", `Attempt ${attempt} failed`, {
+                  error,
+                });
+              },
+            });
 
             try {
-              const completion = JSON.parse(completionCheck.toString());
               isComplete = completion.complete;
 
               if (completion.newActions) {
@@ -1210,7 +1219,7 @@ Do not include any text outside the JSON object. Do not include backticks, backs
                 "Error parsing completion check",
                 {
                   error: error instanceof Error ? error.message : String(error),
-                  completionCheck,
+                  completion,
                 }
               );
               continue;
@@ -1274,40 +1283,31 @@ Do not include any text outside the JSON object. Do not include backticks, backs
     importance?: number
   ): Promise<void> {
     try {
-      // Get semantic summary of the outcome
       const formattedOutcome = await this.formatActionOutcome(action, result);
-
-      // Calculate importance if not provided
       const calculatedImportance =
         importance ?? this.calculateImportance(formattedOutcome);
+      const actionWithResult = `${action} RESULT: ${result}`;
+      const emotions = this.determineEmotions(
+        actionWithResult,
+        formattedOutcome,
+        calculatedImportance
+      );
 
-      // Store the experience
-      await this.memory.storeEpisode({
+      const experience = {
         timestamp: new Date(),
-        action: action + " RESULT: " + result,
+        action: actionWithResult,
         outcome: formattedOutcome,
         context: this.context,
         importance: calculatedImportance,
-        emotions: this.determineEmotions(
-          action + " RESULT: " + result,
-          formattedOutcome,
-          calculatedImportance
-        ),
-      });
+        emotions,
+      };
+
+      await this.memory.storeEpisode(experience);
 
       this.emit("memory:experience_stored", {
         experience: {
+          ...experience,
           id: crypto.randomUUID(),
-          action: action + " RESULT: " + result,
-          outcome: formattedOutcome,
-          timestamp: new Date(),
-          context: this.context,
-          importance: calculatedImportance,
-          emotions: this.determineEmotions(
-            action + " RESULT: " + result,
-            formattedOutcome,
-            calculatedImportance
-          ),
         },
       });
     } catch (error) {
@@ -1322,27 +1322,26 @@ Do not include any text outside the JSON object. Do not include backticks, backs
     result: string | Record<string, any>,
     importance: number
   ): string[] {
-    const emotions: string[] = [];
     const resultStr =
       typeof result === "string" ? result : JSON.stringify(result);
+    const resultLower = resultStr.toLowerCase();
+    const emotions: string[] = [];
 
     // Success/failure emotions
-    if (
-      resultStr.toLowerCase().includes("error") ||
-      resultStr.toLowerCase().includes("failed")
-    ) {
+    const isFailure =
+      resultLower.includes("error") || resultLower.includes("failed");
+    const isHighImportance = importance > 0.7;
+
+    if (isFailure) {
       emotions.push("frustrated");
-      if (importance > 0.7) emotions.push("concerned");
+      if (isHighImportance) emotions.push("concerned");
     } else {
       emotions.push("satisfied");
-      if (importance > 0.7) emotions.push("excited");
+      if (isHighImportance) emotions.push("excited");
     }
 
     // Learning emotions
-    if (
-      resultStr.toLowerCase().includes("learned") ||
-      resultStr.toLowerCase().includes("discovered")
-    ) {
+    if (resultLower.includes("learned") || resultLower.includes("discovered")) {
       emotions.push("curious");
     }
 
@@ -1417,64 +1416,218 @@ Do not include any text outside the JSON object. Do not include backticks, backs
     tags: string[]
   ): Promise<void> {
     try {
-      await this.memory.storeDocument({
+      const document = {
+        id: crypto.randomUUID(),
         title,
         content,
         category,
         tags,
         lastUpdated: new Date(),
-      });
+      };
 
-      this.emit("memory:knowledge_stored", {
-        document: {
-          id: crypto.randomUUID(),
-          title,
-          content,
-          category,
-          tags,
-          lastUpdated: new Date(),
-        },
-      });
+      await this.memory.storeDocument(document);
+
+      this.emit("memory:knowledge_stored", { document });
     } catch (error) {
       this.logger.error("storeKnowledge", "Failed to store knowledge", {
         error,
       });
     }
   }
-}
 
-// Add type definitions for the events
-export interface ChainOfThoughtEvents {
-  step: (step: Step) => void;
-  "action:start": (action: CoTAction) => void;
-  "action:complete": (data: { action: CoTAction; result: string }) => void;
-  "action:error": (data: { action: CoTAction; error: Error | unknown }) => void;
-  "think:start": (data: { query: string }) => void;
-  "think:complete": (data: { query: string }) => void;
-  "think:timeout": (data: { query: string }) => void;
-  "think:error": (data: { query: string; error: Error | unknown }) => void;
-  "goal:created": (goal: { id: string; description: string }) => void;
-  "goal:updated": (goal: { id: string; status: GoalStatus }) => void;
-  "goal:completed": (goal: { id: string; result: any }) => void;
-  "goal:failed": (goal: { id: string; error: Error | unknown }) => void;
-  "goal:started": (goal: { id: string; description: string }) => void;
-  "goal:blocked": (goal: { id: string; reason: string }) => void;
-  "memory:experience_stored": (data: { experience: EpisodicMemory }) => void;
-  "memory:knowledge_stored": (data: { document: Documentation }) => void;
-  "memory:experience_retrieved": (data: {
-    experiences: EpisodicMemory[];
-  }) => void;
-  "memory:knowledge_retrieved": (data: { documents: Documentation[] }) => void;
-}
+  private registerDefaultActions() {
+    this.actionRegistry.set("SYSTEM_PROMPT", systemPromptAction);
+  }
 
-// Add type safety to event emitter
-export declare interface ChainOfThought {
-  on<K extends keyof ChainOfThoughtEvents>(
-    event: K,
-    listener: ChainOfThoughtEvents[K]
-  ): this;
-  emit<K extends keyof ChainOfThoughtEvents>(
-    event: K,
-    ...args: Parameters<ChainOfThoughtEvents[K]>
-  ): boolean;
+  private async updateBlackboard(update: {
+    type: "resource" | "state" | "event" | "achievement";
+    key: string;
+    value: any;
+    timestamp: number;
+    metadata?: Record<string, any>;
+  }): Promise<void> {
+    try {
+      await this.memory.storeDocument({
+        title: `Blackboard Update: ${update.type} - ${update.key}`,
+        content: JSON.stringify({
+          ...update,
+          value: update.value,
+          timestamp: update.timestamp || Date.now(),
+        }),
+        category: "blackboard",
+        tags: ["blackboard", update.type, update.key],
+        lastUpdated: new Date(),
+      });
+
+      this.logger.debug("updateBlackboard", "Stored blackboard update", {
+        update,
+      });
+    } catch (error) {
+      this.logger.error(
+        "updateBlackboard",
+        "Failed to store blackboard update",
+        {
+          error,
+        }
+      );
+    }
+  }
+
+  private async getBlackboardState(): Promise<Record<string, any>> {
+    try {
+      // Use findDocumentsByCategory to get all blackboard documents
+      const blackboardDocs = await this.memory.searchDocumentsByTag([
+        "blackboard",
+      ]);
+
+      // Build current state by applying updates in order
+      const state: Record<string, any> = {};
+
+      blackboardDocs
+        .sort((a, b) => {
+          const aContent = JSON.parse(a.content);
+          const bContent = JSON.parse(b.content);
+          return aContent.timestamp - bContent.timestamp;
+        })
+        .forEach((doc) => {
+          const update = JSON.parse(doc.content);
+          if (!state[update.type]) {
+            state[update.type] = {};
+          }
+          state[update.type][update.key] = update.value;
+        });
+
+      return state;
+    } catch (error) {
+      this.logger.error(
+        "getBlackboardState",
+        "Failed to get blackboard state",
+        {
+          error,
+        }
+      );
+      return {};
+    }
+  }
+
+  private async getBlackboardHistory(
+    type?: string,
+    key?: string,
+    limit: number = 10
+  ): Promise<any[]> {
+    try {
+      // Use searchDocumentsByTag to find relevant documents
+      const tags = ["blackboard"];
+      if (type) tags.push(type);
+      if (key) tags.push(key);
+
+      const docs = await this.memory.searchDocumentsByTag(tags, limit);
+
+      return docs
+        .map((doc) => ({
+          ...JSON.parse(doc.content),
+          id: doc.id,
+          lastUpdated: doc.lastUpdated,
+        }))
+        .sort((a, b) => b.timestamp - a.timestamp);
+    } catch (error) {
+      this.logger.error(
+        "getBlackboardHistory",
+        "Failed to get blackboard history",
+        {
+          error,
+        }
+      );
+      return [];
+    }
+  }
+
+  private async getValidatedLLMResponse<T>({
+    prompt,
+    systemPrompt,
+    schema,
+    maxRetries = 3,
+    onRetry,
+  }: LLMValidationOptions<T>): Promise<T> {
+    const jsonSchema = zodToJsonSchema(schema, "mySchema");
+    const validate = ajv.compile(jsonSchema as JSONSchemaType<T>);
+    let attempts = 0;
+
+    const formattedPrompt = `
+      ${prompt}
+
+      <response_structure>
+      Return a JSON object matching this schema. Do not include any markdown formatting.
+
+      ${JSON.stringify(jsonSchema, null, 2)}
+      </response_structure>
+    `;
+
+    while (attempts < maxRetries) {
+      try {
+        const response = await this.llmClient.analyze(formattedPrompt, {
+          system: systemPrompt,
+        });
+
+        let responseText = response.toString();
+
+        // Remove markdown code block formatting if present
+        responseText = responseText.replace(/```json\n?|\n?```/g, "");
+
+        let parsed: T;
+        try {
+          parsed = JSON.parse(responseText);
+        } catch (parseError) {
+          this.logger.error(
+            "getValidatedLLMResponse",
+            "Failed to parse LLM response as JSON",
+            {
+              response: responseText,
+              error: parseError,
+            }
+          );
+          attempts++;
+          onRetry?.(parseError as Error, attempts);
+          continue;
+        }
+
+        if (!validate(parsed)) {
+          this.logger.error(
+            "getValidatedLLMResponse",
+            "Response failed schema validation",
+            {
+              errors: validate.errors,
+              response: parsed,
+            }
+          );
+          attempts++;
+          onRetry?.(
+            new Error(
+              `Schema validation failed: ${JSON.stringify(validate.errors)}`
+            ),
+            attempts
+          );
+          continue;
+        }
+
+        return parsed;
+      } catch (error) {
+        this.logger.error(
+          "getValidatedLLMResponse",
+          `Attempt ${attempts + 1} failed`,
+          { error }
+        );
+        attempts++;
+        onRetry?.(error as Error, attempts);
+
+        if (attempts >= maxRetries) {
+          throw new Error(
+            `Failed to get valid LLM response after ${maxRetries} attempts: ${error}`
+          );
+        }
+      }
+    }
+
+    throw new Error("Maximum retries exceeded");
+  }
 }

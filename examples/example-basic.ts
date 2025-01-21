@@ -4,7 +4,7 @@
 import { env } from "../packages/core/src/core/env";
 import { LLMClient } from "../packages/core/src/core/llm-client";
 import { ChainOfThought } from "../packages/core/src/core/chain-of-thought";
-import { ETERNUM_CONTEXT } from "./eternum-context";
+import { ETERNUM_CONTEXT, PROVIDER_GUIDE } from "./eternum-context";
 import * as readline from "readline";
 import chalk from "chalk";
 import { starknetTransactionAction } from "../packages/core/src/core/actions/starknet-transaction";
@@ -14,6 +14,7 @@ import {
   starknetTransactionSchema,
 } from "../packages/core/src/core/validation";
 import type { JSONSchemaType } from "ajv";
+import { ChromaVectorDB } from "../packages/core/src/core/vector-db";
 
 async function getCliInput(prompt: string): Promise<string> {
   const rl = readline.createInterface({
@@ -32,14 +33,33 @@ async function getCliInput(prompt: string): Promise<string> {
 async function main() {
   // Initialize LLM client
   const llmClient = new LLMClient({
-    provider: "anthropic",
-    apiKey: env.ANTHROPIC_API_KEY,
+    model: "deepseek/deepseek-r1", // clutch model!
+  });
+
+  const memory = new ChromaVectorDB("agent_memory");
+
+  await memory.storeDocument({
+    title: "Game Rules",
+    content: ETERNUM_CONTEXT,
+    category: "rules",
+    tags: ["game-mechanics", "rules"],
+    lastUpdated: new Date(),
+  });
+
+  await memory.storeDocument({
+    title: "Provider Guide",
+    content: PROVIDER_GUIDE,
+    category: "actions",
+    tags: ["actions", "provider-guide"],
+    lastUpdated: new Date(),
   });
 
   // Initialize ChainOfThought
-  const dreams = new ChainOfThought(llmClient, {
+  const dreams = new ChainOfThought(llmClient, memory, {
     worldState: ETERNUM_CONTEXT,
   });
+
+  // Load initial context
 
   // Register available actions
   dreams.registerAction(

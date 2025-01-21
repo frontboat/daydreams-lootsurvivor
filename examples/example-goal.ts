@@ -9,9 +9,9 @@ import { env } from "../packages/core/src/core/env";
 
 import { LLMClient } from "../packages/core/src/core/llm-client";
 import { ChainOfThought } from "../packages/core/src/core/chain-of-thought";
-import { ETERNUM_CONTEXT } from "./eternum-context";
+import { ETERNUM_CONTEXT, PROVIDER_GUIDE } from "./eternum-context";
 import * as readline from "readline";
-import { type GoalStatus } from "../packages/core/src/core/goal-manager";
+
 import chalk from "chalk";
 import { starknetTransactionAction } from "../packages/core/src/core/actions/starknet-transaction";
 import { graphqlAction } from "../packages/core/src/core/actions/graphql";
@@ -20,6 +20,8 @@ import {
   starknetTransactionSchema,
 } from "../packages/core/src/core/validation";
 import type { JSONSchemaType } from "ajv";
+import { ChromaVectorDB } from "../packages/core/src/core/vector-db";
+import { GoalStatus } from "../packages/core/src/types";
 
 async function getCliInput(prompt: string): Promise<string> {
   const rl = readline.createInterface({
@@ -47,31 +49,35 @@ function printGoalStatus(status: GoalStatus): string {
   return colors[status] || status;
 }
 
-// This is a simple function to fetch the context from a remote source
-async function fetchContext() {
-  try {
-    const response = await fetch(
-      "https://raw.githubusercontent.com/daydreamsai/sleeves/main/sleeves/eternum.json"
-    );
-    const data = await response.json();
-    return data.context;
-  } catch (error) {
-    console.error(chalk.red("Failed to fetch context:"), error);
-    throw error;
-  }
-}
-
 async function main() {
   // Initialize LLM client
   const llmClient = new LLMClient({
-    provider: "anthropic",
-    apiKey: env.ANTHROPIC_API_KEY,
+    model: "deepseek/deepseek-r1", // clutch model!
   });
 
-  const context = await fetchContext();
+  // Initialize memory
+  const memory = new ChromaVectorDB("agent_memory");
 
-  const dreams = new ChainOfThought(llmClient, {
-    worldState: context,
+  // Load initial context
+  await memory.storeDocument({
+    title: "Game Rules",
+    content: ETERNUM_CONTEXT,
+    category: "rules",
+    tags: ["game-mechanics", "rules"],
+    lastUpdated: new Date(),
+  });
+
+  // Load provider guide
+  await memory.storeDocument({
+    title: "Provider Guide",
+    content: PROVIDER_GUIDE,
+    category: "rules",
+    tags: ["provider-guide"],
+    lastUpdated: new Date(),
+  });
+
+  const dreams = new ChainOfThought(llmClient, memory, {
+    worldState: ETERNUM_CONTEXT,
   });
 
   // Register actions
@@ -113,6 +119,10 @@ async function main() {
       });
     }
   });
+
+  // llmClient.on("trace:tokens", ({ input, output }) => {
+  //   console.log("\n💡 Tokens used:", { input, output });
+  // });
 
   dreams.on("action:start", (action) => {
     console.log("\n🎬 Starting action:", {

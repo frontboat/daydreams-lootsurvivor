@@ -683,13 +683,26 @@ export class ChromaVectorDB implements VectorDB {
     limit: number = 5
   ): Promise<Documentation[]> {
     const collection = await this.getDocumentationCollection();
-    const results = await collection.get({
-      where: {
-        type: "documentation",
-        tags: { $eq: tags.join(",") },
-      },
-      limit,
-    });
+
+    let results;
+    try {
+      results = await collection.get({
+        where: {
+          $and: [{ type: "documentation" }, { tags: { $eq: tags.join(",") } }],
+        },
+        limit,
+      });
+    } catch (error) {
+      this.logger.error(
+        "ChromaVectorDB.searchDocumentsByTag",
+        "Failed to search documents by tag",
+        {
+          error: error instanceof Error ? error.message : String(error),
+          tags,
+        }
+      );
+      throw error;
+    }
 
     return results.ids.map((id: string, index: number) => ({
       id,

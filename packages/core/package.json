@@ -14,7 +14,9 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",
+    "@openrouter/ai-sdk-provider": "^0.0.6",
     "agent-twitter-client": "^0.0.16",
+    "ai": "^4.1.0",
     "ajv": "^8.17.1",
     "chromadb": "^1.9.4",
     "chromadb-default-embed": "^2.13.2",
