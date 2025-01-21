@@ -14,12 +14,14 @@ import * as readline from "readline";
 import { type GoalStatus } from "../packages/core/src/core/goal-manager";
 import chalk from "chalk";
 import { starknetTransactionAction } from "../packages/core/src/core/actions/starknet-transaction";
+import { starknetReadAction } from "../packages/core/src/core/actions/starknet-read";
 import { graphqlAction } from "../packages/core/src/core/actions/graphql";
 import {
   graphqlFetchSchema,
   starknetTransactionSchema,
 } from "../packages/core/src/core/validation";
 import type { JSONSchemaType } from "ajv";
+import type { CoTAction } from "../packages/core/src/types";
 
 async function getCliInput(prompt: string): Promise<string> {
   const rl = readline.createInterface({
@@ -68,7 +70,7 @@ async function main() {
     apiKey: env.ANTHROPIC_API_KEY,
   });
 
-  const context = await fetchContext();
+  const context = ETERNUM_CONTEXT;
 
   const dreams = new ChainOfThought(llmClient, {
     worldState: context,
@@ -93,13 +95,28 @@ async function main() {
     "GRAPHQL_FETCH",
     graphqlAction,
     {
-      description: "Fetch data from the Eternum GraphQL API",
+      description: "Fetch data from the GraphQL API",
       example: JSON.stringify({
         query:
-          "query GetRealmInfo { eternumRealmModels(where: { realm_id: 42 }) { edges { node { ... on eternum_Realm { entity_id level } } } }",
+          "query GetExampleInfo { get_example_info(where: { example_id: 42 }) { edges { node { ... on example_info { example_id level } } } } }",
       }),
     },
     graphqlFetchSchema as JSONSchemaType<any>
+  );
+
+  // Register actions
+  dreams.registerAction(
+    "READ_CONTRACT",
+    starknetReadAction,
+    {
+      description: "Read data from the Starknet blockchain",
+      example: JSON.stringify({
+        contractAddress: "0x1234567890abcdef",
+        entrypoint: "read",
+        calldata: [1, 2, 3],
+      }),
+    },
+    starknetTransactionSchema as JSONSchemaType<any>
   );
 
   // Subscribe to events

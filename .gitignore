@@ -177,3 +177,5 @@ dist
 # Logs
 
 logs/app-*.log
+
+packages/client/
