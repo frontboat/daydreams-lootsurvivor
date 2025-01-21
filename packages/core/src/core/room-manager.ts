@@ -193,6 +193,18 @@ export class RoomManager {
     return rooms;
   }
 
+  public async ensureRoom(name: string, platform: string): Promise<Room> {
+    let room = await this.getRoomByPlatformId(name, platform);
+    if (!room) {
+      room = await this.createRoom(name, platform, {
+        name,
+        description: `Room for ${name}`,
+        participants: [],
+      });
+    }
+    return room;
+  }
+
   public async deleteRoom(roomId: string): Promise<void> {
     if (!this.vectorDb) {
       return;

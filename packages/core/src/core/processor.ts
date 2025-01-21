@@ -1,18 +1,27 @@
 import { LLMClient } from "./llm-client";
-import { type ClientEvent, type CoreEvent } from "../types";
-import { type ActionRegistry } from "./actions";
-import { type IntentExtractor } from "./intent";
 import { Logger } from "./logger";
-import { type Room } from "./room";
-import { type VectorDB } from "./vector-db";
-import { type Character, defaultCharacter } from "./character";
-import { type SearchResult } from "../types";
+import { Room } from "./room";
+import type { VectorDB } from "./vector-db";
+import type { Character } from "./character";
+import type { SearchResult } from "../types";
 import { LogLevel } from "../types";
-export interface ProcessedIntent {
-  type: string;
+import type { Output } from "./core";
+import type { JSONSchemaType } from "ajv";
+
+export interface ProcessedResult {
+  content: any;
+  metadata: Record<string, any>;
+  enrichedContext: EnrichedContext;
+  suggestedOutputs: SuggestedOutput<any>[];
+  isOutputSuccess?: boolean;
+  alreadyProcessed?: boolean;
+}
+
+export interface SuggestedOutput<T> {
+  name: string;
+  data: T;
   confidence: number;
-  action?: string;
-  parameters?: Record<string, any>;
+  reasoning: string;
 }
 
 export interface EnrichedContext {
@@ -24,14 +33,8 @@ export interface EnrichedContext {
   entities?: string[];
   intent?: string;
   similarMessages?: any[];
-  clientVariables?: Record<string, any>;
   metadata?: Record<string, any>;
-}
-
-export interface ProcessingResult {
-  intents: ProcessedIntent[];
-  suggestedActions: CoreEvent[];
-  enrichedContext: EnrichedContext;
+  availableOutputs?: string[]; // Names of available outputs
 }
 
 interface EnrichedContent {
@@ -59,16 +62,25 @@ function hasRoomSupport(vectorDb: VectorDB): vectorDb is VectorDBWithRooms {
   return "storeInRoom" in vectorDb && "findSimilarInRoom" in vectorDb;
 }
 
-export class EventProcessor {
+function hashString(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return Math.abs(hash).toString(36); // Convert to base36 for shorter strings
+}
+
+export class Processor {
   private logger: Logger;
+  private availableOutputs: Map<string, Output> = new Map();
 
   constructor(
     private vectorDb: VectorDB,
-    private intentExtractor: IntentExtractor,
     private llmClient: LLMClient,
-    private actionRegistry: ActionRegistry,
-    private character: Character = defaultCharacter,
-    logLevel: LogLevel = LogLevel.INFO
+    private character: Character,
+    logLevel: LogLevel = LogLevel.ERROR
   ) {
     this.logger = new Logger({
       level: logLevel,
@@ -77,97 +89,223 @@ export class EventProcessor {
     });
   }
 
-  async process(event: ClientEvent, room: Room): Promise<ProcessingResult> {
-    this.logger.debug("EventProcessor.process", "Processing event", {
-      type: event.type,
-      source: event.source,
+  public registerAvailableOutput(output: Output): void {
+    this.availableOutputs.set(output.name, output);
+  }
+
+  async process(content: any, room: Room): Promise<ProcessedResult> {
+    this.logger.debug("Processor.process", "Processing content", {
+      content,
       roomId: room.id,
     });
 
-    // First, classify the content
-    const contentClassification = await this.classifyContent(event);
+    // Check if this content was already processed
+    const contentId = this.generateContentId(content);
 
-    // second, generate intents
-    const intents = await this.generateIntents(contentClassification, event);
+    console.log("contentId", contentId);
+    const alreadyProcessed = await this.hasProcessedContent(contentId, room);
 
-    // third, enrich content
-    const enrichedContent = await this.enrichContent(
-      event.content,
-      room,
-      event.timestamp
-    );
+    this.logger.info("Processor.process", "Already processed", {
+      contentId,
+      alreadyProcessed,
+    });
 
-    // Use type guard for room operations
-    if (this.vectorDb && hasRoomSupport(this.vectorDb)) {
-      await this.vectorDb.storeInRoom(event.content, room.id, {
-        ...event.metadata,
-        ...enrichedContent.context,
-        eventType: event.type,
-        timestamp: event.timestamp,
-      });
+    if (alreadyProcessed) {
+      return {
+        content,
+        metadata: {},
+        enrichedContext: {
+          timeContext: this.getTimeContext(new Date()),
+          summary: "",
+          topics: [],
+          relatedMemories: [],
+        },
+        suggestedOutputs: [],
+        alreadyProcessed: true,
+      };
     }
 
-    const suggestedActions = await this.generateActions(intents, room);
+    // First, classify the content
+    const contentClassification = await this.classifyContent(content);
+
+    // Second, enrich content
+    const enrichedContent = await this.enrichContent(content, room, new Date());
+
+    // Third, determine potential outputs
+    const suggestedOutputs = await this.determinePotentialOutputs(
+      content,
+      enrichedContent,
+      contentClassification
+    );
+
+    this.logger.info("Processor.process", "Suggested outputs", {
+      contentId,
+      suggestedOutputs,
+    });
+
+    // Store that we've processed this content
+    await this.markContentAsProcessed(contentId, room);
 
     return {
-      intents,
-      suggestedActions,
-      enrichedContext: enrichedContent.context,
+      content,
+      metadata: {
+        ...contentClassification.context,
+        contentType: contentClassification.contentType,
+      },
+      enrichedContext: {
+        ...enrichedContent.context,
+        availableOutputs: Array.from(this.availableOutputs.keys()),
+      },
+      suggestedOutputs,
+      alreadyProcessed: false,
     };
   }
 
-  private async generateIntents(
-    classification: { contentType: string; context: Record<string, any> },
-    event: ClientEvent
-  ): Promise<ProcessedIntent[]> {
-    const availableActions = this.actionRegistry.getAvailableActions();
+  private async determinePotentialOutputs(
+    content: any,
+    enrichedContent: EnrichedContent,
+    classification: { contentType: string; context: Record<string, any> }
+  ): Promise<SuggestedOutput<any>[]> {
+    const availableOutputs = Array.from(this.availableOutputs.entries());
+    if (availableOutputs.length === 0) return [];
 
-    const prompt = `Given the following classified content and available actions, determine appropriate intents:
+    const prompt = `You are an AI assistant that analyzes content and suggests appropriate outputs.
+
+Content to analyze: 
+${typeof content === "string" ? content : JSON.stringify(content, null, 2)}
 
 Content Classification:
-- Type: ${classification.contentType}
-- Context: ${JSON.stringify(classification.context)}
+${JSON.stringify(classification, null, 2)}
 
-Original Content: "${event.content}"
+Context:
+${JSON.stringify(enrichedContent.context, null, 2)}
 
-Available Actions:
-${Array.from(availableActions.entries())
+If this is feedback from a previous output:
+1. First determine if the output was successful
+2. If successful, return an empty array - no new actions needed
+3. Only suggest new outputs if the previous action failed or requires follow-up
+
+Available Outputs:
+${availableOutputs
   .map(
-    ([type, def]) => `
-- ${type}:
-  Description: ${def.description}
-  EventType: ${def.eventType}
-  Platforms: ${def.targetPlatforms.join(", ")}
-`
+    ([name, output]) => `${name}:
+  Schema: ${JSON.stringify(output.schema, null, 2)}
+  Response: ${JSON.stringify(output.response, null, 2)}`
   )
-  .join("\n")}
+  .join("\n\n")}
 
-Generate intents that are appropriate for this type of content and map to available actions.
-Use EventType for the type field.`;
+If the output is for a message user the personality of the character to determine if the output was successful.
 
-    return this.intentExtractor.extract(event.content, prompt);
+${JSON.stringify(this.character, null, 2)}
+
+Based on the content and context, determine which outputs should be triggered.
+For each appropriate output, provide:
+1. The output name
+2. The data that matches the output's schema
+3. A confidence score (0-1)
+4. Reasoning for the suggestion
+
+Respond with a JSON array in this format:
+<response>
+[
+  {
+    "name": "output_name",
+    "data": { /* data matching the output schema */ },
+    "confidence": 0.0,
+    "reasoning": "explanation"
+  }
+]
+</response>
+
+Only respond with the JSON array, no other text, return empty array if no outputs are appropriate or if feedback indicates success.
+`;
+
+    try {
+      const response = await this.llmClient.analyze(prompt, {
+        system:
+          "You are an expert system that analyzes content and suggests appropriate automated responses. You are precise and careful to ensure all data matches the required schemas.",
+        temperature: 0.4,
+        formatResponse: true,
+      });
+
+      const suggestions: SuggestedOutput<any>[] =
+        typeof response === "string" ? JSON.parse(response) : response;
+
+      // Validate each suggestion against its output schema
+      return suggestions.filter((suggestion) => {
+        const output = this.availableOutputs.get(suggestion.name);
+        if (!output) {
+          this.logger.warn(
+            "Processor.determinePotentialOutputs",
+            "Unknown output suggested",
+            { name: suggestion.name }
+          );
+          return false;
+        }
+
+        try {
+          // Import Ajv properly
+          const Ajv = require("ajv");
+          const ajv = new Ajv();
+
+          const validate = ajv.compile(output.schema);
+          const isValid = validate(suggestion.data);
+
+          if (!isValid) {
+            this.logger.warn(
+              "Processor.determinePotentialOutputs",
+              "Invalid output data",
+              {
+                name: suggestion.name,
+                data: suggestion.data,
+                errors: validate.errors,
+              }
+            );
+            return false;
+          }
+
+          return true;
+        } catch (error) {
+          this.logger.error(
+            "Processor.determinePotentialOutputs",
+            "Schema validation error",
+            {
+              error,
+              suggestion,
+              schema: output.schema,
+            }
+          );
+          return false;
+        }
+      });
+    } catch (error) {
+      this.logger.error("Processor.determinePotentialOutputs", "Error", {
+        error,
+      });
+      return [];
+    }
   }
 
-  private async classifyContent(event: ClientEvent): Promise<{
+  private async classifyContent(content: any): Promise<{
     contentType: string;
     context: Record<string, any>;
   }> {
+    const contentStr =
+      typeof content === "string" ? content : JSON.stringify(content);
+
     const prompt = `Classify the following content and provide context:
 
-Content: "${event.content}"
-Source: ${event.source}
-Type: ${event.type}
-Metadata: ${JSON.stringify(event.metadata)}
+Content: "${contentStr}"
 
 Determine:
-1. What type of content this is (tweet, question, statement, etc.)
-2. What kind of response or action it requires
+1. What type of content this is (data, message, event, etc.)
+2. What kind of processing it requires
 3. Any relevant context
 
 Return JSON only:
 {
-  "contentType": "tweet|question|statement|etc",
-  "requiresResponse": boolean,
+  "contentType": "data|message|event|etc",
+  "requiresProcessing": boolean,
   "context": {
     "topic": "string",
     "urgency": "high|medium|low",
@@ -187,31 +325,31 @@ Return JSON only:
   }
 
   private stripCodeBlock(text: string): string {
-    // First remove markdown code block markers if present
     text = text
       .replace(/^```[\w]*\n/, "")
       .replace(/\n```$/, "")
       .trim();
 
-    // Find the first occurrence of a valid JSON object
     const jsonMatch = text.match(/\{[\s\S]*?\}/);
     return jsonMatch ? jsonMatch[0] : text;
   }
 
   private async enrichContent(
-    content: string,
+    content: any,
     room: Room,
     timestamp: Date
   ): Promise<EnrichedContent> {
-    // Use type guard for getting related memories
-    const relatedMemories =
-      this.vectorDb && hasRoomSupport(this.vectorDb)
-        ? await this.vectorDb.findSimilarInRoom(content, room.id, 3)
-        : [];
+    const contentStr =
+      typeof content === "string" ? content : JSON.stringify(content);
+
+    // Get related memories if supported
+    const relatedMemories = hasRoomSupport(this.vectorDb)
+      ? await this.vectorDb.findSimilarInRoom(contentStr, room.id, 3)
+      : [];
 
     const prompt = `Analyze the following content and provide enrichment:
 
-Content: "${content}"
+Content: "${contentStr}"
 
 Related Context:
 ${relatedMemories.map((m: SearchResult) => `- ${m.content}`).join("\n")}
@@ -224,21 +362,19 @@ Provide a JSON response with:
 5. Detected intent/purpose
 
 Response format:
-\`\`\`json
 {
   "summary": "Brief summary here",
   "topics": ["topic1", "topic2"],
   "sentiment": "positive|negative|neutral",
   "entities": ["entity1", "entity2"],
-  "intent": "question|statement|request|etc"
+  "intent": "purpose of the content"
 }
-\`\`\`
+
 Return only valid JSON, no other text.`;
 
     try {
       const enrichment = await this.llmClient.analyze(prompt, {
-        system:
-          "You are a helpful assistant that generates actions based on intents.",
+        system: this.character.voice.tone,
         temperature: 0.3,
         formatResponse: true,
       });
@@ -253,29 +389,20 @@ Return only valid JSON, no other text.`;
         result =
           typeof cleanJson === "string" ? JSON.parse(cleanJson) : cleanJson;
 
-        // Validate required fields
         if (!result.summary || !Array.isArray(result.topics)) {
           throw new Error("Invalid response structure");
         }
       } catch (parseError) {
         this.logger.warn(
-          "EventProcessor.enrichContent",
-          "Failed to parse LLM response, retrying with stricter prompt",
-          {
-            error:
-              parseError instanceof Error
-                ? parseError.message
-                : String(parseError),
-            response: enrichment,
-          }
+          "Processor.enrichContent",
+          "Failed to parse LLM response, retrying",
+          { error: parseError }
         );
 
-        // Retry with stricter prompt
-        const retryPrompt = `${prompt}\n\nIMPORTANT: Respond with ONLY the JSON object, no markdown, no explanations.`;
+        const retryPrompt = `${prompt}\n\nIMPORTANT: Respond with ONLY the JSON object.`;
         const retryResponse = await this.llmClient.analyze(retryPrompt, {
-          system:
-            "You are a helpful assistant that generates actions based on intents.",
-          temperature: 0.2, // Lower temperature for more consistent formatting
+          system: this.character.voice.tone,
+          temperature: 0.2,
           formatResponse: true,
         });
 
@@ -286,11 +413,11 @@ Return only valid JSON, no other text.`;
       }
 
       return {
-        originalContent: content,
+        originalContent: contentStr,
         timestamp,
         context: {
           timeContext: this.getTimeContext(timestamp),
-          summary: result.summary || content.slice(0, 100),
+          summary: result.summary || contentStr.slice(0, 100),
           topics: Array.isArray(result.topics) ? result.topics : [],
           relatedMemories: relatedMemories.map((m: SearchResult) => m.content),
           sentiment: result.sentiment || "neutral",
@@ -299,17 +426,16 @@ Return only valid JSON, no other text.`;
         },
       };
     } catch (error) {
-      this.logger.error("EventProcessor.enrichContent", "Enrichment failed", {
-        error: error instanceof Error ? error.message : String(error),
+      this.logger.error("Processor.enrichContent", "Enrichment failed", {
+        error,
       });
 
-      // Return basic enrichment on failure
       return {
-        originalContent: content,
+        originalContent: contentStr,
         timestamp,
         context: {
           timeContext: this.getTimeContext(timestamp),
-          summary: content.slice(0, 100),
+          summary: contentStr.slice(0, 100),
           topics: [],
           relatedMemories: relatedMemories.map((m: SearchResult) => m.content),
           sentiment: "neutral",
@@ -331,175 +457,122 @@ Return only valid JSON, no other text.`;
     return "older";
   }
 
-  private async generateActions(
-    intents: ProcessedIntent[],
-    room: Room
-  ): Promise<CoreEvent[]> {
-    const actions: CoreEvent[] = [];
-
-    // Add debug logging to see what intents we're receiving
-    this.logger.debug("EventProcessor.generateActions", "Processing intents", {
-      intents,
-    });
-
-    for (const intent of intents) {
-      try {
-        const availableActions = this.actionRegistry.getAvailableActions();
-
-        // Add debug logging for available actions
-        this.logger.debug(
-          "EventProcessor.generateActions",
-          "Available actions",
-          {
-            actionCount: availableActions.size,
-            actions: Array.from(availableActions.keys()),
-          }
-        );
-
-        let prompt = `Given the following intent and available actions, determine the most appropriate action to take.
-        YOU MUST RESPOND WITH A SINGLE VALID JSON OBJECT AND NOTHING ELSE.
-        Required JSON structure:
-
-        \`\`\`json
-        {
-            "selectedAction": "action_type_here",
-            "confidence": 0.0-1.0,
-            "parameters": {
-                "content": "action content here",
-                // other parameters as needed
-            },
-            "reasoning": "brief explanation"
-        }
-        \`\`\`
-
-Intent:
-- Type: ${intent.type}
-- Confidence: ${intent.confidence}
-- Parameters: ${JSON.stringify(intent.parameters, null, 2)}
-
-Available Actions:
-${Array.from(availableActions.entries())
-  .map(
-    ([type, def]) => `
-- ${type}:
-  Description: ${def.description}
-  Platforms: ${def.targetPlatforms.join(", ")}
-  Parameters: ${JSON.stringify(def.parameters, null, 2)}
-`
-  )
-  .join("\n")}
-
-IMPORTANT: Return ONLY the JSON object with no additional text or explanations.`;
-
-        console.log(intent);
-
-        // If this is a tweet-related action, append the tweet template
-        if (intent.type.includes("tweet")) {
-          const tweetTemplate = await this.enrichPrompt(
-            this.character.templates?.tweetTemplate || "",
-            {
-              context: intent.parameters?.context || "",
-            }
-          );
-          prompt += `\n\nWhen generating tweet content, use this template for tone of voice:\n${tweetTemplate}`;
-        }
-
-        console.log(prompt);
-
-        const response = await this.llmClient.analyze(prompt, {
-          system:
-            "You are Ser blob, a crypto, market, geopolitical, and economic expert. You speak like an analyst from old times.",
-          temperature: 0.8,
-          formatResponse: true,
-        });
-
-        // Add debug logging for LLM response
-        this.logger.debug("EventProcessor.generateActions", "LLM response", {
-          response,
-        });
-
-        let result;
-        try {
-          result =
-            typeof response === "string"
-              ? JSON.parse(this.stripCodeBlock(response))
-              : response;
-        } catch (parseError) {
-          this.logger.error(
-            "EventProcessor.generateActions",
-            "Failed to parse LLM response",
-            {
-              error:
-                parseError instanceof Error
-                  ? parseError.message
-                  : String(parseError),
-              response,
-            }
-          );
-          continue;
-        }
-
-        // Remove the strict confidence threshold to help with debugging
-        // if (result.confidence >= 0.7) {  // Comment out or lower this threshold temporarily
-        if (result.selectedAction && result.confidence >= 0.7) {
-          // Just check if an action was selected
-          const actionDef = this.actionRegistry.getActionDefinition(
-            result.selectedAction
-          );
-
-          if (actionDef) {
-            const event: CoreEvent = {
-              type: actionDef.eventType,
-              target: actionDef.clientType,
-              content: result.parameters?.content || "",
-              timestamp: new Date(),
-              metadata: {
-                ...result.parameters,
-                intent: intent.type,
-                confidence: result.confidence,
-                reasoning: result.reasoning,
-                originalParameters: intent.parameters,
-              },
-            };
-
-            actions.push(event);
-
-            this.logger.debug(
-              "EventProcessor.generateActions",
-              "Generated action event",
-              { event }
-            );
-          }
-        }
-      } catch (error) {
-        this.logger.error(
-          "EventProcessor.generateActions",
-          "Failed to generate action",
-          {
-            error: error instanceof Error ? error.message : String(error),
-            intentType: intent.type,
-          }
-        );
+  // Helper method to generate a consistent ID for content
+  private generateContentId(content: any): string {
+    try {
+      // For strings, look for ID pattern first, then hash
+      if (typeof content === "string") {
+        return `content_${hashString(content)}`;
       }
+
+      // For arrays, try to find IDs first
+      if (Array.isArray(content)) {
+        const ids = content.map((item) => {
+          // Try to find an explicit ID first
+          if (item.id) return item.id;
+          if (item.metadata?.id) return item.metadata.id;
+
+          // Look for common ID patterns
+          for (const [key, value] of Object.entries(item.metadata || {})) {
+            if (key.toLowerCase().endsWith("id") && value) {
+              return value;
+            }
+          }
+
+          // If no ID found, hash the content
+          const relevantData = {
+            content: item.content || item,
+            type: item.type,
+          };
+          return hashString(JSON.stringify(relevantData));
+        });
+
+        return `array_${ids.join("_")}`;
+      }
+
+      // For single objects, try to find an ID first
+      if (content.id) {
+        return `obj_${content.id}`;
+      }
+
+      // Special handling for consciousness-generated content
+      if (
+        content.type === "internal_thought" ||
+        content.source === "consciousness"
+      ) {
+        const thoughtData = {
+          content: content.content,
+          timestamp: content.timestamp,
+        };
+        return `thought_${hashString(JSON.stringify(thoughtData))}`;
+      }
+
+      if (content.metadata?.id) {
+        return `obj_${content.metadata.id}`;
+      }
+
+      // Look for common ID patterns in metadata
+      if (content.metadata) {
+        for (const [key, value] of Object.entries(content.metadata)) {
+          if (key.toLowerCase().endsWith("id") && value) {
+            return `obj_${value}`;
+          }
+        }
+      }
+
+      // If no ID found, fall back to hashing relevant content
+      const relevantData = {
+        content: content.content || content,
+        type: content.type,
+        // Include source if available, but exclude room IDs
+        ...(content.source &&
+          content.source !== "consciousness" && { source: content.source }),
+      };
+      return `obj_${hashString(JSON.stringify(relevantData))}`;
+    } catch (error) {
+      this.logger.error(
+        "Processor.generateContentId",
+        "Error generating content ID",
+        {
+          error,
+          content:
+            typeof content === "object" ? JSON.stringify(content) : content,
+        }
+      );
+      return `fallback_${Date.now()}`;
     }
-
-    // Add final debug logging
-    this.logger.debug("EventProcessor.generateActions", "Generated actions", {
-      actionCount: actions.length,
-      actions,
-    });
-
-    return actions;
   }
 
-  private async enrichPrompt(prompt: string, context: any): Promise<string> {
-    return prompt.replace(/\{\{(\w+)\}\}/g, (match, key) => {
-      if (key === "name") return this.character.name;
-      if (key === "voice") return this.character.voice.tone;
-      if (key === "emojis") return this.character.voice.emojis.join(" ");
-      if (key === "topics")
-        return this.character.instructions.topics.join(", ");
-      return context[key] || match;
+  // Check if we've already processed this content
+  private async hasProcessedContent(
+    contentId: string,
+    room: Room
+  ): Promise<boolean> {
+    if (!hasRoomSupport(this.vectorDb)) {
+      return false;
+    }
+
+    const similar = await this.vectorDb.findSimilarInRoom(
+      `processed_content:${contentId}`,
+      room.id,
+      1
+    );
+
+    return similar.length > 0;
+  }
+
+  // Mark content as processed
+  private async markContentAsProcessed(
+    contentId: string,
+    room: Room
+  ): Promise<void> {
+    if (!hasRoomSupport(this.vectorDb)) {
+      return;
+    }
+
+    await this.vectorDb.storeInRoom(`processed_content:${contentId}`, room.id, {
+      type: "processed_marker",
+      timestamp: new Date().toISOString(),
     });
   }
 }

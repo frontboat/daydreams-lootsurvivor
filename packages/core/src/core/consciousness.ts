@@ -10,6 +10,10 @@ export interface Thought {
   confidence: number;
   context?: Record<string, any>;
   timestamp: Date;
+  type: string;
+  source: string;
+  metadata?: Record<string, any>;
+  roomId?: string;
 }
 
 export type ThoughtType =
@@ -151,7 +155,6 @@ Focus on:
   ]);
 
   constructor(
-    private core: Core,
     private llmClient: LLMClient,
     private roomManager: RoomManager,
     private config: {
@@ -167,15 +170,8 @@ Focus on:
     });
   }
 
-  public async start(): Promise<void> {
-    if (this.isThinking) return;
-
-    this.isThinking = true;
-    const intervalMs = this.config.intervalMs || 60000; // Default to 1 minute
-
-    this.thoughtInterval = setInterval(() => this.think(), intervalMs);
-
-    this.logger.info("Consciousness.start", "Internal thought process started");
+  public async start(): Promise<Thought> {
+    return this.think();
   }
 
   public async stop(): Promise<void> {
@@ -187,12 +183,24 @@ Focus on:
     this.logger.info("Consciousness.stop", "Internal thought process stopped");
   }
 
-  private async think(): Promise<void> {
+  private async think(): Promise<Thought> {
     try {
       const thought = await this.generateThought();
 
       if (thought.confidence >= (this.config.minConfidence || 0.7)) {
-        await this.processThought(thought);
+        return {
+          type: "internal_thought",
+          source: "consciousness",
+          content: thought.content,
+          timestamp: thought.timestamp,
+          confidence: thought.confidence,
+          metadata: {
+            ...thought.context,
+            confidence: thought.confidence,
+            suggestedActions: thought.context?.suggestedActions || [],
+            roomId: Consciousness.ROOM_ID,
+          },
+        };
       } else {
         this.logger.debug(
           "Consciousness.think",
@@ -202,18 +210,43 @@ Focus on:
             threshold: this.config.minConfidence,
           }
         );
+        // Return a default thought object when confidence is too low
+        return {
+          type: "low_confidence",
+          source: "consciousness",
+          content: "Thought was below confidence threshold",
+          timestamp: new Date(),
+          confidence: thought.confidence,
+          metadata: {
+            confidence: thought.confidence,
+            threshold: this.config.minConfidence || 0.7,
+          },
+        };
       }
     } catch (error) {
       this.logger.error("Consciousness.think", "Error in thought process", {
         error: error instanceof Error ? error.message : String(error),
       });
+      // Return error thought object
+      return {
+        type: "error",
+        source: "consciousness",
+        content: "Error occurred during thought process",
+        timestamp: new Date(),
+        confidence: 0,
+        metadata: {
+          error: error instanceof Error ? error.message : String(error),
+        },
+      };
     }
   }
 
   private async generateThought(): Promise<Thought> {
     // Get all rooms and their recent memories
-    const rooms = await this.roomManager.listRooms();
-    const recentMemories = this.getRecentMemories(rooms);
+
+    const recentMemories = this.getRecentMemories(
+      await this.roomManager.listRooms()
+    );
 
     // Randomly select a thought type based on context
     const thoughtType = await this.determineThoughtType(recentMemories);
@@ -246,6 +279,8 @@ Return only the JSON object, no other text or formatting.`;
     return {
       content: result.thought,
       confidence: result.confidence,
+      type: thoughtType,
+      source: "consciousness",
       context: {
         reasoning: result.reasoning,
         ...result.context,
@@ -344,30 +379,6 @@ Return only the JSON object, no other text.`;
     // Fallback to random selection if confidence is low
     const types = Array.from(this.thoughtTemplates.keys());
     return types[Math.floor(Math.random() * types.length)];
-  }
-
-  private async processThought(thought: Thought): Promise<void> {
-    this.logger.debug("Consciousness.processThought", "Processing thought", {
-      content: thought.content,
-      confidence: thought.confidence,
-      type: thought.context?.type,
-    });
-
-    // Create an internal event from the thought
-    const internalEvent = {
-      type: "internal_thought",
-      source: "consciousness",
-      content: thought.content,
-      timestamp: thought.timestamp,
-      metadata: {
-        ...thought.context,
-        confidence: thought.confidence,
-        suggestedActions: thought.context?.suggestedActions || [],
-        roomId: Consciousness.ROOM_ID, // Ensure consistent room ID
-      },
-    };
-
-    await this.core.emit(internalEvent);
   }
 
   private getRecentMemories(

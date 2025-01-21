@@ -3,7 +3,8 @@
   "version": "0.0.1",
   "scripts": {
     "goal": "bun run examples/example-goal.ts",
-    "task": "bun run examples/example-basic.ts"
+    "task": "bun run examples/example-basic.ts",
+    "twitter": "bun run examples/example-twitter.ts"
   },
   "dependencies": {
     "@types/node": "^22.10.5",
