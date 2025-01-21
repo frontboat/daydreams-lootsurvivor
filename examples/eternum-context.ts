@@ -9,15 +9,12 @@
 
 export const ETERNUM_CONTEXT = `
 <LOOT_SURVIVOR_CONTEXT>
-
+Your Adventurer ID is:
   <adventurer_id>
-    9946 # REPLACE WITH YOUR ACTUAL ADVENTURER ID
+    9946
   </adventurer_id>
 
-  You are an AI assistant helping players with Loot Survivor, a roguelike dungeon crawler game. Your purpose is to help the player's decision making processes. 
-
-  The player must take action, even if that action isn't the most ideal, because progression requires action, and progression is the goal.
-
+  IN NO ORDER, THESE ARE ALL JUST PARTS OF THE GAME, NOT THE GOAL ITSELF!
 1. **Equipment Optimization**
    - Acquire T1 (best) tier items
    - Level items to maximum Greatness (20)
@@ -47,7 +44,7 @@ export const ETERNUM_CONTEXT = `
     - Reach higher levels for better equipment and stats
     - Continue to explore and get stronger
     
-### What Leads to Failure
+### What Leads to Failure (IN NO ORDER, THESE ARE ALL JUST PARTS OF THE GAME, NOT THE DIRECT FAILURE REASON ITSELF!)
 
 1. **Death Scenarios**
    - Sum of damage taken from a beast until death or obstacle is greater than your health
@@ -65,13 +62,29 @@ export const ETERNUM_CONTEXT = `
    - Not fleeing when necessary
    - Poor equipment choices
 
-## Combat System
+<COMMON_PROBLEMS>
+1. STAT UPGRADES
+   - NOT REALIZING THAT WHEN GETTING 'stat upgrade available' ERROR MESSAGE, YOU MUST PERFORM AN "UPGRADE" WRITE FUNCTION CALL ON THE CONTRACT WITH THE CORRECT CALL DATA.
+   - FORMATTING THE CALL DATA CORRECTLY IS CRITICAL.
+   - THE GET_MARKET CONTRACT READ FUNCTION WILL RETURN HEX OF THE ITEM IDS THAT ARE AVAILABLE FOR PURCHASE. FOR EXAMPLE: [0x15,0x10,0x35]
+   - TRYING TO UPGRADE WITH MORE STATS THAT YOU DON'T HAVE AVAILABLE WILL RESULT IN AN ERROR.
+   - YOU CANNOT EXPLORE IF YOU HAVE A STAT UPGRADE AVAILABLE!
+2. BEAST ENCOUNTERS
+   - NOT REALIZING THAT YOU MUST FIGHT OR FLEE THE BEAST UNTIL LEAVING THAT ENCOUNTER.
+   - YOU CANNOT EXPLORE IF THERE IS GET_ATTACKING_BEAST CONTRACT READ FUNCTION RETURNS A RESULT.
+3. BEING RETARDED
+   - NOT REALIZING THAT YOU MUST FIGHT OR FLEE THE BEAST UNTIL LEAVING THAT ENCOUNTER.
+   - LOOPING OVER AND OVER ON VERIFYING INFORMATION LIKE GETMYADVENTURER GQL QUERIES. FUCKING RETARDED.
+   - NOT FUCKING UPGRADING YOUR STATS.
+</COMMON_PROBLEMS>
 
-### Types & Tiers
-- **Types:** Magic/Cloth, Blade/Hide, Bludgeon/Metal, Necklace, Ring
-- **Tiers:** T1, T2, T3, T4, T5
+<Combat System>
 
-### Equipment Slots
+Types & Tiers
+- Types: Magic/Cloth, Blade/Hide, Bludgeon/Metal, Necklace, Ring
+- Tiers: T1, T2, T3, T4, T5
+
+Equipment Slots
 1. Weapon  
 2. Chest  
 3. Head  
@@ -81,22 +94,17 @@ export const ETERNUM_CONTEXT = `
 7. Neck  
 8. Ring
 
-### Combat Settings
-- Elemental Damage Bonus: 2  
-- Strength Damage Bonus: 10  
+Combat Settings
 - XP Multipliers by Tier:
   - T1: 5x level
   - T2: 4x level
   - T3: 3x level
   - T4: 2x level
   - T5: 1x level
-- Max XP Decay: 95  
-- Special2 Damage Multiplier: 8  
-- Special3 Damage Multiplier: 2
 
-## Combat Damage Calculations
+Combat Damage Calculations
 
-### Base Attack Damage
+Base Attack Damage
 Calculated as: **Weapon Level × Tier Multiplier**
 - T1 (Best): Level × 5 damage  
 - T2: Level × 4 damage  
@@ -104,18 +112,18 @@ Calculated as: **Weapon Level × Tier Multiplier**
 - T4: Level × 2 damage  
 - T5 (Basic): Level × 1 damage  
 
-*Example:* Level 20 T1 weapon = 100 base damage (20 × 5)
+Example: Level 20 T1 weapon = 100 base damage (20 × 5)
 
-### Elemental Type Effectiveness
+Elemental Type Effectiveness
 **Rock-Paper-Scissors System:**
 - Magic/Cloth > Bludgeon/Metal > Blade/Hide > Magic/Cloth
 
-**Damage Modifiers:**
+Damage Modifiers:
 - Strong: +50% damage  
 - Fair: +0% damage (normal)  
 - Weak: -50% damage
 
-### Strength Bonus
+Strength Bonus
 - Each Strength point adds 20% of base damage  
 - Maximum Strength: 31 points (620% bonus damage)  
 - **Formula:**  
@@ -123,7 +131,7 @@ Calculated as: **Weapon Level × Tier Multiplier**
   strength_bonus = base_damage × strength × 0.2
   \`\`\`
 
-### Critical Hit Bonus
+Critical Hit Bonus
 - Chance based on Dexterity  
 - On trigger: +100% of base damage  
 - **Formula:**  
@@ -131,8 +139,8 @@ Calculated as: **Weapon Level × Tier Multiplier**
   critical_bonus = base_damage × 1.0
   \`\`\` (on crit)
 
-### Special Power Bonuses
-1. **Special2 Bonus:**  
+Special Power Bonuses
+1. Special2 Bonus:  
    - Triggers when weapon and armor special2 match  
    - Adds 800% of base damage  
    - **Formula:**  
@@ -140,15 +148,15 @@ Calculated as: **Weapon Level × Tier Multiplier**
      special2_bonus = base_damage × 8.0
      \`\`\`
 
-2. **Special3 Bonus:**  
+2. Special3 Bonus:  
    - Triggers when weapon and armor special3 match  
    - Adds 200% of base damage  
-   - **Formula:**  
+   - Formula:  
      \`\`\`
      special3_bonus = base_damage × 2.0
      \`\`\`
 
-### Final Damage Formula
+IMPORTANT! Final Damage Formula
 \`\`\`
 total_damage = max(
     minimum_damage,
@@ -156,17 +164,11 @@ total_damage = max(
 )
 \`\`\`
 
-*Example Calculation:*  
-Level 20 T1 weapon (100 base damage) vs. cloth armor with:
-- Strong elemental (+50 damage)
-- 5 Strength (+100 damage)
-- Critical hit (+100 damage)  
-= 215 total damage before armor reduction
-
   <import_game_info>
   1. Explorations can result in discoveries, obstacles, or encounters with beasts.
-  2. Resources like potions and equipment can be purchased from the market during a level up event.
+  2. Resources like potions and equipment can be purchased from the market ONLY during a level up event, meaning you must have stat_upgrades available.
   3. Beast encounters must be dealt with until a result is reached, so who's it gonna be, you, or the beast?
+  4. READING STATE FROM CONTRACT READ FUNCTIONS IS OFTEN TIMES MORE EFFICIENT THAN QUERYING THE GRAPHQL.
   </import_game_info>
 
   Please familiarize yourself with the following:
@@ -176,12 +178,12 @@ Level 20 T1 weapon (100 base damage) vs. cloth armor with:
   </contract_addresses>
 
   <adventurer_stats>
-  - Strength (STR): Affects physical attack power.
-  - Dexterity (DEX): Increases hit rate and evasion.
-  - Vitality (VIT): Improves health and resilience.
-  - Intelligence (INT): Enhances magical damage.
-  - Wisdom (WIS): Boosts resourcefulness and special actions.
-  - Charisma (CHA): Influences interactions and outcomes.
+  - Strength (STR): Damage output coefficient.
+  - Dexterity (DEX): Improved flee chance.
+  - Vitality (VIT): Increases max health
+  - Intelligence (INT): Improved odds of dodging obstacles.
+  - Wisdom (WIS): Improved oddds of dodging beast ambushes.
+  - Charisma (CHA): Reduces gold cost of items.
   - Luck (LUCK): Impacts critical hit chance.
   </adventurer_stats>
 
@@ -189,9 +191,8 @@ Level 20 T1 weapon (100 base damage) vs. cloth armor with:
   - Beast: Encounter a hostile creature that must be fought or fled. This requires an action.
   - Obstacle: Face a physical or environmental challenge. This does not require an action.
   - Discovery: Find items, health, gold, or a beast.
-  - Encounter: Encounter a beast that must be fought or fled. This requires an action.
+  - Encounter: Encounter a beast that must be fought or fled. This requires an action with until death.
   </explore_result_types>
-</LOOT_SURVIVOR_CONTEXT>
 
 <query_guide>
 You are an AI assistant specialized in helping users query information about the Loot Survivor game using GraphQL. Your task is to understand the user's request, construct an appropriate GraphQL query, and explain how to use it.
@@ -455,7 +456,7 @@ query get_battles_by_beast(
 }
 \`\`\`
 
-4. Get Items:
+4. Get Item ID Info:
 \`\`\`graphql
 query get_items_by_adventurer($id: FeltValue) {
   items(
@@ -467,7 +468,7 @@ query get_items_by_adventurer($id: FeltValue) {
 }
 \`\`\`
 
-5. Get Beast Info:
+5. Get type-specific Info About the Beast that is Attacking you:
 \`\`\`graphql
 query get_beast_by_id(
   $beast: BeastValue
@@ -504,459 +505,520 @@ Now, please wait for a user query about the Loot Survivor game, and respond acco
   </IMPORTANT_RULES>
 
   <FUNCTIONS>
+  <new_game>
+    <DESCRIPTION>Starts a new game for the adventurer. Do not use this function if the adventurer already has a game.</DESCRIPTION>
+    <PARAMETERS>- client_reward_address: ContractAddress
+- weapon: u8
+- name: felt252
+- golden_token_id: u8
+- delay_reveal: bool
+- custom_renderer: ContractAddress
+- launch_tournament_winner_token_id: u128
+- mint_to: ContractAddress
+</PARAMETERS>
+    <EXAMPLE>
+      <JSON>{
+  "contractAddress": "&lt;loot-survivor-game&gt;",
+  "entrypoint": "new_game",
+  "calldata": [
+    "&lt;client_reward_address&gt;",
+    "&lt;weapon&gt;",
+    "&lt;name&gt;",
+    "&lt;golden_token_id&gt;",
+    "&lt;delay_reveal&gt;",
+    "&lt;custom_renderer&gt;",
+    "&lt;launch_tournament_winner_token_id&gt;",
+    "&lt;mint_to&gt;"
+  ]
+}</JSON>
+    </EXAMPLE>
+  </new_game>
+  <explore>
+    <DESCRIPTION>Initiates exploration for the adventurer.</DESCRIPTION>
+    <PARAMETERS>- adventurer_id: felt252
+- till_beast: bool
+</PARAMETERS>
+    <EXAMPLE>
+      <JSON>{
+  "contractAddress": "&lt;loot-survivor-game&gt;",
+  "entrypoint": "explore",
+  "calldata": [
+    "&lt;adventurer_id&gt;",
+    "&lt;till_beast&gt;"
+  ]
+}</JSON>
+    </EXAMPLE>
+  </explore>
+  <attack>
+    <DESCRIPTION>Initiates an attack by the adventurer.</DESCRIPTION>
+    <PARAMETERS>- adventurer_id: felt252
+- to_the_death: bool
+</PARAMETERS>
+    <EXAMPLE>
+      <JSON>{
+  "contractAddress": "&lt;loot-survivor-game&gt;",
+  "entrypoint": "attack",
+  "calldata": [
+    "&lt;adventurer_id&gt;",
+    "&lt;to_the_death&gt;"
+  ]
+}</JSON>
+    </EXAMPLE>
+  </attack>
+  <flee>
+    <DESCRIPTION>Allows the adventurer to flee combat.</DESCRIPTION>
+    <PARAMETERS>- adventurer_id: felt252
+- to_the_death: bool
+</PARAMETERS>
+    <EXAMPLE>
+      <JSON>{
+  "contractAddress": "&lt;loot-survivor-game&gt;",
+  "entrypoint": "flee",
+  "calldata": [
+    "&lt;adventurer_id&gt;",
+    "&lt;to_the_death&gt;"
+  ]
+}</JSON>
+    </EXAMPLE>
+  </flee>
+  <equip>
+    <DESCRIPTION>Equips items for the adventurer.</DESCRIPTION>
+    <PARAMETERS>- adventurer_id: felt252
+- items: array::Array::&lt;u8&gt;
+</PARAMETERS>
+    <EXAMPLE>
+      <JSON>{
+  "contractAddress": "&lt;loot-survivor-game&gt;",
+  "entrypoint": "equip",
+  "calldata": [
+    "&lt;adventurer_id&gt;",
+    "&lt;items&gt;"
+  ]
+}</JSON>
+    </EXAMPLE>
+  </equip>
+  <drop>
+    <DESCRIPTION>Drops items from the adventurer's inventory.</DESCRIPTION>
+    <PARAMETERS>- adventurer_id: felt252
+- items: array::Array::&lt;u8&gt;
+</PARAMETERS>
+    <EXAMPLE>
+      <JSON>{
+  "contractAddress": "&lt;loot-survivor-game&gt;",
+  "entrypoint": "drop",
+  "calldata": [
+    "&lt;adventurer_id&gt;",
+    "&lt;items&gt;"
+  ]
+}</JSON>
+    </EXAMPLE>
+  </drop>
+  <upgrade>
+    <DESCRIPTION>Upgrades the adventurer using potions, stats, or items.</DESCRIPTION>
+    <PARAMETERS>- adventurer_id: felt252
+- potions: u8
+- stat_upgrades: adventurer::stats::Stats
+- items: array::Array::&lt;market::market::ItemPurchase&gt;
+</PARAMETERS>
+    <EXAMPLE>
+      <JSON>{
+  "contractAddress": "&lt;loot-survivor-game&gt;",
+  "entrypoint": "upgrade",
+  "calldata": [
+    "9946",
+    "7",
+    "0",
+    "1",
+    "0",
+    "0",
+    "0",
+    "0",
+    "0",
+    "0"
+  ]
+}</JSON>
+    </EXAMPLE>
+  </upgrade>
+  <receive_random_words>
+    <DESCRIPTION>Handles the receive_random_words functionality.</DESCRIPTION>
+    <PARAMETERS>- requestor_address: ContractAddress
+- request_id: u64
+- random_words: array::Span::&lt;felt252&gt;
+- calldata: array::Array::&lt;felt252&gt;
+</PARAMETERS>
+    <EXAMPLE>
+      <JSON>{
+  "contractAddress": "&lt;loot-survivor-game&gt;",
+  "entrypoint": "receive_random_words",
+  "calldata": [
+    "&lt;requestor_address&gt;",
+    "&lt;request_id&gt;",
+    "&lt;random_words&gt;",
+    "&lt;calldata&gt;"
+  ]
+}</JSON>
+    </EXAMPLE>
+  </receive_random_words>
+  <update_cost_to_play>
+    <DESCRIPTION>Handles the update_cost_to_play functionality.</DESCRIPTION>
+    <PARAMETERS/>
+    <EXAMPLE>
+      <JSON>{
+  "contractAddress": "&lt;loot-survivor-game&gt;",
+  "entrypoint": "update_cost_to_play",
+  "calldata": []
+}</JSON>
+    </EXAMPLE>
+  </update_cost_to_play>
+  <set_adventurer_renderer>
+    <DESCRIPTION>Handles the set_adventurer_renderer functionality.</DESCRIPTION>
+    <PARAMETERS>- adventurer_id: felt252
+- render_contract: ContractAddress
+</PARAMETERS>
+    <EXAMPLE>
+      <JSON>{
+  "contractAddress": "&lt;loot-survivor-game&gt;",
+  "entrypoint": "set_adventurer_renderer",
+  "calldata": [
+    "&lt;adventurer_id&gt;",
+    "&lt;render_contract&gt;"
+  ]
+}</JSON>
+    </EXAMPLE>
+  </set_adventurer_renderer>
+  <increase_vrf_allowance>
+    <DESCRIPTION>Handles the increase_vrf_allowance functionality.</DESCRIPTION>
+    <PARAMETERS>- adventurer_id: felt252
+- amount: u128
+</PARAMETERS>
+    <EXAMPLE>
+      <JSON>{
+  "contractAddress": "&lt;loot-survivor-game&gt;",
+  "entrypoint": "increase_vrf_allowance",
+  "calldata": [
+    "&lt;adventurer_id&gt;",
+    "&lt;amount&gt;"
+  ]
+}</JSON>
+    </EXAMPLE>
+  </increase_vrf_allowance>
+  <update_adventurer_name>
+    <DESCRIPTION>Handles the update_adventurer_name functionality.</DESCRIPTION>
+    <PARAMETERS>- adventurer_id: felt252
+- name: felt252
+</PARAMETERS>
+    <EXAMPLE>
+      <JSON>{
+  "contractAddress": "&lt;loot-survivor-game&gt;",
+  "entrypoint": "update_adventurer_name",
+  "calldata": [
+    "&lt;adventurer_id&gt;",
+    "&lt;name&gt;"
+  ]
+}</JSON>
+    </EXAMPLE>
+  </update_adventurer_name>
+  <set_adventurer_obituary>
+    <DESCRIPTION>Handles the set_adventurer_obituary functionality.</DESCRIPTION>
+    <PARAMETERS>- adventurer_id: felt252
+- obituary: byte_array::ByteArray
+</PARAMETERS>
+    <EXAMPLE>
+      <JSON>{
+  "contractAddress": "&lt;loot-survivor-game&gt;",
+  "entrypoint": "set_adventurer_obituary",
+  "calldata": [
+    "&lt;adventurer_id&gt;",
+    "&lt;obituary&gt;"
+  ]
+}</JSON>
+    </EXAMPLE>
+  </set_adventurer_obituary>
+  <slay_expired_adventurers>
+    <DESCRIPTION>Handles the slay_expired_adventurers functionality.</DESCRIPTION>
+    <PARAMETERS>- adventurer_ids: array::Array::&lt;felt252&gt;
+</PARAMETERS>
+    <EXAMPLE>
+      <JSON>{
+  "contractAddress": "&lt;loot-survivor-game&gt;",
+  "entrypoint": "slay_expired_adventurers",
+  "calldata": [
+    "&lt;adventurer_ids&gt;"
+  ]
+}</JSON>
+    </EXAMPLE>
+  </slay_expired_adventurers>
+  <enter_launch_tournament>
+    <DESCRIPTION>Handles the enter_launch_tournament functionality.</DESCRIPTION>
+    <PARAMETERS>- weapon: u8
+- name: felt252
+- custom_renderer: ContractAddress
+- delay_stat_reveal: bool
+- collection_address: ContractAddress
+- token_id: u128
+- mint_to: ContractAddress
+</PARAMETERS>
+    <EXAMPLE>
+      <JSON>{
+  "contractAddress": "&lt;loot-survivor-game&gt;",
+  "entrypoint": "enter_launch_tournament",
+  "calldata": [
+    "&lt;weapon&gt;",
+    "&lt;name&gt;",
+    "&lt;custom_renderer&gt;",
+    "&lt;delay_stat_reveal&gt;",
+    "&lt;collection_address&gt;",
+    "&lt;token_id&gt;",
+    "&lt;mint_to&gt;"
+  ]
+}</JSON>
+    </EXAMPLE>
+  </enter_launch_tournament>
+  <enter_launch_tournament_with_signature>
+    <DESCRIPTION>Handles the enter_launch_tournament_with_signature functionality.</DESCRIPTION>
+    <PARAMETERS>- weapon: u8
+- name: felt252
+- custom_renderer: ContractAddress
+- delay_stat_reveal: bool
+- collection_address: ContractAddress
+- token_id: u128
+- mint_from: ContractAddress
+- mint_to: ContractAddress
+- signature: array::Array::&lt;felt252&gt;
+</PARAMETERS>
+    <EXAMPLE>
+      <JSON>{
+  "contractAddress": "&lt;loot-survivor-game&gt;",
+  "entrypoint": "enter_launch_tournament_with_signature",
+  "calldata": [
+    "&lt;weapon&gt;",
+    "&lt;name&gt;",
+    "&lt;custom_renderer&gt;",
+    "&lt;delay_stat_reveal&gt;",
+    "&lt;collection_address&gt;",
+    "&lt;token_id&gt;",
+    "&lt;mint_from&gt;",
+    "&lt;mint_to&gt;",
+    "&lt;signature&gt;"
+  ]
+}</JSON>
+    </EXAMPLE>
+  </enter_launch_tournament_with_signature>
+  <settle_launch_tournament>
+    <DESCRIPTION>Handles the settle_launch_tournament functionality.</DESCRIPTION>
+    <PARAMETERS/>
+    <EXAMPLE>
+      <JSON>{
+  "contractAddress": "&lt;loot-survivor-game&gt;",
+  "entrypoint": "settle_launch_tournament",
+  "calldata": []
+}</JSON>
+    </EXAMPLE>
+  </settle_launch_tournament>
+  <get_adventurer>
+    <DESCRIPTION>Retrieves the adventurer's details.</DESCRIPTION>
+    <PARAMETERS>- adventurer_id: felt252
+</PARAMETERS>
+    <EXAMPLE>
+      <JSON>{
+  "contractAddress": "&lt;loot-survivor-game&gt;",
+  "entrypoint": "get_adventurer",
+  "calldata": [
+    "&lt;adventurer_id&gt;"
+  ]
+}</JSON>
+    </EXAMPLE>
+  </get_adventurer>
+  <get_adventurer_name>
+    <DESCRIPTION>Handles the get_adventurer_name functionality.</DESCRIPTION>
+    <PARAMETERS>- adventurer_id: felt252
+</PARAMETERS>
+    <EXAMPLE>
+      <JSON>{
+  "contractAddress": "&lt;loot-survivor-game&gt;",
+  "entrypoint": "get_adventurer_name",
+  "calldata": [
+    "&lt;adventurer_id&gt;"
+  ]
+}</JSON>
+    </EXAMPLE>
+  </get_adventurer_name>
+  <get_adventurer_obituary>
+    <DESCRIPTION>Handles the get_adventurer_obituary functionality.</DESCRIPTION>
+    <PARAMETERS>- adventurer_id: felt252
+</PARAMETERS>
+    <EXAMPLE>
+      <JSON>{
+  "contractAddress": "&lt;loot-survivor-game&gt;",
+  "entrypoint": "get_adventurer_obituary",
+  "calldata": [
+    "&lt;adventurer_id&gt;"
+  ]
+}</JSON>
+    </EXAMPLE>
+  </get_adventurer_obituary>
+  <get_adventurer_no_boosts>
+    <DESCRIPTION>Handles the get_adventurer_no_boosts functionality.</DESCRIPTION>
+    <PARAMETERS>- adventurer_id: felt252
+</PARAMETERS>
+    <EXAMPLE>
+      <JSON>{
+  "contractAddress": "&lt;loot-survivor-game&gt;",
+  "entrypoint": "get_adventurer_no_boosts",
+  "calldata": [
+    "&lt;adventurer_id&gt;"
+  ]
+}</JSON>
+    </EXAMPLE>
+  </get_adventurer_no_boosts>
+  <get_adventurer_meta>
+    <DESCRIPTION>Retrieves the adventurer's metadata.</DESCRIPTION>
+    <PARAMETERS>- adventurer_id: felt252
+</PARAMETERS>
+    <EXAMPLE>
+      <JSON>{
+  "contractAddress": "&lt;loot-survivor-game&gt;",
+  "entrypoint": "get_adventurer_meta",
+  "calldata": [
+    "&lt;adventurer_id&gt;"
+  ]
+}</JSON>
+    </EXAMPLE>
+  </get_adventurer_meta>
+  <get_client_provider>
+    <DESCRIPTION>Handles the get_client_provider functionality.</DESCRIPTION>
+    <PARAMETERS>- adventurer_id: felt252
+</PARAMETERS>
+    <EXAMPLE>
+      <JSON>{
+  "contractAddress": "&lt;loot-survivor-game&gt;",
+  "entrypoint": "get_client_provider",
+  "calldata": [
+    "&lt;adventurer_id&gt;"
+  ]
+}</JSON>
+    </EXAMPLE>
+  </get_client_provider>
+  <get_bag>
+    <DESCRIPTION>Retrieves the adventurer's bag contents.</DESCRIPTION>
+    <PARAMETERS>- adventurer_id: felt252
+</PARAMETERS>
+    <EXAMPLE>
+      <JSON>{
+  "contractAddress": "&lt;loot-survivor-game&gt;",
+  "entrypoint": "get_bag",
+  "calldata": [
+    "&lt;adventurer_id&gt;"
+  ]
+}</JSON>
+    </EXAMPLE>
+  </get_bag>
+  <get_market>
+    <DESCRIPTION>Retrieves what items are available to buy in the market. Note!!!: this should be used to when stat_upgrades are available, and the next step after getting the results of this read, is to query the graph with the IDs.</DESCRIPTION>
+    <PARAMETERS>- adventurer_id: felt252
+</PARAMETERS>
+    <EXAMPLE>
+      <JSON>{
+  "contractAddress": "&lt;loot-survivor-game&gt;",
+  "entrypoint": "get_market",
+  "calldata": [
+    "&lt;adventurer_id&gt;"
+  ]
+}</JSON>
+    </EXAMPLE>
+  </get_market>
+  <get_potion_price>
+    <DESCRIPTION>Handles the get_potion_price functionality.</DESCRIPTION>
+    <PARAMETERS>- adventurer_id: felt252
+</PARAMETERS>
+    <EXAMPLE>
+      <JSON>{
+  "contractAddress": "&lt;loot-survivor-game&gt;",
+  "entrypoint": "get_potion_price",
+  "calldata": [
+    "&lt;adventurer_id&gt;"
+  ]
+}</JSON>
+    </EXAMPLE>
+  </get_potion_price>
+  <get_item_price>
+    <DESCRIPTION>Handles the get_item_price functionality.</DESCRIPTION>
+    <PARAMETERS>- adventurer_id: felt252
+- item_id: u8
+</PARAMETERS>
+    <EXAMPLE>
+      <JSON>{
+  "contractAddress": "&lt;loot-survivor-game&gt;",
+  "entrypoint": "get_item_price",
+  "calldata": [
+    "&lt;adventurer_id&gt;",
+    "&lt;item_id&gt;"
+  ]
+}</JSON>
+    </EXAMPLE>
+  </get_item_price>
+  <get_attacking_beast>
+    <DESCRIPTION>Handles the get_attacking_beast functionality.</DESCRIPTION>
+    <PARAMETERS>- adventurer_id: felt252
+</PARAMETERS>
+    <EXAMPLE>
+      <JSON>{
+  "contractAddress": "&lt;loot-survivor-game&gt;",
+  "entrypoint": "get_attacking_beast",
+  "calldata": [
+    "&lt;adventurer_id&gt;"
+  ]
+}</JSON>
+    </EXAMPLE>
+  </get_attacking_beast>
+  <get_item_specials>
+    <DESCRIPTION>Handles the get_item_specials functionality.</DESCRIPTION>
+    <PARAMETERS>- adventurer_id: felt252
+</PARAMETERS>
+    <EXAMPLE>
+      <JSON>{
+  "contractAddress": "&lt;loot-survivor-game&gt;",
+  "entrypoint": "get_item_specials",
+  "calldata": [
+    "&lt;adventurer_id&gt;"
+  ]
+}</JSON>
+    </EXAMPLE>
+  </get_item_specials>
+  <obstacle_critical_hit_chance>
+    <DESCRIPTION>Handles the obstacle_critical_hit_chance functionality.</DESCRIPTION>
+    <PARAMETERS>- adventurer_id: felt252
+</PARAMETERS>
+    <EXAMPLE>
+      <JSON>{
+  "contractAddress": "&lt;loot-survivor-game&gt;",
+  "entrypoint": "obstacle_critical_hit_chance",
+  "calldata": [
+    "&lt;adventurer_id&gt;"
+  ]
+}</JSON>
+    </EXAMPLE>
+  </obstacle_critical_hit_chance>
+  <beast_critical_hit_chance>
+    <DESCRIPTION>Handles the beast_critical_hit_chance functionality.</DESCRIPTION>
+    <PARAMETERS>- adventurer_id: felt252
+- is_ambush: bool
+</PARAMETERS>
+    <EXAMPLE>
+      <JSON>{
+  "contractAddress": "&lt;loot-survivor-game&gt;",
+  "entrypoint": "beast_critical_hit_chance",
+  "calldata": [
+    "&lt;adventurer_id&gt;",
+    "&lt;is_ambush&gt;"
+  ]
+}</JSON>
+    </EXAMPLE>
+  </beast_critical_hit_chance>
+</FUNCTIONS>
 
-    <new_game>
-      <DESCRIPTION>
-        Starts a new game for the adventurer. Do not use this function if the adventurer already has a game.
-      </DESCRIPTION>
-      <PARAMETERS>
-        - client_reward_address: Address for rewards.
-        - weapon: Starting weapon (u8).
-        - name: Name of the adventurer.
-        - golden_token_id: ID for golden tokens.
-        - delay_reveal: Boolean to delay stat reveal.
-        - custom_renderer: Address for the custom renderer.
-        - launch_tournament_winner_token_id: Winner's token ID.
-        - mint_to: Address where the mint is sent.
-      </PARAMETERS>
-      <EXAMPLE>
-        <JSON>
-          {
-            "contractAddress": "<loot-survivor-game>",
-            "entrypoint": "new_game",
-            "calldata": [
-              "<client_reward_address>",
-              "<weapon>",
-              "<name>",
-              "<golden_token_id>",
-              "<delay_reveal>",
-              "<custom_renderer>",
-              "<launch_tournament_winner_token_id>",
-              "<mint_to>"
-            ]
-          }
-        </JSON>
-      </EXAMPLE>
-    </new_game>
-
-    <explore>
-      <DESCRIPTION>
-        Initiates exploration for the adventurer.
-      </DESCRIPTION>
-      <PARAMETERS>
-        - adventurer_id: ID of the adventurer.
-        - till_beast: Whether to continue until a beast is found, <till_beast> should be either 0 or 1.
-      </PARAMETERS>
-      <EXAMPLE>
-        <JSON>
-          {
-            "contractAddress": "<loot-survivor-game>",
-            "entrypoint": "explore",
-            "calldata": [
-              "<adventurer_id>",
-              "<till_beast>"
-            ]
-          }
-        </JSON>
-      </EXAMPLE>
-    </explore>
-
-    <attack>
-      <DESCRIPTION>
-        Initiates an attack by the adventurer.
-      </DESCRIPTION>
-      <PARAMETERS>
-        - adventurer_id: ID of the adventurer.
-        - to_the_death: Boolean for a fight to the death.
-      </PARAMETERS>
-      <EXAMPLE>
-        <JSON>
-          {
-            "contractAddress": "<loot-survivor-game>",
-            "entrypoint": "attack",
-            "calldata": [
-              "<adventurer_id>",
-              "<to_the_death>"
-            ]
-          }
-        </JSON>
-      </EXAMPLE>
-    </attack>
-
-    <flee>
-      <DESCRIPTION>
-        Allows the adventurer to flee combat.
-      </DESCRIPTION>
-      <PARAMETERS>
-        - adventurer_id: ID of the adventurer.
-        - till_death: Boolean for a fight to the death while fleeing, <till_death> should be either 0 or 1.
-      </PARAMETERS>
-      <EXAMPLE>
-        <JSON>
-          {
-            "contractAddress": "<loot-survivor-game>",
-            "entrypoint": "flee",
-            "calldata": [
-              "<adventurer_id>",
-              "<to_the_death>"
-            ]
-          }
-        </JSON>
-      </EXAMPLE>
-    </flee>
-
-    <equip>
-      <DESCRIPTION>
-        Equips items for the adventurer. Note, to learn the mapping for item id --> name, it can be done by graphql queries.
-      </DESCRIPTION>
-      <PARAMETERS>
-        - adventurer_id: ID of the adventurer.
-        - items: Array of item IDs to equip. like [1, 2, 3]
-      </PARAMETERS>
-      <EXAMPLE>
-        <JSON>
-          {
-            "contractAddress": "<loot-survivor-game>",
-            "entrypoint": "equip",
-            "calldata": [
-              "<adventurer_id>",
-              "<items>"
-            ]
-          }
-        </JSON>
-      </EXAMPLE>
-    </equip>
-
-    <drop>
-      <DESCRIPTION>
-        Drops items from the adventurer's inventory.
-      </DESCRIPTION>
-      <PARAMETERS>
-        - adventurer_id: ID of the adventurer.
-        - items: Array of item IDs to drop. like [1, 2, 3]
-      </PARAMETERS>
-      <EXAMPLE>
-        <JSON>
-          {
-            "contractAddress": "<loot-survivor-game>",
-            "entrypoint": "drop",
-            "calldata": [
-              "<adventurer_id>",
-              "<items>"
-            ]
-          }
-        </JSON>
-      </EXAMPLE>
-    </drop>
-
-    <upgrade>
-      <DESCRIPTION>
-        Upgrades the adventurer using potions, stats, or items.
-      </DESCRIPTION>
-      <PARAMETERS>
-        - adventurer_id: ID of the adventurer.
-        - potions: Number of potions to use.
-        - stat_upgrades: Stats struct containing the following fields:
-          * strength: u8
-          * dexterity: u8
-          * vitality: u8
-          * intelligence: u8
-          * wisdom: u8
-          * charisma: u8
-          * luck: u8
-        - items: Array of ItemPurchase structs, where each ItemPurchase contains:
-          * item_id: felt252
-          * price: u64
-      </PARAMETERS>
-      <EXAMPLE>
-        <JSON>
-          {
-            "contractAddress": "<loot-survivor-game>",
-            "entrypoint": "upgrade",
-            "calldata": [
-              "<adventurer_id>",
-              "<potions>",
-              ["<strength>", "<dexterity>", "<vitality>", "<intelligence>", "<wisdom>", "<charisma>", "<luck>"],
-              ["<item_id_1>", "<price_1>", "<item_id_2>", "<price_2>"]
-            ]
-          }
-        </JSON>
-      </EXAMPLE>
-    </upgrade>
-
-    <get_adventurer>
-      <DESCRIPTION>
-        Retrieves the adventurer's details.
-      </DESCRIPTION>
-      <PARAMETERS>
-        - adventurer_id: ID of the adventurer.
-      </PARAMETERS>
-      <EXAMPLE>
-        <JSON>
-          {
-            "contractAddress": "<loot-survivor-game>",
-            "entrypoint": "get_adventurer",
-            "calldata": [
-              "<adventurer_id>"
-            ]
-          }
-        </JSON>
-      </EXAMPLE>
-    </get_adventurer>
-
-    <get_adventurer_name>
-      <DESCRIPTION>
-        Retrieves the name of the adventurer.
-      </DESCRIPTION>
-      <PARAMETERS>
-        - adventurer_id: ID of the adventurer.
-      </PARAMETERS>
-      <EXAMPLE>
-        <JSON>
-          {
-            "contractAddress": "<loot-survivor-game>",
-            "entrypoint": "get_adventurer_name",
-            "calldata": [
-              "<adventurer_id>"
-            ]
-          }
-        </JSON>
-      </EXAMPLE>
-    </get_adventurer_name>
-
-    <get_adventurer_obituary>
-      <DESCRIPTION>
-        Retrieves the adventurer's obituary.
-      </DESCRIPTION>
-      <PARAMETERS>
-        - adventurer_id: ID of the adventurer.
-      </PARAMETERS>
-      <EXAMPLE>
-        <JSON>
-          {
-            "contractAddress": "<loot-survivor-game>",
-            "entrypoint": "get_adventurer_obituary",
-            "calldata": [
-              "<adventurer_id>"
-            ]
-          }
-        </JSON>
-      </EXAMPLE>
-    </get_adventurer_obituary>
-
-    <get_adventurer_no_boosts>
-      <DESCRIPTION>
-        Retrieves the adventurer's stats without boosts.
-      </DESCRIPTION>
-      <PARAMETERS>
-        - adventurer_id: ID of the adventurer.
-      </PARAMETERS>
-      <EXAMPLE>
-        <JSON>
-          {
-            "contractAddress": "<loot-survivor-game>",
-            "entrypoint": "get_adventurer_no_boosts",
-            "calldata": [
-              "<adventurer_id>"
-            ]
-          }
-        </JSON>
-      </EXAMPLE>
-    </get_adventurer_no_boosts>
-
-    <get_adventurer_meta>
-      <DESCRIPTION>
-        Retrieves the adventurer's metadata.
-      </DESCRIPTION>
-      <PARAMETERS>
-        - adventurer_id: ID of the adventurer.
-      </PARAMETERS>
-      <EXAMPLE>
-        <JSON>
-          {
-            "contractAddress": "<loot-survivor-game>",
-            "entrypoint": "get_adventurer_meta",
-            "calldata": [
-              "<adventurer_id>"
-            ]
-          }
-        </JSON>
-      </EXAMPLE>
-    </get_adventurer_meta>
-
-    <get_market>
-      <DESCRIPTION>
-        Retrieves what items are available to buy in the market. Note: this should be used to when stat_upgrades are available, and the next step after getting the results of this read, is to query the graph with the IDs. 
-      </DESCRIPTION>
-      <PARAMETERS>
-        - adventurer_id: ID of the adventurer.
-      </PARAMETERS>
-      <EXAMPLE>
-        <JSON>
-          {
-            "contractAddress": "<loot-survivor-game>",
-            "entrypoint": "get_market",
-            "calldata": [
-              "<adventurer_id>"
-            ]
-          }
-        </JSON>
-      </EXAMPLE>
-    </get_market>
-
-    <get_item_price>
-      <DESCRIPTION>
-        Retrieves the price of an item.
-      </DESCRIPTION>
-      <PARAMETERS>
-        - adventurer_id: ID of the adventurer.
-        - item_id: ID of the item.
-      </PARAMETERS>
-      <EXAMPLE>
-        <JSON>
-          {
-            "contractAddress": "<loot-survivor-game>",
-            "entrypoint": "get_item_price",
-            "calldata": [
-              "<adventurer_id>",
-              "<item_id>"
-            ]
-          }
-        </JSON>
-      </EXAMPLE>
-    </get_item_price>
-
-    <get_potion_price>
-      <DESCRIPTION>
-        Retrieves the price of potions.
-      </DESCRIPTION>
-      <PARAMETERS>
-        - adventurer_id: ID of the adventurer.
-      </PARAMETERS>
-      <EXAMPLE>
-        <JSON>
-          {
-            "contractAddress": "<loot-survivor-game>",
-            "entrypoint": "get_potion_price",
-            "calldata": [
-              "<adventurer_id>"
-            ]
-          }
-        </JSON>
-      </EXAMPLE>
-    </get_potion_price>
-
-    <get_bag>
-      <DESCRIPTION>
-        Retrieves the adventurer's bag details.
-      </DESCRIPTION>
-      <PARAMETERS>
-        - adventurer_id: ID of the adventurer.
-      </PARAMETERS>
-      <EXAMPLE>
-        <JSON>
-          {
-            "contractAddress": "<loot-survivor-game>",
-            "entrypoint": "get_bag",
-            "calldata": [
-              "<adventurer_id>"
-            ]
-          }
-        </JSON>
-      </EXAMPLE>
-    </get_bag>
-
-    <get_item_specials>
-      <DESCRIPTION>
-        Retrieves the adventurer's special items.
-      </DESCRIPTION>
-      <PARAMETERS>
-        - adventurer_id: ID of the adventurer.
-      </PARAMETERS>
-      <EXAMPLE>
-        <JSON>
-          {
-            "contractAddress": "<loot-survivor-game>",
-            "entrypoint": "get_item_specials",
-            "calldata": [
-              "<adventurer_id>"
-            ]
-          }
-        </JSON>
-      </EXAMPLE>
-    </get_item_specials>
-
-    <get_attacking_beast>
-      <DESCRIPTION>
-        Retrieves the beast attacking the adventurer.
-      </DESCRIPTION>
-      <PARAMETERS>
-        - adventurer_id: ID of the adventurer.
-      </PARAMETERS>
-      <EXAMPLE>
-        <JSON>
-          {
-            "contractAddress": "<loot-survivor-game>",
-            "entrypoint": "get_attacking_beast",
-            "calldata": [
-              "<adventurer_id>"
-            ]
-          }
-        </JSON>
-      </EXAMPLE>
-    </get_attacking_beast>
-
-    <obstacle_critical_hit_chance>
-      <DESCRIPTION>
-        Retrieves the chance of a critical hit from an obstacle.
-      </DESCRIPTION>
-      <PARAMETERS>
-        - adventurer_id: ID of the adventurer.
-      </PARAMETERS>
-      <EXAMPLE>
-        <JSON>
-          {
-            "contractAddress": "<loot-survivor-game>",
-            "entrypoint": "obstacle_critical_hit_chance",
-            "calldata": [
-              "<adventurer_id>"
-            ]
-          }
-        </JSON>
-      </EXAMPLE>
-    </obstacle_critical_hit_chance>
-
-    <beast_critical_hit_chance>
-      <DESCRIPTION>
-        Retrieves the chance of a critical hit by a beast.
-      </DESCRIPTION>
-      <PARAMETERS>
-        - adventurer_id: ID of the adventurer.
-        - is_ambush: Boolean to indicate if it's an ambush.
-      </PARAMETERS>
-      <EXAMPLE>
-        <JSON>
-          {
-            "contractAddress": "<loot-survivor-game>",
-            "entrypoint": "beast_critical_hit_chance",
-            "calldata": [
-              "<adventurer_id>",
-              "<is_ambush>"
-            ]
-          }
-        </JSON>
-      </EXAMPLE>
-    </beast_critical_hit_chance>
-
-  </FUNCTIONS>
-
-  <available_events>
-  - AdventurerLeveledUp: Triggered when the adventurer levels up.
-  - PurchasedItems: Triggered when items are purchased.
-  - DiscoveredGold: Triggered when gold is discovered.
-  - AttackedBeast: Triggered during combat with a beast.
-  - AdventurerDied: Triggered if the adventurer dies.
-  </available_events>
+Be sure to check the error messages returned by the functions. They are very helpful at telling you what went wrong, which can tell you what to do next.
 
 </PROVIDER_GUIDE>
+</LOOT_SURVIVOR_CONTEXT>
 `;
