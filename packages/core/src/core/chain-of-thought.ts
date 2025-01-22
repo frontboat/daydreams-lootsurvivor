@@ -577,16 +577,42 @@ export class ChainOfThought extends EventEmitter {
       
       Analyze how the world state has changed after this goal completion.
       Return only a JSON object with updated context fields that have changed.
+      Do not include any markdown formatting or comments in your response.
       </context_update_analysis>
     `;
 
     try {
       const response = await this.llmClient.analyze(prompt, {
         system:
-          "You are a context analysis system that determines state changes after goal completion.",
+          "You are a context analysis system that determines state changes after goal completion. Return only raw JSON without any markdown formatting or comments.",
       });
 
-      return JSON.parse(response.toString());
+      if (!response) {
+        return null;
+      }
+
+      let responseText = response.toString();
+      
+      // Clean the response using the same logic as getValidatedLLMResponse
+      responseText = responseText.replace(/```json\n?|\n?```/g, ""); // Remove markdown
+      responseText = responseText.replace(/\/\/.*$/gm, ""); // Remove single-line comments
+      responseText = responseText.replace(/\/\*[\s\S]*?\*\//gm, ""); // Remove multi-line comments
+      responseText = responseText.replace(/,(\s*[}\]])/g, "$1"); // Clean trailing commas
+      responseText = responseText.trim();
+
+      try {
+        return JSON.parse(responseText);
+      } catch (parseError) {
+        this.logger.error(
+          "determineContextUpdates",
+          "Failed to parse LLM response",
+          {
+            response: responseText,
+            error: parseError,
+          }
+        );
+        return null;
+      }
     } catch (error) {
       this.logger.error(
         "determineContextUpdates",
@@ -636,16 +662,35 @@ export class ChainOfThought extends EventEmitter {
       - 0-100 = 0-100% success
 
       Return only a JSON object with: { "success": boolean, "reason": string, "outcomeScore": number }
+      Do not include any markdown formatting in your response.
       </goal_validation>
     `;
 
     try {
       const response = await this.llmClient.analyze(prompt, {
         system:
-          "You are a goal validation system that carefully checks success criteria against the current context.",
+          "You are a goal validation system that carefully checks success criteria against the current context. Return only raw JSON without any markdown formatting.",
       });
 
-      const result = JSON.parse(response.toString());
+      if (!response) {
+        throw new Error("LLM response was empty");
+      }
+
+      let responseText = response.toString();
+      // Remove any markdown code block formatting if present
+      responseText = responseText.replace(/```json\n?|\n?```/g, "").trim();
+
+      let result;
+      try {
+        result = JSON.parse(responseText);
+      } catch (parseError) {
+        throw new Error(`Failed to parse LLM response: ${responseText}`);
+      }
+
+      // Validate the response structure
+      if (!result || typeof result.success !== "boolean" || typeof result.reason !== "string" || typeof result.outcomeScore !== "number") {
+        throw new Error(`Invalid response structure: ${JSON.stringify(result)}`);
+      }
 
       if (result.success) {
         this.addStep(
@@ -668,9 +713,26 @@ export class ChainOfThought extends EventEmitter {
 
       return result.success;
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      const errorStack = error instanceof Error ? error.stack : undefined;
+      
       this.logger.error("validateGoalSuccess", "Goal validation failed", {
-        error,
+        error: errorMessage,
+        stack: errorStack,
+        goalId: goal.id,
+        goalDescription: goal.description
       });
+
+      // Add a step to track the validation failure
+      this.addStep(
+        `Goal validation error: ${errorMessage}`,
+        "system",
+        ["goal-validation", "error"]
+      );
+
+      // Record the failure
+      this.goalManager.recordGoalFailure(goal.id, errorMessage);
+
       return false;
     }
   }
@@ -1557,7 +1619,7 @@ ${actionExamplesText}
       ${prompt}
 
       <response_structure>
-      Return a JSON object matching this schema. Do not include any markdown formatting.
+      Return a JSON object matching this schema. Do not include any markdown formatting or comments.
 
       ${JSON.stringify(jsonSchema, null, 2)}
       </response_structure>
@@ -1573,6 +1635,18 @@ ${actionExamplesText}
 
         // Remove markdown code block formatting if present
         responseText = responseText.replace(/```json\n?|\n?```/g, "");
+        
+        // Remove single-line comments
+        responseText = responseText.replace(/\/\/.*$/gm, "");
+        
+        // Remove multi-line comments
+        responseText = responseText.replace(/\/\*[\s\S]*?\*\//gm, "");
+        
+        // Clean up any trailing commas
+        responseText = responseText.replace(/,(\s*[}\]])/g, "$1");
+        
+        // Remove any extra whitespace
+        responseText = responseText.trim();
 
         let parsed: T;
         try {

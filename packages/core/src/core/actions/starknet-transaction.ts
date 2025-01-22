@@ -9,6 +9,11 @@ export const starknetTransactionAction: ActionHandler = async (
   const result = await executeStarknetTransaction(
     action.payload as CoTTransaction
   );
+  
+  if (result instanceof Error) {
+    throw result; // This will be caught by the error handling in ChainOfThought
+  }
+
   return `Transaction executed successfully: ${JSON.stringify(
     result,
     null,

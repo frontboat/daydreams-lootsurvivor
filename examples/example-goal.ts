@@ -14,10 +14,13 @@ import * as readline from "readline";
 
 import chalk from "chalk";
 import { starknetTransactionAction } from "../packages/core/src/core/actions/starknet-transaction";
+import { starknetReadAction } from "../packages/core/src/core/actions/starknet-read";
 import { graphqlAction } from "../packages/core/src/core/actions/graphql";
+import { solanaTransactionAction } from "../packages/core/src/core/actions/solana-transaction";
 import {
   graphqlFetchSchema,
   starknetTransactionSchema,
+  solanaTransactionSchema,
 } from "../packages/core/src/core/validation";
 import type { JSONSchemaType } from "ajv";
 import { ChromaVectorDB } from "../packages/core/src/core/vector-db";
@@ -96,16 +99,57 @@ async function main() {
   );
 
   dreams.registerAction(
+    "SOLANA_TRANSACTION",
+    solanaTransactionAction,
+    {
+      description: "Execute a transaction on the Solana blockchain",
+      example: JSON.stringify({
+        programId: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+        instruction: "transfer",
+        data: [1000000], // Amount to transfer
+        accounts: [
+          {
+            pubkey: "sender_pubkey",
+            isSigner: true,
+            isWritable: true
+          },
+          {
+            pubkey: "recipient_pubkey",
+            isSigner: false,
+            isWritable: true
+          }
+        ]
+      }),
+    },
+    solanaTransactionSchema as JSONSchemaType<any>
+  );
+
+  dreams.registerAction(
     "GRAPHQL_FETCH",
     graphqlAction,
     {
-      description: "Fetch data from the Eternum GraphQL API",
+      description: "Fetch data from the Loot Survivor GraphQL API",
       example: JSON.stringify({
         query:
-          "query GetRealmInfo { eternumRealmModels(where: { realm_id: 42 }) { edges { node { ... on eternum_Realm { entity_id level } } } }",
+          "query ExampleQuery { example_queryModels(where: { adventurerId: 69 }) { edges { node { ... on example_queryModel { entity_id level } } } }",
       }),
     },
     graphqlFetchSchema as JSONSchemaType<any>
+  );
+
+  // Register actions
+  dreams.registerAction(
+    "READ_CONTRACT",
+    starknetReadAction,
+    {
+      description: "Read data from the Loot Survivor contract, without executing a transaction",
+      example: JSON.stringify({
+        contractAddress: "0x1234567890abcdef",
+        entrypoint: "read",
+        calldata: [1, 2, 3],
+      }),
+    },
+    starknetTransactionSchema as JSONSchemaType<any>
   );
 
   // Subscribe to events

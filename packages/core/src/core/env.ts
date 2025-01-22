@@ -11,6 +11,10 @@ const envSchema = z.object({
   STARKNET_PRIVATE_KEY: z.string(),
   OPENROUTER_API_KEY: z.string(),
   GRAPHQL_URL: z.string(),
+  SOLANA_RPC_URL: z.string(),
+  SOLANA_PRIVATE_KEY: z.string(),
+  JUPITER_API_URL: z.string().default("https://quote-api.jup.ag/v6"),
+  JUPITER_PRICE_API_URL: z.string().default("https://api.jup.ag/price/v2"),
 });
 
 export const env = envSchema.parse(process.env);
