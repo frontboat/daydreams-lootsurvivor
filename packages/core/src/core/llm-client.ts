@@ -1,147 +1,56 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { setTimeout } from "timers/promises";
-import { env } from "./env";
-import { Logger } from "./logger";
-export interface LLMResponse {
-  text: string;
-  model: string;
-  usage?: {
-    prompt_tokens: number;
-    completion_tokens: number;
-    total_tokens: number;
-  };
-  metadata?: Record<string, unknown>;
-}
+import { EventEmitter } from "events";
+import type {
+  AnalysisOptions,
+  LLMClientConfig,
+  LLMResponse,
+  StructuredAnalysis,
+} from "../types";
+import { openrouter } from "@openrouter/ai-sdk-provider";
+import { generateText } from "ai";
 
-export interface LLMClientConfig {
-  provider: "anthropic";
-  model?: string;
-  maxRetries?: number;
-  timeout?: number;
-  temperature?: number;
-  maxTokens?: number;
-  apiKey?: string;
-  baseDelay?: number;
-  maxDelay?: number;
-  minTimeBetweenRequestsMs?: number;
-}
-
-interface AnalysisOptions {
-  system?: string;
-  role?: string;
-  temperature?: number;
-  maxTokens?: number;
-  formatResponse?: boolean;
-}
-
-interface StructuredAnalysis {
-  summary: string;
-  reasoning: string;
-  conclusion: string;
-  confidenceLevel: number;
-  caveats: string[];
-}
-
-export class LLMClient {
-  private anthropic?: Anthropic;
+export class LLMClient extends EventEmitter {
   private readonly config: Required<LLMClientConfig>;
-  private lastRequestTimestamp = 0;
-  private logger: Logger;
-  constructor(config: LLMClientConfig, logger?: Logger) {
-    // If no logger passed, create a default
-    this.logger = logger || new Logger({ level: 3, enableTimestamp: true });
+
+  constructor(config: LLMClientConfig) {
+    super();
+    this.setMaxListeners(50);
+
     this.config = {
-      provider: config.provider,
-      model: config.model || this.getDefaultModel(config.provider),
+      model: config.model || this.getDefaultModel(),
       maxRetries: config.maxRetries || 3,
       timeout: config.timeout || 30000,
       temperature: config.temperature || 0.3,
       maxTokens: config.maxTokens || 1000,
-      apiKey: config.apiKey || this.getApiKeyFromEnv(config.provider),
       baseDelay: config.baseDelay || 1000,
       maxDelay: config.maxDelay || 10000,
-      // Pull from config if set, otherwise from env if not explicitly provided:
-      minTimeBetweenRequestsMs:
-        typeof config.minTimeBetweenRequestsMs === "number"
-          ? config.minTimeBetweenRequestsMs
-          : env.ANTHROPIC_MIN_DELAY_MS, // fallback to env value
     };
 
     this.initializeClient();
   }
 
-  private initializeClient(): void {
-    this.anthropic = new Anthropic({
-      apiKey: this.config.apiKey,
-    });
-  }
-
-  // obfuscate the API key when logging
-  toJSON() {
-    let maskedApiKey = this.config.apiKey.slice(0, 7) + "*".repeat(3);
-
-    return {
-      ...this,
-      config: {
-        ...this.config,
-        apiKey: maskedApiKey,
-      },
-      anthropic: this.anthropic && {
-        ...this.anthropic,
-        apiKey: maskedApiKey,
-        _options: {
-          // @ts-ignore
-          ...this.anthropic._options,
-          apiKey: maskedApiKey,
-        },
-      },
-    };
-  }
-
-  [Symbol.for("nodejs.util.inspect.custom")]() {
-    return this.toJSON();
-  }
+  private initializeClient(): void {}
 
   public async complete(prompt: string): Promise<LLMResponse> {
-    // Enforce a minimum delay between requests if configured
-    await this.enforceMinDelay();
-
     let lastError: Error | null = null;
+
     for (let attempt = 1; attempt <= this.config.maxRetries; attempt++) {
       try {
-        const result = await this.executeCompletion(prompt);
-        this.lastRequestTimestamp = Date.now();
-        return result;
+        return await this.executeCompletion(prompt);
       } catch (error) {
         lastError = error as Error;
-        if (this.shouldRetry(lastError, attempt)) {
+
+        if (this.shouldRetry(error as Error, attempt)) {
           const delay = this.calculateBackoff(attempt);
           await setTimeout(delay);
           continue;
         }
-        throw this.enhanceError(lastError);
-      }
-    }
-    throw this.enhanceError(lastError!);
-  }
 
-  private async enforceMinDelay(): Promise<void> {
-    if (this.config.minTimeBetweenRequestsMs > 0) {
-      const now = Date.now();
-      const elapsed = now - this.lastRequestTimestamp;
-      const remaining = this.config.minTimeBetweenRequestsMs - elapsed;
-      if (remaining > 0) {
-        this.logger.debug(
-          "LLMClient.enforceMinDelay",
-          `Waiting ${remaining} ms to respect minTimeBetweenRequestsMs`,
-          {
-            lastRequestTimestamp: this.lastRequestTimestamp,
-            now,
-          }
-        );
-        await setTimeout(remaining);
+        throw this.enhanceError(error as Error);
       }
     }
+
+    throw this.enhanceError(lastError!);
   }
 
   public getModelName(): string {
@@ -157,57 +66,43 @@ export class LLMClient {
     const controller = new AbortController();
     const timeoutId = globalThis.setTimeout(
       () => controller.abort(),
-      this.config.timeout,
+      this.config.timeout
     );
 
     try {
-      return await this.executeAnthropicCompletion(prompt, controller.signal);
+      return await this.call(prompt, controller.signal);
     } finally {
       clearTimeout(timeoutId);
     }
   }
 
-  private async executeAnthropicCompletion(
+  private async call(
     prompt: string,
     signal: AbortSignal
   ): Promise<LLMResponse> {
-    if (!this.anthropic) throw new Error("Anthropic client not initialized");
-
-    const response = await this.anthropic.messages.create(
-      {
-        model: this.config.model,
-        max_tokens: this.config.maxTokens,
-        temperature: this.config.temperature,
-        messages: [{ role: "user", content: prompt }],
-      },
-      { signal },
-    );
+    const response = await generateText({
+      model: openrouter(this.config.model),
+      prompt,
+      abortSignal: signal,
+    });
 
     return {
-      text: response.content[0].type === "text" ? response.content[0].text : "",
+      text: response.text,
       model: this.config.model,
       usage: {
-        prompt_tokens: response.usage.input_tokens,
-        completion_tokens: response.usage.output_tokens,
-        total_tokens: response.usage.input_tokens +
-          response.usage.output_tokens,
+        prompt_tokens: response.usage.promptTokens,
+        completion_tokens: response.usage.completionTokens,
+        total_tokens:
+          response.usage.promptTokens + response.usage.completionTokens,
       },
       metadata: {
-        stop_reason: response.stop_reason,
+        stop_reason: response.finishReason,
       },
     };
   }
 
-  private getDefaultModel(provider: string): string {
-    return "claude-3-5-haiku-20241022";
-  }
-
-  private getApiKeyFromEnv(provider: string): string {
-    if (provider === "anthropic") {
-      return env.ANTHROPIC_API_KEY;
-    }
-
-    throw new Error(`Unsupported provider: ${provider}`);
+  private getDefaultModel(): string {
+    return "anthropic/claude-3.5-sonnet:beta";
   }
 
   private shouldRetry(error: Error, attempt: number): boolean {
@@ -230,7 +125,7 @@ export class LLMClient {
 
   private enhanceError(error: Error): Error {
     const enhancedError = new Error(
-      `LLM Error (${this.config.provider}): ${error.message}`
+      `LLM Error (${this.config.model}): ${error.message}`
     );
     enhancedError.cause = error;
     return enhancedError;
@@ -241,29 +136,34 @@ export class LLMClient {
     options: AnalysisOptions = {}
   ): Promise<string | StructuredAnalysis> {
     const {
-      system,
       temperature = this.config.temperature,
       maxTokens = this.config.maxTokens,
       formatResponse = false,
     } = options;
 
-    const response = await this.anthropic?.messages.create({
-      model: this.config.model,
-      system: system || "",
+    const response = await generateText({
+      model: openrouter(this.config.model),
+      temperature,
       messages: [
         {
+          role: "system",
+          content: "\n\nProvide response in JSON format.",
+        },
+        {
           role: "user",
-          content: formatResponse
-            ? prompt + "\n\nProvide response in JSON format."
-            : prompt,
+          content: prompt,
         },
       ],
-      temperature,
-      max_tokens: maxTokens,
+      maxTokens,
     });
 
-    const result =
-      response?.content[0]?.type === "text" ? response.content[0].text : "";
+    // Emit token usage metrics
+    this.emit("trace:tokens", {
+      input: response?.usage.promptTokens,
+      output: response?.usage.completionTokens,
+    });
+
+    const result = response?.text;
 
     if (formatResponse && result) {
       try {

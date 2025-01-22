@@ -1,8 +1,11 @@
-import { ChromaClient, OpenAIEmbeddingFunction } from "chromadb";
+import crypto from "crypto"; // Needed for crypto.randomUUID()
+import { ChromaClient, IncludeEnum, OpenAIEmbeddingFunction } from "chromadb";
 import { env } from "./env";
 import { Logger } from "./logger";
 import { Room } from "./room";
 import { LogLevel, type SearchResult } from "../types";
+
+// ======================= INTERFACES & TYPES =======================
 
 export interface VectorDB {
   findSimilar(
@@ -10,27 +13,34 @@ export interface VectorDB {
     limit?: number,
     metadata?: Record<string, any>
   ): Promise<SearchResult[]>;
+
   store(content: string, metadata?: Record<string, any>): Promise<void>;
+
   delete(id: string): Promise<void>;
+
   storeInRoom?(
     content: string,
     roomId: string,
     metadata?: Record<string, any>
   ): Promise<void>;
+
   findSimilarInRoom?(
     content: string,
     roomId: string,
     limit?: number,
     metadata?: Record<string, any>
   ): Promise<SearchResult[]>;
+
   storeSystemMetadata(key: string, value: Record<string, any>): Promise<void>;
   getSystemMetadata(key: string): Promise<Record<string, any> | null>;
+
   storeEpisode(memory: Omit<EpisodicMemory, "id">): Promise<string>;
   findSimilarEpisodes(
     action: string,
     limit?: number
   ): Promise<EpisodicMemory[]>;
   getRecentEpisodes(limit?: number): Promise<EpisodicMemory[]>;
+
   storeDocument(doc: Omit<Documentation, "id">): Promise<string>;
   findSimilarDocuments(query: string, limit?: number): Promise<Documentation[]>;
   searchDocumentsByTag(
@@ -38,22 +48,8 @@ export interface VectorDB {
     limit?: number
   ): Promise<Documentation[]>;
   updateDocument(id: string, updates: Partial<Documentation>): Promise<void>;
-}
 
-interface Cluster {
-  id: string;
-  name: string;
-  description: string;
-  centroid?: number[];
-  topics: string[];
-  documentCount: number;
-  lastUpdated: Date;
-}
-
-interface ClusterMetadata {
-  clusterId: string;
-  confidence: number;
-  topics: string[];
+  purge(): Promise<void>;
 }
 
 export interface EpisodicMemory {
@@ -77,7 +73,60 @@ export interface Documentation {
   relatedIds?: string[];
 }
 
-// Helper function to check if value is valid for Date constructor
+interface Cluster {
+  id: string;
+  name: string;
+  description: string;
+  centroid?: number[];
+  topics: string[];
+  documentCount: number;
+  lastUpdated: Date;
+}
+
+interface ClusterMetadata {
+  clusterId: string;
+  confidence: number;
+  topics: string[];
+}
+
+interface ClusterStats {
+  variance: number;
+  memberCount: number;
+  averageDistance: number;
+}
+
+interface ClusterUpdate {
+  newCentroid?: number[];
+  documentCount: number;
+  topics: string[];
+  variance?: number;
+}
+
+interface DocumentClusterMetadata extends ClusterMetadata {
+  category: string;
+  commonTags: string[];
+}
+
+interface EpisodeClusterMetadata extends ClusterMetadata {
+  commonEmotions: string[];
+  averageImportance: number;
+}
+
+interface HierarchicalCluster extends Cluster {
+  parentId?: string;
+  childIds: string[];
+  level: number;
+  domain: string;
+  subDomain?: string;
+}
+
+interface DomainMetadata {
+  domain: string;
+  subDomain?: string;
+  confidence: number;
+}
+
+// Helper function to check if a value can be used for a Date constructor
 function isValidDateValue(value: unknown): value is string | number | Date {
   return (
     typeof value === "string" ||
@@ -86,18 +135,25 @@ function isValidDateValue(value: unknown): value is string | number | Date {
   );
 }
 
+// ======================= MAIN CLASS =======================
+
 export class ChromaVectorDB implements VectorDB {
-  private client: ChromaClient;
-  private embedder: OpenAIEmbeddingFunction;
-  private logger: Logger;
-  private collectionName: string;
+  // Static collection names
   static readonly CLUSTER_COLLECTION = "clusters";
   static readonly SYSTEM_COLLECTION = "system_metadata";
   static readonly EPISODIC_COLLECTION = "episodic_memory";
   static readonly DOCUMENTATION_COLLECTION = "documentation";
 
+  private client: ChromaClient;
+  private embedder: OpenAIEmbeddingFunction;
+  private logger: Logger;
+  private collectionName: string;
+
+  /**
+   * Constructs a ChromaVectorDB for general "memory" usage.
+   */
   constructor(
-    collectionName: string = "memories",
+    collectionName = "memories",
     config: {
       chromaUrl?: string;
       logLevel?: LogLevel;
@@ -114,14 +170,34 @@ export class ChromaVectorDB implements VectorDB {
       path: config.chromaUrl || "http://localhost:8000",
     });
 
-    this.embedder = new OpenAIEmbeddingFunction({
-      openai_api_key: env.OPENAI_API_KEY,
-      openai_model: "text-embedding-3-small",
+    // Add debug logging for embedder initialization
+    this.logger.debug("ChromaVectorDB.constructor", "Initializing embedder", {
+      apiKey: env.OPENAI_API_KEY ? "present" : "missing",
+      model: "text-embedding-3-small",
     });
+
+    // Initialize embedder with explicit error handling
+    try {
+      this.embedder = new OpenAIEmbeddingFunction({
+        openai_api_key: env.OPENAI_API_KEY,
+        openai_model: "text-embedding-3-small", // Make sure we're using a valid model
+      });
+    } catch (error) {
+      this.logger.error(
+        "ChromaVectorDB.constructor",
+        "Failed to initialize embedder",
+        {
+          error: error instanceof Error ? error.message : String(error),
+        }
+      );
+      throw error;
+    }
   }
 
-  public async getCollection() {
-    return await this.client.getOrCreateCollection({
+  // ======================= COMMON COLLECTIONS =======================
+
+  private async getCollection() {
+    return this.client.getOrCreateCollection({
       name: this.collectionName,
       embeddingFunction: this.embedder,
       metadata: {
@@ -130,9 +206,54 @@ export class ChromaVectorDB implements VectorDB {
     });
   }
 
+  private async getSystemCollection() {
+    return this.client.getOrCreateCollection({
+      name: ChromaVectorDB.SYSTEM_COLLECTION,
+      embeddingFunction: this.embedder,
+      metadata: {
+        description: "System-wide metadata storage",
+      },
+    });
+  }
+
+  private async getEpisodicCollection() {
+    return this.client.getOrCreateCollection({
+      name: ChromaVectorDB.EPISODIC_COLLECTION,
+      embeddingFunction: this.embedder,
+      metadata: {
+        description: "Storage for agent's episodic memories and experiences",
+      },
+    });
+  }
+
+  private async getDocumentationCollection() {
+    return this.client.getOrCreateCollection({
+      name: ChromaVectorDB.DOCUMENTATION_COLLECTION,
+      embeddingFunction: this.embedder,
+      metadata: {
+        description: "Storage for documentation and learned information",
+      },
+    });
+  }
+
+  private async getClusterCollection() {
+    return this.client.getOrCreateCollection({
+      name: ChromaVectorDB.CLUSTER_COLLECTION,
+      embeddingFunction: this.embedder,
+      metadata: {
+        description: "Cluster centroids for hierarchical memory organization",
+      },
+    });
+  }
+
+  // ======================= MAIN API METHODS =======================
+
+  /**
+   * Finds similar items in the main "memories" collection.
+   */
   public async findSimilar(
     content: string,
-    limit: number = 5,
+    limit = 5,
     metadata?: Record<string, any>
   ): Promise<SearchResult[]> {
     try {
@@ -146,14 +267,14 @@ export class ChromaVectorDB implements VectorDB {
       const results = await collection.query({
         queryTexts: [content],
         nResults: limit,
-        where: metadata, // Using 'where' instead of 'whereDocument'
+        where: metadata,
       });
 
       if (!results.ids.length || !results.distances?.length) {
         return [];
       }
 
-      // Format results
+      // Format as SearchResult
       return results.ids[0].map((id: string, index: number) => ({
         id,
         content: results.documents[0][index] || "",
@@ -168,13 +289,16 @@ export class ChromaVectorDB implements VectorDB {
     }
   }
 
+  /**
+   * Stores a piece of content in the main "memories" collection.
+   */
   public async store(
     content: string,
     metadata?: Record<string, any>
   ): Promise<void> {
     try {
       const collection = await this.getCollection();
-      // Use deterministic ID for global memories too
+      // Generate deterministic ID so we don't accidentally store duplicates
       const id = Room.createDeterministicMemoryId("global", content);
 
       this.logger.debug("ChromaVectorDB.store", "Storing content", {
@@ -196,13 +320,14 @@ export class ChromaVectorDB implements VectorDB {
     }
   }
 
+  /**
+   * Deletes an item by ID from the main "memories" collection.
+   */
   public async delete(id: string): Promise<void> {
     try {
-      const collection = await this.getCollection();
       this.logger.debug("ChromaVectorDB.delete", "Deleting content", { id });
-      await collection.delete({
-        ids: [id],
-      });
+      const collection = await this.getCollection();
+      await collection.delete({ ids: [id] });
     } catch (error) {
       this.logger.error("ChromaVectorDB.delete", "Failed to delete content", {
         error: error instanceof Error ? error.message : String(error),
@@ -211,38 +336,15 @@ export class ChromaVectorDB implements VectorDB {
     }
   }
 
-  // Additional utility methods
-  public async count(): Promise<number> {
-    const collection = await this.getCollection();
-    const results = await collection.count();
-    return results;
-  }
+  // ======================= ROOM-SPECIFIC METHODS =======================
 
-  public async clear(): Promise<void> {
-    const collection = await this.getCollection();
-    await collection.delete();
-  }
-
-  public async peek(limit: number = 5): Promise<SearchResult[]> {
-    const collection = await this.getCollection();
-    const results = await collection.peek({ limit });
-    return results.ids.map((id: string, index: number) => {
-      const content = results.documents[index];
-      if (content === null) {
-        throw new Error(`Document content is null for id ${id}`);
-      }
-      return {
-        id,
-        content,
-        similarity: 1,
-        metadata: results.metadatas?.[index] ?? undefined,
-      };
-    });
-  }
-
+  /**
+   * Returns (and creates if necessary) a separate collection for a given room.
+   * Rooms are typically namespaced as `room_<roomId>`.
+   */
   public async getCollectionForRoom(roomId: string) {
     const collectionName = `room_${roomId}`;
-    return await this.client.getOrCreateCollection({
+    return this.client.getOrCreateCollection({
       name: collectionName,
       embeddingFunction: this.embedder,
       metadata: {
@@ -256,79 +358,40 @@ export class ChromaVectorDB implements VectorDB {
     });
   }
 
-  private async getClusterCollection() {
-    return await this.client.getOrCreateCollection({
-      name: ChromaVectorDB.CLUSTER_COLLECTION,
-      embeddingFunction: this.embedder,
-      metadata: {
-        description: "Cluster centroids for hierarchical memory organization",
-      },
-    });
-  }
-
-  private async findOrCreateCluster(
-    content: string,
-    metadata: Record<string, any>
-  ): Promise<ClusterMetadata> {
-    const clusterCollection = await this.getClusterCollection();
-
-    // Find most relevant cluster
-    const results = await clusterCollection.query({
-      queryTexts: [content],
-      nResults: 1,
-    });
-
-    if (results.distances?.[0]?.[0] && results.distances[0][0] < 0.3) {
-      // Use existing cluster if similarity is high
-      const topics = ((results.metadatas?.[0]?.[0]?.topics as string) || "")
-        .split(",")
-        .filter(Boolean);
-
-      return {
-        clusterId: results.ids[0][0],
-        confidence: 1 - (results.distances[0][0] || 0),
-        topics,
-      };
-    }
-
-    // Create new cluster if no good match
-    const clusterId = crypto.randomUUID();
-    const topics = Array.isArray(metadata.topics) ? metadata.topics : [];
-
-    await clusterCollection.add({
-      ids: [clusterId],
-      documents: [content],
-      metadatas: [
-        {
-          topics: topics.join(","),
-          documentCount: 1,
-          lastUpdated: new Date().toISOString(),
-        },
-      ],
-    });
-
-    return {
-      clusterId,
-      confidence: 1,
-      topics,
-    };
-  }
-
+  /**
+   * Stores content in a specific room's memory, also associating it with a cluster ID.
+   */
   public async storeInRoom(
     content: string,
     roomId: string,
-    metadata?: Record<string, any>
+    metadata: Record<string, any> = {}
   ): Promise<void> {
     try {
+      // Add detailed logging
+      this.logger.debug("ChromaVectorDB.storeInRoom", "Storing content", {
+        content,
+        contentType: typeof content,
+        contentLength: content?.length,
+        roomId,
+        metadata,
+      });
+
+      // Ensure content is a non-empty string
+      if (!content || typeof content !== "string") {
+        throw new Error(`Invalid content: ${typeof content}`);
+      }
+
       const collection = await this.getCollectionForRoom(roomId);
       const id = Room.createDeterministicMemoryId(roomId, content);
-      const timestamp = new Date(metadata?.timestamp || Date.now());
+      const timestamp = new Date(metadata.timestamp || Date.now());
 
-      const clusterInfo = await this.findOrCreateCluster(
-        content,
-        metadata || {}
-      );
+      this.logger.debug("ChromaVectorDB.storeInRoom", "Generated ID", {
+        id,
+        roomId,
+        timestamp: timestamp.toISOString(),
+      });
 
+      // Update the room's metadata
       await collection.modify({
         metadata: {
           ...collection.metadata,
@@ -336,7 +399,7 @@ export class ChromaVectorDB implements VectorDB {
         },
       });
 
-      // Store with cluster information, converting arrays to strings
+      // Store the document
       await collection.add({
         ids: [id],
         documents: [content],
@@ -344,93 +407,112 @@ export class ChromaVectorDB implements VectorDB {
           {
             ...metadata,
             roomId,
-            clusterId: clusterInfo.clusterId,
-            clusterConfidence: clusterInfo.confidence,
-            clusterTopics: clusterInfo.topics.join(","),
             timestamp: timestamp.toISOString(),
           },
         ],
       });
 
-      this.logger.debug("ChromaVectorDB.storeInRoom", "Stored content", {
+      this.logger.debug("ChromaVectorDB.storeInRoom", "Successfully stored", {
+        id,
         roomId,
         contentLength: content.length,
-        memoryId: id,
-        clusterId: clusterInfo.clusterId,
-        clusterConfidence: clusterInfo.confidence,
       });
     } catch (error) {
       this.logger.error("ChromaVectorDB.storeInRoom", "Storage failed", {
         error: error instanceof Error ? error.message : String(error),
+        content,
+        contentType: typeof content,
         roomId,
       });
       throw error;
     }
   }
 
+  /**
+   * Finds similar items in a given room's collection. If no cluster match,
+   * falls back to "global" search in that room's collection.
+   */
   public async findSimilarInRoom(
     content: string,
     roomId: string,
-    limit: number = 5,
+    limit = 5,
     metadata?: Record<string, any>
   ): Promise<SearchResult[]> {
     try {
+      // Add detailed logging
+      this.logger.debug(
+        "ChromaVectorDB.findSimilarInRoom",
+        "Input content details",
+        {
+          content,
+          contentType: typeof content,
+          contentLength: content?.length,
+          roomId,
+          metadata,
+        }
+      );
+
+      // Ensure content is a non-empty string
+      if (!content || typeof content !== "string") {
+        this.logger.warn(
+          "ChromaVectorDB.findSimilarInRoom",
+          "Invalid content",
+          {
+            content,
+            contentType: typeof content,
+            roomId,
+          }
+        );
+        return [];
+      }
+
       const collection = await this.getCollectionForRoom(roomId);
-      const clusterInfo = await this.findOrCreateCluster(
-        content,
-        metadata || {}
+
+      this.logger.debug(
+        "ChromaVectorDB.findSimilarInRoom",
+        "Querying collection",
+        {
+          queryText: content,
+          roomId,
+          limit,
+          metadata,
+        }
       );
 
       const results = await collection.query({
         queryTexts: [content],
-        nResults: limit * 2,
-        where: {
-          ...metadata,
-          clusterId: clusterInfo.clusterId,
-        },
+        nResults: limit,
+        where: metadata,
       });
 
-      if (!results.ids.length || !results.distances?.length) {
-        return this.findSimilarInRoomGlobal(content, roomId, limit, metadata);
+      if (!results.ids.length || !results.ids[0]) {
+        return [];
       }
 
-      // Process and rank results with proper timestamp handling
-      const processedResults = results.ids[0].map(
-        (id: string, index: number) => {
-          const metadata = results.metadatas?.[0]?.[index];
-          const timestamp =
-            metadata?.timestamp && isValidDateValue(metadata.timestamp)
-              ? new Date(metadata.timestamp)
-              : new Date();
-
-          return {
-            id,
-            content: results.documents[0][index] || "",
-            similarity: 1 - (results.distances?.[0]?.[index] || 0),
-            metadata: {
-              ...metadata,
-              timestamp: timestamp.toISOString(),
-            },
-          };
-        }
-      );
-
-      return processedResults
-        .sort((a, b) => b.similarity - a.similarity)
-        .slice(0, limit);
+      return results.ids[0].map((id: string, idx: number) => ({
+        id,
+        content: results.documents[0][idx] || "",
+        similarity: 1 - (results.distances?.[0]?.[idx] || 0),
+        metadata: results.metadatas?.[0]?.[idx] || undefined,
+      }));
     } catch (error) {
       this.logger.error("ChromaVectorDB.findSimilarInRoom", "Search failed", {
         error: error instanceof Error ? error.message : String(error),
+        content,
+        contentType: typeof content,
         roomId,
       });
       return [];
     }
   }
 
+  /**
+   * Fallback search for a room: no cluster restriction, just raw similarity.
+   */
   private async findSimilarInRoomGlobal(
     content: string,
     roomId: string,
-    limit: number = 5,
+    limit = 5,
     metadata?: Record<string, any>
   ): Promise<SearchResult[]> {
     const collection = await this.getCollectionForRoom(roomId);
@@ -445,36 +527,52 @@ export class ChromaVectorDB implements VectorDB {
     }
 
     return results.ids[0].map((id: string, index: number) => {
-      const metadata = results.metadatas?.[0]?.[index];
+      const meta = results.metadatas?.[0]?.[index] || {};
+      const dist = results.distances?.[0]?.[index] || 0;
+
+      const timestampStr = meta.timestamp;
       const timestamp =
-        metadata?.timestamp && isValidDateValue(metadata.timestamp)
-          ? new Date(metadata.timestamp)
+        timestampStr && isValidDateValue(timestampStr)
+          ? new Date(timestampStr)
           : new Date();
 
       return {
         id,
         content: results.documents[0][index] || "",
-        similarity: 1 - (results.distances?.[0]?.[index] || 0),
+        similarity: 1 - dist,
         metadata: {
-          ...metadata,
+          ...meta,
           timestamp: timestamp.toISOString(),
         },
       };
     });
   }
 
+  /**
+   * Lists the known "room_..." collections.
+   */
   public async listRooms(): Promise<string[]> {
     const collections = await this.client.listCollections();
+
+    // If .listCollections() returns an array of objects that contain `name`,
+    // you may need to adapt the .filter / .map
     return collections
-      .filter((c: any) => c.startsWith("room_"))
-      .map((c: any) => c.replace("room_", ""));
+      .map((c) => c)
+      .filter((name: string) => name.startsWith("room_"))
+      .map((name: string) => name.replace("room_", ""));
   }
 
+  /**
+   * Gets the memory count for a specific room.
+   */
   public async getRoomMemoryCount(roomId: string): Promise<number> {
     const collection = await this.getCollectionForRoom(roomId);
-    return await collection.count();
+    return collection.count();
   }
 
+  /**
+   * Deletes an entire room's collection.
+   */
   public async deleteRoom(roomId: string): Promise<void> {
     try {
       await this.client.deleteCollection({ name: `room_${roomId}` });
@@ -488,24 +586,451 @@ export class ChromaVectorDB implements VectorDB {
     }
   }
 
-  private async getSystemCollection() {
-    return await this.client.getOrCreateCollection({
-      name: ChromaVectorDB.SYSTEM_COLLECTION,
-      embeddingFunction: this.embedder,
-      metadata: {
-        description: "System-wide metadata storage",
-      },
+  // ======================= CLUSTERING LOGIC =======================
+
+  /**
+   * Updates cluster statistics and potentially splits clusters that have grown too large or diverse
+   */
+  private async updateClusterStats(
+    clusterId: string,
+    content: string
+  ): Promise<ClusterStats> {
+    const clusterColl = await this.getClusterCollection();
+
+    // Get all documents in this cluster
+    const results = await clusterColl.get({
+      ids: [clusterId],
+      include: ["embeddings", "metadatas"] as IncludeEnum[],
+    });
+
+    if (!results.embeddings?.[0]) {
+      throw new Error(`No embeddings found for cluster ${clusterId}`);
+    }
+
+    const centroid = results.embeddings[0];
+    const memberEmbeddings = await this.embedder.generate([content]);
+
+    // Calculate variance and average distance from centroid
+    let totalDistance = 0;
+    let maxDistance = 0;
+
+    const distances = memberEmbeddings.map((embedding) => {
+      const distance = this.calculateCosineSimilarity(embedding, centroid);
+      totalDistance += distance;
+      maxDistance = Math.max(maxDistance, distance);
+      return distance;
+    });
+
+    const averageDistance = totalDistance / memberEmbeddings.length;
+    const variance =
+      distances.reduce(
+        (sum, dist) => sum + Math.pow(dist - averageDistance, 2),
+        0
+      ) / distances.length;
+
+    return {
+      variance,
+      memberCount: memberEmbeddings.length,
+      averageDistance,
+    };
+  }
+
+  /**
+   * Updates a cluster's centroid and metadata based on new content
+   */
+  private async updateClusterCentroid(
+    clusterId: string,
+    content: string,
+    metadata: Record<string, any>
+  ): Promise<void> {
+    const clusterColl = await this.getClusterCollection();
+
+    // Get current cluster data
+    const cluster = await clusterColl.get({
+      ids: [clusterId],
+      include: ["embeddings", "metadatas"] as IncludeEnum[],
+    });
+
+    if (!cluster.embeddings?.[0] || !cluster.metadatas?.[0]) {
+      throw new Error(`Invalid cluster data for ${clusterId}`);
+    }
+
+    const currentMeta = cluster.metadatas[0];
+    const currentEmbedding = cluster.embeddings[0];
+
+    // Generate embedding for new content
+    const newEmbedding = (await this.embedder.generate([content]))[0];
+
+    // Calculate new centroid as weighted average
+    const documentCount = Number(currentMeta.documentCount || 1) + 1;
+    const weight = 1 / documentCount;
+
+    const newCentroid = currentEmbedding.map(
+      (val: number, idx: number) =>
+        val * (1 - weight) + newEmbedding[idx] * weight
+    );
+
+    // Merge topics
+    const currentTopics = String(currentMeta.topics || "")
+      .split(",")
+      .filter(Boolean);
+    const newTopics = Array.isArray(metadata.topics) ? metadata.topics : [];
+    const uniqueTopics = [...new Set([...currentTopics, ...newTopics])];
+
+    const update: ClusterUpdate = {
+      newCentroid,
+      documentCount,
+      topics: uniqueTopics,
+    };
+
+    // Update the cluster
+    await clusterColl.update({
+      ids: [clusterId],
+      embeddings: [newCentroid],
+      metadatas: [
+        {
+          ...currentMeta,
+          documentCount: update.documentCount,
+          topics: update.topics.join(","),
+          lastUpdated: new Date().toISOString(),
+        },
+      ],
     });
   }
 
+  /**
+   * Splits a cluster into two if it's too large or diverse
+   */
+  private async splitCluster(
+    clusterId: string,
+    stats: ClusterStats
+  ): Promise<string[]> {
+    // Only split if cluster is large enough and has high variance
+    if (stats.memberCount < 50 || stats.variance < 0.3) {
+      return [clusterId];
+    }
+
+    const clusterColl = await this.getClusterCollection();
+
+    // Get all documents in this cluster
+    const results = await clusterColl.get({
+      ids: [clusterId],
+    });
+
+    // Create two new clusters
+    const newClusterIds = [crypto.randomUUID(), crypto.randomUUID()];
+
+    // For now, just split the existing documents roughly in half
+    // In a more sophisticated implementation, you might use k-means here
+    const midpoint = Math.floor(results.documents.length / 2);
+
+    for (let i = 0; i < 2; i++) {
+      const start = i * midpoint;
+      const end = i === 0 ? midpoint : results.documents.length;
+
+      const docs = results.documents.slice(start, end);
+      const metas = results.metadatas?.slice(start, end);
+
+      if (docs.length > 0) {
+        await clusterColl.add({
+          ids: [newClusterIds[i]],
+          documents: docs.filter((doc): doc is string => doc !== null),
+          metadatas: metas?.map((meta) => ({
+            ...meta,
+            parentClusterId: clusterId,
+            splitTimestamp: new Date().toISOString(),
+          })),
+        });
+      }
+    }
+
+    // Delete the original cluster
+    await clusterColl.delete({ ids: [clusterId] });
+
+    return newClusterIds;
+  }
+
+  /**
+   * Identifies the domain and subdomain for a piece of content
+   */
+  private async identifyDomain(
+    content: string,
+    metadata?: Record<string, any>
+  ): Promise<DomainMetadata> {
+    const clusterColl = await this.getClusterCollection();
+
+    // First try to match against top-level domain clusters
+    const topResults = await clusterColl.query({
+      queryTexts: [content],
+      nResults: 1,
+      where: { level: 1 }, // Top level clusters
+    });
+
+    const bestDist = topResults.distances?.[0]?.[0];
+    if (bestDist && bestDist < 0.3) {
+      const meta = topResults.metadatas?.[0]?.[0];
+      return {
+        domain: String(meta?.domain || "general"),
+        subDomain: String(meta?.subDomain || ""),
+        confidence: 1 - bestDist,
+      };
+    }
+
+    // If no good match, try to infer from metadata
+    if (metadata?.type === "documentation") {
+      return {
+        domain: "knowledge_base",
+        subDomain: metadata.category,
+        confidence: 1,
+      };
+    }
+
+    if (metadata?.type === "episode") {
+      return {
+        domain: "experiences",
+        subDomain: metadata.context?.domain,
+        confidence: 0.8,
+      };
+    }
+
+    // Default fallback
+    return {
+      domain: "general",
+      confidence: 0.5,
+    };
+  }
+
+  /**
+   * Creates or updates hierarchical clusters for a domain
+   */
+  private async maintainHierarchicalClusters(
+    content: string,
+    domainInfo: DomainMetadata
+  ): Promise<{ topClusterId: string; subClusterId?: string }> {
+    const clusterColl = await this.getClusterCollection();
+
+    // Find or create top-level domain cluster
+    let topCluster = await clusterColl.query({
+      queryTexts: [""],
+      nResults: 1,
+      where: {
+        $and: [{ level: { $eq: 1 } }, { domain: { $eq: domainInfo.domain } }],
+      },
+    });
+
+    let topClusterId: string;
+
+    if (!topCluster.ids.length) {
+      // Create new top-level cluster
+      topClusterId = crypto.randomUUID();
+      await clusterColl.add({
+        ids: [topClusterId],
+        documents: [content],
+        metadatas: [
+          {
+            type: "hierarchical_cluster",
+            level: 1,
+            domain: domainInfo.domain,
+            childIds: "",
+            documentCount: 1,
+            lastUpdated: new Date().toISOString(),
+          },
+        ],
+      });
+    } else {
+      topClusterId = topCluster.ids[0][0];
+      await this.updateClusterCentroid(topClusterId, content, {
+        type: "hierarchical_cluster",
+        level: 1,
+        domain: domainInfo.domain,
+      });
+    }
+
+    // If we have a subdomain, handle sub-clustering
+    if (domainInfo.subDomain) {
+      // Find or create subdomain cluster
+      let subCluster = await clusterColl.query({
+        queryTexts: [content],
+        nResults: 1,
+        where: {
+          level: 2,
+          domain: domainInfo.domain,
+          subDomain: domainInfo.subDomain,
+          parentId: topClusterId,
+        },
+      });
+
+      if (!subCluster.ids.length) {
+        // Create new sub-cluster
+        const subClusterId = crypto.randomUUID();
+        await clusterColl.add({
+          ids: [subClusterId],
+          documents: [content],
+          metadatas: [
+            {
+              type: "hierarchical_cluster",
+              level: 2,
+              domain: domainInfo.domain,
+              subDomain: domainInfo.subDomain,
+              parentId: topClusterId,
+              childIds: "",
+              documentCount: 1,
+              lastUpdated: new Date().toISOString(),
+            },
+          ],
+        });
+
+        // Update parent's childIds
+        const parent = await clusterColl.get({ ids: [topClusterId] });
+        const currentChildIds = String(parent.metadatas?.[0]?.childIds || "")
+          .split(",")
+          .filter(Boolean);
+
+        await clusterColl.update({
+          ids: [topClusterId],
+          metadatas: [
+            {
+              ...parent.metadatas?.[0],
+              childIds: [...currentChildIds, subClusterId].join(","),
+            },
+          ],
+        });
+
+        return { topClusterId, subClusterId };
+      } else {
+        const subClusterId = subCluster.ids[0][0];
+        await this.updateClusterCentroid(subClusterId, content, {
+          type: "hierarchical_cluster",
+          level: 2,
+          domain: domainInfo.domain,
+          subDomain: domainInfo.subDomain,
+          parentId: topClusterId,
+        });
+        return { topClusterId, subClusterId };
+      }
+    }
+
+    return { topClusterId };
+  }
+
+  /**
+   * Finds the best cluster match for a piece of content or creates a new cluster if no match is found.
+   */
+  private async findOrCreateCluster(
+    content: string,
+    metadata: Record<string, any>
+  ): Promise<ClusterMetadata> {
+    // First identify the domain
+    const domainInfo = await this.identifyDomain(content, metadata);
+
+    // Maintain hierarchical structure
+    const { topClusterId, subClusterId } =
+      await this.maintainHierarchicalClusters(content, domainInfo);
+
+    // Now find or create a content-specific cluster within the hierarchy
+    const clusterColl = await this.getClusterCollection();
+    const results = await clusterColl.query({
+      queryTexts: [content],
+      nResults: 1,
+      where: {
+        type: "content_cluster",
+        parentId: subClusterId || topClusterId,
+      },
+    });
+
+    const bestDist = results.distances?.[0]?.[0];
+    if (bestDist && bestDist < 0.3) {
+      const bestId = results.ids[0][0];
+      const meta = results.metadatas?.[0]?.[0];
+
+      // Update cluster statistics
+      const stats = await this.updateClusterStats(bestId, content);
+
+      // Handle potential split of content cluster
+      if (stats.memberCount >= 50 && stats.variance >= 0.3) {
+        const newClusterIds = await this.splitCluster(bestId, stats);
+        const newResults = await clusterColl.query({
+          queryTexts: [content],
+          nResults: 1,
+          where: { id: { $in: newClusterIds } },
+        });
+
+        if (newResults.ids[0]?.[0]) {
+          await this.updateClusterCentroid(newResults.ids[0][0], content, {
+            ...metadata,
+            type: "content_cluster",
+            parentId: subClusterId || topClusterId,
+            domain: domainInfo.domain,
+            subDomain: domainInfo.subDomain,
+          });
+
+          return {
+            clusterId: newResults.ids[0][0],
+            confidence: 1 - (newResults.distances?.[0]?.[0] || 0),
+            topics: String(newResults.metadatas?.[0]?.[0]?.topics || "").split(
+              ","
+            ),
+          };
+        }
+      }
+
+      // Update existing cluster
+      await this.updateClusterCentroid(bestId, content, {
+        ...metadata,
+        type: "content_cluster",
+        parentId: subClusterId || topClusterId,
+        domain: domainInfo.domain,
+        subDomain: domainInfo.subDomain,
+      });
+
+      return {
+        clusterId: bestId,
+        confidence: 1 - bestDist,
+        topics: typeof meta?.topics === "string" ? meta.topics.split(",") : [],
+      };
+    }
+
+    // Create new content cluster
+    const clusterId = crypto.randomUUID();
+    await clusterColl.add({
+      ids: [clusterId],
+      documents: [content],
+      metadatas: [
+        {
+          ...metadata,
+          type: "content_cluster",
+          parentId: subClusterId || topClusterId,
+          domain: domainInfo.domain,
+          subDomain: domainInfo.subDomain || "",
+          topics: Array.isArray(metadata.topics)
+            ? metadata.topics.join(",")
+            : "",
+          documentCount: 1,
+          lastUpdated: new Date().toISOString(),
+        },
+      ],
+    });
+
+    return {
+      clusterId,
+      confidence: 1,
+      topics: Array.isArray(metadata.topics) ? metadata.topics : [],
+    };
+  }
+
+  // ======================= SYSTEM-WIDE METADATA =======================
+
+  /**
+   * Stores arbitrary metadata in the "system_metadata" collection.
+   */
   public async storeSystemMetadata(
     key: string,
     value: Record<string, any>
   ): Promise<void> {
-    const collection = await this.getSystemCollection();
+    const coll = await this.getSystemCollection();
     const id = `metadata_${key}`;
 
-    await collection.upsert({
+    await coll.upsert({
       ids: [id],
       documents: [JSON.stringify(value)],
       metadatas: [
@@ -518,16 +1043,15 @@ export class ChromaVectorDB implements VectorDB {
     });
   }
 
+  /**
+   * Retrieves system metadata by key.
+   */
   public async getSystemMetadata(
     key: string
   ): Promise<Record<string, any> | null> {
-    const collection = await this.getSystemCollection();
-
+    const coll = await this.getSystemCollection();
     try {
-      const result = await collection.get({
-        ids: [`metadata_${key}`],
-      });
-
+      const result = await coll.get({ ids: [`metadata_${key}`] });
       if (result.metadatas?.[0]) {
         return result.metadatas[0];
       }
@@ -541,38 +1065,25 @@ export class ChromaVectorDB implements VectorDB {
         }
       );
     }
-
     return null;
   }
 
-  private async getEpisodicCollection() {
-    return await this.client.getOrCreateCollection({
-      name: ChromaVectorDB.EPISODIC_COLLECTION,
-      embeddingFunction: this.embedder,
-      metadata: {
-        description: "Storage for agent's episodic memories and experiences",
-      },
-    });
-  }
+  // ======================= EPISODIC MEMORY =======================
 
-  private async getDocumentationCollection() {
-    return await this.client.getOrCreateCollection({
-      name: ChromaVectorDB.DOCUMENTATION_COLLECTION,
-      embeddingFunction: this.embedder,
-      metadata: {
-        description: "Storage for documentation and learned information",
-      },
-    });
-  }
-
+  /**
+   * Stores an episodic memory (action + outcome + context).
+   */
   public async storeEpisode(
     memory: Omit<EpisodicMemory, "id">
   ): Promise<string> {
-    const collection = await this.getEpisodicCollection();
+    const coll = await this.getEpisodicCollection();
     const id = crypto.randomUUID();
-    const content = `Action: ${memory.action}\nOutcome: ${memory.outcome}`;
 
-    await collection.add({
+    // Find or create appropriate cluster
+    const clusterInfo = await this.findOrCreateEpisodeCluster(memory);
+
+    const content = `Action: ${memory.action}\nOutcome: ${memory.outcome}`;
+    await coll.add({
       ids: [id],
       documents: [content],
       metadatas: [
@@ -582,6 +1093,11 @@ export class ChromaVectorDB implements VectorDB {
           emotions: memory.emotions?.join(",") || "",
           timestamp: memory.timestamp.toISOString(),
           type: "episode",
+          clusterId: clusterInfo.clusterId,
+          clusterConfidence: clusterInfo.confidence,
+          clusterTopics: clusterInfo.topics.join(","),
+          clusterEmotions: clusterInfo.commonEmotions.join(","),
+          clusterImportance: clusterInfo.averageImportance,
         },
       ],
     });
@@ -589,54 +1105,270 @@ export class ChromaVectorDB implements VectorDB {
     return id;
   }
 
+  /**
+   * Finds similar episodes by matching the "action" field.
+   */
   public async findSimilarEpisodes(
     action: string,
-    limit: number = 5
+    limit = 5
   ): Promise<EpisodicMemory[]> {
-    const collection = await this.getEpisodicCollection();
-    const results = await collection.query({
+    const coll = await this.getEpisodicCollection();
+    const results = await coll.query({
       queryTexts: [action],
       nResults: limit,
       where: { type: "episode" },
     });
 
-    return results.ids[0].map((id: string, index: number) => ({
-      id,
-      action: String(results.metadatas[0][index]?.action),
-      outcome: String(results.metadatas[0][index]?.outcome),
-      context: results.metadatas[0][index]?.context
-        ? JSON.parse(results.metadatas[0][index].context as string)
-        : undefined,
-      emotions:
-        (results.metadatas[0][index]?.emotions as string)?.split(",") || [],
-      timestamp: new Date(String(results.metadatas[0][index]?.timestamp)),
-    }));
+    if (!results.ids[0]) return [];
+
+    return results.ids[0].map((id: string, idx: number) => {
+      const meta = results.metadatas[0][idx];
+      return {
+        id,
+        action: String(meta?.action),
+        outcome: String(meta?.outcome),
+        context: meta?.context ? JSON.parse(String(meta.context)) : undefined,
+        emotions: String(meta?.emotions || "").split(","),
+        timestamp: new Date(String(meta?.timestamp)),
+      };
+    });
   }
 
-  public async getRecentEpisodes(
-    limit: number = 10
-  ): Promise<EpisodicMemory[]> {
-    const collection = await this.getEpisodicCollection();
-    const results = await collection.peek({ limit });
-
-    return results.ids.map((id: string, index: number) => ({
-      id,
-      action: String(results.metadatas[index]?.action),
-      outcome: String(results.metadatas[index]?.outcome),
-      context: results.metadatas[index]?.context
-        ? JSON.parse(results.metadatas[index].context as string)
-        : undefined,
-      emotions:
-        (results.metadatas[index]?.emotions as string)?.split(",") || [],
-      timestamp: new Date(String(results.metadatas[index]?.timestamp)),
-    }));
+  /**
+   * Retrieves the most recent episodic memories (peeking at the underlying collection).
+   */
+  public async getRecentEpisodes(limit = 10): Promise<EpisodicMemory[]> {
+    const coll = await this.getEpisodicCollection();
+    const results = await coll.peek({ limit });
+    return results.ids.map((id: string, idx: number) => {
+      const meta = results.metadatas[idx];
+      return {
+        id,
+        action: String(meta?.action),
+        outcome: String(meta?.outcome),
+        context: meta?.context ? JSON.parse(String(meta.context)) : undefined,
+        emotions: String(meta?.emotions || "").split(","),
+        timestamp: new Date(String(meta?.timestamp)),
+      };
+    });
   }
 
+  // ======================= DOCUMENTATION (LONG-TERM KNOWLEDGE) =======================
+
+  /**
+   * Finds or creates a cluster for a documentation record
+   */
+  private async findOrCreateDocumentCluster(
+    doc: Omit<Documentation, "id">
+  ): Promise<DocumentClusterMetadata> {
+    const clusterColl = await this.getClusterCollection();
+
+    // Try to find most relevant cluster with matching category
+    const results = await clusterColl.query({
+      queryTexts: [doc.content],
+      nResults: 1,
+      where: {
+        $and: [
+          { type: { $eq: "documentation_cluster" } },
+          { category: { $eq: doc.category } },
+        ],
+      },
+    });
+
+    const bestDist = results.distances?.[0]?.[0];
+    if (bestDist && bestDist < 0.3) {
+      const bestId = results.ids[0][0];
+      const meta = results.metadatas?.[0]?.[0];
+
+      // Update cluster statistics
+      const stats = await this.updateClusterStats(bestId, doc.content);
+
+      // Handle potential cluster split
+      if (stats.memberCount >= 50 && stats.variance >= 0.3) {
+        const newClusterIds = await this.splitCluster(bestId, stats);
+        const newResults = await clusterColl.query({
+          queryTexts: [doc.content],
+          nResults: 1,
+          where: { id: { $in: newClusterIds } },
+        });
+
+        if (newResults.ids[0]?.[0]) {
+          await this.updateClusterCentroid(newResults.ids[0][0], doc.content, {
+            type: "documentation_cluster",
+            category: doc.category,
+            tags: doc.tags,
+          });
+
+          return {
+            clusterId: newResults.ids[0][0],
+            confidence: 1 - (newResults.distances?.[0]?.[0] || 0),
+            topics: String(newResults.metadatas?.[0]?.[0]?.topics || "").split(
+              ","
+            ),
+            category: doc.category,
+            commonTags: doc.tags,
+          };
+        }
+      }
+
+      // Update existing cluster
+      await this.updateClusterCentroid(bestId, doc.content, {
+        type: "documentation_cluster",
+        category: doc.category,
+        tags: doc.tags,
+      });
+
+      return {
+        clusterId: bestId,
+        confidence: 1 - bestDist,
+        topics: typeof meta?.topics === "string" ? meta.topics.split(",") : [],
+        category: doc.category,
+        commonTags: doc.tags,
+      };
+    }
+
+    // Create new cluster
+    const clusterId = crypto.randomUUID();
+    await clusterColl.add({
+      ids: [clusterId],
+      documents: [doc.content],
+      metadatas: [
+        {
+          type: "documentation_cluster",
+          category: doc.category,
+          topics: doc.tags.join(","),
+          commonTags: doc.tags.join(","),
+          documentCount: 1,
+          lastUpdated: new Date().toISOString(),
+        },
+      ],
+    });
+
+    return {
+      clusterId,
+      confidence: 1,
+      topics: doc.tags,
+      category: doc.category,
+      commonTags: doc.tags,
+    };
+  }
+
+  /**
+   * Finds or creates a cluster for an episodic memory
+   */
+  private async findOrCreateEpisodeCluster(
+    memory: Omit<EpisodicMemory, "id">
+  ): Promise<EpisodeClusterMetadata> {
+    const clusterColl = await this.getClusterCollection();
+
+    // Try to find most relevant cluster
+    const results = await clusterColl.query({
+      queryTexts: [`${memory.action}\n${memory.outcome}`],
+      nResults: 1,
+      where: {
+        type: { $eq: "episode_cluster" },
+      },
+    });
+
+    const bestDist = results.distances?.[0]?.[0];
+    if (bestDist && bestDist < 0.3) {
+      const bestId = results.ids[0][0];
+      const meta = results.metadatas?.[0]?.[0];
+
+      // Update cluster statistics
+      const stats = await this.updateClusterStats(
+        bestId,
+        `${memory.action}\n${memory.outcome}`
+      );
+
+      // Handle potential cluster split
+      if (stats.memberCount >= 50 && stats.variance >= 0.3) {
+        const newClusterIds = await this.splitCluster(bestId, stats);
+        const newResults = await clusterColl.query({
+          queryTexts: [`${memory.action}\n${memory.outcome}`],
+          nResults: 1,
+          where: { id: { $in: newClusterIds } },
+        });
+
+        if (newResults.ids[0]?.[0]) {
+          const newMeta = newResults.metadatas?.[0]?.[0];
+          await this.updateClusterCentroid(
+            newResults.ids[0][0],
+            `${memory.action}\n${memory.outcome}`,
+            {
+              type: "episode_cluster",
+              emotions: memory.emotions,
+              importance: memory.importance,
+            }
+          );
+
+          return {
+            clusterId: newResults.ids[0][0],
+            confidence: 1 - (newResults.distances?.[0]?.[0] || 0),
+            topics: String(newMeta?.topics || "").split(","),
+            commonEmotions: memory.emotions || [],
+            averageImportance: memory.importance || 0,
+          };
+        }
+      }
+
+      // Update existing cluster
+      await this.updateClusterCentroid(
+        bestId,
+        `${memory.action}\n${memory.outcome}`,
+        {
+          type: "episode_cluster",
+          emotions: memory.emotions,
+          importance: memory.importance,
+        }
+      );
+
+      return {
+        clusterId: bestId,
+        confidence: 1 - bestDist,
+        topics: typeof meta?.topics === "string" ? meta.topics.split(",") : [],
+        commonEmotions: memory.emotions || [],
+        averageImportance: memory.importance || 0,
+      };
+    }
+
+    // Create new cluster
+    const clusterId = crypto.randomUUID();
+    await clusterColl.add({
+      ids: [clusterId],
+      documents: [`${memory.action}\n${memory.outcome}`],
+      metadatas: [
+        {
+          type: "episode_cluster",
+          topics: "",
+          commonEmotions: memory.emotions?.join(",") || "",
+          averageImportance: memory.importance || 0,
+          documentCount: 1,
+          lastUpdated: new Date().toISOString(),
+        },
+      ],
+    });
+
+    return {
+      clusterId,
+      confidence: 1,
+      topics: [],
+      commonEmotions: memory.emotions || [],
+      averageImportance: memory.importance || 0,
+    };
+  }
+
+  /**
+   * Stores a documentation record (knowledge resource).
+   */
   public async storeDocument(doc: Omit<Documentation, "id">): Promise<string> {
-    const collection = await this.getDocumentationCollection();
+    const coll = await this.getDocumentationCollection();
     const id = crypto.randomUUID();
 
-    await collection.add({
+    // Find or create appropriate cluster
+    const clusterInfo = await this.findOrCreateDocumentCluster(doc);
+
+    await coll.add({
       ids: [id],
       documents: [doc.content],
       metadatas: [
@@ -648,6 +1380,11 @@ export class ChromaVectorDB implements VectorDB {
           source: doc.source || "",
           relatedIds: doc.relatedIds?.join(",") || "",
           type: "documentation",
+          clusterId: clusterInfo.clusterId,
+          clusterConfidence: clusterInfo.confidence,
+          clusterTopics: clusterInfo.topics.join(","),
+          clusterCategory: clusterInfo.category,
+          clusterCommonTags: clusterInfo.commonTags.join(","),
         },
       ],
     });
@@ -655,82 +1392,238 @@ export class ChromaVectorDB implements VectorDB {
     return id;
   }
 
+  /**
+   * Finds similar documentation records by matching the user query text.
+   */
   public async findSimilarDocuments(
     query: string,
-    limit: number = 5
+    limit = 5
   ): Promise<Documentation[]> {
-    const collection = await this.getDocumentationCollection();
-    const results = await collection.query({
+    const coll = await this.getDocumentationCollection();
+    const results = await coll.query({
       queryTexts: [query],
       nResults: limit,
-      where: { type: "documentation" },
+      where: {
+        type: { $eq: "documentation" },
+      },
     });
 
-    return results.ids[0].map((id: string, index: number) => ({
-      id,
-      title: String(results.metadatas[0][index]?.title),
-      category: String(results.metadatas[0][index]?.category),
-      content: results.documents[0][index] || "",
-      tags: (results.metadatas[0][index]?.tags as string)?.split(",") || [],
-      lastUpdated: new Date(String(results.metadatas[0][index]?.lastUpdated)),
-      relatedIds:
-        (results.metadatas[0][index]?.relatedIds as string)?.split(",") || [],
-    }));
+    if (!results.ids.length || !results.ids[0]) {
+      return [];
+    }
+
+    return results.ids[0].map((id: string, idx: number) => {
+      const meta = results.metadatas[0][idx];
+      return {
+        id,
+        title: String(meta?.title),
+        category: String(meta?.category),
+        content: results.documents[0][idx] || "",
+        tags: String(meta?.tags || "").split(","),
+        lastUpdated: new Date(String(meta?.lastUpdated)),
+        relatedIds: String(meta?.relatedIds || "").split(","),
+      };
+    });
   }
 
+  /**
+   * Searches documents by exact match on tags (joined by commas).
+   */
   public async searchDocumentsByTag(
     tags: string[],
-    limit: number = 5
+    limit = 5
   ): Promise<Documentation[]> {
-    const collection = await this.getDocumentationCollection();
-    const results = await collection.get({
-      where: {
-        type: "documentation",
-        tags: { $eq: tags.join(",") },
-      },
-      limit,
-    });
+    const coll = await this.getDocumentationCollection();
 
-    return results.ids.map((id: string, index: number) => ({
-      id,
-      content: results.documents[index] || "",
-      title: String(results.metadatas[index]?.title),
-      category: String(results.metadatas[index]?.category),
-      tags: (results.metadatas[index]?.tags as string)?.split(",") || [],
-      lastUpdated: new Date(String(results.metadatas[index]?.lastUpdated)),
-      relatedIds:
-        (results.metadatas[index]?.relatedIds as string)?.split(",") || [],
-    }));
+    let results: any;
+    try {
+      results = await coll.get({
+        where: {
+          $and: [
+            { type: { $eq: "documentation" } },
+            { tags: { $eq: tags.join(",") } },
+          ],
+        },
+        limit,
+      });
+    } catch (error) {
+      this.logger.error(
+        "ChromaVectorDB.searchDocumentsByTag",
+        "Failed to search by tag",
+        {
+          error: error instanceof Error ? error.message : String(error),
+          tags,
+        }
+      );
+      throw error;
+    }
+
+    if (!results.ids?.length) return [];
+
+    return results.ids.map((id: string, idx: number) => {
+      const meta = results.metadatas[idx];
+      return {
+        id,
+        content: results.documents[idx] || "",
+        title: String(meta.title),
+        category: String(meta.category),
+        tags: String(meta.tags || "").split(","),
+        lastUpdated: new Date(String(meta.lastUpdated)),
+        relatedIds: String(meta.relatedIds || "").split(","),
+      };
+    });
   }
 
+  /**
+   * Updates an existing documentation record by ID.
+   */
   public async updateDocument(
     id: string,
     updates: Partial<Documentation>
   ): Promise<void> {
-    const collection = await this.getDocumentationCollection();
-    const existing = await collection.get({ ids: [id] });
+    const coll = await this.getDocumentationCollection();
+    const existing = await coll.get({ ids: [id] });
 
     if (!existing.ids.length) {
       throw new Error(`Document with id ${id} not found`);
     }
 
-    const currentMetadata = existing.metadatas[0];
+    const current = existing.metadatas[0];
     const updatedMetadata = {
-      ...currentMetadata,
-      title: updates.title || currentMetadata?.title || "",
-      category: updates.category || currentMetadata?.category || "",
-      source: updates.source || currentMetadata?.source || "",
+      ...current,
+      title: updates.title || current?.title || "",
+      category: updates.category || current?.category || "",
+      source: updates.source || current?.source || "",
       lastUpdated: new Date().toISOString(),
-      tags: updates.tags?.join(",") ?? currentMetadata?.tags ?? "",
-      relatedIds:
-        updates.relatedIds?.join(",") ?? currentMetadata?.relatedIds ?? "",
-      type: currentMetadata?.type || "documentation",
+      tags: updates.tags ? updates.tags.join(",") : current?.tags ?? "",
+      relatedIds: updates.relatedIds
+        ? updates.relatedIds.join(",")
+        : current?.relatedIds ?? "",
+      type: current?.type || "documentation",
     };
 
-    await collection.update({
+    await coll.update({
       ids: [id],
       documents: updates.content ? [updates.content] : undefined,
       metadatas: [updatedMetadata],
     });
+  }
+
+  // ======================= EXTRA UTILITY =======================
+
+  /**
+   * Returns the total count of items in the main collection.
+   */
+  public async count(): Promise<number> {
+    const coll = await this.getCollection();
+    return coll.count();
+  }
+
+  /**
+   * Clears all items from the main collection.
+   */
+  public async clear(): Promise<void> {
+    const coll = await this.getCollection();
+    await coll.delete();
+  }
+
+  /**
+   * Retrieves the first N items from the main collection (for debugging).
+   */
+  public async peek(limit = 5): Promise<SearchResult[]> {
+    const coll = await this.getCollection();
+    const results = await coll.peek({ limit });
+
+    return results.ids.map((id: string, index: number) => {
+      const content = results.documents[index];
+      if (content === null) {
+        throw new Error(`Document content is null for id ${id}`);
+      }
+      return {
+        id,
+        content,
+        similarity: 1,
+        metadata: results.metadatas?.[index] ?? undefined,
+      };
+    });
+  }
+
+  // Add this utility method for calculating cosine similarity
+  private calculateCosineSimilarity(vec1: number[], vec2: number[]): number {
+    const dotProduct = vec1.reduce((sum, val, i) => sum + val * vec2[i], 0);
+    const mag1 = Math.sqrt(vec1.reduce((sum, val) => sum + val * val, 0));
+    const mag2 = Math.sqrt(vec2.reduce((sum, val) => sum + val * val, 0));
+    return dotProduct / (mag1 * mag2);
+  }
+
+  /**
+   * Gets the full hierarchical path for a cluster
+   */
+  private async getClusterHierarchy(
+    clusterId: string
+  ): Promise<HierarchicalCluster[]> {
+    const clusterColl = await this.getClusterCollection();
+    const hierarchy: HierarchicalCluster[] = [];
+
+    let currentId = clusterId;
+    while (currentId) {
+      const result = await clusterColl.get({ ids: [currentId] });
+      if (!result.metadatas?.[0]) break;
+
+      const meta = result.metadatas[0];
+      hierarchy.unshift({
+        id: currentId,
+        name: String(meta.name || ""),
+        description: String(meta.description || ""),
+        topics: String(meta.topics || "").split(","),
+        documentCount: Number(meta.documentCount || 0),
+        lastUpdated: new Date(String(meta.lastUpdated)),
+        level: Number(meta.level || 0),
+        domain: String(meta.domain || ""),
+        subDomain: String(meta.subDomain || ""),
+        parentId: String(meta.parentId || ""),
+        childIds: String(meta.childIds || "")
+          .split(",")
+          .filter(Boolean),
+      });
+
+      currentId = String(meta.parentId || "");
+    }
+
+    return hierarchy;
+  }
+
+  /**
+   * Purges all collections and data from the database.
+   * Use with caution - this is irreversible!
+   */
+  public async purge(): Promise<void> {
+    try {
+      this.logger.warn("ChromaVectorDB.purge", "Purging all collections");
+
+      // Get list of all collections
+      const collections = await this.client.listCollections();
+
+      // Delete each collection
+      for (const collection of collections) {
+        await this.client.deleteCollection({ name: collection });
+        this.logger.debug("ChromaVectorDB.purge", "Deleted collection", {
+          name: collection,
+        });
+      }
+
+      this.logger.info(
+        "ChromaVectorDB.purge",
+        "Successfully purged all collections",
+        {
+          collectionCount: collections.length,
+        }
+      );
+    } catch (error) {
+      this.logger.error("ChromaVectorDB.purge", "Failed to purge collections", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
   }
 }

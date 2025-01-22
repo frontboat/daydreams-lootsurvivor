@@ -1,28 +1,30 @@
-// This is a simple example of how to use the Daydreams package
-// It runs a simple goal-based agent that can be used to plan and execute goals
-
-// Who to customise:
-// 1. Define a new context for the agent. Similar to ETERNUM_CONTEXT
-// 2. Inject the next context into the agent
-
-import { env } from "../packages/core/src/core/env";
+/**
+ * Example demonstrating goal-based agent functionality in the Daydreams package.
+ * This example creates an agent that can plan and execute hierarchical goals.
+ *
+ * To customize:
+ * 1. Define a new context for the agent (similar to ETERNUM_CONTEXT)
+ * 2. Inject the context into the agent initialization
+ */
 
 import { LLMClient } from "../packages/core/src/core/llm-client";
 import { ChainOfThought } from "../packages/core/src/core/chain-of-thought";
-import { ETERNUM_CONTEXT } from "./eternum-context";
+import { ETERNUM_CONTEXT, PROVIDER_GUIDE } from "./eternum-context";
 import * as readline from "readline";
-import { type GoalStatus } from "../packages/core/src/core/goal-manager";
 import chalk from "chalk";
 import { starknetTransactionAction } from "../packages/core/src/core/actions/starknet-transaction";
-import { starknetReadAction } from "../packages/core/src/core/actions/starknet-read";
 import { graphqlAction } from "../packages/core/src/core/actions/graphql";
 import {
   graphqlFetchSchema,
   starknetTransactionSchema,
 } from "../packages/core/src/core/validation";
 import type { JSONSchemaType } from "ajv";
-import type { CoTAction } from "../packages/core/src/types";
+import { ChromaVectorDB } from "../packages/core/src/core/vector-db";
+import { GoalStatus } from "../packages/core/src/types";
 
+/**
+ * Helper function to get user input from CLI
+ */
 async function getCliInput(prompt: string): Promise<string> {
   const rl = readline.createInterface({
     input: process.stdin,
@@ -37,6 +39,9 @@ async function getCliInput(prompt: string): Promise<string> {
   });
 }
 
+/**
+ * Helper function to format goal status with colored icons
+ */
 function printGoalStatus(status: GoalStatus): string {
   const colors: Record<GoalStatus, string> = {
     pending: chalk.yellow("⏳ PENDING"),
@@ -49,34 +54,38 @@ function printGoalStatus(status: GoalStatus): string {
   return colors[status] || status;
 }
 
-// This is a simple function to fetch the context from a remote source
-async function fetchContext() {
-  try {
-    const response = await fetch(
-      "https://raw.githubusercontent.com/daydreamsai/sleeves/main/sleeves/eternum.json"
-    );
-    const data = await response.json();
-    return data.context;
-  } catch (error) {
-    console.error(chalk.red("Failed to fetch context:"), error);
-    throw error;
-  }
-}
-
 async function main() {
-  // Initialize LLM client
+  // Initialize core components
   const llmClient = new LLMClient({
-    provider: "anthropic",
-    apiKey: env.ANTHROPIC_API_KEY,
+    model: "deepseek/deepseek-r1", // High performance model
   });
 
-  const context = ETERNUM_CONTEXT;
+  const memory = new ChromaVectorDB("agent_memory");
+  await memory.purge(); // Clear previous session data
 
-  const dreams = new ChainOfThought(llmClient, {
-    worldState: context,
+  // Load initial context documents
+  await memory.storeDocument({
+    title: "Game Rules",
+    content: ETERNUM_CONTEXT,
+    category: "rules",
+    tags: ["game-mechanics", "rules"],
+    lastUpdated: new Date(),
   });
 
-  // Register actions
+  await memory.storeDocument({
+    title: "Provider Guide",
+    content: PROVIDER_GUIDE,
+    category: "rules",
+    tags: ["provider-guide"],
+    lastUpdated: new Date(),
+  });
+
+  // Initialize the main reasoning engine
+  const dreams = new ChainOfThought(llmClient, memory, {
+    worldState: ETERNUM_CONTEXT,
+  });
+
+  // Register available actions
   dreams.registerAction(
     "EXECUTE_TRANSACTION",
     starknetTransactionAction,
@@ -95,31 +104,18 @@ async function main() {
     "GRAPHQL_FETCH",
     graphqlAction,
     {
-      description: "Fetch data from the GraphQL API",
+      description: "Fetch data from the Eternum GraphQL API",
       example: JSON.stringify({
         query:
-          "query GetExampleInfo { get_example_info(where: { example_id: 42 }) { edges { node { ... on example_info { example_id level } } } } }",
+          "query GetRealmInfo { eternumRealmModels(where: { realm_id: 42 }) { edges { node { ... on eternum_Realm { entity_id level } } } }",
       }),
     },
     graphqlFetchSchema as JSONSchemaType<any>
   );
 
-  // Register actions
-  dreams.registerAction(
-    "READ_CONTRACT",
-    starknetReadAction,
-    {
-      description: "Read data from the Starknet blockchain",
-      example: JSON.stringify({
-        contractAddress: "0x1234567890abcdef",
-        entrypoint: "read",
-        calldata: [1, 2, 3],
-      }),
-    },
-    starknetTransactionSchema as JSONSchemaType<any>
-  );
+  // Set up event logging
 
-  // Subscribe to events
+  // Thought process events
   dreams.on("step", (step) => {
     if (step.type === "system") {
       console.log("\n💭 System prompt:", step.content);
@@ -131,6 +127,12 @@ async function main() {
     }
   });
 
+  // Uncomment to log token usage
+  // llmClient.on("trace:tokens", ({ input, output }) => {
+  //   console.log("\n💡 Tokens used:", { input, output });
+  // });
+
+  // Action execution events
   dreams.on("action:start", (action) => {
     console.log("\n🎬 Starting action:", {
       type: action.type,
@@ -152,6 +154,7 @@ async function main() {
     });
   });
 
+  // Thinking process events
   dreams.on("think:start", ({ query }) => {
     console.log("\n🧠 Starting to think about:", query);
   });
@@ -168,7 +171,7 @@ async function main() {
     console.log("\n💥 Error while thinking about:", query, error);
   });
 
-  // Add goal-related event handlers
+  // Goal management events
   dreams.on("goal:created", ({ id, description }) => {
     console.log(chalk.cyan("\n🎯 New goal created:"), {
       id,
@@ -197,7 +200,7 @@ async function main() {
     });
   });
 
-  // Add memory-related event handlers
+  // Memory management events
   dreams.on("memory:experience_stored", ({ experience }) => {
     console.log(chalk.blue("\n💾 New experience stored:"), {
       action: experience.action,
@@ -206,7 +209,6 @@ async function main() {
       timestamp: experience.timestamp,
     });
 
-    // If there are emotions, show them
     if (experience.emotions?.length) {
       console.log(
         chalk.blue("😊 Emotional context:"),
@@ -249,6 +251,7 @@ async function main() {
     });
   });
 
+  // Main interaction loop
   while (true) {
     console.log(chalk.cyan("\n🤖 Enter your goal (or 'exit' to quit):"));
     const userInput = await getCliInput("> ");
@@ -259,11 +262,10 @@ async function main() {
     }
 
     try {
-      // First, plan the strategy for the goal
+      // Plan and execute goals
       console.log(chalk.cyan("\n🤔 Planning strategy for goal..."));
       await dreams.planStrategy(userInput);
 
-      // Execute goals until completion or failure
       console.log(chalk.cyan("\n🎯 Executing goals..."));
 
       const stats = {
@@ -272,7 +274,7 @@ async function main() {
         total: 0,
       };
 
-      // Keep executing goals until no more ready goals
+      // Execute goals until completion
       while (true) {
         const readyGoals = dreams.goalManager.getReadyGoals();
         const activeGoals = dreams.goalManager
@@ -282,7 +284,7 @@ async function main() {
           .getGoalsByHorizon("short")
           .filter((g) => g.status === "pending");
 
-        // Print current status
+        // Status update
         console.log(chalk.cyan("\n📊 Current Progress:"));
         console.log(`Ready goals: ${readyGoals.length}`);
         console.log(`Active goals: ${activeGoals.length}`);
@@ -290,6 +292,7 @@ async function main() {
         console.log(`Completed: ${stats.completed}`);
         console.log(`Failed: ${stats.failed}`);
 
+        // Check if all goals are complete
         if (
           readyGoals.length === 0 &&
           activeGoals.length === 0 &&
@@ -299,6 +302,7 @@ async function main() {
           break;
         }
 
+        // Handle blocked goals
         if (readyGoals.length === 0 && activeGoals.length === 0) {
           console.log(
             chalk.yellow(
@@ -322,6 +326,7 @@ async function main() {
           break;
         }
 
+        // Execute next goal
         try {
           await dreams.executeNextGoal();
           stats.completed++;
@@ -329,7 +334,7 @@ async function main() {
           console.error(chalk.red("\n❌ Goal execution failed:"), error);
           stats.failed++;
 
-          // Check if we should continue
+          // Ask to continue
           const shouldContinue = await getCliInput(
             chalk.yellow("\nContinue executing remaining goals? (y/n): ")
           );
@@ -343,10 +348,9 @@ async function main() {
         stats.total++;
       }
 
-      // Add learning summary after goal execution
+      // Learning summary
       console.log(chalk.cyan("\n📊 Learning Summary:"));
 
-      // Get recent experiences
       const recentExperiences = await dreams.memory.getRecentEpisodes(5);
       console.log(chalk.blue("\n🔄 Recent Experiences:"));
       recentExperiences.forEach((exp, index) => {
@@ -356,7 +360,6 @@ async function main() {
         console.log(`   Importance: ${exp.importance || "N/A"}`);
       });
 
-      // Get relevant documents for the current context
       const relevantDocs = await dreams.memory.findSimilarDocuments(
         userInput,
         3
@@ -369,7 +372,7 @@ async function main() {
         console.log(`   Tags: ${doc.tags.join(", ")}`);
       });
 
-      // Final summary with stats
+      // Final execution summary
       console.log(chalk.cyan("\n📊 Final Execution Summary:"));
       console.log(chalk.green(`✅ Completed Goals: ${stats.completed}`));
       console.log(chalk.red(`❌ Failed Goals: ${stats.failed}`));
@@ -390,13 +393,14 @@ async function main() {
     }
   }
 
-  // Handle shutdown
+  // Graceful shutdown handler
   process.on("SIGINT", async () => {
     console.log(chalk.yellow("\nShutting down..."));
     process.exit(0);
   });
 }
 
+// Start the application
 main().catch((error) => {
   console.error(chalk.red("Fatal error:"), error);
   process.exit(1);

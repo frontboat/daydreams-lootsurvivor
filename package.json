@@ -4,13 +4,15 @@
   "scripts": {
     "goal": "bun run examples/example-goal.ts",
     "task": "bun run examples/example-basic.ts",
-    "twitter": "bun run examples/example-twitter.ts"
+    "twitter": "bun run examples/example-twitter.ts",
+    "test": "bun run packages/core"
   },
   "dependencies": {
     "@types/node": "^22.10.5",
     "ajv": "^8.17.1",
     "chalk": "^5.4.1",
-    "readline": "^1.3.0"
+    "readline": "^1.3.0",
+    "zod": "^3.24.1"
   },
   "packageManager": "pnpm@9.15.2+sha512.93e57b0126f0df74ce6bff29680394c0ba54ec47246b9cf321f0121d8d9bb03f750a705f24edc3c1180853afd7c2c3b94196d0a3d53d3e069d9e2793ef11f321"
 }

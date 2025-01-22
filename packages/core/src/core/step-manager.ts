@@ -1,46 +1,6 @@
 // Add new step types at the top
-type StepType = "action" | "planning" | "system" | "task";
 
-interface BaseStep {
-  id: string;
-  type: StepType;
-  content: string;
-  timestamp: number;
-  tags?: string[];
-  meta?: Record<string, any>;
-}
-
-interface ActionStep extends BaseStep {
-  type: "action";
-  content: string;
-  toolCall?: {
-    name: string;
-    arguments: any;
-    id: string;
-  };
-  error?: Error;
-  observations?: string;
-  actionOutput?: any;
-  duration?: number;
-}
-
-interface PlanningStep extends BaseStep {
-  type: "planning";
-  plan: string;
-  facts: string;
-}
-
-interface SystemStep extends BaseStep {
-  type: "system";
-  systemPrompt: string;
-}
-
-interface TaskStep extends BaseStep {
-  type: "task";
-  task: string;
-}
-
-type Step = ActionStep | PlanningStep | SystemStep | TaskStep;
+import type { Step, StepType } from "../types";
 
 // Add StepManager class
 class StepManager {

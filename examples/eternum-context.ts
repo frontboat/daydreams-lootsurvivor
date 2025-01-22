@@ -491,10 +491,12 @@ Remember to replace placeholders like <adventurer_id>, <limit>, and other variab
 Now, please wait for a user query about the Loot Survivor game, and respond according to the steps outlined above.
 
 </query_guide>
+`;
+
+// API DOCs etc
+export const PROVIDER_GUIDE = `
 
 <PROVIDER_GUIDE>
-
-  Use these to call functions on the game contract.
 
   <IMPORTANT_RULES>
   1. If you receive an error, you may need to try again, the error message should tell you what went wrong.

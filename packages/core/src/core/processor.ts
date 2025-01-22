@@ -7,6 +7,9 @@ import type { SearchResult } from "../types";
 import { LogLevel } from "../types";
 import type { Output } from "./core";
 import type { JSONSchemaType } from "ajv";
+import { getValidatedLLMResponse } from "./utils";
+import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
 
 export interface ProcessedResult {
   content: any;
@@ -97,12 +100,20 @@ export class Processor {
     this.logger.debug("Processor.process", "Processing content", {
       content,
       roomId: room.id,
+      contentType: typeof content,
+      isString: typeof content === "string",
+      contentStr:
+        typeof content === "string" ? content : JSON.stringify(content),
     });
 
     // Check if this content was already processed
     const contentId = this.generateContentId(content);
 
-    console.log("contentId", contentId);
+    this.logger.debug("Processor.process", "Generated content ID", {
+      contentId,
+      content: typeof content === "string" ? content : JSON.stringify(content),
+    });
+
     const alreadyProcessed = await this.hasProcessedContent(contentId, room);
 
     this.logger.info("Processor.process", "Already processed", {
@@ -167,6 +178,7 @@ export class Processor {
     classification: { contentType: string; context: Record<string, any> }
   ): Promise<SuggestedOutput<any>[]> {
     const availableOutputs = Array.from(this.availableOutputs.entries());
+
     if (availableOutputs.length === 0) return [];
 
     const prompt = `You are an AI assistant that analyzes content and suggests appropriate outputs.
@@ -185,12 +197,12 @@ If this is feedback from a previous output:
 2. If successful, return an empty array - no new actions needed
 3. Only suggest new outputs if the previous action failed or requires follow-up
 
-Available Outputs:
+# Content Outputs Schemas - select the appropriate schema for the output. You can select one or more or none.
 ${availableOutputs
   .map(
     ([name, output]) => `${name}:
-  Schema: ${JSON.stringify(output.schema, null, 2)}
-  Response: ${JSON.stringify(output.response, null, 2)}`
+   ${JSON.stringify(zodToJsonSchema(output.schema, "mySchema"), null, 2)}
+  `
   )
   .join("\n\n")}
 
@@ -205,79 +217,24 @@ For each appropriate output, provide:
 3. A confidence score (0-1)
 4. Reasoning for the suggestion
 
-Respond with a JSON array in this format:
-<response>
-[
-  {
-    "name": "output_name",
-    "data": { /* data matching the output schema */ },
-    "confidence": 0.0,
-    "reasoning": "explanation"
-  }
-]
-</response>
-
-Only respond with the JSON array, no other text, return empty array if no outputs are appropriate or if feedback indicates success.
 `;
 
     try {
-      const response = await this.llmClient.analyze(prompt, {
-        system:
+      return (await getValidatedLLMResponse({
+        prompt,
+        systemPrompt:
           "You are an expert system that analyzes content and suggests appropriate automated responses. You are precise and careful to ensure all data matches the required schemas.",
-        temperature: 0.4,
-        formatResponse: true,
-      });
-
-      const suggestions: SuggestedOutput<any>[] =
-        typeof response === "string" ? JSON.parse(response) : response;
-
-      // Validate each suggestion against its output schema
-      return suggestions.filter((suggestion) => {
-        const output = this.availableOutputs.get(suggestion.name);
-        if (!output) {
-          this.logger.warn(
-            "Processor.determinePotentialOutputs",
-            "Unknown output suggested",
-            { name: suggestion.name }
-          );
-          return false;
-        }
-
-        try {
-          // Import Ajv properly
-          const Ajv = require("ajv");
-          const ajv = new Ajv();
-
-          const validate = ajv.compile(output.schema);
-          const isValid = validate(suggestion.data);
-
-          if (!isValid) {
-            this.logger.warn(
-              "Processor.determinePotentialOutputs",
-              "Invalid output data",
-              {
-                name: suggestion.name,
-                data: suggestion.data,
-                errors: validate.errors,
-              }
-            );
-            return false;
-          }
-
-          return true;
-        } catch (error) {
-          this.logger.error(
-            "Processor.determinePotentialOutputs",
-            "Schema validation error",
-            {
-              error,
-              suggestion,
-              schema: output.schema,
-            }
-          );
-          return false;
-        }
-      });
+        schema: z.array(
+          z.object({
+            name: z.string(),
+            data: z.any().describe("The data that matches the output's schema"),
+            confidence: z.number(),
+            reasoning: z.string(),
+          })
+        ),
+        llmClient: this.llmClient,
+        logger: this.logger,
+      })) as SuggestedOutput<any>[];
     } catch (error) {
       this.logger.error("Processor.determinePotentialOutputs", "Error", {
         error,
@@ -295,28 +252,29 @@ Only respond with the JSON array, no other text, return empty array if no output
 
     const prompt = `Classify the following content and provide context:
 
-Content: "${contentStr}"
+    # Content: "${contentStr}"
 
-Determine:
-1. What type of content this is (data, message, event, etc.)
-2. What kind of processing it requires
-3. Any relevant context
+    # Determine
+    1. What type of content this is (data, message, event, etc.)
+    2. What kind of processing it requires
+    3. Any relevant context
+  
+`;
 
-Return JSON only:
-{
-  "contentType": "data|message|event|etc",
-  "requiresProcessing": boolean,
-  "context": {
-    "topic": "string",
-    "urgency": "high|medium|low",
-    "additionalContext": "string"
-  }
-}`;
-
-    const classification = await this.llmClient.analyze(prompt, {
-      system: "You are an expert content classifier.",
-      temperature: 0.3,
-      formatResponse: true,
+    const classification = await getValidatedLLMResponse({
+      prompt,
+      systemPrompt: "You are an expert content classifier.",
+      schema: z.object({
+        contentType: z.string(),
+        requiresProcessing: z.boolean(),
+        context: z.object({
+          topic: z.string(),
+          urgency: z.enum(["high", "medium", "low"]),
+          additionalContext: z.string(),
+        }),
+      }),
+      llmClient: this.llmClient,
+      logger: this.logger,
     });
 
     return typeof classification === "string"
@@ -334,8 +292,8 @@ Return JSON only:
     return jsonMatch ? jsonMatch[0] : text;
   }
 
-  private async enrichContent(
-    content: any,
+  private async enrichContent<T>(
+    content: T,
     room: Room,
     timestamp: Date
   ): Promise<EnrichedContent> {
@@ -354,63 +312,29 @@ Content: "${contentStr}"
 Related Context:
 ${relatedMemories.map((m: SearchResult) => `- ${m.content}`).join("\n")}
 
-Provide a JSON response with:
+Return a JSON object with the following fields:
 1. A brief summary (max 100 chars)
 2. Key topics mentioned (max 5)
 3. Sentiment analysis
 4. Named entities
 5. Detected intent/purpose
 
-Response format:
-{
-  "summary": "Brief summary here",
-  "topics": ["topic1", "topic2"],
-  "sentiment": "positive|negative|neutral",
-  "entities": ["entity1", "entity2"],
-  "intent": "purpose of the content"
-}
-
-Return only valid JSON, no other text.`;
+`;
 
     try {
-      const enrichment = await this.llmClient.analyze(prompt, {
-        system: this.character.voice.tone,
-        temperature: 0.3,
-        formatResponse: true,
+      const result = await getValidatedLLMResponse({
+        prompt,
+        systemPrompt: this.character.voice.tone,
+        schema: z.object({
+          summary: z.string().max(300),
+          topics: z.array(z.string()).max(20),
+          sentiment: z.enum(["positive", "negative", "neutral"]),
+          entities: z.array(z.string()),
+          intent: z.string(),
+        }),
+        llmClient: this.llmClient,
+        logger: this.logger,
       });
-
-      let result;
-      try {
-        const cleanJson =
-          typeof enrichment === "string"
-            ? this.stripCodeBlock(enrichment)
-            : enrichment;
-
-        result =
-          typeof cleanJson === "string" ? JSON.parse(cleanJson) : cleanJson;
-
-        if (!result.summary || !Array.isArray(result.topics)) {
-          throw new Error("Invalid response structure");
-        }
-      } catch (parseError) {
-        this.logger.warn(
-          "Processor.enrichContent",
-          "Failed to parse LLM response, retrying",
-          { error: parseError }
-        );
-
-        const retryPrompt = `${prompt}\n\nIMPORTANT: Respond with ONLY the JSON object.`;
-        const retryResponse = await this.llmClient.analyze(retryPrompt, {
-          system: this.character.voice.tone,
-          temperature: 0.2,
-          formatResponse: true,
-        });
-
-        result =
-          typeof retryResponse === "string"
-            ? JSON.parse(this.stripCodeBlock(retryResponse))
-            : retryResponse;
-      }
 
       return {
         originalContent: contentStr,
@@ -460,15 +384,26 @@ Return only valid JSON, no other text.`;
   // Helper method to generate a consistent ID for content
   private generateContentId(content: any): string {
     try {
-      // For strings, look for ID pattern first, then hash
+      // Special handling for Twitter mentions/tweets
+      if (Array.isArray(content) && content[0]?.type === "tweet") {
+        // For Twitter content, use the newest tweet's ID as the marker
+        const newestTweet = content[0];
+        return `tweet_batch_${newestTweet.metadata.tweetId}`;
+      }
+
+      // Single tweet handling
+      if (content?.type === "tweet") {
+        return `tweet_${content.metadata.tweetId}`;
+      }
+
+      // Keep existing logic for other content types
       if (typeof content === "string") {
         return `content_${hashString(content)}`;
       }
 
-      // For arrays, try to find IDs first
+      // For arrays of non-tweet content
       if (Array.isArray(content)) {
         const ids = content.map((item) => {
-          // Try to find an explicit ID first
           if (item.id) return item.id;
           if (item.metadata?.id) return item.metadata.id;
 
@@ -487,7 +422,7 @@ Return only valid JSON, no other text.`;
           return hashString(JSON.stringify(relevantData));
         });
 
-        return `array_${ids.join("_")}`;
+        return `array_${ids.join("_").slice(0, 100)}`; // Limit length of combined IDs
       }
 
       // For single objects, try to find an ID first
@@ -552,8 +487,17 @@ Return only valid JSON, no other text.`;
       return false;
     }
 
+    // Create a marker string that includes the content ID
+    const markerContent = `processed_content:${contentId}`;
+
+    this.logger.debug("Processor.hasProcessedContent", "Checking content", {
+      contentId,
+      markerContent,
+      roomId: room.id,
+    });
+
     const similar = await this.vectorDb.findSimilarInRoom(
-      `processed_content:${contentId}`,
+      markerContent,
       room.id,
       1
     );
@@ -570,9 +514,16 @@ Return only valid JSON, no other text.`;
       return;
     }
 
-    await this.vectorDb.storeInRoom(`processed_content:${contentId}`, room.id, {
-      type: "processed_marker",
-      timestamp: new Date().toISOString(),
-    });
+    // Create a marker string that includes the content ID
+    const markerContent = `processed_content:${contentId}`;
+
+    await this.vectorDb.storeInRoom(
+      markerContent, // Changed from just contentId to markerContent
+      room.id,
+      {
+        type: "processed_marker",
+        timestamp: new Date().toISOString(),
+      }
+    );
   }
 }

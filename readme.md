@@ -238,3 +238,13 @@ The Daydreams protocol is intentionally open and modular, enabling easy customiz
 ### Swarm Collaboration
 
 - Other agents subscribe, retrieving the newly shared CoT embedding and integrating it into their memory store, thus spreading successful strategies network-wide.
+
+## Contributors
+
+<a href="https://github.com/daydreamsai/daydreams/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=daydreamsai/daydreams" alt="Daydreams contributors" />
+</a>
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=daydreamsai/daydreams&type=Date)](https://star-history.com/#daydreamsai/daydreams&Date)

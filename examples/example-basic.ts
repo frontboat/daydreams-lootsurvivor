@@ -1,10 +1,16 @@
-// This is a basic example of how to use the Daydreams package
-// It runs a simple agent that can execute tasks directly using the think method
+/**
+ * Basic example demonstrating the Daydreams package functionality.
+ * This example creates an interactive CLI agent that can:
+ * - Execute tasks using the ChainOfThought system
+ * - Interact with Starknet blockchain
+ * - Query data via GraphQL
+ * - Maintain conversation memory using ChromaDB
+ */
 
 import { env } from "../packages/core/src/core/env";
 import { LLMClient } from "../packages/core/src/core/llm-client";
 import { ChainOfThought } from "../packages/core/src/core/chain-of-thought";
-import { ETERNUM_CONTEXT } from "./eternum-context";
+import { ETERNUM_CONTEXT, PROVIDER_GUIDE } from "./eternum-context";
 import * as readline from "readline";
 import chalk from "chalk";
 import { starknetTransactionAction } from "../packages/core/src/core/actions/starknet-transaction";
@@ -14,7 +20,11 @@ import {
   starknetTransactionSchema,
 } from "../packages/core/src/core/validation";
 import type { JSONSchemaType } from "ajv";
+import { ChromaVectorDB } from "../packages/core/src/core/vector-db";
 
+/**
+ * Helper function to get user input from CLI
+ */
 async function getCliInput(prompt: string): Promise<string> {
   const rl = readline.createInterface({
     input: process.stdin,
@@ -30,14 +40,33 @@ async function getCliInput(prompt: string): Promise<string> {
 }
 
 async function main() {
-  // Initialize LLM client
+  // Initialize core components
   const llmClient = new LLMClient({
-    provider: "anthropic",
-    apiKey: env.ANTHROPIC_API_KEY,
+    model: "deepseek/deepseek-r1", // High performance model
   });
 
-  // Initialize ChainOfThought
-  const dreams = new ChainOfThought(llmClient, {
+  const memory = new ChromaVectorDB("agent_memory");
+  await memory.purge(); // Clear previous session data
+
+  // Load initial context documents
+  await memory.storeDocument({
+    title: "Game Rules",
+    content: ETERNUM_CONTEXT,
+    category: "rules",
+    tags: ["game-mechanics", "rules"],
+    lastUpdated: new Date(),
+  });
+
+  await memory.storeDocument({
+    title: "Provider Guide",
+    content: PROVIDER_GUIDE,
+    category: "actions",
+    tags: ["actions", "provider-guide"],
+    lastUpdated: new Date(),
+  });
+
+  // Initialize the main reasoning engine
+  const dreams = new ChainOfThought(llmClient, memory, {
     worldState: ETERNUM_CONTEXT,
   });
 
@@ -69,7 +98,7 @@ async function main() {
     graphqlFetchSchema as JSONSchemaType<any>
   );
 
-  // Add basic event handlers
+  // Set up event logging
   dreams.on("think:start", ({ query }) => {
     console.log(chalk.blue("\n🧠 Thinking about:"), query);
   });
@@ -117,13 +146,14 @@ async function main() {
     }
   }
 
-  // Handle shutdown
+  // Graceful shutdown handler
   process.on("SIGINT", async () => {
     console.log(chalk.yellow("\nShutting down..."));
     process.exit(0);
   });
 }
 
+// Application entry point with error handling
 main().catch((error) => {
   console.error(chalk.red("Fatal error:"), error);
   process.exit(1);

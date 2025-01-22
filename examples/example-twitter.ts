@@ -1,3 +1,12 @@
+/**
+ * Example demonstrating a Twitter bot using the Daydreams package.
+ * This bot can:
+ * - Monitor Twitter mentions and auto-reply
+ * - Generate autonomous thoughts and tweet them
+ * - Maintain conversation memory using ChromaDB
+ * - Process inputs through a character-based personality
+ */
+
 import { Core } from "../packages/core/src/core/core";
 import { tweetSchema, TwitterClient } from "../packages/core/src/io/twitter";
 import { RoomManager } from "../packages/core/src/core/room-manager";
@@ -8,92 +17,108 @@ import { env } from "../packages/core/src/core/env";
 import { LogLevel } from "../packages/core/src/types";
 import chalk from "chalk";
 import { defaultCharacter } from "../packages/core/src/core/character";
-import { JSONSchemaType } from "ajv";
+
 import { Consciousness } from "../packages/core/src/core/consciousness";
+import type { AnySchema, JSONSchemaType } from "ajv";
+import { z } from "zod";
 
 async function main() {
+  const loglevel = LogLevel.ERROR;
   // Initialize core dependencies
   const vectorDb = new ChromaVectorDB("twitter_agent", {
     chromaUrl: "http://localhost:8000",
-    logLevel: LogLevel.DEBUG,
+    logLevel: loglevel,
   });
+
+  await vectorDb.purge(); // Clear previous session data
 
   const roomManager = new RoomManager(vectorDb);
 
   const llmClient = new LLMClient({
-    provider: "anthropic",
-    apiKey: env.ANTHROPIC_API_KEY,
+    model: "deepseek/deepseek-r1", // High performance model
   });
 
-  // Initialize processor with character definition
+  // Initialize processor with default character personality
   const processor = new Processor(
     vectorDb,
     llmClient,
     defaultCharacter,
-    LogLevel.DEBUG
+    LogLevel.INFO
   );
 
-  // Initialize core
+  // Initialize core system
   const core = new Core(roomManager, vectorDb, processor, {
     logging: {
-      level: LogLevel.ERROR,
+      level: loglevel,
       enableColors: true,
       enableTimestamp: true,
     },
   });
 
-  // Initialize Twitter client
+  // Set up Twitter client with credentials
   const twitter = new TwitterClient(
     {
       username: env.TWITTER_USERNAME,
       password: env.TWITTER_PASSWORD,
       email: env.TWITTER_EMAIL,
     },
-    LogLevel.DEBUG
+    loglevel
   );
 
-  // Initialize consciousness
+  // Initialize autonomous thought generation
   const consciousness = new Consciousness(llmClient, roomManager, {
     intervalMs: 300000, // Think every 5 minutes
     minConfidence: 0.7,
-    logLevel: LogLevel.ERROR,
+    logLevel: loglevel,
   });
 
-  // Register Twitter inputs
+  // Register input handler for Twitter mentions
   core.registerInput({
     name: "twitter_mentions",
     handler: async () => {
       console.log(chalk.blue("🔍 Checking Twitter mentions..."));
-      const mentions = await twitter.createMentionsInput(60000).handler();
+      // Create a static mentions input handler
+      const mentionsInput = twitter.createMentionsInput(60000);
+      const mentions = await mentionsInput.handler();
 
-      // The processor will analyze these mentions and may suggest replies
+      // If no new mentions, return null to skip processing
+      if (!mentions || mentions.length === 0) {
+        return null;
+      }
+
       return mentions;
     },
-    response: {
-      type: "string",
-      content: "string",
-      metadata: "object",
-    },
-    interval: 60000,
+    response: z.object({
+      type: z.string(),
+      content: z.string(),
+      metadata: z.record(z.any()),
+    }),
+    interval: 60000, // Check mentions every minute
   });
 
-  // Register consciousness input
+  // Register input handler for autonomous thoughts
   core.registerInput({
     name: "consciousness_thoughts",
     handler: async () => {
       console.log(chalk.blue("🧠 Generating thoughts..."));
       const thought = await consciousness.start();
+
+      // If no thought was generated or it was already processed, skip
+      if (!thought || !thought.content) {
+        return null;
+      }
+
       return thought;
     },
-    response: {
-      type: "string",
-      content: "string",
-      metadata: "object",
-    },
-    interval: 300000, // Check for new thoughts every 5 minutes
+    response: z.object({
+      type: z.string(),
+      content: z.string(),
+      metadata: z.record(z.any()),
+    }),
+    interval: 300000, // Generate thoughts every 5 minutes
   });
 
-  // Register Twitter output for thoughts
+  // Register output handler for posting thoughts to Twitter
   core.registerOutput({
     name: "twitter_thought",
     handler: async (data: unknown) => {
@@ -102,54 +127,39 @@ async function main() {
         content: thoughtData.content,
       });
     },
-    response: {
-      success: "boolean",
-      tweetId: "string",
-    },
-    schema: {
-      type: "object" as const,
-      properties: {
-        content: { type: "string" as const, nullable: false },
-      },
-      required: ["content"],
-      additionalProperties: false,
-    } as any,
+    schema: z.object({
+      content: z
+        .string()
+        .regex(/^[\x20-\x7E]*$/, "No emojis or non-ASCII characters allowed"),
+    }),
   });
 
-  // Register Twitter output for auto-replies
+  // Register output handler for Twitter replies
   core.registerOutput({
     name: "twitter_reply",
     handler: async (data: unknown) => {
       const tweetData = data as { content: string; inReplyTo: string };
       return twitter.createTweetOutput().handler(tweetData);
     },
-    response: {
-      success: "boolean",
-      tweetId: "string",
-    },
-    schema: {
-      type: "object" as const,
-      properties: {
-        content: { type: "string" as const, nullable: false },
-        inReplyTo: { type: "string" as const, nullable: false },
-      },
-      required: ["content", "inReplyTo"],
-      additionalProperties: false,
-    } as any,
+    schema: z.object({
+      content: z.string(),
+      inReplyTo: z
+        .string()
+        .optional()
+        .describe("The tweet ID to reply to, if any"),
+    }),
   });
 
-  // Keep the process running
+  // Start monitoring
   console.log(chalk.cyan("🤖 Bot is now running and monitoring Twitter..."));
   console.log(chalk.cyan("Press Ctrl+C to stop"));
 
-  // Handle shutdown gracefully
+  // Handle graceful shutdown
   process.on("SIGINT", async () => {
     console.log(chalk.yellow("\n\nShutting down..."));
 
-    // Stop consciousness
+    // Clean up resources
     await consciousness.stop();
-
-    // Remove all inputs and outputs
     core.removeInput("twitter_mentions");
     core.removeInput("consciousness_thoughts");
     core.removeOutput("twitter_reply");

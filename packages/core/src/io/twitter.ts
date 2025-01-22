@@ -2,6 +2,7 @@ import { Scraper, SearchMode, type Tweet } from "agent-twitter-client";
 import type { JSONSchemaType } from "ajv";
 import { Logger } from "../core/logger";
 import { LogLevel } from "../types";
+import { env } from "../core/env";
 
 interface TwitterCredentials {
   username: string;
@@ -109,7 +110,7 @@ export class TwitterClient {
       name: "twitter_tweet",
       handler: async (data: TweetData) => {
         await this.initialize();
-        return this.sendTweet(data);
+        return await this.sendTweet(data);
       },
       response: {
         success: "boolean",
@@ -138,17 +139,33 @@ export class TwitterClient {
       }
 
       // Filter and format mentions
-      return mentionsArray
-        .filter(
-          (tweet) =>
-            tweet.userId !== this.credentials.username &&
-            (!this.lastCheckedTweetId ||
-              BigInt(tweet.id ?? "") > this.lastCheckedTweetId)
-        )
-        .map((tweet) => {
-          this.lastCheckedTweetId = BigInt(tweet.id ?? "");
-          return this.formatTweetData(tweet);
-        });
+      const newMentions = mentionsArray
+        .filter((tweet) => {
+          // Skip own tweets and already processed tweets
+          if (tweet.userId === this.credentials.username) {
+            return false;
+          }
+
+          // Check if this is a new tweet we haven't seen
+          if (
+            this.lastCheckedTweetId &&
+            BigInt(tweet.id ?? "") <= this.lastCheckedTweetId
+          ) {
+            return false;
+          }
+
+          // Update last checked ID if newer
+          const tweetId = BigInt(tweet.id ?? "");
+          if (!this.lastCheckedTweetId || tweetId > this.lastCheckedTweetId) {
+            this.lastCheckedTweetId = tweetId;
+          }
+
+          return true;
+        })
+        .map(this.formatTweetData);
+
+      // Only return if we have new mentions
+      return newMentions.length > 0 ? newMentions : null;
     } catch (error) {
       this.logger.error(
         "TwitterClient.checkMentions",
@@ -178,12 +195,23 @@ export class TwitterClient {
 
   private async sendTweet(data: TweetData) {
     try {
-      // TODO: Implement actual tweet sending using scraper
       this.logger.info("TwitterClient.sendTweet", "Would send tweet", { data });
+
+      if (env.DRY_RUN) {
+        return {
+          success: true,
+          tweetId: "DRY RUN TWEET ID",
+        };
+      }
+
+      const sendTweetResults = await this.scraper.sendTweet(
+        data.content,
+        data?.inReplyTo
+      );
 
       return {
         success: true,
-        tweetId: "mock-tweet-id", // Replace with actual tweet ID
+        tweetId: sendTweetResults,
       };
     } catch (error) {
       this.logger.error("TwitterClient.sendTweet", "Error sending tweet", {
