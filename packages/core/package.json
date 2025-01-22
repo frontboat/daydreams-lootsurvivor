@@ -21,6 +21,7 @@
     "chromadb": "^1.9.4",
     "chromadb-default-embed": "^2.13.2",
     "openai": "^4.76.0",
+    "@solana/web3.js": "^1.91.1",
     "starknet": "^6.11.0",
     "uuid": "^11.0.3",
     "vitest": "^2.1.8",

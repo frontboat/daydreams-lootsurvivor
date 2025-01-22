@@ -11,6 +11,9 @@ const envSchema = z.object({
   STARKNET_PRIVATE_KEY: z.string(),
   OPENROUTER_API_KEY: z.string(),
   GRAPHQL_URL: z.string(),
+  SOLANA_RPC_URL: z.string(),
+  SOLANA_PRIVATE_KEY: z.string(),
+  JUPITER_API_URL: z.string(),
 });
 
 export const env = envSchema.parse(process.env);

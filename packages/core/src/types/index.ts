@@ -39,7 +39,10 @@ export type CoTActionType =
   | "GRAPHQL_FETCH"
   | "EXECUTE_TRANSACTION"
   | "READ_CONTRACT"
-  | "SYSTEM_PROMPT";
+  | "SYSTEM_PROMPT"
+  | "JUPITER_QUOTE"
+  | "JUPITER_PRICE"
+  | "JUPITER_SWAP";
 
 /**
  * Data necessary for a particular action type.
@@ -65,6 +68,17 @@ export interface CoTTransaction {
   contractAddress: string;
   entrypoint: string;
   calldata: any[];
+}
+
+export interface SolanaTransactionPayload {
+  programId: string;
+  instruction: string;
+  data: any[];
+  accounts: Array<{
+    pubkey: string;
+    isSigner: boolean;
+    isWritable: boolean;
+  }>;
 }
 
 export interface SearchResult {
@@ -260,4 +274,170 @@ export declare interface ChainOfThought {
     event: K,
     ...args: Parameters<ChainOfThoughtEvents[K]>
   ): boolean;
+}
+
+export type SwapMode = "ExactIn" | "ExactOut";
+
+export interface JupiterQuoteParams {
+  // Required parameters
+  inputMint: string;
+  outputMint: string;
+  amount: string;
+  
+  // Optional parameters with defaults
+  slippageBps?: number;  // Default: 50
+  swapMode?: SwapMode;   // Default: ExactIn
+  
+  // Advanced options
+  dexes?: string[];
+  excludeDexes?: string[];
+  onlyDirectRoutes?: boolean;
+  asLegacyTransaction?: boolean;
+  platformFeeBps?: number;
+  maxAccounts?: number;
+  
+  // Auto slippage options
+  autoSlippage?: boolean;
+  maxAutoSlippageBps?: number;
+  autoSlippageCollisionUsdValue?: number;
+  restrictIntermediateTokens?: boolean;
+}
+
+export interface JupiterQuoteResponse {
+  inputMint: string;
+  inAmount: string;
+  outputMint: string;
+  outAmount: string;
+  otherAmountThreshold: string;
+  swapMode: SwapMode;
+  slippageBps: number;
+  platformFee?: {
+    amount: string;
+    feeBps: number;
+  };
+  priceImpactPct: string;
+  routePlan: Array<{
+    swapInfo: {
+      ammKey: string;
+      label?: string;
+      inputMint: string;
+      outputMint: string;
+      inAmount: string;
+      outAmount: string;
+      feeAmount: string;
+      feeMint: string;
+      percent: number;
+    };
+  }>;
+  contextSlot?: number;
+  timeTaken?: number;
+}
+
+export interface JupiterSwapParams {
+  quoteResponse: JupiterQuoteResponse;
+  userPublicKey: string;
+  wrapUnwrapSOL?: boolean;
+}
+
+// Jupiter Price API Types
+export interface JupiterPriceParams {
+  ids?: string[];          // Token IDs to get prices for
+  vsToken?: string;        // Token to price against (default: USDC)
+  vsAmount?: number;       // Amount of vs_token (default: 1)
+}
+
+export interface JupiterTokenSearchParams {
+  query: string;           // Search query for token
+  limit?: number;         // Max results to return
+}
+
+export interface JupiterRouteParams {
+  inputMint: string;      // Input token mint address
+  outputMint: string;     // Output token mint address
+  amount: string;         // Amount to swap
+  slippageBps?: number;   // Slippage tolerance in basis points
+  onlyDirectRoutes?: boolean;  // Only return direct routes
+  restrictIntermediateTokens?: boolean;  // Restrict to major tokens as intermediates
+}
+
+// Response types
+export interface TokenInfo {
+  address: string;
+  chainId: number;
+  decimals: number;
+  name: string;
+  symbol: string;
+  logoURI?: string;
+  coingeckoId?: string;
+}
+
+export interface PriceResponse {
+  data: {
+    [tokenId: string]: {
+      id: string;
+      type: "derivedPrice";
+      price: string;
+      extraInfo?: {
+        lastSwappedPrice?: {
+          lastJupiterSellAt?: number;
+          lastJupiterSellPrice?: string;
+          lastJupiterBuyAt?: number;
+          lastJupiterBuyPrice?: string;
+        };
+        quotedPrice?: {
+          buyPrice: string;
+          buyAt: number;
+          sellPrice: string;
+          sellAt: number;
+        };
+        confidenceLevel: "high" | "medium" | "low";
+        depth?: {
+          buyPriceImpactRatio?: {
+            depth: {
+              "10": number;
+              "100": number;
+              "1000": number;
+            };
+            timestamp: number;
+          };
+          sellPriceImpactRatio?: {
+            depth: {
+              "10": number;
+              "100": number;
+              "1000": number;
+            };
+            timestamp: number;
+          };
+        };
+      };
+    };
+  };
+  timeTaken: number;
+}
+
+export interface RouteResponse {
+  data: {
+    id: string;
+    inAmount: string;
+    outAmount: string;
+    priceImpactPct: string;
+    marketInfos: Array<{
+      id: string;
+      label: string;
+      inputMint: string;
+      outputMint: string;
+      notEnoughLiquidity: boolean;
+      inAmount: string;
+      outAmount: string;
+      lpFee: {
+        amount: string;
+        mint: string;
+        pct: string;
+      };
+    }>;
+    amount: string;
+    slippageBps: number;
+    otherAmountThreshold: string;
+    swapMode: "ExactIn" | "ExactOut";
+  }
 }

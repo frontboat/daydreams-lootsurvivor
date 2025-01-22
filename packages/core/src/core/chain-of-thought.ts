@@ -656,7 +656,8 @@ export class ChainOfThought extends EventEmitter {
 
       console.log("validateGoalSuccess response: =================================", response);
 
-      const result = JSON.parse(response.toString());
+      // Response is already validated and parsed by getValidatedLLMResponse
+      const result = response;
 
       if (result.success) {
         this.addStep(
@@ -664,24 +665,42 @@ export class ChainOfThought extends EventEmitter {
           "system",
           ["goal-validation"]
         );
+        
+        // Record successful outcome
+        this.goalManager.recordGoalOutcome(
+          goal.id,
+          result.outcomeScore,
+          result.reason
+        );
       } else {
         this.addStep(`Goal validation failed: ${result.reason}`, "system", [
           "goal-validation",
         ]);
+        
+        // Record failed outcome
+        this.goalManager.recordGoalFailure(
+          goal.id,
+          result.reason,
+          result.outcomeScore
+        );
       }
-
-      // Record the outcome score
-      this.goalManager.recordGoalOutcome(
-        goal.id,
-        result.outcomeScore,
-        result.reason
-      );
 
       return result.success;
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown validation error";
       this.logger.error("validateGoalSuccess", "Goal validation failed", {
-        error,
+        error: errorMessage,
+        goalId: goal.id,
+        description: goal.description
       });
+      
+      // Record validation failure
+      this.goalManager.recordGoalFailure(
+        goal.id,
+        `Validation error: ${errorMessage}`,
+        0
+      );
+      
       return false;
     }
   }
