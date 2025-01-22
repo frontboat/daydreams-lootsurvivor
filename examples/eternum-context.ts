@@ -4,7 +4,6 @@
 // - Combat and exploration systems
 // - Resource management guidelines
 // - Progression goals and failure conditions
-// The context helps inform AI decision making for optimal gameplay
 
 
 export const ETERNUM_CONTEXT = `
