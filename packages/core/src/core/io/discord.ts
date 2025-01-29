@@ -1,4 +1,13 @@
-import { Client, Events, GatewayIntentBits, Partials, User } from "discord.js";
+import {
+    ChannelType,
+    Client,
+    Events,
+    GatewayIntentBits,
+    Partials,
+    TextChannel,
+    User,
+    type Channel,
+} from "discord.js";
 import type { JSONSchemaType } from "ajv";
 import { Logger } from "../../core/logger";
 import { LogLevel } from "../types";
@@ -99,6 +108,10 @@ export class DiscordClient {
         };
     }
 
+    private getIsValidTextChannel(channel?: Channel): channel is TextChannel {
+        return channel?.type === ChannelType.GuildText;
+    }
+
     private async sendMessage(data: MessageData) {
         try {
             this.logger.info(
@@ -117,7 +130,7 @@ export class DiscordClient {
             }
 
             const channel = this.client.channels.cache.get(data.channelId);
-            if (!channel?.isTextBased()) {
+            if (!this.getIsValidTextChannel(channel)) {
                 const error = new Error(
                     `Invalid or unsupported channel: ${data.channelId}`
                 );
