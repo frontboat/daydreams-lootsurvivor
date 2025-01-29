@@ -4,7 +4,7 @@
 
 ### `abstract` BaseProcessor
 
-Defined in: [packages/core/src/core/processor.ts:13](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/processor.ts#L13)
+Defined in: [packages/core/src/core/processor.ts:13](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/processor.ts#L13)
 
 Base abstract class for content processors that handle different types of input
 and generate appropriate responses using LLM.
@@ -20,7 +20,7 @@ and generate appropriate responses using LLM.
 
 > **new BaseProcessor**(`metadata`, `loggerLevel`, `character`, `llmClient`, `contentLimit`): [`BaseProcessor`](globals.md#baseprocessor)
 
-Defined in: [packages/core/src/core/processor.ts:24](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/processor.ts#L24)
+Defined in: [packages/core/src/core/processor.ts:24](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/processor.ts#L24)
 
 Creates a new BaseProcessor instance
 
@@ -70,7 +70,7 @@ The LLM client instance to use for processing
 
 > `protected` **character**: [`Character`](namespaces/Types.md#character)
 
-Defined in: [packages/core/src/core/processor.ts:27](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/processor.ts#L27)
+Defined in: [packages/core/src/core/processor.ts:27](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/processor.ts#L27)
 
 The character personality to use for responses
 
@@ -78,13 +78,13 @@ The character personality to use for responses
 
 > `protected` **contentLimit**: `number` = `1000`
 
-Defined in: [packages/core/src/core/processor.ts:29](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/processor.ts#L29)
+Defined in: [packages/core/src/core/processor.ts:29](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/processor.ts#L29)
 
 ##### llmClient
 
 > `protected` **llmClient**: [`LLMClient`](globals.md#llmclient-1)
 
-Defined in: [packages/core/src/core/processor.ts:28](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/processor.ts#L28)
+Defined in: [packages/core/src/core/processor.ts:28](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/processor.ts#L28)
 
 The LLM client instance to use for processing
 
@@ -92,7 +92,7 @@ The LLM client instance to use for processing
 
 > `protected` **logger**: [`Logger`](globals.md#logger-1)
 
-Defined in: [packages/core/src/core/processor.ts:15](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/processor.ts#L15)
+Defined in: [packages/core/src/core/processor.ts:15](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/processor.ts#L15)
 
 Logger instance for this processor
 
@@ -100,7 +100,7 @@ Logger instance for this processor
 
 > `protected` **loggerLevel**: [`LogLevel`](namespaces/Types.md#loglevel) = `LogLevel.ERROR`
 
-Defined in: [packages/core/src/core/processor.ts:26](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/processor.ts#L26)
+Defined in: [packages/core/src/core/processor.ts:26](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/processor.ts#L26)
 
 The logging level to use
 
@@ -108,7 +108,7 @@ The logging level to use
 
 > `protected` **metadata**: `object`
 
-Defined in: [packages/core/src/core/processor.ts:25](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/processor.ts#L25)
+Defined in: [packages/core/src/core/processor.ts:25](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/processor.ts#L25)
 
 Metadata about this processor including name and description
 
@@ -126,7 +126,7 @@ Metadata about this processor including name and description
 
 > `abstract` **canHandle**(`content`): `boolean`
 
-Defined in: [packages/core/src/core/processor.ts:51](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/processor.ts#L51)
+Defined in: [packages/core/src/core/processor.ts:51](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/processor.ts#L51)
 
 Determines if this processor can handle the given content.
 
@@ -148,7 +148,7 @@ True if this processor can handle the content, false otherwise
 
 > **getName**(): `string`
 
-Defined in: [packages/core/src/core/processor.ts:42](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/processor.ts#L42)
+Defined in: [packages/core/src/core/processor.ts:42](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/processor.ts#L42)
 
 Gets the name of this processor
 
@@ -162,7 +162,7 @@ The processor name from metadata
 
 > `abstract` **process**(`content`, `otherContext`, `ioContext`?): `Promise`\<[`ProcessedResult`](namespaces/Types.md#processedresult)\>
 
-Defined in: [packages/core/src/core/processor.ts:62](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/processor.ts#L62)
+Defined in: [packages/core/src/core/processor.ts:62](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/processor.ts#L62)
 
 Processes the given content and returns a result.
 
@@ -206,7 +206,7 @@ Promise resolving to the processed result
 
 ### ChainOfThought
 
-Defined in: [packages/core/src/core/chain-of-thought.ts:29](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/chain-of-thought.ts#L29)
+Defined in: [packages/core/src/core/chain-of-thought.ts:29](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/chain-of-thought.ts#L29)
 
 #### Extends
 
@@ -218,7 +218,7 @@ Defined in: [packages/core/src/core/chain-of-thought.ts:29](https://github.com/f
 
 > **new ChainOfThought**(`llmClient`, `memory`, `initialContext`?, `config`?): [`ChainOfThought`](globals.md#chainofthought)
 
-Defined in: [packages/core/src/core/chain-of-thought.ts:39](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/chain-of-thought.ts#L39)
+Defined in: [packages/core/src/core/chain-of-thought.ts:39](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/chain-of-thought.ts#L39)
 
 ###### Parameters
 
@@ -254,13 +254,13 @@ Defined in: [packages/core/src/core/chain-of-thought.ts:39](https://github.com/f
 
 > **goalManager**: [`GoalManager`](globals.md#goalmanager-1)
 
-Defined in: [packages/core/src/core/chain-of-thought.ts:34](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/chain-of-thought.ts#L34)
+Defined in: [packages/core/src/core/chain-of-thought.ts:34](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/chain-of-thought.ts#L34)
 
 ##### memory
 
 > **memory**: [`VectorDB`](namespaces/Types.md#vectordb)
 
-Defined in: [packages/core/src/core/chain-of-thought.ts:35](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/chain-of-thought.ts#L35)
+Defined in: [packages/core/src/core/chain-of-thought.ts:35](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/chain-of-thought.ts#L35)
 
 ##### captureRejections
 
@@ -439,7 +439,7 @@ v0.1.26
 
 > **decomposeObjectiveIntoGoals**(`objective`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/core/chain-of-thought.ts:78](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/chain-of-thought.ts#L78)
+Defined in: [packages/core/src/core/chain-of-thought.ts:78](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/chain-of-thought.ts#L78)
 
 Plans a strategic approach to achieve a given objective by breaking it down into hierarchical goals.
 
@@ -578,7 +578,7 @@ v6.0.0
 
 > **executeAction**(`action`): `Promise`\<`string`\>
 
-Defined in: [packages/core/src/core/chain-of-thought.ts:1090](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/chain-of-thought.ts#L1090)
+Defined in: [packages/core/src/core/chain-of-thought.ts:1090](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/chain-of-thought.ts#L1090)
 
 Executes a Chain of Thought action triggered by the LLM.
 
@@ -621,7 +621,7 @@ const result = await chain.executeAction({
 
 > **getBlackboardHistory**(`type`?, `key`?, `limit`?): `Promise`\<`any`[]\>
 
-Defined in: [packages/core/src/core/chain-of-thought.ts:1714](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/chain-of-thought.ts#L1714)
+Defined in: [packages/core/src/core/chain-of-thought.ts:1714](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/chain-of-thought.ts#L1714)
 
 Retrieves the history of blackboard updates, optionally filtered by type and key.
 Returns updates in reverse chronological order (newest first).
@@ -666,7 +666,7 @@ Array of blackboard updates, each containing the update details and metadata
 
 > **getBlackboardState**(): `Promise`\<`Record`\<`string`, `any`\>\>
 
-Defined in: [packages/core/src/core/chain-of-thought.ts:1662](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/chain-of-thought.ts#L1662)
+Defined in: [packages/core/src/core/chain-of-thought.ts:1662](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/chain-of-thought.ts#L1662)
 
 Retrieves the current state of the blackboard by aggregating all stored updates.
 The blackboard state is built by applying updates in chronological order, organized by type and key.
@@ -693,7 +693,7 @@ and second level keys are the specific keys within each type, with their corresp
 
 > **getContextHistory**(): [`ChainOfThoughtContext`](namespaces/Types.md#chainofthoughtcontext)[]
 
-Defined in: [packages/core/src/core/chain-of-thought.ts:1019](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/chain-of-thought.ts#L1019)
+Defined in: [packages/core/src/core/chain-of-thought.ts:1019](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/chain-of-thought.ts#L1019)
 
 Retrieves all context snapshots that have been captured.
 
@@ -1073,7 +1073,7 @@ v6.0.0
 
 > **processHighestPriorityGoal**(): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/core/chain-of-thought.ts:575](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/chain-of-thought.ts#L575)
+Defined in: [packages/core/src/core/chain-of-thought.ts:575](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/chain-of-thought.ts#L575)
 
 Executes the next highest priority goal that is ready for execution.
 
@@ -1160,7 +1160,7 @@ v9.4.0
 
 > **recordReasoningStep**(`content`, `type`, `tags`?, `meta`?): [`Step`](namespaces/Types.md#step-1)
 
-Defined in: [packages/core/src/core/chain-of-thought.ts:931](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/chain-of-thought.ts#L931)
+Defined in: [packages/core/src/core/chain-of-thought.ts:931](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/chain-of-thought.ts#L931)
 
 Adds a new step to the chain of thought sequence.
 
@@ -1211,7 +1211,7 @@ chain.recordReasoningStep("Analyzing user request", "reasoning", ["analysis"]);
 
 > **registerOutput**(`output`): `void`
 
-Defined in: [packages/core/src/core/chain-of-thought.ts:1042](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/chain-of-thought.ts#L1042)
+Defined in: [packages/core/src/core/chain-of-thought.ts:1042](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/chain-of-thought.ts#L1042)
 
 Registers an output handler for a specific action type.
 
@@ -1392,7 +1392,7 @@ v0.1.26
 
 > **removeOutput**(`name`): `void`
 
-Defined in: [packages/core/src/core/chain-of-thought.ts:1062](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/chain-of-thought.ts#L1062)
+Defined in: [packages/core/src/core/chain-of-thought.ts:1062](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/chain-of-thought.ts#L1062)
 
 Removes a registered output handler.
 
@@ -1423,7 +1423,7 @@ chain.removeOutput("sendMessage");
 
 > **saveContextSnapshot**(): `void`
 
-Defined in: [packages/core/src/core/chain-of-thought.ts:996](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/chain-of-thought.ts#L996)
+Defined in: [packages/core/src/core/chain-of-thought.ts:996](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/chain-of-thought.ts#L996)
 
 Creates and stores a snapshot of the current context state.
 
@@ -1478,7 +1478,7 @@ v0.3.5
 
 > **think**(`userQuery`, `maxIterations`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/core/chain-of-thought.ts:1267](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/chain-of-thought.ts#L1267)
+Defined in: [packages/core/src/core/chain-of-thought.ts:1267](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/chain-of-thought.ts#L1267)
 
 ###### Parameters
 
@@ -1498,7 +1498,7 @@ Defined in: [packages/core/src/core/chain-of-thought.ts:1267](https://github.com
 
 > **updateContextState**(`newContext`): `void`
 
-Defined in: [packages/core/src/core/chain-of-thought.ts:970](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/chain-of-thought.ts#L970)
+Defined in: [packages/core/src/core/chain-of-thought.ts:970](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/chain-of-thought.ts#L970)
 
 Merges new data into the current chain of thought context.
 
@@ -2236,7 +2236,7 @@ v15.4.0
 
 ### ChromaVectorDB
 
-Defined in: [packages/core/src/core/vector-db.ts:23](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/vector-db.ts#L23)
+Defined in: [packages/core/src/core/vector-db.ts:23](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/vector-db.ts#L23)
 
 #### Implements
 
@@ -2248,7 +2248,7 @@ Defined in: [packages/core/src/core/vector-db.ts:23](https://github.com/frontboa
 
 > **new ChromaVectorDB**(`collectionName`, `config`): [`ChromaVectorDB`](globals.md#chromavectordb)
 
-Defined in: [packages/core/src/core/vector-db.ts:35](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/vector-db.ts#L35)
+Defined in: [packages/core/src/core/vector-db.ts:35](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/vector-db.ts#L35)
 
 ###### Parameters
 
@@ -2276,25 +2276,25 @@ Defined in: [packages/core/src/core/vector-db.ts:35](https://github.com/frontboa
 
 > `readonly` `static` **CLUSTER\_COLLECTION**: `"clusters"` = `"clusters"`
 
-Defined in: [packages/core/src/core/vector-db.ts:25](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/vector-db.ts#L25)
+Defined in: [packages/core/src/core/vector-db.ts:25](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/vector-db.ts#L25)
 
 ##### DOCUMENTATION\_COLLECTION
 
 > `readonly` `static` **DOCUMENTATION\_COLLECTION**: `"documentation"` = `"documentation"`
 
-Defined in: [packages/core/src/core/vector-db.ts:28](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/vector-db.ts#L28)
+Defined in: [packages/core/src/core/vector-db.ts:28](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/vector-db.ts#L28)
 
 ##### EPISODIC\_COLLECTION
 
 > `readonly` `static` **EPISODIC\_COLLECTION**: `"episodic_memory"` = `"episodic_memory"`
 
-Defined in: [packages/core/src/core/vector-db.ts:27](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/vector-db.ts#L27)
+Defined in: [packages/core/src/core/vector-db.ts:27](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/vector-db.ts#L27)
 
 ##### SYSTEM\_COLLECTION
 
 > `readonly` `static` **SYSTEM\_COLLECTION**: `"system_metadata"` = `"system_metadata"`
 
-Defined in: [packages/core/src/core/vector-db.ts:26](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/vector-db.ts#L26)
+Defined in: [packages/core/src/core/vector-db.ts:26](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/vector-db.ts#L26)
 
 #### Methods
 
@@ -2302,7 +2302,7 @@ Defined in: [packages/core/src/core/vector-db.ts:26](https://github.com/frontboa
 
 > **clear**(): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/core/vector-db.ts:1479](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/vector-db.ts#L1479)
+Defined in: [packages/core/src/core/vector-db.ts:1479](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/vector-db.ts#L1479)
 
 Clears all items from the main collection.
 
@@ -2314,7 +2314,7 @@ Clears all items from the main collection.
 
 > **count**(): `Promise`\<`number`\>
 
-Defined in: [packages/core/src/core/vector-db.ts:1471](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/vector-db.ts#L1471)
+Defined in: [packages/core/src/core/vector-db.ts:1471](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/vector-db.ts#L1471)
 
 Returns the total count of items in the main collection.
 
@@ -2326,7 +2326,7 @@ Returns the total count of items in the main collection.
 
 > **delete**(`id`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/core/vector-db.ts:223](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/vector-db.ts#L223)
+Defined in: [packages/core/src/core/vector-db.ts:223](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/vector-db.ts#L223)
 
 Deletes an item by ID from the main "memories" collection.
 
@@ -2348,7 +2348,7 @@ Deletes an item by ID from the main "memories" collection.
 
 > **deleteRoom**(`roomId`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/core/vector-db.ts:489](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/vector-db.ts#L489)
+Defined in: [packages/core/src/core/vector-db.ts:489](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/vector-db.ts#L489)
 
 Deletes an entire room's collection.
 
@@ -2366,7 +2366,7 @@ Deletes an entire room's collection.
 
 > **findSimilar**(`content`, `limit`, `metadata`?): `Promise`\<[`SearchResult`](namespaces/Types.md#searchresult)[]\>
 
-Defined in: [packages/core/src/core/vector-db.ts:142](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/vector-db.ts#L142)
+Defined in: [packages/core/src/core/vector-db.ts:142](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/vector-db.ts#L142)
 
 Finds similar items in the main "memories" collection.
 
@@ -2396,7 +2396,7 @@ Finds similar items in the main "memories" collection.
 
 > **findSimilarDocuments**(`query`, `limit`): `Promise`\<[`Documentation`](namespaces/Types.md#documentation)[]\>
 
-Defined in: [packages/core/src/core/vector-db.ts:1351](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/vector-db.ts#L1351)
+Defined in: [packages/core/src/core/vector-db.ts:1351](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/vector-db.ts#L1351)
 
 Finds similar documentation records by matching the user query text.
 
@@ -2422,7 +2422,7 @@ Finds similar documentation records by matching the user query text.
 
 > **findSimilarEpisodes**(`action`, `limit`): `Promise`\<[`EpisodicMemory`](namespaces/Types.md#episodicmemory)[]\>
 
-Defined in: [packages/core/src/core/vector-db.ts:1048](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/vector-db.ts#L1048)
+Defined in: [packages/core/src/core/vector-db.ts:1048](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/vector-db.ts#L1048)
 
 Finds similar episodes by matching the "action" field.
 
@@ -2448,7 +2448,7 @@ Finds similar episodes by matching the "action" field.
 
 > **findSimilarInRoom**(`content`, `roomId`, `limit`, `metadata`?): `Promise`\<[`SearchResult`](namespaces/Types.md#searchresult)[]\>
 
-Defined in: [packages/core/src/core/vector-db.ts:343](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/vector-db.ts#L343)
+Defined in: [packages/core/src/core/vector-db.ts:343](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/vector-db.ts#L343)
 
 Finds similar items in a given room's collection. If no cluster match,
 falls back to "global" search in that room's collection.
@@ -2483,7 +2483,7 @@ falls back to "global" search in that room's collection.
 
 > **getCollectionForRoom**(`roomId`): `Promise`\<`Collection`\>
 
-Defined in: [packages/core/src/core/vector-db.ts:249](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/vector-db.ts#L249)
+Defined in: [packages/core/src/core/vector-db.ts:249](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/vector-db.ts#L249)
 
 Returns (and creates if necessary) a separate collection for a given room.
 Rooms are typically namespaced as `room_<roomId>`.
@@ -2502,7 +2502,7 @@ Rooms are typically namespaced as `room_<roomId>`.
 
 > **getMemoriesFromRoom**(`roomId`, `limit`?): `Promise`\<`object`[]\>
 
-Defined in: [packages/core/src/core/vector-db.ts:1675](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/vector-db.ts#L1675)
+Defined in: [packages/core/src/core/vector-db.ts:1675](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/vector-db.ts#L1675)
 
 Gets all memories from a specific room's collection, optionally limited to a certain number
 
@@ -2524,7 +2524,7 @@ Gets all memories from a specific room's collection, optionally limited to a cer
 
 > **getRecentEpisodes**(`limit`): `Promise`\<[`EpisodicMemory`](namespaces/Types.md#episodicmemory)[]\>
 
-Defined in: [packages/core/src/core/vector-db.ts:1079](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/vector-db.ts#L1079)
+Defined in: [packages/core/src/core/vector-db.ts:1079](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/vector-db.ts#L1079)
 
 Retrieves the most recent episodic memories (peeking at the underlying collection).
 
@@ -2546,7 +2546,7 @@ Retrieves the most recent episodic memories (peeking at the underlying collectio
 
 > **getRoomMemoryCount**(`roomId`): `Promise`\<`number`\>
 
-Defined in: [packages/core/src/core/vector-db.ts:481](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/vector-db.ts#L481)
+Defined in: [packages/core/src/core/vector-db.ts:481](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/vector-db.ts#L481)
 
 Gets the memory count for a specific room.
 
@@ -2564,7 +2564,7 @@ Gets the memory count for a specific room.
 
 > **getSystemMetadata**(`key`): `Promise`\<`null` \| `Record`\<`string`, `any`\>\>
 
-Defined in: [packages/core/src/core/vector-db.ts:983](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/vector-db.ts#L983)
+Defined in: [packages/core/src/core/vector-db.ts:983](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/vector-db.ts#L983)
 
 Retrieves system metadata by key.
 
@@ -2586,7 +2586,7 @@ Retrieves system metadata by key.
 
 > **hasProcessedContent**(`contentId`, `room`): `Promise`\<`boolean`\>
 
-Defined in: [packages/core/src/core/vector-db.ts:1594](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/vector-db.ts#L1594)
+Defined in: [packages/core/src/core/vector-db.ts:1594](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/vector-db.ts#L1594)
 
 ###### Parameters
 
@@ -2606,7 +2606,7 @@ Defined in: [packages/core/src/core/vector-db.ts:1594](https://github.com/frontb
 
 > **listRooms**(): `Promise`\<`string`[]\>
 
-Defined in: [packages/core/src/core/vector-db.ts:467](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/vector-db.ts#L467)
+Defined in: [packages/core/src/core/vector-db.ts:467](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/vector-db.ts#L467)
 
 Lists the known "room_..." collections.
 
@@ -2618,7 +2618,7 @@ Lists the known "room_..." collections.
 
 > **markContentAsProcessed**(`contentId`, `room`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/core/vector-db.ts:1628](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/vector-db.ts#L1628)
+Defined in: [packages/core/src/core/vector-db.ts:1628](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/vector-db.ts#L1628)
 
 ###### Parameters
 
@@ -2638,7 +2638,7 @@ Defined in: [packages/core/src/core/vector-db.ts:1628](https://github.com/frontb
 
 > **peek**(`limit`): `Promise`\<[`SearchResult`](namespaces/Types.md#searchresult)[]\>
 
-Defined in: [packages/core/src/core/vector-db.ts:1487](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/vector-db.ts#L1487)
+Defined in: [packages/core/src/core/vector-db.ts:1487](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/vector-db.ts#L1487)
 
 Retrieves the first N items from the main collection (for debugging).
 
@@ -2656,7 +2656,7 @@ Retrieves the first N items from the main collection (for debugging).
 
 > **purge**(): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/core/vector-db.ts:1554](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/vector-db.ts#L1554)
+Defined in: [packages/core/src/core/vector-db.ts:1554](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/vector-db.ts#L1554)
 
 Purges all collections and data from the database.
 Use with caution - this is irreversible!
@@ -2673,7 +2673,7 @@ Use with caution - this is irreversible!
 
 > **searchDocumentsByTag**(`tags`, `limit`): `Promise`\<[`Documentation`](namespaces/Types.md#documentation)[]\>
 
-Defined in: [packages/core/src/core/vector-db.ts:1385](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/vector-db.ts#L1385)
+Defined in: [packages/core/src/core/vector-db.ts:1385](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/vector-db.ts#L1385)
 
 Searches documents by exact match on tags (joined by commas).
 
@@ -2699,7 +2699,7 @@ Searches documents by exact match on tags (joined by commas).
 
 > **store**(`content`, `metadata`?): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/core/vector-db.ts:187](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/vector-db.ts#L187)
+Defined in: [packages/core/src/core/vector-db.ts:187](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/vector-db.ts#L187)
 
 Stores a piece of content in the main "memories" collection.
 
@@ -2725,7 +2725,7 @@ Stores a piece of content in the main "memories" collection.
 
 > **storeDocument**(`doc`): `Promise`\<`string`\>
 
-Defined in: [packages/core/src/core/vector-db.ts:1315](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/vector-db.ts#L1315)
+Defined in: [packages/core/src/core/vector-db.ts:1315](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/vector-db.ts#L1315)
 
 Stores a documentation record (knowledge resource).
 
@@ -2747,7 +2747,7 @@ Stores a documentation record (knowledge resource).
 
 > **storeEpisode**(`memory`): `Promise`\<`string`\>
 
-Defined in: [packages/core/src/core/vector-db.ts:1011](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/vector-db.ts#L1011)
+Defined in: [packages/core/src/core/vector-db.ts:1011](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/vector-db.ts#L1011)
 
 Stores an episodic memory (action + outcome + context).
 
@@ -2769,7 +2769,7 @@ Stores an episodic memory (action + outcome + context).
 
 > **storeInRoom**(`content`, `roomId`, `metadata`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/core/vector-db.ts:268](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/vector-db.ts#L268)
+Defined in: [packages/core/src/core/vector-db.ts:268](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/vector-db.ts#L268)
 
 Stores content in a specific room's memory, also associating it with a cluster ID.
 
@@ -2799,7 +2799,7 @@ Stores content in a specific room's memory, also associating it with a cluster I
 
 > **storeSystemMetadata**(`key`, `value`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/core/vector-db.ts:960](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/vector-db.ts#L960)
+Defined in: [packages/core/src/core/vector-db.ts:960](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/vector-db.ts#L960)
 
 Stores arbitrary metadata in the "system_metadata" collection.
 
@@ -2825,7 +2825,7 @@ Stores arbitrary metadata in the "system_metadata" collection.
 
 > **updateDocument**(`id`, `updates`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/core/vector-db.ts:1434](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/vector-db.ts#L1434)
+Defined in: [packages/core/src/core/vector-db.ts:1434](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/vector-db.ts#L1434)
 
 Updates an existing documentation record by ID.
 
@@ -2851,7 +2851,7 @@ Updates an existing documentation record by ID.
 
 ### Consciousness
 
-Defined in: [packages/core/src/core/consciousness.ts:9](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/consciousness.ts#L9)
+Defined in: [packages/core/src/core/consciousness.ts:9](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/consciousness.ts#L9)
 
 #### Constructors
 
@@ -2859,7 +2859,7 @@ Defined in: [packages/core/src/core/consciousness.ts:9](https://github.com/front
 
 > **new Consciousness**(`llmClient`, `roomManager`, `config`): [`Consciousness`](globals.md#consciousness)
 
-Defined in: [packages/core/src/core/consciousness.ts:15](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/consciousness.ts#L15)
+Defined in: [packages/core/src/core/consciousness.ts:15](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/consciousness.ts#L15)
 
 ###### Parameters
 
@@ -2895,7 +2895,7 @@ Defined in: [packages/core/src/core/consciousness.ts:15](https://github.com/fron
 
 > **start**(): `Promise`\<[`Thought`](namespaces/Types.md#thought)\>
 
-Defined in: [packages/core/src/core/consciousness.ts:31](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/consciousness.ts#L31)
+Defined in: [packages/core/src/core/consciousness.ts:31](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/consciousness.ts#L31)
 
 ###### Returns
 
@@ -2905,7 +2905,7 @@ Defined in: [packages/core/src/core/consciousness.ts:31](https://github.com/fron
 
 > **stop**(): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/core/consciousness.ts:35](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/consciousness.ts#L35)
+Defined in: [packages/core/src/core/consciousness.ts:35](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/consciousness.ts#L35)
 
 ###### Returns
 
@@ -2915,7 +2915,7 @@ Defined in: [packages/core/src/core/consciousness.ts:35](https://github.com/fron
 
 ### GoalManager
 
-Defined in: [packages/core/src/core/goal-manager.ts:6](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/goal-manager.ts#L6)
+Defined in: [packages/core/src/core/goal-manager.ts:6](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/goal-manager.ts#L6)
 
 Manages a collection of goals, their relationships, and their lifecycle states.
 Provides methods for creating, updating, and querying goals and their hierarchies.
@@ -2936,7 +2936,7 @@ Provides methods for creating, updating, and querying goals and their hierarchie
 
 > **addGoal**(`goal`): [`Goal`](namespaces/Types.md#goal)
 
-Defined in: [packages/core/src/core/goal-manager.ts:16](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/goal-manager.ts#L16)
+Defined in: [packages/core/src/core/goal-manager.ts:16](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/goal-manager.ts#L16)
 
 Creates a new goal and adds it to the goal collection.
 If the goal is a subgoal, updates the parent goal's subgoals array.
@@ -2959,7 +2959,7 @@ The newly created goal with generated ID
 
 > **arePrerequisitesMet**(`goalId`): `boolean`
 
-Defined in: [packages/core/src/core/goal-manager.ts:221](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/goal-manager.ts#L221)
+Defined in: [packages/core/src/core/goal-manager.ts:221](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/goal-manager.ts#L221)
 
 Checks if all prerequisites for a goal are met.
 
@@ -2981,7 +2981,7 @@ True if all dependencies are completed
 
 > **blockGoalHierarchy**(`goalId`, `reason`): `void`
 
-Defined in: [packages/core/src/core/goal-manager.ts:283](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/goal-manager.ts#L283)
+Defined in: [packages/core/src/core/goal-manager.ts:283](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/goal-manager.ts#L283)
 
 Blocks a goal and all its subgoals recursively.
 
@@ -3007,7 +3007,7 @@ Reason for blocking
 
 > **canBeRefined**(`goalId`): `boolean`
 
-Defined in: [packages/core/src/core/goal-manager.ts:267](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/goal-manager.ts#L267)
+Defined in: [packages/core/src/core/goal-manager.ts:267](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/goal-manager.ts#L267)
 
 Checks if a goal can be refined into subgoals.
 
@@ -3029,7 +3029,7 @@ True if the goal can be refined
 
 > **estimateCompletionTime**(`goalId`): `number`
 
-Defined in: [packages/core/src/core/goal-manager.ts:322](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/goal-manager.ts#L322)
+Defined in: [packages/core/src/core/goal-manager.ts:322](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/goal-manager.ts#L322)
 
 Estimates completion time based on horizon and dependencies.
 
@@ -3051,7 +3051,7 @@ Estimated time units to complete
 
 > **getBlockingGoals**(`goalId`): [`Goal`](namespaces/Types.md#goal)[]
 
-Defined in: [packages/core/src/core/goal-manager.ts:170](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/goal-manager.ts#L170)
+Defined in: [packages/core/src/core/goal-manager.ts:170](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/goal-manager.ts#L170)
 
 Gets all incomplete goals that are blocking a given goal.
 
@@ -3073,7 +3073,7 @@ Array of blocking goals
 
 > **getChildGoals**(`parentId`): [`Goal`](namespaces/Types.md#goal)[]
 
-Defined in: [packages/core/src/core/goal-manager.ts:196](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/goal-manager.ts#L196)
+Defined in: [packages/core/src/core/goal-manager.ts:196](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/goal-manager.ts#L196)
 
 Gets all direct child goals of a parent goal.
 
@@ -3095,7 +3095,7 @@ Array of child goals
 
 > **getDependentGoals**(`goalId`): [`Goal`](namespaces/Types.md#goal)[]
 
-Defined in: [packages/core/src/core/goal-manager.ts:210](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/goal-manager.ts#L210)
+Defined in: [packages/core/src/core/goal-manager.ts:210](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/goal-manager.ts#L210)
 
 Gets all goals that depend on a given goal.
 
@@ -3117,7 +3117,7 @@ Array of dependent goals
 
 > **getGoalById**(`id`): `undefined` \| [`Goal`](namespaces/Types.md#goal)
 
-Defined in: [packages/core/src/core/goal-manager.ts:187](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/goal-manager.ts#L187)
+Defined in: [packages/core/src/core/goal-manager.ts:187](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/goal-manager.ts#L187)
 
 Retrieves a goal by its ID.
 
@@ -3139,7 +3139,7 @@ The goal or undefined if not found
 
 > **getGoalHierarchy**(`goalId`): [`Goal`](namespaces/Types.md#goal)[]
 
-Defined in: [packages/core/src/core/goal-manager.ts:150](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/goal-manager.ts#L150)
+Defined in: [packages/core/src/core/goal-manager.ts:150](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/goal-manager.ts#L150)
 
 Gets a goal and all its subgoals as a flattened array.
 
@@ -3161,7 +3161,7 @@ Array containing the goal and all its subgoals
 
 > **getGoalPath**(`goalId`): [`Goal`](namespaces/Types.md#goal)[]
 
-Defined in: [packages/core/src/core/goal-manager.ts:305](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/goal-manager.ts#L305)
+Defined in: [packages/core/src/core/goal-manager.ts:305](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/goal-manager.ts#L305)
 
 Gets the full path from root goal to specified goal.
 
@@ -3183,7 +3183,7 @@ Array of goals representing the path
 
 > **getGoalsByHorizon**(`horizon`): [`Goal`](namespaces/Types.md#goal)[]
 
-Defined in: [packages/core/src/core/goal-manager.ts:118](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/goal-manager.ts#L118)
+Defined in: [packages/core/src/core/goal-manager.ts:118](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/goal-manager.ts#L118)
 
 Retrieves all goals for a specific time horizon, sorted by priority.
 
@@ -3205,7 +3205,7 @@ Array of matching goals
 
 > **getGoalsByScore**(): [`Goal`](namespaces/Types.md#goal)[]
 
-Defined in: [packages/core/src/core/goal-manager.ts:412](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/goal-manager.ts#L412)
+Defined in: [packages/core/src/core/goal-manager.ts:412](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/goal-manager.ts#L412)
 
 Gets all goals sorted by their outcome scores.
 
@@ -3219,7 +3219,7 @@ Array of goals with outcome scores, sorted highest to lowest
 
 > **getGoalsByStatus**(`status`): [`Goal`](namespaces/Types.md#goal)[]
 
-Defined in: [packages/core/src/core/goal-manager.ts:256](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/goal-manager.ts#L256)
+Defined in: [packages/core/src/core/goal-manager.ts:256](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/goal-manager.ts#L256)
 
 Gets all goals with a specific status.
 
@@ -3241,7 +3241,7 @@ Array of matching goals, sorted by priority
 
 > **getReadyGoals**(`horizon`?): [`Goal`](namespaces/Types.md#goal)[]
 
-Defined in: [packages/core/src/core/goal-manager.ts:130](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/goal-manager.ts#L130)
+Defined in: [packages/core/src/core/goal-manager.ts:130](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/goal-manager.ts#L130)
 
 Returns goals that are ready to be worked on.
 A goal is ready if its status is "ready" or all its dependencies are completed.
@@ -3264,7 +3264,7 @@ Array of ready goals, sorted by priority
 
 > **recordGoalFailure**(`goalId`, `reason`, `outcomeScore`): `void`
 
-Defined in: [packages/core/src/core/goal-manager.ts:387](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/goal-manager.ts#L387)
+Defined in: [packages/core/src/core/goal-manager.ts:387](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/goal-manager.ts#L387)
 
 Records a goal failure with reason and score.
 
@@ -3296,7 +3296,7 @@ Optional failure score (defaults to 0)
 
 > **recordGoalOutcome**(`goalId`, `outcomeScore`, `comment`?): `void`
 
-Defined in: [packages/core/src/core/goal-manager.ts:360](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/goal-manager.ts#L360)
+Defined in: [packages/core/src/core/goal-manager.ts:360](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/goal-manager.ts#L360)
 
 Records an outcome score and optional comment for a completed goal.
 
@@ -3328,7 +3328,7 @@ Optional comment about the outcome
 
 > **updateGoalDependencies**(`goalId`, `dependencies`): `void`
 
-Defined in: [packages/core/src/core/goal-manager.ts:39](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/goal-manager.ts#L39)
+Defined in: [packages/core/src/core/goal-manager.ts:39](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/goal-manager.ts#L39)
 
 Updates an existing goal with new dependencies.
 Used to map generated thought IDs to goal IDs.
@@ -3355,7 +3355,7 @@ The new array of dependency IDs
 
 > **updateGoalProgress**(`id`, `progress`): `void`
 
-Defined in: [packages/core/src/core/goal-manager.ts:236](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/goal-manager.ts#L236)
+Defined in: [packages/core/src/core/goal-manager.ts:236](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/goal-manager.ts#L236)
 
 Updates the progress percentage of a goal.
 
@@ -3381,7 +3381,7 @@ New progress value (0-100)
 
 > **updateGoalStatus**(`id`, `status`): `void`
 
-Defined in: [packages/core/src/core/goal-manager.ts:55](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/goal-manager.ts#L55)
+Defined in: [packages/core/src/core/goal-manager.ts:55](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/goal-manager.ts#L55)
 
 Updates the status of a goal. When marking as "completed",
 sets completed_at timestamp, progress to 100%, and updates related goals.
@@ -3408,7 +3408,7 @@ The new status to set
 
 ### LLMClient
 
-Defined in: [packages/core/src/core/llm-client.ts:79](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/llm-client.ts#L79)
+Defined in: [packages/core/src/core/llm-client.ts:79](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/llm-client.ts#L79)
 
 Main client class for interacting with LLM providers
 
@@ -3422,7 +3422,7 @@ Main client class for interacting with LLM providers
 
 > **new LLMClient**(`config`): [`LLMClient`](globals.md#llmclient-1)
 
-Defined in: [packages/core/src/core/llm-client.ts:108](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/llm-client.ts#L108)
+Defined in: [packages/core/src/core/llm-client.ts:108](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/llm-client.ts#L108)
 
 Creates a new LLM client instance - supports all major LLM providers
 
@@ -3637,7 +3637,7 @@ v0.1.26
 
 > **analyze**(`prompt`, `options`): `Promise`\<`string` \| [`StructuredAnalysis`](namespaces/Types.md#structuredanalysis)\>
 
-Defined in: [packages/core/src/core/llm-client.ts:342](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/llm-client.ts#L342)
+Defined in: [packages/core/src/core/llm-client.ts:342](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/llm-client.ts#L342)
 
 Analyzes text using the LLM with optional structured output
 
@@ -3665,7 +3665,7 @@ Promise resolving to analysis result
 
 > **complete**(`prompt`): `Promise`\<[`LLMResponse`](namespaces/Types.md#llmresponse)\>
 
-Defined in: [packages/core/src/core/llm-client.ts:206](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/llm-client.ts#L206)
+Defined in: [packages/core/src/core/llm-client.ts:206](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/llm-client.ts#L206)
 
 Completes a prompt using the configured LLM
 
@@ -3813,7 +3813,7 @@ v1.0.0
 
 > **getModelName**(): `string`
 
-Defined in: [packages/core/src/core/llm-client.ts:231](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/llm-client.ts#L231)
+Defined in: [packages/core/src/core/llm-client.ts:231](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/llm-client.ts#L231)
 
 Gets the full model name
 
@@ -3825,7 +3825,7 @@ Gets the full model name
 
 > **getModelVersion**(): `string`
 
-Defined in: [packages/core/src/core/llm-client.ts:238](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/llm-client.ts#L238)
+Defined in: [packages/core/src/core/llm-client.ts:238](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/llm-client.ts#L238)
 
 Extracts the version number from the model name
 
@@ -5099,7 +5099,7 @@ v15.4.0
 
 ### Logger
 
-Defined in: [packages/core/src/core/logger.ts:5](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/logger.ts#L5)
+Defined in: [packages/core/src/core/logger.ts:5](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/logger.ts#L5)
 
 #### Constructors
 
@@ -5107,7 +5107,7 @@ Defined in: [packages/core/src/core/logger.ts:5](https://github.com/frontboat/da
 
 > **new Logger**(`config`): [`Logger`](globals.md#logger-1)
 
-Defined in: [packages/core/src/core/logger.ts:9](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/logger.ts#L9)
+Defined in: [packages/core/src/core/logger.ts:9](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/logger.ts#L9)
 
 ###### Parameters
 
@@ -5125,7 +5125,7 @@ Defined in: [packages/core/src/core/logger.ts:9](https://github.com/frontboat/da
 
 > **debug**(`context`, `message`, `data`?): `void`
 
-Defined in: [packages/core/src/core/logger.ts:35](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/logger.ts#L35)
+Defined in: [packages/core/src/core/logger.ts:35](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/logger.ts#L35)
 
 ###### Parameters
 
@@ -5149,7 +5149,7 @@ Defined in: [packages/core/src/core/logger.ts:35](https://github.com/frontboat/d
 
 > **error**(`context`, `message`, `data`?): `void`
 
-Defined in: [packages/core/src/core/logger.ts:23](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/logger.ts#L23)
+Defined in: [packages/core/src/core/logger.ts:23](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/logger.ts#L23)
 
 ###### Parameters
 
@@ -5173,7 +5173,7 @@ Defined in: [packages/core/src/core/logger.ts:23](https://github.com/frontboat/d
 
 > **info**(`context`, `message`, `data`?): `void`
 
-Defined in: [packages/core/src/core/logger.ts:31](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/logger.ts#L31)
+Defined in: [packages/core/src/core/logger.ts:31](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/logger.ts#L31)
 
 ###### Parameters
 
@@ -5197,7 +5197,7 @@ Defined in: [packages/core/src/core/logger.ts:31](https://github.com/frontboat/d
 
 > **trace**(`context`, `message`, `data`?): `void`
 
-Defined in: [packages/core/src/core/logger.ts:39](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/logger.ts#L39)
+Defined in: [packages/core/src/core/logger.ts:39](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/logger.ts#L39)
 
 ###### Parameters
 
@@ -5221,7 +5221,7 @@ Defined in: [packages/core/src/core/logger.ts:39](https://github.com/frontboat/d
 
 > **warn**(`context`, `message`, `data`?): `void`
 
-Defined in: [packages/core/src/core/logger.ts:27](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/logger.ts#L27)
+Defined in: [packages/core/src/core/logger.ts:27](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/logger.ts#L27)
 
 ###### Parameters
 
@@ -5245,7 +5245,7 @@ Defined in: [packages/core/src/core/logger.ts:27](https://github.com/frontboat/d
 
 ### Orchestrator
 
-Defined in: [packages/core/src/core/orchestrator.ts:15](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/orchestrator.ts#L15)
+Defined in: [packages/core/src/core/orchestrator.ts:15](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/orchestrator.ts#L15)
 
 Orchestrator system that manages both "input" and "output" handlers
 in a unified manner, along with scheduling recurring inputs.
@@ -5256,7 +5256,7 @@ in a unified manner, along with scheduling recurring inputs.
 
 > **new Orchestrator**(`roomManager`, `vectorDb`, `processors`, `mongoDb`, `config`?): [`Orchestrator`](globals.md#orchestrator)
 
-Defined in: [packages/core/src/core/orchestrator.ts:43](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/orchestrator.ts#L43)
+Defined in: [packages/core/src/core/orchestrator.ts:43](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/orchestrator.ts#L43)
 
 ###### Parameters
 
@@ -5290,13 +5290,13 @@ Defined in: [packages/core/src/core/orchestrator.ts:43](https://github.com/front
 
 > **userId**: `string`
 
-Defined in: [packages/core/src/core/orchestrator.ts:37](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/orchestrator.ts#L37)
+Defined in: [packages/core/src/core/orchestrator.ts:37](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/orchestrator.ts#L37)
 
 ##### vectorDb
 
 > `readonly` **vectorDb**: [`VectorDB`](namespaces/Types.md#vectordb)
 
-Defined in: [packages/core/src/core/orchestrator.ts:42](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/orchestrator.ts#L42)
+Defined in: [packages/core/src/core/orchestrator.ts:42](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/orchestrator.ts#L42)
 
 Other references in your system. Adjust as needed.
 
@@ -5306,7 +5306,7 @@ Other references in your system. Adjust as needed.
 
 > **dispatchToAction**\<`T`\>(`name`, `data`): `Promise`\<`unknown`\>
 
-Defined in: [packages/core/src/core/orchestrator.ts:222](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/orchestrator.ts#L222)
+Defined in: [packages/core/src/core/orchestrator.ts:222](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/orchestrator.ts#L222)
 
 Dispatches data to a registered action handler and returns its result.
 
@@ -5362,7 +5362,7 @@ const result = await orchestrator.dispatchToAction("sendEmail", {
 
 > **dispatchToInput**\<`T`\>(`name`, `data`, `userId`, `orchestratorId`?): `Promise`\<`unknown`\>
 
-Defined in: [packages/core/src/core/orchestrator.ts:499](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/orchestrator.ts#L499)
+Defined in: [packages/core/src/core/orchestrator.ts:499](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/orchestrator.ts#L499)
 
 Dispatches data to a registered input handler and processes the result through the autonomous flow.
 
@@ -5433,7 +5433,7 @@ If the handler's role is not "input"
 
 > **dispatchToOutput**\<`T`\>(`name`, `data`): `Promise`\<`unknown`\>
 
-Defined in: [packages/core/src/core/orchestrator.ts:125](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/orchestrator.ts#L125)
+Defined in: [packages/core/src/core/orchestrator.ts:125](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/orchestrator.ts#L125)
 
 Executes a handler with role="output" by name, passing data to it.
 This is effectively "dispatchToOutput."
@@ -5460,7 +5460,7 @@ This is effectively "dispatchToOutput."
 
 > **initializeOrchestrator**(`userId`): `void`
 
-Defined in: [packages/core/src/core/orchestrator.ts:77](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/orchestrator.ts#L77)
+Defined in: [packages/core/src/core/orchestrator.ts:77](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/orchestrator.ts#L77)
 
 ###### Parameters
 
@@ -5476,7 +5476,7 @@ Defined in: [packages/core/src/core/orchestrator.ts:77](https://github.com/front
 
 > **processContent**(`content`, `source`, `userId`?): `Promise`\<[`ProcessedResult`](namespaces/Types.md#processedresult)[]\>
 
-Defined in: [packages/core/src/core/orchestrator.ts:686](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/orchestrator.ts#L686)
+Defined in: [packages/core/src/core/orchestrator.ts:686](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/orchestrator.ts#L686)
 
 ###### Parameters
 
@@ -5500,7 +5500,7 @@ Defined in: [packages/core/src/core/orchestrator.ts:686](https://github.com/fron
 
 > **registerIOHandler**(`handler`): `void`
 
-Defined in: [packages/core/src/core/orchestrator.ts:86](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/orchestrator.ts#L86)
+Defined in: [packages/core/src/core/orchestrator.ts:86](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/orchestrator.ts#L86)
 
 Primary method to register any IOHandler (input or output).
 - If it's an input with an interval, schedule it for recurring runs.
@@ -5520,7 +5520,7 @@ Primary method to register any IOHandler (input or output).
 
 > **removeIOHandler**(`name`): `void`
 
-Defined in: [packages/core/src/core/orchestrator.ts:110](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/orchestrator.ts#L110)
+Defined in: [packages/core/src/core/orchestrator.ts:110](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/orchestrator.ts#L110)
 
 Removes a handler (input or output) by name, stopping scheduling if needed.
 
@@ -5538,7 +5538,7 @@ Removes a handler (input or output) by name, stopping scheduling if needed.
 
 > **scheduleTaskInDb**(`userId`, `handlerName`, `data`, `intervalMs`?): `Promise`\<`ObjectId`\>
 
-Defined in: [packages/core/src/core/orchestrator.ts:533](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/orchestrator.ts#L533)
+Defined in: [packages/core/src/core/orchestrator.ts:533](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/orchestrator.ts#L533)
 
 ###### Parameters
 
@@ -5566,7 +5566,7 @@ Defined in: [packages/core/src/core/orchestrator.ts:533](https://github.com/fron
 
 > **startPolling**(`everyMs`): `void`
 
-Defined in: [packages/core/src/core/orchestrator.ts:563](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/orchestrator.ts#L563)
+Defined in: [packages/core/src/core/orchestrator.ts:563](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/orchestrator.ts#L563)
 
 ###### Parameters
 
@@ -5582,7 +5582,7 @@ Defined in: [packages/core/src/core/orchestrator.ts:563](https://github.com/fron
 
 > **stop**(): `void`
 
-Defined in: [packages/core/src/core/orchestrator.ts:816](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/orchestrator.ts#L816)
+Defined in: [packages/core/src/core/orchestrator.ts:816](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/orchestrator.ts#L816)
 
 Stops all scheduled tasks and shuts down the orchestrator.
 
@@ -5594,7 +5594,7 @@ Stops all scheduled tasks and shuts down the orchestrator.
 
 ### Room
 
-Defined in: [packages/core/src/core/room.ts:8](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/room.ts#L8)
+Defined in: [packages/core/src/core/room.ts:8](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/room.ts#L8)
 
 Represents a room/conversation context that can store memories and metadata.
 
@@ -5604,7 +5604,7 @@ Represents a room/conversation context that can store memories and metadata.
 
 > **new Room**(`platformId`, `platform`, `metadata`?): [`Room`](globals.md#room)
 
-Defined in: [packages/core/src/core/room.ts:22](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/room.ts#L22)
+Defined in: [packages/core/src/core/room.ts:22](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/room.ts#L22)
 
 Creates a new Room instance
 
@@ -5638,7 +5638,7 @@ Optional metadata to initialize the room with
 
 > `readonly` **id**: `string`
 
-Defined in: [packages/core/src/core/room.ts:10](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/room.ts#L10)
+Defined in: [packages/core/src/core/room.ts:10](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/room.ts#L10)
 
 Unique identifier for the room
 
@@ -5646,7 +5646,7 @@ Unique identifier for the room
 
 > `readonly` **platform**: `string`
 
-Defined in: [packages/core/src/core/room.ts:24](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/room.ts#L24)
+Defined in: [packages/core/src/core/room.ts:24](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/room.ts#L24)
 
 Platform name where this room exists
 
@@ -5654,7 +5654,7 @@ Platform name where this room exists
 
 > `readonly` **platformId**: `string`
 
-Defined in: [packages/core/src/core/room.ts:23](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/room.ts#L23)
+Defined in: [packages/core/src/core/room.ts:23](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/room.ts#L23)
 
 Platform-specific identifier (e.g. tweet thread ID, chat ID)
 
@@ -5664,7 +5664,7 @@ Platform-specific identifier (e.g. tweet thread ID, chat ID)
 
 > **addMemory**(`content`, `metadata`?): `Promise`\<[`Memory`](namespaces/Types.md#memory)\>
 
-Defined in: [packages/core/src/core/room.ts:63](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/room.ts#L63)
+Defined in: [packages/core/src/core/room.ts:63](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/room.ts#L63)
 
 Adds a new memory to the room
 
@@ -5692,7 +5692,7 @@ The created Memory object
 
 > **getMemories**(`limit`?): [`Memory`](namespaces/Types.md#memory)[]
 
-Defined in: [packages/core/src/core/room.ts:107](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/room.ts#L107)
+Defined in: [packages/core/src/core/room.ts:107](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/room.ts#L107)
 
 Retrieves memories from the room
 
@@ -5714,7 +5714,7 @@ Array of Memory objects
 
 > **getMetadata**(): [`RoomMetadata`](namespaces/Types.md#roommetadata)
 
-Defined in: [packages/core/src/core/room.ts:115](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/room.ts#L115)
+Defined in: [packages/core/src/core/room.ts:115](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/room.ts#L115)
 
 Gets a copy of the room's metadata
 
@@ -5728,7 +5728,7 @@ Copy of room metadata
 
 > **toJSON**(): `object`
 
-Defined in: [packages/core/src/core/room.ts:135](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/room.ts#L135)
+Defined in: [packages/core/src/core/room.ts:135](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/room.ts#L135)
 
 Converts the room instance to a plain object
 
@@ -5762,7 +5762,7 @@ Plain object representation of the room
 
 > **updateMetadata**(`update`): `void`
 
-Defined in: [packages/core/src/core/room.ts:123](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/room.ts#L123)
+Defined in: [packages/core/src/core/room.ts:123](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/room.ts#L123)
 
 Updates the room's metadata
 
@@ -5782,7 +5782,7 @@ Partial metadata object with fields to update
 
 > `static` **createDeterministicId**(`platform`, `platformId`): `string`
 
-Defined in: [packages/core/src/core/room.ts:45](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/room.ts#L45)
+Defined in: [packages/core/src/core/room.ts:45](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/room.ts#L45)
 
 Creates a deterministic room ID based on platform and platformId
 
@@ -5810,7 +5810,7 @@ A deterministic room ID string
 
 > `static` **createDeterministicMemoryId**(`roomId`, `content`): `string`
 
-Defined in: [packages/core/src/core/room.ts:90](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/room.ts#L90)
+Defined in: [packages/core/src/core/room.ts:90](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/room.ts#L90)
 
 Creates a deterministic memory ID based on room ID and content
 
@@ -5838,7 +5838,7 @@ A deterministic memory ID string
 
 ### RoomManager
 
-Defined in: [packages/core/src/core/room-manager.ts:7](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/room-manager.ts#L7)
+Defined in: [packages/core/src/core/room-manager.ts:7](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/room-manager.ts#L7)
 
 #### Constructors
 
@@ -5846,7 +5846,7 @@ Defined in: [packages/core/src/core/room-manager.ts:7](https://github.com/frontb
 
 > **new RoomManager**(`vectorDb`?, `config`?): [`RoomManager`](globals.md#roommanager)
 
-Defined in: [packages/core/src/core/room-manager.ts:10](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/room-manager.ts#L10)
+Defined in: [packages/core/src/core/room-manager.ts:10](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/room-manager.ts#L10)
 
 ###### Parameters
 
@@ -5870,7 +5870,7 @@ Defined in: [packages/core/src/core/room-manager.ts:10](https://github.com/front
 
 > **addMemory**(`roomId`, `content`, `metadata`?): `Promise`\<[`Memory`](namespaces/Types.md#memory)\>
 
-Defined in: [packages/core/src/core/room-manager.ts:141](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/room-manager.ts#L141)
+Defined in: [packages/core/src/core/room-manager.ts:141](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/room-manager.ts#L141)
 
 ###### Parameters
 
@@ -5894,7 +5894,7 @@ Defined in: [packages/core/src/core/room-manager.ts:141](https://github.com/fron
 
 > **createRoom**(`platformId`, `platform`, `metadata`?): `Promise`\<[`Room`](globals.md#room)\>
 
-Defined in: [packages/core/src/core/room-manager.ts:83](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/room-manager.ts#L83)
+Defined in: [packages/core/src/core/room-manager.ts:83](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/room-manager.ts#L83)
 
 ###### Parameters
 
@@ -5918,7 +5918,7 @@ Defined in: [packages/core/src/core/room-manager.ts:83](https://github.com/front
 
 > **deleteRoom**(`roomId`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/core/room-manager.ts:228](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/room-manager.ts#L228)
+Defined in: [packages/core/src/core/room-manager.ts:228](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/room-manager.ts#L228)
 
 ###### Parameters
 
@@ -5934,7 +5934,7 @@ Defined in: [packages/core/src/core/room-manager.ts:228](https://github.com/fron
 
 > **ensureRoom**(`name`, `platform`, `userId`?): `Promise`\<[`Room`](globals.md#room)\>
 
-Defined in: [packages/core/src/core/room-manager.ts:211](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/room-manager.ts#L211)
+Defined in: [packages/core/src/core/room-manager.ts:211](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/room-manager.ts#L211)
 
 ###### Parameters
 
@@ -5958,7 +5958,7 @@ Defined in: [packages/core/src/core/room-manager.ts:211](https://github.com/fron
 
 > **findSimilarMemoriesInRoom**(`content`, `roomId`, `limit`): `Promise`\<[`Memory`](namespaces/Types.md#memory)[]\>
 
-Defined in: [packages/core/src/core/room-manager.ts:169](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/room-manager.ts#L169)
+Defined in: [packages/core/src/core/room-manager.ts:169](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/room-manager.ts#L169)
 
 ###### Parameters
 
@@ -5982,7 +5982,7 @@ Defined in: [packages/core/src/core/room-manager.ts:169](https://github.com/fron
 
 > **getMemoriesFromRoom**(`roomId`, `limit`?): `Promise`\<[`Memory`](namespaces/Types.md#memory)[]\>
 
-Defined in: [packages/core/src/core/room-manager.ts:237](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/room-manager.ts#L237)
+Defined in: [packages/core/src/core/room-manager.ts:237](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/room-manager.ts#L237)
 
 ###### Parameters
 
@@ -6002,7 +6002,7 @@ Defined in: [packages/core/src/core/room-manager.ts:237](https://github.com/fron
 
 > **getRoom**(`roomId`): `Promise`\<`undefined` \| [`Room`](globals.md#room)\>
 
-Defined in: [packages/core/src/core/room-manager.ts:23](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/room-manager.ts#L23)
+Defined in: [packages/core/src/core/room-manager.ts:23](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/room-manager.ts#L23)
 
 ###### Parameters
 
@@ -6018,7 +6018,7 @@ Defined in: [packages/core/src/core/room-manager.ts:23](https://github.com/front
 
 > **getRoomByPlatformId**(`platformId`, `platform`): `Promise`\<`undefined` \| [`Room`](globals.md#room)\>
 
-Defined in: [packages/core/src/core/room-manager.ts:71](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/room-manager.ts#L71)
+Defined in: [packages/core/src/core/room-manager.ts:71](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/room-manager.ts#L71)
 
 ###### Parameters
 
@@ -6038,7 +6038,7 @@ Defined in: [packages/core/src/core/room-manager.ts:71](https://github.com/front
 
 > **hasProcessedContentInRoom**(`contentId`, `roomId`): `Promise`\<`boolean`\>
 
-Defined in: [packages/core/src/core/room-manager.ts:261](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/room-manager.ts#L261)
+Defined in: [packages/core/src/core/room-manager.ts:261](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/room-manager.ts#L261)
 
 ###### Parameters
 
@@ -6058,7 +6058,7 @@ Defined in: [packages/core/src/core/room-manager.ts:261](https://github.com/fron
 
 > **listRooms**(): `Promise`\<[`Room`](globals.md#room)[]\>
 
-Defined in: [packages/core/src/core/room-manager.ts:193](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/room-manager.ts#L193)
+Defined in: [packages/core/src/core/room-manager.ts:193](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/room-manager.ts#L193)
 
 ###### Returns
 
@@ -6068,7 +6068,7 @@ Defined in: [packages/core/src/core/room-manager.ts:193](https://github.com/fron
 
 > **markContentAsProcessed**(`contentId`, `roomId`): `Promise`\<`boolean`\>
 
-Defined in: [packages/core/src/core/room-manager.ts:284](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/room-manager.ts#L284)
+Defined in: [packages/core/src/core/room-manager.ts:284](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/room-manager.ts#L284)
 
 ###### Parameters
 
@@ -6088,7 +6088,7 @@ Defined in: [packages/core/src/core/room-manager.ts:284](https://github.com/fron
 
 ### StepManager
 
-Defined in: [packages/core/src/core/step-manager.ts:7](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/step-manager.ts#L7)
+Defined in: [packages/core/src/core/step-manager.ts:7](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/step-manager.ts#L7)
 
 Manages a collection of steps with unique IDs.
 Provides methods to add, retrieve, update, and remove steps.
@@ -6099,7 +6099,7 @@ Provides methods to add, retrieve, update, and remove steps.
 
 > **new StepManager**(): [`StepManager`](globals.md#stepmanager)
 
-Defined in: [packages/core/src/core/step-manager.ts:16](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/step-manager.ts#L16)
+Defined in: [packages/core/src/core/step-manager.ts:16](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/step-manager.ts#L16)
 
 Creates a new StepManager instance with empty steps collection
 
@@ -6113,7 +6113,7 @@ Creates a new StepManager instance with empty steps collection
 
 > **addStep**(`step`): [`Step`](namespaces/Types.md#step-1)
 
-Defined in: [packages/core/src/core/step-manager.ts:27](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/step-manager.ts#L27)
+Defined in: [packages/core/src/core/step-manager.ts:27](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/step-manager.ts#L27)
 
 Adds a new step to the collection
 
@@ -6139,7 +6139,7 @@ Error if a step with the same ID already exists
 
 > **clear**(): `void`
 
-Defined in: [packages/core/src/core/step-manager.ts:95](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/step-manager.ts#L95)
+Defined in: [packages/core/src/core/step-manager.ts:95](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/step-manager.ts#L95)
 
 Removes all steps from the collection
 
@@ -6151,7 +6151,7 @@ Removes all steps from the collection
 
 > **getStepById**(`id`): `undefined` \| [`Step`](namespaces/Types.md#step-1)
 
-Defined in: [packages/core/src/core/step-manager.ts:50](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/step-manager.ts#L50)
+Defined in: [packages/core/src/core/step-manager.ts:50](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/step-manager.ts#L50)
 
 Finds a step by its ID
 
@@ -6173,7 +6173,7 @@ The matching step or undefined if not found
 
 > **getSteps**(): [`Step`](namespaces/Types.md#step-1)[]
 
-Defined in: [packages/core/src/core/step-manager.ts:41](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/step-manager.ts#L41)
+Defined in: [packages/core/src/core/step-manager.ts:41](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/step-manager.ts#L41)
 
 Gets all steps in the collection
 
@@ -6187,7 +6187,7 @@ Array of all steps
 
 > **removeStep**(`id`): `void`
 
-Defined in: [packages/core/src/core/step-manager.ts:82](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/step-manager.ts#L82)
+Defined in: [packages/core/src/core/step-manager.ts:82](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/step-manager.ts#L82)
 
 Removes a step from the collection
 
@@ -6211,7 +6211,7 @@ Error if step with given ID is not found
 
 > **updateStep**(`id`, `updates`): `void`
 
-Defined in: [packages/core/src/core/step-manager.ts:60](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/step-manager.ts#L60)
+Defined in: [packages/core/src/core/step-manager.ts:60](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/step-manager.ts#L60)
 
 Updates an existing step with new properties
 
@@ -6241,7 +6241,7 @@ Error if step with given ID is not found
 
 ### TaskScheduler\<T\>
 
-Defined in: [packages/core/src/core/task-scheduler.ts:6](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/task-scheduler.ts#L6)
+Defined in: [packages/core/src/core/task-scheduler.ts:6](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/task-scheduler.ts#L6)
 
 Priority queue implementation for scheduling tasks.
 Tasks are ordered by their nextRun timestamp.
@@ -6258,7 +6258,7 @@ Type must include a nextRun timestamp property
 
 > **new TaskScheduler**\<`T`\>(`onTaskDue`): [`TaskScheduler`](globals.md#taskschedulert)\<`T`\>
 
-Defined in: [packages/core/src/core/task-scheduler.ts:13](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/task-scheduler.ts#L13)
+Defined in: [packages/core/src/core/task-scheduler.ts:13](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/task-scheduler.ts#L13)
 
 ###### Parameters
 
@@ -6278,7 +6278,7 @@ Callback executed when a task is due to run
 
 > **scheduleTask**(`task`): `void`
 
-Defined in: [packages/core/src/core/task-scheduler.ts:20](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/task-scheduler.ts#L20)
+Defined in: [packages/core/src/core/task-scheduler.ts:20](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/task-scheduler.ts#L20)
 
 Schedules a new task or updates an existing one.
 Tasks are automatically sorted by nextRun timestamp.
@@ -6299,7 +6299,7 @@ The task to schedule
 
 > **stop**(): `void`
 
-Defined in: [packages/core/src/core/task-scheduler.ts:58](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/task-scheduler.ts#L58)
+Defined in: [packages/core/src/core/task-scheduler.ts:58](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/task-scheduler.ts#L58)
 
 Stops the scheduler and clears all pending tasks.
 
@@ -6313,7 +6313,7 @@ Stops the scheduler and clears all pending tasks.
 
 > `const` **defaultCharacter**: [`Character`](namespaces/Types.md#character)
 
-Defined in: [packages/core/src/core/character.ts:2](https://github.com/frontboat/daydreams-lootsurvivor/blob/62ea7e1e71a968563bb427c736a96a5b088382d4/packages/core/src/core/character.ts#L2)
+Defined in: [packages/core/src/core/character.ts:2](https://github.com/frontboat/daydreams-lootsurvivor/blob/d67b2f3397494c04d69d93c255da6bfe11dd2d6f/packages/core/src/core/character.ts#L2)
 
 ## Namespaces
 
