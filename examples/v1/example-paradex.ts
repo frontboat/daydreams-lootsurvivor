@@ -27,6 +27,7 @@ container.singleton("config", () => {
         PARADEX_PRIVATE_KEY: z.string().min(1),
         PARADEX_BASE_URL: z.string().min(1),
         PARADEX_CHAIN_ID: z.string().min(1),
+        GROQ_API_KEY: z.string().min(1),
     });
 
     const dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -395,9 +396,9 @@ async function main() {
                 if (!markets || markets.length === 0) {
                     return {
                         success: true,
-                        message: JSON.stringify({
-                            text: "No trading markets are available at the moment."
-                        })
+                        message: {
+                            message: "No trading markets are available at the moment."
+                        }
                     };
                 }
 
@@ -407,16 +408,16 @@ async function main() {
 
                 return {
                     success: true,
-                    message: JSON.stringify({
-                        text: `Available Trading Markets:\n• ${marketList}`
-                    })
+                    message: {
+                        message: `Available Trading Markets:\n• ${marketList}`
+                    }
                 };
             } catch (error) {
                 return {
                     success: false,
-                    message: JSON.stringify({
-                        error: error instanceof Error ? error.message : String(error)
-                    })
+                    message: {
+                        message: `Error: ${error instanceof Error ? error.message : String(error)}`
+                    }
                 };
             }
         }
@@ -433,17 +434,19 @@ async function main() {
                 const positions = await getPositions(config, account);
                 return {
                     success: true,
-                    message: JSON.stringify({
-                        text: positions.length ?
+                    message: {
+                        message: positions.length ?
                             `Current positions:\n${positions.map((p: { market: string; size: string; price: string }) =>
-                                `${p.market}: ${p.size} @ ${p.price}`).join('\n')}` :
+                                `${p.market}: ${p.size}${p.price ? ` @ ${p.price}` : ''}`).join('\n')}` :
                             "No open positions"
-                    })
+                    }
                 };
             } catch (error) {
                 return {
                     success: false,
-                    message: JSON.stringify({ error: String(error) })
+                    message: {
+                        message: `Error: ${error instanceof Error ? error.message : String(error)}`
+                    }
                 };
             }
         }
