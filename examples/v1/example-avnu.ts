@@ -7,17 +7,21 @@ import chalk from "chalk";
 import { ethers } from "ethers";
 import { Account, Provider, CallData } from "starknet";
 
+type EnvConfig = {
+    GROQ_API_KEY: string;
+    STARKNET_ACCOUNT_ADDRESS: string;
+    STARKNET_PRIVATE_KEY: string;
+    ANVU_EXCHANGE_ADDRESS: string;
+};
 
-// First validate the environment variable
 const env = validateEnv(
     z.object({
         GROQ_API_KEY: z.string().min(1, "GROQ_API_KEY is required"),
-        // Optional: Will default to https://sepolia.api.avnu.fi
-        STARKNET_ACCOUNT_ADDRESS: z.string().default("0x00087fBA85dC439f35316A82418ab5cc49Bc5C3cB94bB47C3CC75D87358a7D22"),
+        STARKNET_ACCOUNT_ADDRESS: z.string().default(""),
         STARKNET_PRIVATE_KEY: z.string().min(1, "STARKNET_PRIVATE_KEY is required"),
-        ANVU_EXCHANGE_ADDRESS: z.string().default("0x02c56e8b00dbe2a71e57472685378fc8988bba947e9a99b26a00fade2b4fe7c2"),
+        ANVU_EXCHANGE_ADDRESS: z.string().default(""),
     })
-);
+) as EnvConfig;
 
 // Initialize Groq client
 const groq = createGroq({
