@@ -18,6 +18,7 @@ import { ParadexClient } from "../../packages/core/src/io/paradex";
 import { createContainer } from "../../packages/core/src/container";
 import { action } from "../../packages/core/src/utils";
 import { createDreams } from "../../packages/core/src/dreams";
+import { LogLevel } from "../../packages/core/src/types";
 
 
 const container = createContainer();
@@ -455,6 +456,7 @@ async function main() {
     const agent = createDreams({
         model: groq("deepseek-r1-distill-llama-70b"),
         extensions: [cli],
+        logger: LogLevel.DEBUG,
         actions: [
             getAccountInfoAction,
             openOrderAction,
