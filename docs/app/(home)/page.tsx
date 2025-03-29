@@ -86,7 +86,7 @@ function Hero() {
       </h1>
 
       <p className="text-xl md:text-2xl  text-center mb-12">
-        loose the handrails, start daydreaming
+        lose the handrails, start daydreaming
       </p>
 
       <div className="max-w-2xl mx-auto w-full mb-12">
@@ -476,7 +476,9 @@ function AgentShowcase() {
 
                   <div className="mt-4">
                     <Link
-                      href={`/docs/agents/${tab.id === "ai-sdk" ? "overview" : tab.id}`}
+                      href={`/docs/agents/${
+                        tab.id === "ai-sdk" ? "overview" : tab.id
+                      }`}
                       className={cn(
                         buttonStyles.ghost,
                         "inline-flex items-center px-4 py-2 text-sm rounded-md"
