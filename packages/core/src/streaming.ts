@@ -1,20 +1,37 @@
-import { handleActionCall, handleOutput, prepareActionCall } from "./handlers";
+import { saveContextWorkingMemory } from "./context";
+import {
+  handleActionCall,
+  handleInput,
+  handleOutput,
+  NotFoundError,
+  ParsingError,
+  prepareActionCall,
+  prepareContext,
+} from "./handlers";
 import type { Logger } from "./logger";
 import { generateEpisode } from "./memory/utils";
+import type { StepConfig } from "./prompts/main";
 import type { TaskRunner } from "./task";
 import type {
   ActionCall,
   ActionCtxRef,
   ActionResult,
+  AnyAction,
   AnyAgent,
+  ContextRef,
   ContextState,
+  EventRef,
   Handlers,
+  Input,
+  InputRef,
   Log,
   Output,
   OutputRef,
+  RunRef,
+  StepRef,
   WorkingMemory,
 } from "./types";
-import { randomUUIDv7 } from "./utils";
+import { input, randomUUIDv7 } from "./utils";
 import { xmlStreamParser } from "./xml";
 
 type PartialLog = Partial<Log> &
@@ -26,15 +43,16 @@ export type StackElement = {
   index: number;
   tag: string;
   attributes: Record<string, any>;
-  content: string[];
+  content: string;
   done: boolean;
 };
 
-export async function handleStream(
+export async function handleStream<Ctx = any>(
   textStream: AsyncGenerator<string>,
   initialIndex: number,
-  fn: (el: StackElement) => void,
-  tags: Set<string>
+  tags: Set<string>,
+  fn: (el: StackElement, ctx?: Ctx) => void,
+  ctx?: Ctx
 ) {
   const parser = xmlStreamParser(tags);
 
@@ -54,25 +72,28 @@ export async function handleStream(
           index: index++,
           tag: result.value.name,
           attributes: result.value.attributes,
-          content: [],
+          content: "",
           done: false,
         };
-        fn(current);
+        fn(current, ctx);
       }
 
       if (result.value.type === "end") {
         if (current)
-          fn({
-            ...current,
-            done: true,
-          });
+          fn(
+            {
+              ...current,
+              done: true,
+            },
+            ctx
+          );
         current = stack.pop();
       }
 
       if (result.value.type === "text") {
         if (current) {
-          current.content.push(result.value.content);
-          fn(current);
+          current.content += result.value.content;
+          fn(current, ctx);
         }
       }
       result = parser.next();
@@ -109,37 +130,167 @@ const defaultTags = new Set([
 
 export function createContextStreamHandler({
   agent,
-  chain,
   ctxState,
   agentCtxState,
   logger,
   handlers,
   taskRunner,
-  outputs,
-  actions,
-  actionCalls,
   workingMemory,
+  stepConfig,
   abortSignal,
-  subCtxsStates,
 }: {
   agent: AnyAgent;
   taskRunner: TaskRunner;
   ctxState: ContextState;
   agentCtxState?: ContextState;
-  chain: Log[];
   logger: Logger;
   handlers?: Partial<Handlers>;
-  outputs: Output[];
-  actions: ActionCtxRef[];
-  actionCalls: Promise<any>[];
   workingMemory: WorkingMemory;
+  stepConfig: StepConfig;
   abortSignal?: AbortSignal;
-  subCtxsStates: ContextState[];
 }) {
+  const runRef: RunRef = {
+    id: randomUUIDv7(),
+    ref: "run",
+    type: ctxState.context.type,
+    data: {},
+    processed: false,
+    timestamp: Date.now(),
+  };
+
+  function createStep() {
+    const newStep: StepRef = {
+      ref: "step",
+      id: randomUUIDv7(),
+      step: state.step,
+      type: stepConfig.name,
+      data: {},
+      processed: false,
+      timestamp: Date.now(),
+    };
+
+    state.steps.push(newStep);
+    workingMemory.steps.push(newStep);
+
+    return newStep;
+  }
+
   const state = {
     index: 0,
     logsByIndex: new Map<number, PartialLog>(),
+    step: 0,
+    ctxState,
+    agentCtxState,
+    runRef,
+    controller: new AbortController(),
+    steps: [] as StepRef[],
+    chain: [] as Log[],
+    actions: [] as ActionCtxRef[],
+    outputs: [] as Output[],
+    inputs: [] as Input[],
+    contexts: [] as ContextState[],
+    errors: [] as any[],
+    calls: [] as Promise<any>[],
+    promises: [] as Promise<any>[],
+    response: null as null | string,
+
+    params: {} as {
+      actions?: AnyAction[];
+      outputs?: Record<string, Omit<Output, "type">>;
+      contexts?: ContextRef[];
+    },
+
+    async start(params: {
+      actions?: AnyAction[];
+      outputs?: Record<string, Omit<Output, "type">>;
+      contexts?: ContextRef[];
+    }) {
+      state.params = params;
+
+      const { actions, contexts, outputs, inputs } = await prepareContext({
+        agent,
+        ctxState,
+        workingMemory,
+        agentCtxState,
+        params: state.params,
+      });
+
+      Object.assign(state, { actions, contexts, outputs, inputs });
+
+      state.step = 1;
+
+      return createStep();
+    },
+
+    async startNewStep(params?: {
+      actions?: AnyAction[];
+      outputs?: Record<string, Omit<Output, "type">>;
+      contexts?: ContextRef[];
+    }) {
+      if (params) {
+        state.params = params;
+      }
+
+      const { actions, contexts, outputs, inputs } = await prepareContext({
+        agent,
+        ctxState,
+        workingMemory,
+        agentCtxState,
+        params: state.params,
+      });
+
+      Object.assign(state, { actions, contexts, outputs, inputs });
+
+      state.index++;
+
+      return createStep();
+    },
+
+    shouldContinue() {
+      if (state.errors.length > 0) {
+        logger.warn("agent:run", "Continuing despite error", {
+          errors: state.errors,
+          step: state.step,
+        });
+      }
+
+      for (const ctx of state.contexts) {
+        if (!ctx.context.shouldContinue) continue;
+
+        if (
+          ctx.context.shouldContinue({
+            ...ctx,
+            workingMemory,
+          })
+        )
+          return true;
+      }
+
+      return stepConfig.shouldContinue({ chain: state.chain });
+    },
   };
+
+  abortSignal?.addEventListener("abort", () => {
+    state.controller.abort(abortSignal?.reason);
+  });
+
+  function createErrorEvent({
+    name,
+    data,
+    params,
+  }: Pick<EventRef, "name" | "data" | "params">): EventRef {
+    return {
+      ref: "event",
+      id: randomUUIDv7(),
+      name,
+      data,
+      params,
+      processed: false,
+      timestamp: Date.now(),
+    };
+  }
+
+  workingMemory.runs.push(runRef);
 
   function getOrCreateRef<
     TLog extends Omit<PartialLog, "id" | "timestamp" | "processed">,
@@ -163,7 +314,7 @@ export function createContextStreamHandler({
   }
 
   async function pushLogStream(log: Log, done: boolean) {
-    if (log.ref !== "output" && done) chain.push(log);
+    if (log.ref !== "output" && done) state.chain.push(log);
 
     if (log.ref === "thought" && done) {
       workingMemory.thoughts.push(log);
@@ -171,13 +322,34 @@ export function createContextStreamHandler({
       handlers?.onThinking?.(log);
     }
 
+    if (log.ref === "input" && done) {
+      await handleInput({
+        agent,
+        ctxState,
+        inputRef: log,
+        inputs: {
+          ...agent.inputs,
+          ...ctxState.context.inputs,
+        },
+        logger,
+        workingMemory,
+      });
+
+      state.chain.push(log);
+      workingMemory.inputs.push(log);
+    }
+
     if (log.ref === "output" && done) {
-      handleOutputStream(log);
+      await handleOutputStream(log);
+    }
+
+    if (log.ref === "event" && done) {
+      workingMemory.events.push(log);
     }
 
     if (log.ref === "action_call" && done) {
       workingMemory.calls.push(log);
-      handleActionCallStream(log);
+      await handleActionCallStream(log);
     }
 
     if (log.ref === "action_result" && done) {
@@ -192,13 +364,14 @@ export function createContextStreamHandler({
       // If we have a complete thought-action-result cycle, generate an episode
       if (lastThought && lastActionCall && agent.memory.generateMemories) {
         // Generate episode with the last thought, action call, and result
-        generateEpisode(
+
+        await generateEpisode(
           lastThought,
           lastActionCall,
           log,
           agent,
           ctxState.id,
-          actions
+          state.actions
         ).catch((error) => {
           logger.error(
             "agent:generateEpisode",
@@ -209,35 +382,35 @@ export function createContextStreamHandler({
       }
     }
 
+    if (done) await saveContextWorkingMemory(agent, ctxState.id, workingMemory);
+
     handlers?.onLogStream?.(log, done);
   }
 
   async function handleActionCallStream(call: ActionCall) {
-    // todo: handle errors
     const { action } = await prepareActionCall({
       call,
-      actions,
+      actions: state.actions,
       logger,
     });
 
     if (abortSignal?.aborted) return;
 
-    actionCalls.push(
+    state.calls.push(
       handleActionCall({
         call,
         action,
         agent,
         logger,
         state:
-          action.ctxId === ctxState.id
-            ? ctxState
-            : (subCtxsStates.find(
-                (subCtxState) => subCtxState.id === action.ctxId
-              ) ?? ctxState),
+          state.contexts.find(
+            (subCtxState) => subCtxState.id === action.ctxId
+          ) ?? ctxState,
         taskRunner,
         workingMemory,
         agentState: agentCtxState,
         abortSignal,
+        pushLog: (log) => handlePushLog(log, true),
       })
         .catch((err) => {
           const result: ActionResult = {
@@ -253,19 +426,21 @@ export function createContextStreamHandler({
           return result;
         })
         .then((res) => {
-          pushLogStream(res, true);
+          handlePushLog(res, true);
           return res;
         })
     );
   }
 
   async function handleOutputStream(outputRef: OutputRef) {
+    logger.debug("agent:output", outputRef.type, outputRef.data);
+
     const refs = await handleOutput({
       agent,
       logger,
       state: ctxState,
       workingMemory,
-      outputs,
+      outputs: state.outputs,
       outputRef,
     });
 
@@ -274,12 +449,81 @@ export function createContextStreamHandler({
         type: ref.type,
         processed: ref.processed,
       });
-      chain.push(ref);
+      state.chain.push(ref);
       workingMemory.outputs.push(ref);
     }
   }
 
-  async function handler(el: StackElement) {
+  async function handlePushLog(el: Log, done: boolean) {
+    try {
+      await pushLogStream(el, done);
+    } catch (error) {
+      state.errors.push(error);
+      if (el.ref === "input") return;
+      // wip
+      if (error instanceof NotFoundError) {
+        if (error.ref.ref === "input") return;
+        if (error.ref.ref === "output") {
+          const outputRef = {
+            ...error.ref,
+            params: {
+              ...error.ref.params,
+              id: error.ref.id,
+              error: "OutputTypeNotFound",
+            },
+            processed: false,
+          };
+          state.chain.push(outputRef);
+          workingMemory.outputs.push(outputRef);
+        }
+
+        await pushLogStream(
+          createErrorEvent({
+            name: `error:${error.ref.ref}`,
+            data:
+              error.ref.ref === "output"
+                ? {
+                    error: "OutputTypeNotFound",
+                    type: error.ref.type ?? "undefined",
+                  }
+                : { error: "ActionNameNotFound", name: error.ref.name },
+            params:
+              error.ref.ref === "output"
+                ? { outputId: error.ref.id }
+                : { callId: error.ref.id },
+          }),
+          true
+        );
+      }
+
+      if (error instanceof ParsingError) {
+        if (error.ref.ref === "output")
+          pushLogStream(
+            {
+              ...error.ref,
+              params: {
+                id: error.ref.id,
+                error: "parsingError",
+              },
+            },
+            true
+          );
+        pushLogStream(
+          createErrorEvent({
+            name: `error:${error.ref.ref}:parsingError`,
+            data: error.parsingError,
+            params:
+              error.ref.ref === "output"
+                ? { outputId: error.ref.id }
+                : { callId: error.ref.id },
+          }),
+          true
+        );
+      }
+    }
+  }
+
+  function handler(el: StackElement, _: any) {
     if (abortSignal?.aborted) return;
 
     switch (el.tag) {
@@ -290,10 +534,10 @@ export function createContextStreamHandler({
           ref: "thought",
         });
 
-        pushLogStream(
+        handlePushLog(
           {
             ...ref,
-            content: el.content.join(""),
+            content: el.content,
           },
           el.done
         );
@@ -306,12 +550,13 @@ export function createContextStreamHandler({
           ref: "action_call",
         });
 
-        pushLogStream(
+        handlePushLog(
           {
             ...ref,
             name: el.attributes.name,
-            content: el.content.join(""),
+            content: el.content,
             data: undefined,
+            processed: false,
           },
           el.done
         );
@@ -325,20 +570,13 @@ export function createContextStreamHandler({
         });
 
         const { type, ...params } = el.attributes;
-        // Check if the type attribute exists
-        if (!type) {
-          logger.error("agent:output", "Missing output type attribute", {
-            content: el.content.join(""),
-            attributes: el.attributes,
-          });
-        }
 
-        pushLogStream(
+        handlePushLog(
           {
             ...ref,
             type,
             params,
-            content: el.content.join("").trim(),
+            content: el.content,
             data: undefined,
           },
           el.done
@@ -355,7 +593,8 @@ export function createContextStreamHandler({
   return {
     state,
     handler,
-    push: pushLogStream,
+    push: handlePushLog,
     tags: defaultTags,
+    stepConfig: stepConfig,
   };
 }

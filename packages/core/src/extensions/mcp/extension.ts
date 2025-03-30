@@ -89,9 +89,8 @@ export function createMcpExtension(servers: McpServerConfig[]): Extension {
         schema: z.object({
           serverId: z.string().describe("ID of the MCP server to query"),
         }),
-        async handler(call: ActionCall<{ serverId: string }>, ctx, agent) {
+        async handler({ serverId }, ctx, agent) {
           const logger = agent.container.resolve<Logger>("logger");
-          const { serverId } = call.data;
 
           const client = clients.get(serverId);
           if (!client) {
@@ -125,17 +124,9 @@ export function createMcpExtension(servers: McpServerConfig[]): Extension {
             .optional()
             .describe("Arguments for the prompt"),
         }),
-        async handler(
-          call: ActionCall<{
-            serverId: string;
-            name: string;
-            arguments?: Record<string, any>;
-          }>,
-          ctx,
-          agent
-        ) {
+        async handler(data, ctx, agent) {
           const logger = agent.container.resolve<Logger>("logger");
-          const { serverId, name, arguments: args } = call.data;
+          const { serverId, name, arguments: args } = data;
 
           const client = clients.get(serverId);
           if (!client) {
@@ -168,9 +159,9 @@ export function createMcpExtension(servers: McpServerConfig[]): Extension {
         schema: z.object({
           serverId: z.string().describe("ID of the MCP server to query"),
         }),
-        async handler(call: ActionCall<{ serverId: string }>, ctx, agent) {
+        async handler(data, ctx, agent) {
           const logger = agent.container.resolve<Logger>("logger");
-          const { serverId } = call.data;
+          const { serverId } = data;
 
           const client = clients.get(serverId);
           if (!client) {
@@ -200,13 +191,9 @@ export function createMcpExtension(servers: McpServerConfig[]): Extension {
           serverId: z.string().describe("ID of the MCP server to query"),
           uri: z.string().describe("URI of the resource to read"),
         }),
-        async handler(
-          call: ActionCall<{ serverId: string; uri: string }>,
-          ctx,
-          agent
-        ) {
+        async handler(data, ctx, agent) {
           const logger = agent.container.resolve<Logger>("logger");
-          const { serverId, uri } = call.data;
+          const { serverId, uri } = data;
 
           const client = clients.get(serverId);
           if (!client) {
@@ -243,17 +230,9 @@ export function createMcpExtension(servers: McpServerConfig[]): Extension {
             .optional()
             .describe("Arguments for the tool"),
         }),
-        async handler(
-          call: ActionCall<{
-            serverId: string;
-            name: string;
-            arguments?: Record<string, any>;
-          }>,
-          ctx,
-          agent
-        ) {
+        async handler(data, ctx, agent) {
           const logger = agent.container.resolve<Logger>("logger");
-          const { serverId, name, arguments: args } = call.data;
+          const { serverId, name, arguments: args } = data;
 
           const client = clients.get(serverId);
           if (!client) {
@@ -303,9 +282,9 @@ export function createMcpExtension(servers: McpServerConfig[]): Extension {
         schema: z.object({
           serverId: z.string().describe("ID of the MCP server to query"),
         }),
-        async handler(call: ActionCall<{ serverId: string }>, ctx, agent) {
+        async handler(data, ctx, agent) {
           const logger = agent.container.resolve<Logger>("logger");
-          const { serverId } = call.data;
+          const { serverId } = data;
 
           const client = clients.get(serverId);
           if (!client) {

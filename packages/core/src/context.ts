@@ -3,6 +3,7 @@ import type {
   AnyAction,
   AnyAgent,
   AnyContext,
+  AnyRef,
   Context,
   ContextSettings,
   ContextState,
@@ -18,8 +19,18 @@ type ContextConfig<
   TMemory = any,
   Args extends z.ZodTypeAny | ZodRawShape = any,
   Ctx = any,
-  T extends AnyAction[] = AnyAction[],
-> = Optional<Omit<Context<TMemory, Args, Ctx, T>, "setActions">, "actions">;
+  Actions extends AnyAction[] = AnyAction[],
+  Events extends Record<string, z.AnyZodObject | z.ZodRawShape> = Record<
+    string,
+    z.AnyZodObject | z.ZodRawShape
+  >,
+> = Optional<
+  Omit<
+    Context<TMemory, Args, Ctx, Actions, Events>,
+    "setActions" | "setInputs"
+  >,
+  "actions" | "events" | "inputs" | "outputs"
+>;
 
 /**
  * Creates a context configuration
@@ -35,18 +46,35 @@ export function context<
   TMemory = any,
   Args extends z.ZodTypeAny | ZodRawShape = any,
   Ctx = any,
-  T extends AnyAction[] = AnyAction[],
->(ctx: ContextConfig<TMemory, Args, Ctx, T>): Context<TMemory, Args, Ctx, T> {
-  return {
-    ...ctx,
-    actions: (ctx.actions ?? []) as T,
+  Actions extends AnyAction[] = AnyAction[],
+  Events extends Record<string, z.AnyZodObject | z.ZodRawShape> = Record<
+    string,
+    z.AnyZodObject | z.ZodRawShape
+  >,
+>(
+  config: ContextConfig<TMemory, Args, Ctx, Actions, Events>
+): Context<TMemory, Args, Ctx, Actions, Events> {
+  const ctx: Context<TMemory, Args, Ctx, Actions, Events> = {
+    ...config,
+    actions: (config.actions ?? []) as Actions,
+    inputs: config.inputs ?? {},
+    outputs: config.outputs ?? {},
+    events: (config.events ?? {}) as Events,
     setActions(actions) {
-      return context<TMemory, Args, Ctx, any>({
+      return context<TMemory, Args, Ctx, any, Events>({
+        ...ctx,
+        actions,
+      });
+    },
+    setInputs(actions) {
+      return context<TMemory, Args, Ctx, any, Events>({
         ...ctx,
         actions,
       });
     },
   };
+
+  return ctx;
 }
 
 /**
@@ -65,10 +93,27 @@ export function getWorkingMemoryLogs(
     ...(memory.calls ?? []),
     ...((includeThoughts ? memory.thoughts : undefined) ?? []),
     ...(memory.results ?? []),
+    ...(memory.events ?? []),
   ].sort((a, b) => (a.timestamp > b.timestamp ? 1 : -1));
 }
 
-export function renderWorkingMemory({
+export function getWorkingMemoryAllLogs(
+  memory: Partial<WorkingMemory>,
+  includeThoughts = true
+): AnyRef[] {
+  return [
+    ...(memory.inputs ?? []),
+    ...(memory.outputs ?? []),
+    ...(memory.calls ?? []),
+    ...((includeThoughts ? memory.thoughts : undefined) ?? []),
+    ...(memory.results ?? []),
+    ...(memory.events ?? []),
+    ...(memory.steps ?? []),
+    ...(memory.runs ?? []),
+  ].sort((a, b) => (a.timestamp > b.timestamp ? 1 : -1));
+}
+
+export function formatWorkingMemory({
   memory,
   processed,
   size,
@@ -99,6 +144,9 @@ export function createWorkingMemory(): WorkingMemory {
     thoughts: [],
     calls: [],
     results: [],
+    runs: [],
+    steps: [],
+    events: [],
   };
 }
 
@@ -119,12 +167,19 @@ export function getContextId<TContext extends AnyContext>(
   return context.key ? [context.type, key].join(":") : context.type;
 }
 
-export async function createContextState<TContext extends AnyContext>(
-  agent: AnyAgent,
-  context: TContext,
-  args: InferSchemaArguments<TContext["schema"]>,
-  initialSettings: ContextSettings = {}
-): Promise<ContextState<TContext>> {
+export async function createContextState<TContext extends AnyContext>({
+  agent,
+  context,
+  args,
+  contexts = [],
+  settings: initialSettings = {},
+}: {
+  agent: AnyAgent;
+  context: TContext;
+  args: InferSchemaArguments<TContext["schema"]>;
+  contexts?: string[];
+  settings?: ContextSettings;
+}): Promise<ContextState<TContext>> {
   const key = context.key ? context.key(args) : context.type;
   const id = context.key ? [context.type, key].join(":") : context.type;
 
@@ -142,7 +197,9 @@ export async function createContextState<TContext extends AnyContext>(
   const memory =
     (await agent.memory.store.get(`memory:${id}`)) ??
     (context.create
-      ? context.create({ key, args, context, id, options, settings })
+      ? await Promise.resolve(
+          context.create({ key, args, id, options, settings })
+        )
       : {});
 
   return {
@@ -153,7 +210,7 @@ export async function createContextState<TContext extends AnyContext>(
     context,
     memory,
     settings,
-    contexts: [],
+    contexts,
   };
 }
 
@@ -161,11 +218,19 @@ export async function getContextWorkingMemory(
   agent: AnyAgent,
   contextId: string
 ) {
-  return (
-    (await agent.memory.store.get<WorkingMemory>(
-      ["working-memory", contextId].join(":")
-    )) ?? (await defaultWorkingMemory.create())
+  let workingMemory = await agent.memory.store.get<WorkingMemory>(
+    ["working-memory", contextId].join(":")
   );
+
+  if (!workingMemory) {
+    workingMemory = await defaultWorkingMemory.create();
+    await agent.memory.store.set(
+      ["working-memory", contextId].join(":"),
+      workingMemory
+    );
+  }
+
+  return workingMemory;
 }
 
 export async function saveContextWorkingMemory(
@@ -185,10 +250,11 @@ type ContextStateSnapshot = {
   args: any;
   key: string;
   settings: Omit<ContextSettings, "model"> & { model?: string };
+  contexts: string[];
 };
 
 export async function saveContextState(agent: AnyAgent, state: ContextState) {
-  const { id, context, key, args, settings } = state;
+  const { id, context, key, args, settings, contexts } = state;
   await agent.memory.store.set<ContextStateSnapshot>(`context:${id}`, {
     id,
     type: context.type,
@@ -198,6 +264,7 @@ export async function saveContextState(agent: AnyAgent, state: ContextState) {
       ...settings,
       model: settings.model?.modelId,
     },
+    contexts,
   });
 
   if (state.context.save) {
@@ -220,7 +287,6 @@ export async function loadContextState(
   return {
     ...state,
     context,
-    contexts: [],
     settings: {
       ...state?.settings,
       // todo: agent resolve model?

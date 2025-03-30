@@ -1,26 +1,3 @@
-import type { XMLElement } from "./types";
-
-/**
- * Formats an XML element into a string representation
- * @param tag - The XML tag name
- * @param params - Optional parameters/attributes for the XML tag
- * @param content - The content of the XML element (string or nested elements)
- * @returns Formatted XML string
- */
-export function formatXml({ tag, params, content }: XMLElement): string {
-  const p = params
-    ? Object.entries(params)
-        .map(([k, v]) => ` ${k}="${v}"`)
-        .join("")
-    : "";
-  try {
-    return `<${tag}${p}>${typeof content === "string" ? content : Array.isArray(content) ? "\n" + content.map((el) => (typeof el === "string" ? el : formatXml(el))).join("\n") + "\n" : ""}</${tag}>`;
-  } catch (error) {
-    console.log("failed to format", { tag, params, content });
-    throw error;
-  }
-}
-
 /**
  * Creates a regular expression to match XML tags with a specific name
  * @param tagName - The name of the XML tag to match
@@ -230,7 +207,13 @@ export function* xmlStreamParser(
         const text = buffer.slice(0, tagStart).trim();
         textContent += text;
         buffer = buffer.slice(tagStart);
-        break;
+
+        if (textContent) {
+          yield { type: "text", content: textContent };
+          textContent = "";
+        }
+
+        continue;
       }
 
       // todo: regex performance

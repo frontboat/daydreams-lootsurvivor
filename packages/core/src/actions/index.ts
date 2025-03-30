@@ -20,10 +20,10 @@ export const searchWebAction = action({
       .describe("The depth of search - basic is faster, deep is more thorough"),
   }),
 
-  async handler(call, ctx, agent) {
+  async handler(data, ctx, agent) {
     const response = await agent.container
       .resolve<TavilyClient>("tavily")
-      .search(call.data.query, {
+      .search(data.query, {
         searchDepth: "advanced",
       });
 

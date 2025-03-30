@@ -4,12 +4,20 @@ import type { TaskRunner } from "./task";
 import { runAction } from "./tasks";
 import type {
   ActionCall,
+  ActionCallContext,
   ActionCtxRef,
   ActionResult,
   AnyAction,
   AnyAgent,
   AnyContext,
+  Context,
+  ContextRef,
   ContextState,
+  EventRef,
+  Input,
+  InputConfig,
+  InputRef,
+  Log,
   Memory,
   Output,
   OutputRef,
@@ -17,14 +25,17 @@ import type {
 } from "./types";
 import { randomUUIDv7 } from "./utils";
 
-class ActionNotFoundError extends Error {
-  constructor(public call: ActionCall) {
+export class NotFoundError extends Error {
+  constructor(public ref: ActionCall | OutputRef | InputRef) {
     super();
   }
 }
 
-class ParsingError extends Error {
-  constructor(public parsingError: unknown) {
+export class ParsingError extends Error {
+  constructor(
+    public ref: ActionCall | OutputRef | InputRef,
+    public parsingError: unknown
+  ) {
     super();
   }
 }
@@ -46,7 +57,7 @@ export async function prepareActionCall({
       data: call.content,
     });
 
-    throw new ActionNotFoundError(call);
+    throw new NotFoundError(call);
   }
 
   try {
@@ -71,7 +82,7 @@ export async function prepareActionCall({
 
     return { action, data };
   } catch (error) {
-    throw new ParsingError(error);
+    throw new ParsingError(call, error);
   }
 }
 
@@ -85,6 +96,7 @@ export async function handleActionCall({
   agent,
   agentState,
   abortSignal,
+  pushLog,
 }: {
   state: ContextState<AnyContext>;
   workingMemory: WorkingMemory;
@@ -95,6 +107,7 @@ export async function handleActionCall({
   agent: AnyAgent;
   agentState?: ContextState;
   abortSignal?: AbortSignal;
+  pushLog?: (log: Log) => void;
 }) {
   let actionMemory: Memory<any> | undefined = undefined;
 
@@ -104,20 +117,37 @@ export async function handleActionCall({
       action.memory.create();
   }
 
+  const callCtx: ActionCallContext = {
+    ...state,
+    workingMemory,
+    actionMemory,
+    agentMemory: agentState?.memory,
+    abortSignal,
+    call,
+    emit(event, args, options) {
+      console.log("emitting", { event, args });
+
+      const eventRef: EventRef = {
+        ref: "event",
+        id: randomUUIDv7(),
+        name: event as string,
+        data: args,
+        processed: options?.processed ?? true,
+        timestamp: Date.now(),
+      };
+
+      if (pushLog) pushLog(eventRef);
+      else workingMemory.events.push(eventRef);
+    },
+  };
+
   const resultData = await taskRunner.enqueueTask(
     runAction,
     {
       action,
-      call,
       agent,
       logger,
-      ctx: {
-        ...state,
-        workingMemory,
-        actionMemory,
-        agentMemory: agentState?.memory,
-        abortSignal,
-      },
+      ctx: callCtx,
     },
     {
       debug: agent.debugger,
@@ -125,6 +155,8 @@ export async function handleActionCall({
       abortSignal,
     }
   );
+
+  call.processed = true;
 
   const result: ActionResult = {
     ref: "action_result",
@@ -140,6 +172,10 @@ export async function handleActionCall({
 
   if (action.memory) {
     await agent.memory.store.set(action.memory.key, actionMemory);
+  }
+
+  if (action.onSuccess) {
+    await Promise.try(action.onSuccess, result, callCtx, agent);
   }
 
   return result;
@@ -163,50 +199,34 @@ export async function handleOutput({
   const output = outputs.find((output) => output.type === outputRef.type);
 
   if (!output) {
-    logger.error("agent:output", "OUTPUT_NOT_FOUND", {
-      outputRef,
-      availableOutputs: outputs.map((o) => o.type),
-    });
-    return {
-      ...outputRef,
-      params: { error: "OUTPUT NOT FOUND" },
-      timestamp: Date.now(),
-      data: { content: outputRef.data, error: "OUTPUT NOT FOUND" },
-    };
+    throw new NotFoundError(outputRef);
   }
 
   logger.debug("agent:output", outputRef.type, outputRef.data);
 
-  try {
-    if (output.schema) {
-      const schema = (
-        "parse" in output.schema ? output.schema : z.object(output.schema)
-      ) as z.AnyZodObject | z.ZodString;
+  if (output.schema) {
+    const schema = (
+      "parse" in output.schema ? output.schema : z.object(output.schema)
+    ) as z.AnyZodObject | z.ZodString;
 
-      let parsedContent = outputRef.content;
+    let parsedContent = outputRef.content;
 
+    try {
       if (typeof parsedContent === "string") {
         if (schema._def.typeName !== "ZodString") {
-          try {
-            parsedContent = JSON.parse(parsedContent.trim());
-          } catch (error) {
-            console.log("failed parsing output content", {
-              content: parsedContent,
-            });
-            throw error;
-          }
+          parsedContent = JSON.parse(parsedContent.trim());
         }
       }
 
-      try {
-        outputRef.data = schema.parse(parsedContent);
-      } catch (error) {
-        console.log("failed parsing output schema");
-        throw error;
-      }
+      outputRef.data = schema.parse(parsedContent);
+    } catch (error) {
+      throw new ParsingError(outputRef, error);
     }
+  }
 
-    const response = await output.handler(
+  if (output.handler) {
+    const response = await Promise.try(
+      output.handler,
       outputRef.data,
       {
         ...state,
@@ -221,7 +241,7 @@ export async function handleOutput({
         const ref: OutputRef = {
           ...outputRef,
           id: randomUUIDv7(),
-          processed: true,
+          processed: res.processed ?? true,
           ...res,
         };
 
@@ -233,31 +253,43 @@ export async function handleOutput({
       const ref: OutputRef = {
         ...outputRef,
         ...response,
-        processed: true,
+        processed: response.processed ?? true,
       };
 
       ref.formatted = output.format ? output.format(response) : undefined;
 
       return ref;
     }
-
-    return {
-      ...outputRef,
-      formatted: output.format ? output.format(outputRef.data) : undefined,
-      processed: true,
-    };
-  } catch (error) {
-    const ref: OutputRef = {
-      ...outputRef,
-      timestamp: Date.now(),
-      error,
-      processed: false,
-    };
-
-    logger.error("agent:output", outputRef.type, error);
-
-    return ref;
   }
+
+  return {
+    ...outputRef,
+    formatted: output.format ? output.format(outputRef.data) : undefined,
+    processed: true,
+  };
+}
+
+export async function prepareContextActions(params: {
+  context: Context;
+  state: ContextState<AnyContext>;
+  workingMemory: WorkingMemory;
+  agent: AnyAgent;
+  agentCtxState: ContextState<AnyContext> | undefined;
+}): Promise<ActionCtxRef[]> {
+  const { context, state } = params;
+  const actions =
+    typeof context.actions === "function"
+      ? await Promise.try(context.actions, state)
+      : context.actions;
+
+  return Promise.all(
+    actions.map((action) =>
+      prepareAction({
+        action,
+        ...params,
+      })
+    )
+  ).then((t) => t.filter((t) => !!t));
 }
 
 export async function prepareAction({
@@ -305,4 +337,198 @@ export async function prepareAction({
         ctxId: state.id,
       }
     : undefined;
+}
+
+export async function prepareContext({
+  agent,
+  ctxState,
+  agentCtxState,
+  workingMemory,
+  params,
+}: {
+  agent: AnyAgent;
+  ctxState: ContextState;
+  agentCtxState?: ContextState;
+  workingMemory: WorkingMemory;
+  params?: {
+    outputs?: Record<string, Omit<Output, "type">>;
+    inputs?: Record<string, InputConfig>;
+    actions?: AnyAction[];
+    contexts?: ContextRef[];
+  };
+}) {
+  await agentCtxState?.context.loader?.(agentCtxState);
+
+  await ctxState?.context.loader?.(ctxState);
+
+  const inputs: Input[] = Object.entries({
+    ...agent.inputs,
+    ...(params?.inputs ?? {}),
+  }).map(([type, input]) => ({
+    type,
+    ...input,
+  }));
+
+  const outputs: Output[] = Object.entries({
+    ...agent.outputs,
+    ...(params?.outputs ?? {}),
+  })
+    .filter(([_, output]) =>
+      output.enabled
+        ? output.enabled({
+            ...ctxState,
+            workingMemory,
+          })
+        : true
+    )
+    .map(([type, output]) => ({
+      type,
+      ...output,
+    }));
+
+  const actions = await Promise.all(
+    [agent.actions, params?.actions]
+      .filter((t) => !!t)
+      .flat()
+      .map((action: AnyAction) =>
+        prepareAction({
+          action,
+          agent,
+          agentCtxState,
+          context: ctxState.context,
+          state: ctxState,
+          workingMemory,
+        })
+      )
+  ).then((r) => r.filter((a) => !!a));
+
+  const ctxActions = await prepareContextActions({
+    agent,
+    agentCtxState,
+    context: ctxState.context,
+    state: ctxState,
+    workingMemory,
+  });
+
+  actions.push(...ctxActions);
+
+  const subCtxsStates = await Promise.all([
+    ...(ctxState?.contexts ?? []).map((ref) => agent.getContextById(ref)),
+    ...(params?.contexts ?? []).map((ref) => agent.getContext(ref)),
+  ]).then((res) => res.filter((r) => !!r));
+
+  await Promise.all(
+    subCtxsStates.map((state) => state.context.loader?.(state))
+  );
+
+  const subCtxsStatesInputs: Input[] = subCtxsStates
+    .map((state) => Object.entries(state.context.inputs))
+    .flat()
+    .map(([type, input]) => ({
+      type,
+      ...input,
+    }));
+
+  inputs.push(...subCtxsStatesInputs);
+
+  const subCtxsStatesOutputs: Output[] = subCtxsStates
+    .map((state) => Object.entries(state.context.outputs))
+    .flat()
+    .map(([type, output]) => ({
+      type,
+      ...output,
+    }));
+
+  outputs.push(...subCtxsStatesOutputs);
+
+  const subCtxsActions = await Promise.all(
+    subCtxsStates.map((state) =>
+      prepareContextActions({
+        agent,
+        agentCtxState,
+        context: state.context,
+        state: state,
+        workingMemory,
+      })
+    )
+  );
+
+  actions.push(...subCtxsActions.flat());
+
+  const contexts = [agentCtxState, ctxState, ...subCtxsStates].filter(
+    (t) => !!t
+  );
+
+  return {
+    contexts,
+    outputs,
+    actions,
+    inputs,
+  };
+}
+
+export async function handleInput({
+  inputs,
+  inputRef,
+  logger,
+  ctxState,
+  workingMemory,
+  agent,
+}: {
+  inputs: Record<string, InputConfig>;
+  inputRef: InputRef;
+  logger: Logger;
+  workingMemory: WorkingMemory;
+  ctxState: ContextState;
+  agent: AnyAgent;
+}) {
+  const input = inputs[inputRef.type];
+
+  if (!input) {
+    throw new NotFoundError(inputRef);
+  }
+
+  try {
+    if (input.schema) {
+      const schema = (
+        "parse" in input.schema ? input.schema : z.object(input.schema)
+      ) as z.AnyZodObject | z.ZodString;
+      inputRef.data = schema.parse(inputRef.content);
+    } else {
+      inputRef.data = z.string().parse(inputRef.content);
+    }
+  } catch (error) {
+    throw new ParsingError(inputRef, error);
+  }
+
+  logger.debug("agent:send", "Querying episodic memory");
+
+  const episodicMemory = await agent.memory.vector.query(
+    `${ctxState.id}`,
+    JSON.stringify(inputRef.data)
+  );
+
+  logger.trace("agent:send", "Episodic memory retrieved", {
+    episodesCount: episodicMemory.length,
+  });
+
+  workingMemory.episodicMemory = {
+    episodes: episodicMemory,
+  };
+
+  if (input.handler) {
+    logger.debug("agent:send", "Using custom input handler", {
+      type: inputRef.type,
+    });
+
+    await Promise.try(
+      input.handler,
+      inputRef.data,
+      {
+        ...ctxState,
+        workingMemory,
+      },
+      agent
+    );
+  }
 }
