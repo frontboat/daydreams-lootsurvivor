@@ -84,7 +84,7 @@ const agent = createDreams({
           .optional()
           .describe("Optional specific path within the repository"),
       }),
-      async handler({ data }, ctx, app) {
+      async handler(data, ctx, app) {
         const octokit = app.container.resolve<Octokit>("octokit");
         try {
           const contents = await fetchRepoContent({

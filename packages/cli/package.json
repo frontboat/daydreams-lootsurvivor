@@ -1,5 +1,5 @@
 {
-  "name": "@daydreamsai/discord",
+  "name": "@daydreamsai/cli",
   "version": "0.2.16",
   "type": "module",
   "exports": "./src/index.ts",
@@ -29,7 +29,6 @@
   },
   "dependencies": {
     "@daydreamsai/core": "workspace:*",
-    "discord.js": "^14.18.0",
     "zod": "^3.24.2"
   }
 }

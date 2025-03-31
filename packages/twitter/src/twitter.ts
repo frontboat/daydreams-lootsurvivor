@@ -51,7 +51,7 @@ export const twitter = extension({
         formatXml({
           tag: "tweet",
           params: { tweetId: data.tweetId },
-          content: data.text,
+          children: data.text,
         }),
       subscribe(send, { container }) {
         const twitter = container.resolve<TwitterClient>("twitter");
@@ -106,7 +106,7 @@ export const twitter = extension({
         formatXml({
           tag: "tweet-reply",
           params: { tweetId: data.tweetId },
-          content: data.content,
+          children: data.content,
         }),
     }),
 
@@ -130,7 +130,7 @@ export const twitter = extension({
       format: ({ data }) =>
         formatXml({
           tag: "tweet",
-          content: data.content,
+          children: data.content,
         }),
     }),
   },

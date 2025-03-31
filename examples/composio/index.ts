@@ -73,28 +73,4 @@ createDreams({
   extensions: [cli, composio],
   logger: LogLevel.ERROR,
   context: goalContexts,
-  actions: [
-    action({
-      name: "addTask",
-      description: "Add a task to the goal",
-      schema: z.object({ task: z.string() }),
-      handler(call, ctx, _agent) {
-        const agentMemory = ctx.agentMemory as GoalMemory;
-        agentMemory.tasks.push(call.data.task);
-        return {};
-      },
-    }),
-    action({
-      name: "completeTask",
-      description: "Complete a task",
-      schema: z.object({ task: z.string() }),
-      handler(call, ctx, _agent) {
-        const agentMemory = ctx.agentMemory as GoalMemory;
-        agentMemory.tasks = agentMemory.tasks.filter(
-          (task) => task !== call.data.task
-        );
-        return {};
-      },
-    }),
-  ],
 }).start({ id: "test", initialGoal: "", initialTasks: [] });

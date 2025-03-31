@@ -10,6 +10,7 @@ import {
   render,
   action,
   validateEnv,
+  output,
 } from "@daydreamsai/core";
 import { cli } from "@daydreamsai/core/extensions";
 import { string, z } from "zod";
@@ -73,14 +74,7 @@ Traits that drive behavior and decision-making:
 - Adaptability: {{adaptability}} (High = flexible in new situations, embraces change, quick to adjust | Low = rigid, resistant to change, needs structure and routine)
 - Impulsivity: {{impulsivity}} (High = acts on instinct, spontaneous decisions, thrill-seeking | Low = deliberate, carefully considers consequences, methodical)
 
-These traits combine to create a unique personality profile that influences how {{name}} approaches problems, interacts with others, and makes decisions. The relative strength of each trait shapes their behavioral patterns and emotional responses.
-
-Here is the current goal:
-
-Goal: {{goal}} 
-Tasks: {{tasks}}
-Current Task: {{currentTask}}
-`;
+These traits combine to create a unique personality profile that influences how {{name}} approaches problems, interacts with others, and makes decisions. The relative strength of each trait shapes their behavioral patterns and emotional responses.`;
 
 type GoalMemory = {
   goal: string;
@@ -171,4 +165,7 @@ createDreams({
       },
     }),
   ],
+  outputs: {
+    test: output({}),
+  },
 }).start({ id: "test", initialGoal: "", initialTasks: [] });

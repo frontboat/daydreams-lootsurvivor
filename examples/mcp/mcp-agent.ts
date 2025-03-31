@@ -1,9 +1,9 @@
 import { createDreams } from "@daydreamsai/core";
-import { createMcpExtension } from "@daydreamsai/core/extensions";
+import { createMcpExtension } from "@daydreamsai/mcp";
 import { LogLevel } from "@daydreamsai/core";
 import path from "path";
-import { anthropic } from "@ai-sdk/anthropic";
-import { cli } from "@daydreamsai/core/extensions";
+import { groq } from "@ai-sdk/groq";
+import { cli } from "@daydreamsai/cli";
 
 /**
  * This example demonstrates how to create an agent that connects to an MCP server
@@ -15,20 +15,19 @@ import { cli } from "@daydreamsai/core/extensions";
 
 // Create an agent with the MCP extension
 createDreams({
-  model: anthropic("claude-3-7-sonnet-latest"),
+  model: groq("deepseek-r1-distill-llama-70b"),
   logger: LogLevel.INFO,
-
+  contexts: [cli],
   // Add the MCP extension with the example server configuration
   extensions: [
-    cli,
     createMcpExtension([
       {
         id: "example-server",
         name: "Example Resource Server",
         transport: {
           type: "stdio",
-          command: "node",
-          args: [path.join(__dirname, "mcp-server-example.mjs")],
+          command: "tsx",
+          args: [path.join(__dirname, "mcp-server-example.ts")],
         },
       },
     ]),

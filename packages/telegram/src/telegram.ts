@@ -30,12 +30,12 @@ const telegramService = service({
 const telegramChat = context({
   type: "telegram:chat",
   key: ({ chatId }) => chatId.toString(),
-  schema: z.object({ chatId: z.number() }),
-  async setup(args, { container }) {
+  schema: { chatId: z.number() },
+  async setup(args, settings, { container }) {
     const telegraf = container.resolve<Telegraf>("telegraf");
     const chat = await telegraf.telegram.getChat(args.chatId);
     return {
-      chat: chat as Chat,
+      chat,
     };
   },
   description({ options: { chat } }) {
@@ -54,10 +54,10 @@ export const telegram = extension({
   },
   inputs: {
     "telegram:message": input({
-      schema: z.object({
+      schema: {
         user: z.object({ id: z.number(), username: z.string() }),
         text: z.string(),
-      }),
+      },
       format: ({ user, text }) =>
         formatMsg({
           role: "user",
@@ -65,7 +65,9 @@ export const telegram = extension({
           user: user.username,
         }),
       subscribe(send, { container }) {
-        container.resolve<Telegraf>("telegraf").on("message", (ctx) => {
+        const tg = container.resolve<Telegraf>("telegraf");
+
+        tg.on("message", (ctx) => {
           const chat = ctx.chat;
           const user = ctx.msg.from;
 
@@ -90,12 +92,12 @@ export const telegram = extension({
   },
   outputs: {
     "telegram:message": output({
-      schema: z.object({
+      schema: {
         userId: z
           .string()
           .describe("the userId to send the message to, you must include this"),
         content: z.string().describe("the content of the message to send"),
-      }),
+      },
       description: "use this to send a telegram message to user",
       enabled({ context }) {
         return context.type === telegramChat.type;
@@ -106,8 +108,10 @@ export const telegram = extension({
           maxChunkSize: 4096,
         });
 
-        for (const chunck of chunks) {
-          await tg.sendMessage(data.userId, chunck);
+        for (const chunk of chunks) {
+          await tg.sendMessage(data.userId, chunk, {
+            parse_mode: "Markdown",
+          });
         }
 
         return {

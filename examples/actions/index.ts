@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { action } from "../utils";
+import { action } from "../../packages/core/src/utils";
 import { tavily, type TavilyClient } from "@tavily/core";
 
 export const searchWebAction = action({

@@ -1,10 +1,13 @@
 import { z } from "zod";
 import { createMcpClient } from "./client";
-import type { Extension, ActionCall } from "../../types";
-import { Logger } from "../../logger";
-
+import {
+  Logger,
+  action,
+  extension,
+  type ActionCallContext,
+  type Context,
+} from "@daydreamsai/core";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { extension } from "../../utils";
 
 export interface McpServerConfig {
   id: string;
@@ -33,7 +36,7 @@ export interface McpServerConfig {
  * @param servers Configuration for one or more MCP servers to connect to
  * @returns An extension that can be added to the agent's extensions list
  */
-export function createMcpExtension(servers: McpServerConfig[]): Extension {
+export function createMcpExtension(servers: McpServerConfig[]) {
   const clients = new Map<string, Client>();
 
   return extension({
@@ -82,188 +85,10 @@ export function createMcpExtension(servers: McpServerConfig[]): Extension {
 
     // Define actions for interacting with MCP servers
     actions: [
-      // Action to list available prompts from a specific MCP server
-      {
-        name: "mcp.listPrompts",
-        description: "List available prompts from an MCP server",
-        schema: z.object({
-          serverId: z.string().describe("ID of the MCP server to query"),
-        }),
-        async handler({ serverId }, ctx, agent) {
-          const logger = agent.container.resolve<Logger>("logger");
-
-          const client = clients.get(serverId);
-          if (!client) {
-            return {
-              error: `MCP server with ID '${serverId}' not found`,
-            };
-          }
-
-          try {
-            const prompts = await client.listPrompts();
-            return { prompts };
-          } catch (error) {
-            logger.error("mcp:action", "Failed to list prompts", {
-              serverId,
-              error,
-            });
-            return { error: String(error) };
-          }
-        },
-      },
-
-      // Action to get a prompt from a specific MCP server
-      {
-        name: "mcp.getPrompt",
-        description: "Get a prompt from an MCP server",
-        schema: z.object({
-          serverId: z.string().describe("ID of the MCP server to query"),
-          name: z.string().describe("Name of the prompt to get"),
-          arguments: z
-            .record(z.any())
-            .optional()
-            .describe("Arguments for the prompt"),
-        }),
-        async handler(data, ctx, agent) {
-          const logger = agent.container.resolve<Logger>("logger");
-          const { serverId, name, arguments: args } = data;
-
-          const client = clients.get(serverId);
-          if (!client) {
-            return {
-              error: `MCP server with ID '${serverId}' not found`,
-            };
-          }
-
-          try {
-            const prompt = await client.getPrompt({
-              name,
-              arguments: args || {},
-            });
-            return { prompt };
-          } catch (error) {
-            logger.error("mcp:action", "Failed to get prompt", {
-              serverId,
-              name,
-              error,
-            });
-            return { error: String(error) };
-          }
-        },
-      },
-
-      // Action to list available resources from a specific MCP server
-      {
-        name: "mcp.listResources",
-        description: "List available resources from an MCP server",
-        schema: z.object({
-          serverId: z.string().describe("ID of the MCP server to query"),
-        }),
-        async handler(data, ctx, agent) {
-          const logger = agent.container.resolve<Logger>("logger");
-          const { serverId } = data;
-
-          const client = clients.get(serverId);
-          if (!client) {
-            return {
-              error: `MCP server with ID '${serverId}' not found`,
-            };
-          }
-
-          try {
-            const resources = await client.listResources();
-            return { resources };
-          } catch (error) {
-            logger.error("mcp:action", "Failed to list resources", {
-              serverId,
-              error,
-            });
-            return { error: String(error) };
-          }
-        },
-      },
-
-      // Action to read a resource from a specific MCP server
-      {
-        name: "mcp.readResource",
-        description: "Read a resource from an MCP server",
-        schema: z.object({
-          serverId: z.string().describe("ID of the MCP server to query"),
-          uri: z.string().describe("URI of the resource to read"),
-        }),
-        async handler(data, ctx, agent) {
-          const logger = agent.container.resolve<Logger>("logger");
-          const { serverId, uri } = data;
-
-          const client = clients.get(serverId);
-          if (!client) {
-            return {
-              error: `MCP server with ID '${serverId}' not found`,
-            };
-          }
-
-          try {
-            const resource = await client.readResource({
-              uri,
-            });
-            return { resource };
-          } catch (error) {
-            logger.error("mcp:action", "Failed to read resource", {
-              serverId,
-              uri,
-              error,
-            });
-            return { error: String(error) };
-          }
-        },
-      },
-
-      // Action to call a tool on a specific MCP server
-      {
-        name: "mcp.callTool",
-        description: "Call a tool on an MCP server",
-        schema: z.object({
-          serverId: z.string().describe("ID of the MCP server to query"),
-          name: z.string().describe("Name of the tool to call"),
-          arguments: z
-            .record(z.any())
-            .optional()
-            .describe("Arguments for the tool"),
-        }),
-        async handler(data, ctx, agent) {
-          const logger = agent.container.resolve<Logger>("logger");
-          const { serverId, name, arguments: args } = data;
-
-          const client = clients.get(serverId);
-          if (!client) {
-            return {
-              error: `MCP server with ID '${serverId}' not found`,
-            };
-          }
-
-          try {
-            const result = await client.callTool({
-              name,
-              arguments: args || {},
-            });
-            return { result };
-          } catch (error) {
-            logger.error("mcp:action", "Failed to call tool", {
-              serverId,
-              name,
-              error,
-            });
-            return { error: String(error) };
-          }
-        },
-      },
-
-      // Action to list all connected MCP servers
-      {
+      action({
         name: "mcp.listServers",
-        description: "List all connected MCP servers",
-        schema: undefined,
-        async handler() {
+        description: "List all MCP servers",
+        handler() {
           const serverList = servers.map((server) => ({
             id: server.id,
             name: server.name,
@@ -273,19 +98,34 @@ export function createMcpExtension(servers: McpServerConfig[]): Extension {
 
           return { servers: serverList };
         },
-      },
+      }),
 
       // Action to list available tools from a specific MCP server
-      {
+      action({
         name: "mcp.listTools",
         description: "List available tools from an MCP server",
-        schema: z.object({
+        schema: {
           serverId: z.string().describe("ID of the MCP server to query"),
-        }),
-        async handler(data, ctx, agent) {
-          const logger = agent.container.resolve<Logger>("logger");
-          const { serverId } = data;
-
+        },
+        async handler({ serverId }, ctx, agent) {
+          const client = clients.get(serverId);
+          if (!client) {
+            return {
+              error: `MCP server with ID '${serverId}' not found`,
+            };
+          }
+          const tools = await client.listTools();
+          return { tools };
+        },
+      }),
+      // Action to list available prompts from a specific MCP server
+      action({
+        name: "mcp.listPrompts",
+        description: "List available prompts from an MCP server",
+        schema: {
+          serverId: z.string().describe("ID of the MCP server to query"),
+        },
+        async handler({ serverId }, ctx) {
           const client = clients.get(serverId);
           if (!client) {
             return {
@@ -293,18 +133,111 @@ export function createMcpExtension(servers: McpServerConfig[]): Extension {
             };
           }
 
-          try {
-            const tools = await client.listTools();
-            return { tools };
-          } catch (error) {
-            logger.error("mcp:action", "Failed to list tools", {
-              serverId,
-              error,
-            });
-            return { error: String(error) };
-          }
+          const prompts = await client.listPrompts();
+          return { prompts };
         },
-      },
+      }),
+
+      // Action to get a prompt from a specific MCP server
+      action({
+        name: "mcp.getPrompt",
+        description: "Get a prompt from an MCP server",
+        schema: {
+          serverId: z.string().describe("ID of the MCP server to query"),
+          name: z.string().describe("Name of the prompt to get"),
+          arguments: z
+            .record(z.any())
+            .optional()
+            .describe("Arguments for the prompt"),
+        },
+        async handler({ serverId, name, arguments: args }, ctx, agent) {
+          const client = clients.get(serverId);
+          if (!client) {
+            return {
+              error: `MCP server with ID '${serverId}' not found`,
+            };
+          }
+
+          const prompt = await client.getPrompt({
+            name,
+            arguments: args || {},
+          });
+          return { prompt };
+        },
+      }),
+
+      // Action to list available resources from a specific MCP server
+      action({
+        name: "mcp.listResources",
+        description: "List available resources from an MCP server",
+        schema: {
+          serverId: z.string().describe("ID of the MCP server to query"),
+        },
+        async handler({ serverId }, ctx) {
+          const client = clients.get(serverId);
+          if (!client) {
+            return {
+              error: `MCP server with ID '${serverId}' not found`,
+            };
+          }
+
+          const resources = await client.listResources();
+          return { resources };
+        },
+      }),
+
+      // Action to read a resource from a specific MCP server
+      action({
+        name: "mcp.readResource",
+        description: "Read a resource from an MCP server",
+        schema: {
+          serverId: z.string().describe("ID of the MCP server to query"),
+          uri: z.string().describe("URI of the resource to read"),
+        },
+        async handler({ serverId, uri }, ctx) {
+          const client = clients.get(serverId);
+          if (!client) {
+            return {
+              error: `MCP server with ID '${serverId}' not found`,
+            };
+          }
+
+          const resource = await client.readResource({
+            uri,
+          });
+
+          return { resource };
+        },
+      }),
+
+      // Action to call a tool on a specific MCP server
+      action({
+        name: "mcp.callTool",
+        description: "Call a tool on an MCP server",
+        schema: {
+          serverId: z.string().describe("ID of the MCP server to query"),
+          name: z.string().describe("Name of the tool to call"),
+          arguments: z
+            .record(z.any())
+            .optional()
+            .describe("Arguments for the tool"),
+        },
+        async handler({ serverId, name, arguments: args }) {
+          const client = clients.get(serverId);
+          if (!client) {
+            return {
+              error: `MCP server with ID '${serverId}' not found`,
+            };
+          }
+
+          const result = await client.callTool({
+            name,
+            arguments: args,
+          });
+
+          return { result };
+        },
+      }),
     ],
   });
 }

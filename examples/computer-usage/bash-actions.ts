@@ -24,7 +24,7 @@ export const executeBashAction = action({
   }),
   async handler(call, ctx) {
     try {
-      const { command, workingDirectory, timeout = 30000 } = call.data;
+      const { command, workingDirectory, timeout = 30000 } = call;
 
       console.log(`Executing bash command: ${command}`);
 
