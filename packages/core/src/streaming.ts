@@ -23,7 +23,6 @@ import type {
   EventRef,
   Handlers,
   Input,
-  InputRef,
   Log,
   Output,
   OutputRef,
@@ -31,8 +30,9 @@ import type {
   StepRef,
   WorkingMemory,
 } from "./types";
-import { input, randomUUIDv7 } from "./utils";
+import { randomUUIDv7 } from "./utils";
 import { xmlStreamParser } from "./xml";
+import pDefer from "p-defer";
 
 type PartialLog = Partial<Log> &
   Pick<Log, "ref" | "id" | "timestamp" | "processed">;
@@ -54,14 +54,74 @@ export async function handleStream<Ctx = any>(
   fn: (el: StackElement, ctx?: Ctx) => void,
   ctx?: Ctx
 ) {
-  const parser = xmlStreamParser(tags);
-
-  parser.next();
-
   let current: StackElement | undefined = undefined;
   let stack: StackElement[] = [];
 
   let index = initialIndex;
+
+  let sameTagDepth = 0;
+
+  const parser = xmlStreamParser(tags, (tag, isClosingTag) => {
+    if (current?.tag === tag && !isClosingTag && tag === "think") {
+      return false;
+    }
+
+    if (current?.tag === tag && !isClosingTag) {
+      console.log({ tag, sameTagDepth });
+      sameTagDepth++;
+      return false;
+    }
+
+    if (current?.tag === tag && isClosingTag) {
+      if (sameTagDepth > 0) {
+        sameTagDepth--;
+        return false;
+      }
+
+      return true;
+    }
+    if (current === undefined || current?.tag === "response") return true;
+
+    if (isClosingTag && stack.length > 0) {
+      const stackIndex = stack.findIndex((el) => el.tag === tag);
+      console.log({ tag, stack, stackIndex, current });
+      if (stackIndex === -1) return false;
+
+      if (current) {
+        fn(
+          {
+            ...current,
+            done: true,
+          },
+          ctx
+        );
+
+        current = undefined;
+      }
+
+      const closed = stack.splice(stackIndex + 1).reverse();
+
+      for (const el of closed) {
+        fn(
+          {
+            ...el,
+            done: true,
+          },
+          ctx
+        );
+      }
+
+      current = stack.pop();
+
+      console.log({ stack, closed, current });
+
+      return true;
+    }
+
+    return false;
+  });
+
+  parser.next();
 
   function handleChunk(chunk: string) {
     let result = parser.next(chunk);
@@ -193,6 +253,8 @@ export function createContextStreamHandler({
     calls: [] as Promise<any>[],
     promises: [] as Promise<any>[],
     response: null as null | string,
+
+    defer: pDefer<Log[]>(),
 
     params: {} as {
       actions?: AnyAction[];

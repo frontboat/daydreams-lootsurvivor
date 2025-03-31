@@ -41,7 +41,7 @@ export function input<
  * @returns Typed action configuration
  */
 export function action<
-  TSchema extends ActionSchema = ActionSchema,
+  TSchema extends ActionSchema = undefined,
   Result = any,
   TError = any,
   TContext extends AnyContext = AnyContext,
@@ -68,9 +68,9 @@ export function action<
  */
 export function output<
   Schema extends OutputSchema = OutputSchema,
-  Context extends AgentContext<any> = AgentContext<any>,
   TResponse extends OutputResponse = OutputResponse,
->(config: OutputConfig<Schema, Context, TResponse>) {
+  Context extends AnyContext = AnyContext,
+>(config: OutputConfig<Schema, TResponse, Context>) {
   return config;
 }
 

@@ -6,22 +6,17 @@ import {
   type StreamTextResult,
   type ToolSet,
 } from "ai";
-import { task, type TaskContext } from "../task";
+import { task } from "../task";
 import type {
   Action,
-  ActionCall,
   ActionCallContext,
-  ActionContext,
   AnyAction,
   AnyAgent,
   AnyContext,
-  Log,
   WorkingMemory,
 } from "../types";
 import type { Logger } from "../logger";
 import { wrapStream } from "../streaming";
-import type { parse } from "../xml";
-import { randomUUIDv7 } from "../utils";
 
 type ModelConfig = {
   assist?: boolean;
@@ -43,6 +38,9 @@ export const modelsResponseConfig: Record<string, ModelConfig> = {
   "qwen-qwq-32b": {
     prefix: "",
   },
+  "google/gemini-2.0-flash-001": {
+    // prefix: "",
+  },
   "deepseek-r1-distill-llama-70b": {
     prefix: "",
     assist: false,
@@ -55,6 +53,7 @@ export const reasoningModels = [
   "deepseek-r1-distill-llama-70b",
   "o3-mini",
   "google/gemini-2.0-flash-001",
+  "google/gemini-2.0-flash-lite-preview-02-05:free",
 ];
 
 /**
@@ -143,14 +142,13 @@ export const runGenerate = task(
     const stream = streamText({
       model,
       messages,
-      stopSequences: ["</response>"],
+      stopSequences: ["\n</response>"],
       temperature: 0.6,
       abortSignal,
       experimental_transform: smoothStream({
         chunking: "word",
       }),
       onError: (event) => {
-        console.log(event);
         onError(event.error);
       },
     });
@@ -197,8 +195,8 @@ export const runAction = task(
     try {
       const result =
         action.schema === undefined
-          ? await (action as Action<undefined>).handler(ctx, agent)
-          : await action.handler(ctx.call.data, ctx, agent);
+          ? await Promise.try((action as Action<undefined>).handler, ctx, agent)
+          : await Promise.try(action.handler, ctx.call.data, ctx, agent);
 
       logger.debug("agent:action_result:" + ctx.call.id, ctx.call.name, result);
       return result;
@@ -206,7 +204,7 @@ export const runAction = task(
       logger.error("agent:action", "ACTION_FAILED", { error });
 
       if (action.onError) {
-        await Promise.resolve(action.onError(error, ctx, agent));
+        await Promise.try(action.onError, error, ctx, agent);
       } else {
         throw error;
       }

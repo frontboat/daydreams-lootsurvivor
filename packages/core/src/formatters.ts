@@ -160,6 +160,12 @@ export function formatAction(action: AnyAction) {
           children: formatSchema(action.schema, "schema"),
         }
       : null,
+    action.returns
+      ? {
+          tag: "returns",
+          children: formatSchema(action.returns, "returns"),
+        }
+      : null,
   ]);
 }
 
@@ -172,7 +178,7 @@ export function formatContextState(state: ContextState) {
       context.description
         ? {
             tag: "description",
-            content:
+            children:
               typeof context.description === "function"
                 ? context.description(state)
                 : context.description,
@@ -181,7 +187,7 @@ export function formatContextState(state: ContextState) {
       context.instructions
         ? {
             tag: "instructions",
-            content:
+            children:
               typeof context.instructions === "function"
                 ? context.instructions(state)
                 : context.instructions,
@@ -189,7 +195,7 @@ export function formatContextState(state: ContextState) {
         : null,
       {
         tag: "state",
-        content: context.render ? context.render(state) : state.memory,
+        children: context.render ? context.render(state) : state.memory,
       },
     ].flat()
   );

@@ -23,6 +23,7 @@ import {
   saveContextsIndex,
   loadContextState,
   getContexts,
+  deleteContext,
 } from "./context";
 import { createMemoryStore } from "./memory";
 import { createMemory } from "./memory";
@@ -258,6 +259,17 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
       return getContextWorkingMemory(agent, contextId);
     },
 
+    async deleteContext(contextId) {
+      //todo: handle if its running;
+
+      contexts.delete(contextId);
+      contextIds.delete(contextId);
+
+      contextsRunning.delete(contextId);
+
+      await deleteContext(agent, contextId);
+    },
+
     async start(args) {
       logger.info("agent:start", "Starting agent", { args, booted });
       if (booted) return agent;
@@ -272,7 +284,7 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
       });
 
       for (const extension of extensions) {
-        if (extension.install) await extension.install(agent);
+        if (extension.install) await Promise.try(extension.install, agent);
       }
 
       logger.debug("agent:start", "Setting up inputs", {
@@ -282,27 +294,27 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
       for (const [type, input] of Object.entries(agent.inputs)) {
         if (input.install) {
           logger.trace("agent:start", "Installing input", { type });
-          await Promise.resolve(input.install(agent));
+          await Promise.try(input.install, agent);
         }
 
         if (input.subscribe) {
           logger.trace("agent:start", "Subscribing to input", { type });
-          let subscription = input.subscribe((context, args, data) => {
-            logger.debug("agent", "input", { context, args, data });
+          let subscription = await Promise.try(
+            input.subscribe,
+            (context, args, data) => {
+              logger.debug("agent", "input", { context, args, data });
+              agent
+                .send({
+                  context,
+                  input: { type, data },
+                  args,
+                })
+                .catch((err) => {
+                  logger.error("agent:input", "error", err);
+                });
+            },
             agent
-              .send({
-                context,
-                input: { type, data },
-                args,
-              })
-              .catch((err) => {
-                logger.error("agent:input", "error", err);
-              });
-          }, agent);
-
-          if (typeof subscription === "object") {
-            subscription = await Promise.resolve(subscription);
-          }
+          );
 
           if (subscription) inputSubscriptions.set(type, subscription);
         }
@@ -315,7 +327,7 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
       for (const [type, output] of Object.entries(outputs)) {
         if (output.install) {
           logger.trace("agent:start", "Installing output", { type });
-          await Promise.resolve(output.install(agent));
+          await Promise.try(output.install, agent);
         }
       }
 
@@ -328,7 +340,7 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
           logger.trace("agent:start", "Installing action", {
             name: action.name,
           });
-          await Promise.resolve(action.install(agent));
+          await Promise.try(action.install, agent);
         }
       }
 
@@ -397,16 +409,15 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
       // todo: allow to control what happens when new input is sent while the ctx is running
       // context.onInput?
       // we should allow to abort the current run, or just push it to current run
+      // state.controller.abort()
       if (contextsRunning.has(ctxId)) {
         logger.debug("agent:run", "Context already running", {
           id: ctxId,
         });
 
-        const { push } = contextsRunning.get(ctxId)!;
+        const { state, push } = contextsRunning.get(ctxId)!;
         params.chain?.forEach((el) => push(el, true));
-
-        // we need to create a defer promise
-        return [];
+        return state.defer.promise;
       }
 
       logger.debug("agent:run", "Added context to running set", {
@@ -546,7 +557,7 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
             state.contexts.map((state) => agent.saveContext(state))
           );
 
-          if (abortSignal?.aborted) break;
+          if (state.controller.signal.aborted) break;
 
           if (!state.shouldContinue()) break;
 
@@ -616,6 +627,8 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
         contextId: ctxState.id,
         chainLength: state.chain.length,
       });
+
+      state.defer.resolve(state.chain);
 
       return state.chain;
     },

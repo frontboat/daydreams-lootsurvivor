@@ -128,7 +128,7 @@ IMPORTANT:
 Always include the 'type' attribute in the output tag and ensure it matches one of the available output types listed above.
 Remember to include the other attribute in the output tag and ensure it matches the output attributes schema.
 If you say you will perform an action, you MUST issue the corresponding action call here`,
-};
+} as const;
 
 export const promptTemplate = `\
 {{intro}}
@@ -203,7 +203,7 @@ export const mainStep = {
         key,
         render(templateSection, data),
       ])
-    );
+    ) as Record<keyof typeof templateSections, string>;
 
     const prompt = render(mainStep.template, sections);
 
@@ -218,6 +218,6 @@ export const mainStep = {
     );
     return pendingResults.length > 0;
   },
-};
+} as const;
 
 export type StepConfig = typeof mainStep;

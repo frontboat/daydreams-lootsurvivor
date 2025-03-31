@@ -339,3 +339,9 @@ export function getContexts(
     getContextData(contexts, id)
   );
 }
+
+export async function deleteContext(agent: AnyAgent, contextId: string) {
+  await agent.memory.store.delete(`context:${contextId}`);
+  await agent.memory.store.delete(`memory:${contextId}`);
+  await agent.memory.store.delete(`working-memory:${contextId}`);
+}

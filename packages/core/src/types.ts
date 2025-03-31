@@ -1,5 +1,5 @@
 import { type LanguageModelV1, type Schema } from "ai";
-import { z, ZodObject, type ZodRawShape } from "zod";
+import { z, ZodObject, ZodType, type ZodRawShape } from "zod";
 import type { Container } from "./container";
 import type { ServiceProvider } from "./serviceProvider";
 import type { BaseMemory } from "./memory";
@@ -8,6 +8,8 @@ import type { TaskRunner } from "./task";
 export { type LanguageModelV1, type Schema } from "ai";
 
 export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+
+export type MaybePromise<T = any> = T | Promise<T>;
 
 /**
  * Represents a memory configuration for storing data
@@ -179,7 +181,7 @@ export type ActionSchema =
   | Schema<any>
   | undefined;
 
-export type InferActionArguments<TSchema extends ActionSchema = undefined> =
+export type InferActionArguments<TSchema = undefined> =
   TSchema extends ZodRawShape
     ? z.infer<ZodObject<TSchema>>
     : TSchema extends z.AnyZodObject
@@ -207,6 +209,14 @@ export type ActionCallContext<
   call: ActionCall<InferActionArguments<Schema>>;
 } & ContextStateApi<TContext>;
 
+type InferActionResult<Result> = Result extends ZodRawShape
+  ? z.infer<ZodObject<Result>>
+  : Result extends ZodType
+    ? z.infer<Result>
+    : Result extends Schema
+      ? Result["_type"]
+      : Result;
+
 export type ActionHandler<
   Schema extends ActionSchema = undefined,
   Result = any,
@@ -222,7 +232,7 @@ export type ActionHandler<
         TMemory
       >,
       agent: TAgent
-    ) => Promise<Result> | Result
+    ) => MaybePromise<Result>
   : (
       args: InferActionArguments<Schema>,
       ctx: ActionCallContext<
@@ -232,7 +242,7 @@ export type ActionHandler<
         TMemory
       >,
       agent: TAgent
-    ) => Promise<Result> | Result;
+    ) => MaybePromise<Result>;
 
 /**
  * Represents an action that can be executed with typed parameters
@@ -260,6 +270,8 @@ export interface Action<
   ) => boolean;
 
   handler: ActionHandler<Schema, Result, TContext, TAgent, TMemory>;
+
+  returns?: ActionSchema;
 
   format?: (result: ActionResult<Result>) => string | string[];
   /** Optional evaluator for this specific action */
@@ -289,7 +301,7 @@ export interface Action<
       TMemory
     >,
     agent: TAgent
-  ) => Promise<unknown> | unknown;
+  ) => Promise<void> | void;
 }
 
 export type ActionCtxRef = AnyAction & { ctxId: string };
@@ -303,7 +315,7 @@ type InferOutputSchemaParams<Schema extends OutputSchema> =
       ? z.infer<Schema>
       : never;
 
-export type OutputRefResponse = Pick<OutputRef, "data" | "params" | "error"> & {
+export type OutputRefResponse = Pick<OutputRef, "data" | "params"> & {
   processed?: boolean;
 };
 
@@ -316,7 +328,7 @@ export type OutputResponse =
 export type Output<
   Schema extends OutputSchema = OutputSchema,
   Response extends OutputResponse = OutputResponse,
-  Context extends AgentContext<any> = AgentContext<any>,
+  TContext extends AnyContext = AnyContext,
   TAgent extends AnyAgent = AnyAgent,
 > = {
   type: string;
@@ -325,17 +337,16 @@ export type Output<
   required?: boolean;
   schema?: Schema;
   attributes?: OutputSchema;
-  install?: (agent: TAgent) => Promise<void>;
-  enabled?: (ctx: AgentContext<any>) => boolean;
+  install?: (agent: TAgent) => MaybePromise<void>;
+  enabled?: (ctx: AgentContext<TContext>) => boolean;
   handler?: (
     data: InferOutputSchemaParams<Schema>,
-    ctx: Context,
+    ctx: AgentContext<TContext>,
     agent: TAgent
-  ) => Promise<Response> | Response;
+  ) => MaybePromise<Response>;
   format?: (res: Response) => string | string[] | XMLElement;
-  // examples?: InferOutputSchema<Schema>[];
   /** Optional evaluator for this specific output */
-  evaluator?: Evaluator<Response, Context, TAgent>;
+  evaluator?: Evaluator<Response, AgentContext<Context>, TAgent>;
 
   examples?: string[];
 };
@@ -365,7 +376,7 @@ export type Input<
   format?: (
     data: InferSchemaArguments<Schema>
   ) => string | string[] | XMLElement;
-  install?: (agent: TAgent) => Promise<void>;
+  install?: (agent: TAgent) => MaybePromise<void>;
   enabled?: (state: AgentContext<TContext>) => Promise<boolean> | boolean;
   handler?: (
     data: InferSchemaArguments<Schema>,
@@ -377,7 +388,7 @@ export type Input<
       context: TContext,
       args: InferSchemaArguments<TContext["schema"]>,
       data: InferSchemaArguments<Schema>
-    ) => void,
+    ) => MaybePromise<void>,
     agent: TAgent
   ) => (() => void) | void | Promise<void | (() => void)>;
 };
@@ -542,12 +553,40 @@ export type ExtractTemplateVariables<T extends string> =
     : never;
 
 /**
- * Creates a type mapping template variables to string values
- * @template T - Template string type
+ * Converts a dot-separated path into a nested object type
+ * @template P - Path string
+ * @template V - Value type at the leaf
  */
-export type TemplateVariables<T extends string> = Pretty<{
+type PathToObject<
+  P extends string,
+  V = string,
+> = P extends `${infer Key}.${infer Rest}`
+  ? { [K in Key]: PathToObject<Rest, V> }
+  : { [K in P]: V };
+
+/**
+ * Merges a union of paths into a single nested object type
+ * @template T - Union of path strings
+ * @template V - Value type at the leaf
+ */
+type UnionToObject<T, V = string> = T extends string
+  ? PathToObject<T, V>
+  : never;
+
+/**
+ * Merges multiple object types into one (handles union overlap)
+ */
+type Merge<T> = { [K in keyof T]: T[K] extends object ? Merge<T[K]> : T[K] };
+
+type Prettify<T> = T extends object ? { [K in keyof T]: Prettify<T[K]> } : T;
+/**
+ * Creates a type mapping template variables (including nested paths) to values
+ * @template T - Template string type
+ * @template V - Value type at the leaf (defaults to string)
+ */
+export type TemplateVariables<T extends string, V = any> = {
   [K in ExtractTemplateVariables<T>]: any;
-}>;
+};
 
 /** Represents an expert system with instructions and actions */
 export type Expert = {
@@ -634,10 +673,7 @@ interface AgentDef<TContext extends AnyContext = AnyContext> {
   /**
    * A record of output configurations for the agent.
    */
-  outputs: Record<
-    string,
-    Omit<Output<any, any, AgentContext<TContext>, any>, "type">
-  >;
+  outputs: Record<string, Omit<Output<any, any, TContext, any>, "type">>;
 
   /**
    * A record of event schemas for the agent.
@@ -706,10 +742,7 @@ export interface Agent<TContext extends AnyContext = AnyContext>
     args: InferSchemaArguments<TContext["schema"]>;
     model?: LanguageModelV1;
     contexts?: ContextRefArray<SubContextRefs>;
-    outputs?: Record<
-      string,
-      Omit<Output<any, any, AgentContext<TContext>, any>, "type">
-    >;
+    outputs?: Record<string, Omit<Output<any, any, TContext, any>, "type">>;
     actions?: AnyAction[];
     handlers?: Partial<Handlers>;
     abortSignal?: AbortSignal;
@@ -730,10 +763,7 @@ export interface Agent<TContext extends AnyContext = AnyContext>
     input: { type: string; data: any };
     model?: LanguageModelV1;
     contexts?: ContextRefArray<SubContextRefs>;
-    outputs?: Record<
-      string,
-      Omit<Output<any, any, AgentContext<SContext>, any>, "type">
-    >;
+    outputs?: Record<string, Omit<Output<any, any, SContext, any>, "type">>;
     actions?: AnyAction[];
     handlers?: Partial<Handlers>;
     abortSignal?: AbortSignal;
@@ -805,6 +835,8 @@ export interface Agent<TContext extends AnyContext = AnyContext>
    * @returns A promise that resolves to the working memory.
    */
   getWorkingMemory(contextId: string): Promise<WorkingMemory>;
+
+  deleteContext(contextId: string): Promise<void>;
 }
 
 export type Debugger = (contextId: string, keys: string[], data: any) => void;
@@ -837,10 +869,10 @@ export type InputConfig<
 /** Configuration type for outputs without type field */
 export type OutputConfig<
   Schema extends OutputSchema = OutputSchema,
-  Context extends AgentContext<AnyContext> = AgentContext<AnyContext>,
   Response extends OutputResponse = OutputResponse,
+  TContext extends AnyContext = AnyContext,
   TAgent extends AnyAgent = AnyAgent,
-> = Omit<Output<Schema, Response, Context, TAgent>, "type">;
+> = Omit<Output<Schema, Response, TContext, TAgent>, "type">;
 
 /** Configuration type for experts without type field */
 export type ExpertConfig = Omit<Expert, "type">;
@@ -987,6 +1019,19 @@ interface ContextConfigApi<
       AnyAgent
     >;
   }): Context<TMemory, Schema, Ctx, Actions, Events>;
+  setOutputs<
+    TSchemas extends Record<
+      string,
+      z.AnyZodObject | z.ZodString | z.ZodRawShape
+    >,
+  >(outputs: {
+    [K in keyof TSchemas]: Output<
+      TSchemas[K],
+      any,
+      Context<TMemory, Schema, Ctx, Actions, Events>,
+      AnyAgent
+    >;
+  }): Context<TMemory, Schema, Ctx, Actions, Events>;
 }
 
 export type EventDef<Schema extends z.ZodTypeAny | ZodRawShape = z.ZodTypeAny> =
@@ -1084,19 +1129,8 @@ export interface Context<
   /**
    * A record of output configurations for the context.
    */
-  outputs: Record<string, Omit<Output, "type">>;
+  outputs: Record<string, Omit<Output<any, any, AnyContext, any>, "type">>;
 }
-
-type ContextInputConfig<
-  Schema extends z.AnyZodObject | z.ZodString | z.ZodRawShape = z.ZodString,
-  TMemory = any,
-> = Omit<InputConfig<Schema, Context<TMemory>, any>, "type" | "handler"> & {
-  handler?: (
-    data: InferSchemaArguments<Schema>,
-    ctx: AgentContext<Context<TMemory>>,
-    agent: AnyAgent
-  ) => Promise<boolean> | boolean;
-};
 
 export type ContextSettings = {
   model?: LanguageModelV1;
