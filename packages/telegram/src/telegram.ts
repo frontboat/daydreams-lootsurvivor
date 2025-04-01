@@ -33,7 +33,7 @@ const telegramChat = context({
   schema: { chatId: z.number() },
   async setup(args, settings, { container }) {
     const telegraf = container.resolve<Telegraf>("telegraf");
-    const chat = await telegraf.telegram.getChat(args.chatId);
+    const chat: Chat = await telegraf.telegram.getChat(args.chatId);
     return {
       chat,
     };

@@ -28,7 +28,7 @@ const discordChannelContext = context({
   key: ({ channelId }) => channelId,
   schema: z.object({ channelId: z.string() }),
 
-  async setup(args, { container }) {
+  async setup(args, setttings, { container }) {
     const channel = await container
       .resolve<DiscordClient>("discord")
       .client.channels.fetch(args.channelId);
