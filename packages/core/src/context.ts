@@ -66,10 +66,16 @@ export function context<
         actions,
       });
     },
-    setInputs(actions) {
-      return context<TMemory, Args, Ctx, any, Events>({
+    setInputs(inputs) {
+      return context({
         ...ctx,
-        actions,
+        inputs,
+      });
+    },
+    setOutputs(outputs) {
+      return context({
+        ...ctx,
+        outputs,
       });
     },
   };
