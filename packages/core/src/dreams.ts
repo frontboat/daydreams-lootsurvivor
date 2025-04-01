@@ -75,12 +75,6 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
     trainingDataPath,
   } = config;
 
-  if (config.contexts) {
-    for (const ctx of config.contexts) {
-      registry.contexts.set(ctx.type, ctx);
-    }
-  }
-
   const container = config.container ?? createContainer();
 
   const taskRunner = config.taskRunner ?? new TaskRunner(3);
@@ -116,6 +110,12 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
 
   for (const service of services) {
     serviceManager.register(service);
+  }
+
+  if (config.contexts) {
+    for (const ctx of config.contexts) {
+      registry.contexts.set(ctx.type, ctx);
+    }
   }
 
   for (const extension of extensions) {
@@ -283,6 +283,19 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
         count: extensions.length,
       });
 
+      if (agent.context) {
+        logger.debug("agent:start", "Setting up agent context", {
+          type: agent.context.type,
+        });
+
+        const agentState = await agent.getContext({
+          context: agent.context,
+          args: args!,
+        });
+
+        contexts.set("agent:context", agentState);
+      }
+
       for (const extension of extensions) {
         if (extension.install) await Promise.try(extension.install, agent);
       }
@@ -291,7 +304,15 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
         count: Object.keys(agent.inputs).length,
       });
 
-      for (const [type, input] of Object.entries(agent.inputs)) {
+      const inputs = {
+        ...agent.inputs,
+      };
+
+      for (const ctx of registry.contexts.values()) {
+        if (ctx.inputs) Object.assign(inputs, ctx.inputs);
+      }
+
+      for (const [type, input] of Object.entries(inputs)) {
         if (input.install) {
           logger.trace("agent:start", "Installing input", { type });
           await Promise.try(input.install, agent);
@@ -355,19 +376,6 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
         for (const id of savedContexts) {
           contextIds.add(id);
         }
-      }
-
-      if (agent.context) {
-        logger.debug("agent:start", "Setting up agent context", {
-          type: agent.context.type,
-        });
-
-        const agentState = await agent.getContext({
-          context: agent.context,
-          args: args!,
-        });
-
-        contexts.set("agent:context", agentState);
       }
 
       logger.info("agent:start", "Agent started successfully");

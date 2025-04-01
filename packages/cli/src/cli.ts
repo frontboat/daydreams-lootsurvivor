@@ -1,5 +1,5 @@
 import * as readline from "readline/promises";
-import { service, context, input } from "@daydreamsai/core";
+import { service, context, input, extension, output } from "@daydreamsai/core";
 import { z } from "zod";
 
 export const readlineService = service({
@@ -16,10 +16,9 @@ export const readlineService = service({
 export const cli = context({
   type: "cli",
   key: ({ user }) => user.toString(),
-  schema: z.object({ user: z.string() }),
+  schema: { user: z.string() },
   inputs: {
     "cli:message": input({
-      schema: z.string(),
       async subscribe(send, { container }) {
         const rl = container.resolve<readline.Interface>("readline");
 
@@ -41,9 +40,27 @@ export const cli = context({
     }),
   },
   outputs: {
-    "cli:message": {
+    "cli:message": output({
       description: "Send messages to the user",
-      schema: z.string().describe("The message to send"),
-    },
+      instructions: "Use plain text",
+      schema: z.string(),
+      handler(data) {
+        console.log("Agent:", { data });
+        return {
+          data,
+        };
+      },
+      examples: [
+        `<output type="cli:message">Hi, How can I assist you today?</output>`,
+      ],
+    }),
   },
+});
+
+export const cliExtension = extension({
+  name: "cli",
+  contexts: {
+    cli,
+  },
+  services: [readlineService],
 });

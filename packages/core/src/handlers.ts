@@ -363,6 +363,7 @@ export async function prepareContext({
 
   const inputs: Input[] = Object.entries({
     ...agent.inputs,
+    ...ctxState.context.inputs,
     ...(params?.inputs ?? {}),
   }).map(([type, input]) => ({
     type,
@@ -371,6 +372,7 @@ export async function prepareContext({
 
   const outputs: Output[] = Object.entries({
     ...agent.outputs,
+    ...ctxState.context.outputs,
     ...(params?.outputs ?? {}),
   })
     .filter(([_, output]) =>
