@@ -27,7 +27,7 @@ type ContextConfig<
 > = Optional<
   Omit<
     Context<TMemory, Args, Ctx, Actions, Events>,
-    "setActions" | "setInputs"
+    "setActions" | "setInputs" | "setOutputs"
   >,
   "actions" | "events" | "inputs" | "outputs"
 >;
