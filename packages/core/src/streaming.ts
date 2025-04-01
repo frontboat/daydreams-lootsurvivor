@@ -264,7 +264,7 @@ export function createContextStreamHandler({
 
     async start(params: {
       actions?: AnyAction[];
-      outputs?: Record<string, Omit<Output, "type">>;
+      outputs?: Record<string, Omit<Output<any, any, any, any>, "type">>;
       contexts?: ContextRef[];
     }) {
       state.params = params;
