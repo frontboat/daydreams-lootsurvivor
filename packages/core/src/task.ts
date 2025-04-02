@@ -6,10 +6,14 @@ import type { Debugger } from "./types";
  */
 export type TaskOptions = {
   limit?: number;
-  retry?: number;
+  retry?:
+    | number
+    | boolean
+    | ((failureCount: number, error: unknown) => boolean);
   debug?: Debugger;
   priority?: number;
   callId?: string;
+  abortSignal?: AbortSignal;
 };
 
 /**

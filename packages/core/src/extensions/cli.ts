@@ -3,6 +3,7 @@ import { context } from "../context";
 import { z } from "zod";
 import { extension, input, output } from "../utils";
 import { formatMsg } from "../formatters";
+import { type AnyAgent } from "../types";
 import { service } from "../serviceProvider";
 
 const cliContext = context({
@@ -42,7 +43,7 @@ export const cli = extension({
           user,
         }),
       // Subscribe to CLI input
-      async subscribe(send, { container }) {
+      async subscribe(send, { container }: AnyAgent) {
         const rl = container.resolve<readline.Interface>("readline");
 
         const controller = new AbortController();
@@ -76,11 +77,9 @@ export const cli = extension({
   outputs: {
     "cli:message": output({
       description: "Send messages to the user",
-      schema: z.object({
-        message: z.string().describe("The message to send"),
-      }),
+      schema: z.string().describe("The message to send"),
       handler(content) {
-        console.log("Agent:", content.message);
+        console.log("Agent:", { content });
         return {
           data: content,
           timestamp: Date.now(),
@@ -89,7 +88,7 @@ export const cli = extension({
       format: ({ data }) =>
         formatMsg({
           role: "assistant",
-          content: data.message,
+          content: data,
         }),
     }),
   },

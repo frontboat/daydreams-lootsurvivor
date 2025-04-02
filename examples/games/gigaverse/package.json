@@ -1,0 +1,21 @@
+{
+  "name": "games",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^1.1.15",
+    "@ai-sdk/openai": "^1.2.1",
+    "@ai-sdk/groq": "^1.1.12",
+    "@daydreamsai/core": "workspace:*",
+    "@daydreamsai/chromadb": "workspace:*",
+    "@daydreamsai/discord": "workspace:*",
+    "zod": "^3.24.2"
+  }
+}

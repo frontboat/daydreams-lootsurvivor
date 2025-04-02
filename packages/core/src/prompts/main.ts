@@ -7,10 +7,7 @@ import { createParser, createPrompt } from "../prompt";
 import type { ActionResult, AnyAction, Log, Output } from "../types";
 import { xmlStreamParser } from "../xml";
 
-const promptTemplate = `
-You are tasked with analyzing messages, formulating responses, and initiating actions based on a given context. 
-You will be provided with a set of available actions, outputs, and a current context. 
-Your instructions is to analyze the situation and respond appropriately.
+/*
 
 ## Instructions
 - If asked for something - never do a summary unless you are asked to do a summary. Always respond with the exact information requested.
@@ -18,6 +15,14 @@ Your instructions is to analyze the situation and respond appropriately.
 - You must reason about the context, think, and planned actions.
 - IMPORTANT: If you state that you will perform an action, you MUST issue the corresponding action call. Do not say you will do something without actually issuing the action call.
 - IMPORTANT: Never end your response with a plan to do something without actually doing it. Always follow through with action calls.
+- When you determine that no further actions or outputs are needed and the flow should end, use the <finalize/> tag to indicate completion.
+
+*/
+
+const promptTemplate = `
+You are tasked with analyzing messages, formulating responses, and initiating actions based on a given context. 
+You will be provided with a set of available actions, outputs, and a current context. 
+Your instructions is to analyze the situation and respond appropriately.
 
 Follow these steps to process the updates:
 
@@ -52,7 +57,9 @@ Follow these steps to process the updates:
    - Acknowledging that certain information may not be immediately available
    - Setting appropriate expectations about action processing time
    - Indicating what will happen after actions complete
-
+   - You can only use outputs listed in the <outputs> section
+   - Follow the schemas provided for each output
+  
 4. Initiate actions (if needed):
    Use <action_call> tags to initiate actions. Remember:
 
@@ -96,13 +103,14 @@ Here's how you structure your response:
 <action_call name="[Action name]">[action arguments using the schema as JSON]</action_call>
 
 [List of outputs, if applicable]
-<output type="[Output type]">
-[output data using the schema]
+<output type="[Output type]" {...output attributes using the schema}>
+[output content using the content schema and type]
 </output>
 </response>
 
-IMPORTANT: Always include the 'type' attribute in the output tag and ensure it matches one of the available output types listed above.
-{{examples}}
+IMPORTANT: 
+Always include the 'type' attribute in the output tag and ensure it matches one of the available output types listed above.
+Remember to include the other attribute in the output tag and ensure it matches the output attributes schema.
 `;
 
 export const prompt = createPrompt(
@@ -207,7 +215,7 @@ Follow these steps to process the <action_results>:
    - Match it with the corresponding action using callId
    - Validate if the result meets the expected outcome
    - Identify any missing or incomplete results
-   - Determine if additional actions are needed based on these results
+   - You must determine if additional actions are needed based on these results
 
 3. Formulate a response (if needed):
    If you decide to respond to the message, use <response> tags to enclose your response.
@@ -273,13 +281,12 @@ Here's how you should structure your next response:
 <action_call name="[Action name]">[action arguments using the schema as JSON]</action_call>
 
 [List of outputs, if applicable]
-<output type="[Output type]">
-[output data using the schema]
+<output type="[Output type]" {...output attributes using the schema}>
+[output content using the content schema and type]
 </output>
 </response>
 
 Remember:
-
 - Always correlate results with their original actions using callId
 - Never repeat your outputs
 - Consider the complete chain of results when formulating responses
@@ -287,6 +294,10 @@ Remember:
 - Initiate follow-up actions only when necessary
 - Provide clear, actionable insights based on the combined results
 - Maintain context awareness between original request and final results
+
+IMPORTANT: 
+Always include the 'type' attribute in the output tag and ensure it matches one of the available output types listed above.
+Remember to include the other attribute in the output tag and ensure it matches the output attributes schema.
 `;
 
 export const resultsPrompt = createPrompt(
@@ -318,88 +329,3 @@ export const resultsPrompt = createPrompt(
     examples: [],
   })
 );
-
-type AsyncIterableStream<T> = AsyncIterable<T> & ReadableStream<T>;
-
-export type StackElement = {
-  index: number;
-  tag: string;
-  attributes: Record<string, any>;
-  content: string[];
-  done: boolean;
-};
-
-const tags = new Set([
-  "think",
-  "response",
-  "output",
-  "action_call",
-  "reasoning",
-]);
-
-export async function handleStream(
-  textStream: AsyncGenerator<string>,
-  initialIndex: number,
-  fn: (el: StackElement) => void
-) {
-  const parser = xmlStreamParser(tags);
-
-  parser.next();
-
-  let current: StackElement | undefined = undefined;
-  let stack: StackElement[] = [];
-
-  let index = initialIndex;
-
-  async function handleChunk(chunk: string) {
-    let result = parser.next(chunk);
-    while (!result.done && result.value) {
-      if (result.value.type === "start") {
-        if (current) stack.push(current);
-        current = {
-          index: index++,
-          tag: result.value.name,
-          attributes: result.value.attributes,
-          content: [],
-          done: false,
-        };
-        fn(current);
-      }
-
-      if (result.value.type === "end") {
-        if (current)
-          fn({
-            ...current,
-            done: true,
-          });
-        current = stack.pop();
-      }
-
-      if (result.value.type === "text") {
-        if (current) {
-          current.content.push(result.value.content);
-          fn(current);
-        }
-      }
-      result = parser.next();
-    }
-  }
-
-  for await (const chunk of textStream) {
-    handleChunk(chunk);
-  }
-
-  parser.return?.();
-}
-
-export async function* wrapStream(
-  stream: AsyncIterableStream<string>,
-  prefix: string,
-  suffix: string
-) {
-  yield prefix;
-  for await (const value of stream) {
-    yield value;
-  }
-  yield suffix;
-}

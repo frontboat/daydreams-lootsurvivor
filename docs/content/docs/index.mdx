@@ -1,0 +1,98 @@
+---
+title: Installation
+description:
+  This guide will walk you through the installation process for Daydreams.
+---
+
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+
+## Prerequisites
+
+- Node.js 18+ using [nvm](https://github.com/nvm-sh/nvm)
+
+We use [ai-sdk](https://sdk.vercel.ai/docs/introduction) to support multiple
+LLMs. You will need to install the ai-sdk for the LLM you want to use.
+
+<Tabs groupId="package-manager" persist items={["npm", "pnpm", "yarn", "bun"]}>
+  <Tab value="npm">
+    ```bash
+    npm install @daydreamsai/core 
+    ```
+  </Tab>
+    <Tab value="pnpm">
+    ```bash
+    pnpm add @daydreamsai/core
+    ```
+  </Tab>
+
+  <Tab value="yarn">
+    ```bash
+    yarn add @daydreamsai/core
+    ```
+  </Tab>
+  <Tab value="bun">
+    ```bash
+    bun add @daydreamsai/core
+    ```
+  </Tab>
+</Tabs>
+
+### Install ai-sdk
+
+See all available ai-sdk packages
+[here](https://sdk.vercel.ai/docs/introduction).
+
+<Tabs groupId="package-manager" persist items={["npm", "pnpm", "yarn", "bun"]}>
+  <Tab value="npm">
+    ```bash
+    npm install @ai-sdk/groq
+    ```
+  </Tab>
+    <Tab value="pnpm">
+    ```bash
+    pnpm add @ai-sdk/groq
+    ```
+  </Tab>
+
+  <Tab value="yarn">
+    ```bash
+    yarn add @ai-sdk/groq
+    ```
+  </Tab>
+  <Tab value="bun">
+    ```bash
+    bun add @ai-sdk/groq
+    ```
+  </Tab>
+</Tabs>
+
+### Basic Usage
+
+Dreams agents are all functional. `createDreams` is a function that returns an
+agent object, which can be run with `agent.start()`. Inject discord, telegram,
+or any other input/output to the agent and define your own actions.
+
+This example demonstrates a simple chat interface using Dreams with a command
+line interface and Groq's LLM. See other examples in the
+[examples](https://github.com/daydreamsai/daydreams/tree/main/examples)
+
+```typescript
+/**
+ * Basic example demonstrating a simple chat interface using Dreams
+ * with a command line interface and Groq's LLM.
+ */
+import { createGroq } from "@ai-sdk/groq";
+import { createDreams } from "@daydreamsai/core";
+import { cli } from "@daydreamsai/core/extensions";
+
+// Initialize Groq client
+const groq = createGroq({
+  apiKey: process.env.GROQ_API_KEY!,
+});
+
+// Create Dreams agent instance
+const agent = createDreams({
+  model: groq("deepseek-r1-distill-llama-70b"),
+  extensions: [cli],
+}).start();
+```

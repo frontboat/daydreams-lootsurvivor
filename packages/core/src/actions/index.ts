@@ -2,17 +2,6 @@ import { z } from "zod";
 import { action } from "../utils";
 import { tavily, type TavilyClient } from "@tavily/core";
 
-export const getWeatherAction = action({
-  name: "getWeather",
-  description: "",
-  schema: z.object({
-    location: z.string(),
-  }),
-  async handler(params, ctx) {
-    return "Sunny";
-  },
-});
-
 export const searchWebAction = action({
   name: "search",
   description: "Search online information using Tavily",

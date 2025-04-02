@@ -26,7 +26,8 @@ export class Logger {
 
   error(context: string, message: string, data?: any) {
     this.log(LogLevel.ERROR, context, message, data);
-    console.error(data);
+
+    if (data) console.error(data);
   }
 
   warn(context: string, message: string, data?: any) {

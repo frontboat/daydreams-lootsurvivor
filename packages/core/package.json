@@ -1,6 +1,6 @@
 {
   "name": "@daydreamsai/core",
-  "version": "0.2.8",
+  "version": "0.2.18-alpha.1",
   "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -10,22 +10,13 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": {
-        "development": "./src/index.ts",
         "default": "./dist/index.js"
       }
     },
     "./extensions": {
       "types": "./dist/extensions/index.d.ts",
       "import": {
-        "development": "./src/extensions/index.ts",
         "default": "./dist/extensions/index.js"
-      }
-    },
-    "./io/*": {
-      "types": "./dist/io/*.d.ts",
-      "import": {
-        "development": "./src/io/*.ts",
-        "default": "./dist/io/*.js"
       }
     }
   },
@@ -34,37 +25,26 @@
     "tsup": "^8.3.6",
     "vitest": "^3.0.5"
   },
+  "peerDependencies": {
+    "typescript": "^5.8.2"
+  },
   "scripts": {
     "test": "vitest",
     "build": "tsup --dts-resolve"
   },
-  "peerDependencies": {
-    "typescript": "^5.6.3"
-  },
   "dependencies": {
     "@ai-sdk/openai": "^1.1.14",
-    "@cetusprotocol/aggregator-sdk": "^0.3.22",
+    "@ai-sdk/ui-utils": "1.2.1",
     "@langchain/core": "^0.3.39",
     "@langchain/textsplitters": "^0.1.0",
     "@modelcontextprotocol/sdk": "^1.6.1",
-    "@mysten/sui": "^1.16.0",
-    "@solana/web3.js": "^1.98.0",
-    "@telegraf/types": "^8.3.1",
-    "agent-twitter-client": "^0.0.18",
+    "@tavily/core": "^0.3.1",
     "ai": "^4.1.46",
-    "ajv": "^8.17.1",
-    "bignumber.js": "9.1.2",
-    "bs58": "^6.0.0",
     "chromadb-default-embed": "^2.13.2",
-    "cohere-ai": "^7.15.4",
     "dotenv": "^16.4.7",
-    "ethers": "^6.13.5",
     "js-tiktoken": "^1.0.18",
-    "mongodb": "^6.13.0",
     "openai": "^4.83.0",
     "p-defer": "^4.0.1",
-    "starknet": "^6.23.1",
-    "telegraf": "^4.16.3",
     "uuid": "^11.1.0",
     "zod": "^3.24.2",
     "zod-to-json-schema": "^3.24.1"

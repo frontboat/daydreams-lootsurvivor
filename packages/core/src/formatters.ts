@@ -1,6 +1,6 @@
 import zodToJsonSchema from "zod-to-json-schema";
 import type {
-  Action,
+  AnyAction,
   ContextState,
   InputRef,
   Log,
@@ -11,7 +11,9 @@ import type {
 } from "./types";
 import { formatXml } from "./xml";
 import { formatValue } from "./utils";
-import { defaultContextRender } from "./context";
+import { renderWorkingMemory } from "./context";
+import { z } from "zod";
+import { type Schema } from "@ai-sdk/ui-utils";
 
 /**
  * Formats an input reference into XML format
@@ -43,12 +45,20 @@ export function formatOutput(output: OutputRef) {
   });
 }
 
+export function formatSchema(schema: any, key?: string) {
+  return JSON.stringify(
+    "_type" in schema
+      ? (schema as Schema).jsonSchema
+      : zodToJsonSchema("parse" in schema ? schema : z.object(schema), key)
+  );
+}
+
 /**
  * Formats an output interface definition into XML format
  * @param output - The output interface to format
  * @returns XML string representation of the output interface
  */
-export function formatOutputInterface(output: Output) {
+export function formatOutputInterface(output: Output<any>) {
   const params: Record<string, string> = {
     name: output.type,
   };
@@ -64,20 +74,33 @@ export function formatOutputInterface(output: Output) {
       output.description
         ? { tag: "description", content: output.description }
         : null,
-      output.instructions
-        ? { tag: "instructions", content: output.instructions }
+      output.attributes
+        ? {
+            tag: "attributes",
+            content: formatSchema(output.attributes, "attributes"),
+          }
         : null,
       output.schema
         ? {
             tag: "schema",
-            content: JSON.stringify(zodToJsonSchema(output.schema, "output")),
+            content: formatSchema(output.schema, "schema"),
+          }
+        : null,
+      output.instructions
+        ? { tag: "instructions", content: output.instructions }
+        : null,
+
+      output.examples
+        ? {
+            tag: "examples",
+            content: output.examples.join("\n"),
           }
         : null,
     ].filter((c) => !!c),
   });
 }
 
-export function formatAction(action: Action<any, any, any>) {
+export function formatAction(action: AnyAction) {
   return formatXml({
     tag: "action",
     params: { name: action.name },
@@ -97,7 +120,7 @@ export function formatAction(action: Action<any, any, any>) {
       action.schema
         ? {
             tag: "schema",
-            content: JSON.stringify(zodToJsonSchema(action.schema, "action")),
+            content: formatSchema(action.schema, "schema"),
           }
         : null,
     ].filter((t) => !!t),
@@ -218,53 +241,73 @@ export function formatContexts(
   workingMemory: WorkingMemory
 ) {
   return contexts
-    .map(({ id, context, key, args, memory, options }) =>
-      formatContext({
-        type: context.type,
-        key: key,
-        description:
-          typeof context.description === "function"
-            ? context.description({
-                key,
-                args,
-                options,
-                id,
-                context,
-                memory,
-              })
-            : context.description,
-        instructions:
-          typeof context.instructions === "function"
-            ? context.instructions({
-                key,
-                args,
-                options,
-                id,
-                context,
-                memory,
-              })
-            : context.instructions,
-        content: [
-          context.render
-            ? context.render({ id, context, key, args, memory, options })
-            : "",
-          mainContextId === id
-            ? defaultContextRender({
-                memory: {
-                  ...workingMemory,
-                  inputs: workingMemory.inputs.filter(
-                    (i) => i.processed === true
-                  ),
-                  results: workingMemory.results.filter(
-                    (i) => i.processed === true
-                  ),
-                },
-              })
-            : "",
-        ]
-          .flat()
-          .filter((t) => !!t),
-      })
+    .map(
+      ({
+        id,
+        context,
+        key,
+        args,
+        memory,
+        options,
+        settings,
+        contexts: subContexts,
+      }) =>
+        formatContext({
+          type: context.type,
+          key: key,
+          description:
+            typeof context.description === "function"
+              ? context.description({
+                  key,
+                  args,
+                  options,
+                  id,
+                  context,
+                  memory,
+                  settings,
+                  contexts: subContexts,
+                })
+              : context.description,
+          instructions:
+            typeof context.instructions === "function"
+              ? context.instructions({
+                  key,
+                  args,
+                  options,
+                  id,
+                  context,
+                  memory,
+                  settings,
+                  contexts: subContexts,
+                })
+              : context.instructions,
+          content: [
+            context.render
+              ? context.render({
+                  id,
+                  context,
+                  key,
+                  args,
+                  memory,
+                  options,
+                  settings,
+                  contexts: subContexts,
+                })
+              : "",
+            mainContextId === id
+              ? formatXml({
+                  tag: "working-memory",
+                  content: renderWorkingMemory({
+                    memory: workingMemory,
+                    processed: true,
+                    size: context.maxWorkingMemorySize ?? undefined,
+                  }),
+                })
+              : "",
+          ]
+            .flat()
+            .filter((t) => !!t),
+        })
     )
     .flat()
     .join("\n");

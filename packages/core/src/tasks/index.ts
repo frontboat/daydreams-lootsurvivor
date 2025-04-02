@@ -6,23 +6,57 @@ import {
   type StreamTextResult,
   type ToolSet,
 } from "ai";
-import { parse, prompt, resultsPrompt, wrapStream } from "../prompts/main";
+import { parse, prompt, resultsPrompt } from "../prompts/main";
 import { task, type TaskContext } from "../task";
 import { formatContext, formatContexts } from "../formatters";
-import { defaultContextRender } from "../context";
+import { renderWorkingMemory } from "../context";
 import type {
+  Action,
   ActionCall,
-  AgentContext,
+  ActionContext,
   AnyAction,
   AnyAgent,
   AnyContext,
   ContextState,
-  InferContextMemory,
   Log,
   Output,
   WorkingMemory,
 } from "../types";
 import type { Logger } from "../logger";
+import { wrapStream } from "../streaming";
+
+type ModelConfig = {
+  assist?: boolean;
+  prefix?: string;
+  thinkTag?: string;
+};
+
+// TODO: move this
+export const modelsResponseConfig: Record<string, ModelConfig> = {
+  "o3-mini": {
+    assist: false,
+    prefix: "",
+  },
+  "claude-3-7-sonnet-20250219": {
+    // assist: true,
+    // prefix: "<thinking>",
+    // thinkTag: "<thinking>",
+  },
+  "qwen-qwq-32b": {
+    prefix: "",
+  },
+  "deepseek-r1-distill-llama-70b": {
+    prefix: "",
+    assist: false,
+  },
+};
+
+export const reasoningModels = [
+  "claude-3-7-sonnet-20250219",
+  "qwen-qwq-32b",
+  "deepseek-r1-distill-llama-70b",
+  "o3-mini",
+];
 
 /**
  * Prepares a stream response by handling the stream result and parsing it.
@@ -36,23 +70,34 @@ import type { Logger } from "../logger";
  * @returns An object containing the parsed response promise and wrapped text stream
  */
 function prepareStreamResponse({
+  model,
   stream,
   logger,
   contextId,
   step,
   task: { callId, debug },
+  isReasoningModel,
 }: {
+  model: LanguageModelV1;
   contextId: string;
   step: string;
   stream: StreamTextResult<ToolSet, never>;
   logger: Logger;
   task: TaskContext;
+  isReasoningModel: boolean;
 }) {
+  const prefix =
+    modelsResponseConfig[model.modelId]?.prefix ??
+    (isReasoningModel
+      ? (modelsResponseConfig[model.modelId]?.thinkTag ?? "<think>")
+      : "<response>");
+  const suffix = "</response>";
+
   const response = new Promise<ReturnType<typeof parse>>(
     async (resolve, reject) => {
       try {
         const result = await stream.text;
-        const text = "<think>" + result + "</response>";
+        const text = prefix + result + suffix;
 
         debug(contextId, [step, callId], text);
 
@@ -70,9 +115,22 @@ function prepareStreamResponse({
 
   return {
     response,
-    stream: wrapStream(stream.textStream, "<think>", "</response>"),
+    stream: wrapStream(stream.textStream, prefix, suffix),
   };
 }
+
+type GenerateOptions = {
+  agent: AnyAgent;
+  contexts: ContextState<AnyContext>[];
+  contextId: string;
+  workingMemory: WorkingMemory;
+  outputs: Output[];
+  actions: AnyAction[];
+  logger: Logger;
+  model: LanguageModelV1;
+  chain: Log[];
+  abortSignal?: AbortSignal;
+};
 
 /**
  * Task that generates a response from the agent based on the current context and working memory.
@@ -100,17 +158,9 @@ export const runGenerate = task(
       logger,
       model,
       contextId,
-    }: {
-      agent: AnyAgent;
-      contexts: ContextState<AnyContext>[];
-      contextId: string;
-      workingMemory: WorkingMemory;
-      outputs: Output[];
-      actions: AnyAction[];
-      logger: Logger;
-      model: LanguageModelV1;
-    },
-    { callId, debug }: TaskContext
+      abortSignal,
+    }: GenerateOptions,
+    { callId, debug }
   ) => {
     debug(
       contextId,
@@ -127,11 +177,12 @@ export const runGenerate = task(
       updates: formatContext({
         type: mainContext.context.type,
         key: mainContext.key,
-        content: defaultContextRender({
+        content: renderWorkingMemory({
           memory: {
-            inputs: workingMemory.inputs.filter((i) => i.processed !== true),
-            results: workingMemory.results.filter((i) => i.processed !== true),
+            inputs: workingMemory.inputs,
+            results: workingMemory.results,
           },
+          processed: false,
         }),
       }),
     });
@@ -140,7 +191,9 @@ export const runGenerate = task(
 
     logger.debug("agent:system", system);
 
-    const messages = [
+    const isReasoningModel = reasoningModels.includes(model.modelId);
+
+    const messages: CoreMessage[] = [
       {
         role: "user",
         content: [
@@ -150,11 +203,15 @@ export const runGenerate = task(
           },
         ],
       },
-      {
+    ];
+
+    if (modelsResponseConfig[model.modelId]?.assist !== false)
+      messages.push({
         role: "assistant",
-        content: "<think>",
-      },
-    ] as CoreMessage[];
+        content: isReasoningModel
+          ? (modelsResponseConfig[model.modelId]?.thinkTag ?? "<think>")
+          : "<response>",
+      });
 
     if (workingMemory.currentImage) {
       messages[0].content = [
@@ -171,20 +228,37 @@ export const runGenerate = task(
       messages,
       stopSequences: ["</response>"],
       temperature: 0.6,
+      abortSignal,
       experimental_transform: smoothStream({
         chunking: "word",
       }),
+      onError: (error) => {
+        console.error(error);
+      },
+      providerOptions: {
+        // TODO: providerOptions
+        // openai: isReasoningModel
+        //   ? {
+        //       reasoningEffort: "low",
+        //     }
+        //   : {},
+        // anthropic: {
+        //   thinking: {
+        //     type: isReasoningModel ? "enabled" : "disabled",
+        //     budgetTokens: 12000,
+        //   },
+        // },
+      },
     });
 
-    // Clear the current image after using it
-    workingMemory.currentImage = undefined;
-
     return prepareStreamResponse({
+      model,
       step: "response",
       contextId,
       logger,
       stream,
       task: { callId, debug },
+      isReasoningModel,
     });
   }
 );
@@ -217,18 +291,9 @@ export const runGenerateResults = task(
       model,
       contextId,
       chain,
-    }: {
-      agent: AnyAgent;
-      contexts: ContextState<AnyContext>[];
-      contextId: string;
-      workingMemory: WorkingMemory;
-      outputs: Output[];
-      actions: AnyAction[];
-      logger: Logger;
-      model: LanguageModelV1;
-      chain: Log[];
-    },
-    { callId, debug }: TaskContext
+      abortSignal,
+    }: GenerateOptions,
+    { callId, debug }
   ) => {
     debug(
       contextId,
@@ -245,20 +310,17 @@ export const runGenerateResults = task(
       updates: formatContext({
         type: mainContext.context.type,
         key: mainContext.key,
-        content: defaultContextRender({
+        content: renderWorkingMemory({
           memory: {
-            inputs: workingMemory.inputs.filter((i) => i.processed !== true),
+            inputs: workingMemory.inputs,
           },
+          processed: false,
         }),
       }),
       logs: chain.filter((i) =>
-        i.ref === "action_result" ? i.processed === true : true
+        i.ref === "action_result" ? false : i.processed !== true
       ),
       results: workingMemory.results.filter((i) => i.processed !== true),
-    });
-
-    workingMemory.results.forEach((i) => {
-      i.processed = true;
     });
 
     debug(contextId, ["prompt-results", callId], system);
@@ -268,7 +330,9 @@ export const runGenerateResults = task(
       callId,
     });
 
-    const messages = [
+    const isReasoningModel = reasoningModels.includes(model.modelId);
+
+    const messages: CoreMessage[] = [
       {
         role: "user",
         content: [
@@ -278,11 +342,15 @@ export const runGenerateResults = task(
           },
         ],
       },
-      {
+    ];
+
+    if (modelsResponseConfig[model.modelId]?.assist !== false)
+      messages.push({
         role: "assistant",
-        content: "<think>",
-      },
-    ] as CoreMessage[];
+        content: isReasoningModel
+          ? (modelsResponseConfig[model.modelId]?.thinkTag ?? "<think>")
+          : "<response>",
+      });
 
     if (workingMemory.currentImage) {
       messages[0].content = [
@@ -296,23 +364,26 @@ export const runGenerateResults = task(
 
     const stream = streamText({
       model,
-      messages: messages,
+      messages,
       stopSequences: ["</response>"],
       temperature: 0.6,
+      abortSignal,
       experimental_transform: smoothStream({
         chunking: "word",
       }),
+      onError: (error) => {
+        console.error(error);
+      },
     });
 
-    // Clear the current image after using it
-    workingMemory.currentImage = undefined;
-
     return prepareStreamResponse({
+      model,
       step: "results-response",
       contextId,
       logger,
       stream,
       task: { callId, debug },
+      isReasoningModel,
     });
   }
 );
@@ -338,10 +409,7 @@ export const runAction = task(
     agent,
     logger,
   }: {
-    ctx: AgentContext<InferContextMemory<TContext>, TContext> & {
-      actionMemory: unknown;
-      agentMemory?: unknown;
-    };
+    ctx: ActionContext<TContext>;
     action: AnyAction;
     call: ActionCall;
     agent: AnyAgent;
@@ -353,12 +421,47 @@ export const runAction = task(
         call.name,
         JSON.stringify(call.data)
       );
-      const result = await action.handler(call, ctx, agent);
+
+      call.processed = true;
+
+      const result =
+        action.schema === undefined
+          ? await (action as Action<undefined>).handler(
+              {
+                ...ctx,
+                call,
+              },
+              agent
+            )
+          : await action.handler(
+              call.data,
+              {
+                ...ctx,
+                call,
+              },
+              agent
+            );
+
       logger.debug("agent:action_result:" + call.id, call.name, result);
       return result;
     } catch (error) {
       logger.error("agent:action", "ACTION_FAILED", { error });
-      throw error;
+
+      if (action.onError) {
+        await Promise.resolve(
+          action.onError(
+            error,
+            action.schema === undefined ? undefined : call.data,
+            {
+              ...ctx,
+              call,
+            },
+            agent
+          )
+        );
+      } else {
+        throw error;
+      }
     }
   }
 );

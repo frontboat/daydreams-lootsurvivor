@@ -50,7 +50,6 @@ export function createTagParser<T = string>(
           : t[2]?.trim()) as T extends string ? string : T,
       }));
     } catch (error) {
-      console.log({ content, matches });
       throw error;
     }
   };
@@ -210,6 +209,8 @@ type SelfClosingTag = {
 
 type XMLToken = StartTag | EndTag | TextContent | SelfClosingTag;
 
+const alphaSlashRegex = /[a-zA-Z\/]/;
+
 export function* xmlStreamParser(
   parseTags: Set<string>
 ): Generator<XMLToken | void, void, string> {
@@ -232,7 +233,11 @@ export function* xmlStreamParser(
         break;
       }
 
-      if (tagStart === -1) {
+      // todo: regex performance
+      if (
+        tagStart === -1 ||
+        (buffer.length > 1 && !alphaSlashRegex.test(buffer[tagStart + 1]))
+      ) {
         textContent += buffer;
         buffer = "";
         break;
@@ -240,8 +245,6 @@ export function* xmlStreamParser(
 
       const tagEnd = buffer.indexOf(">", tagStart);
       if (tagEnd === -1) {
-        // textContent += buffer;
-        // buffer = "";
         break;
       }
 

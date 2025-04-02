@@ -9,6 +9,7 @@ export type BaseMemory = {
   /** Store for vector embeddings and similarity search */
   vector: VectorStore;
   vectorModel?: LanguageModelV1;
+  generateMemories?: boolean;
 };
 
 /**

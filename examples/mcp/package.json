@@ -1,0 +1,17 @@
+{
+  "name": "mcp",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^1.1.15",
+    "@daydreamsai/core": "workspace:*",
+    "zod": "^3.24.2"
+  }
+}

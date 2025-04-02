@@ -1,21 +1,46 @@
 import { generateObject } from "ai";
 import { openai } from "@ai-sdk/openai";
-import type { AnyAgent, Episode, WorkingMemory, Log } from "../types";
+import type {
+  AnyAgent,
+  Episode,
+  ActionResult,
+  Action,
+  Thought,
+  ActionCall,
+  AnyAction,
+} from "../types";
 import { z } from "zod";
 import { v7 as randomUUIDv7 } from "uuid";
 
+// Check if we're in a browser environment
+const isBrowser =
+  typeof window !== "undefined" && typeof window.document !== "undefined";
+
+// Conditionally import Node.js modules
+let fs: any;
+let path: any;
+
+if (!isBrowser) {
+  // Only import in Node.js environment
+  // Using dynamic import to avoid browser errors
+  try {
+    fs = require("fs");
+    path = require("path");
+  } catch (e) {
+    console.warn("File system modules not available in this environment");
+  }
+}
+
 export const generateEpisodicMemory = async (
   agent: AnyAgent,
-  conversation: string[]
+  thoughts: Thought[],
+  actions: Action[],
+  results: ActionResult[]
 ): Promise<{
   observation: string;
   thoughts: string;
   result: string;
 }> => {
-  if (!conversation.length) {
-    throw new Error("Cannot generate episodic memory from empty conversation");
-  }
-
   const extractEpisode = await generateObject({
     model: agent.memory.vectorModel || openai("gpt-4-turbo"),
     schema: z.object({
@@ -32,14 +57,47 @@ export const generateEpisodicMemory = async (
         ),
     }),
     prompt: `
-    You are a helpful assistant that extracts the episode from the conversation.
+    You are creating an episodic memory for an AI agent to help it recall and learn from past experiences.
     
-    The conversation is a list of messages between a user and an assistant.
+    Your task is to analyze the agent's thoughts, actions, and the results of those actions to create a structured memory that can be used for future reference and learning.
 
-    Extract the key elements from this conversation:
-    ${conversation.join("\n")}
+    ## Context
+    <thoughts>
+    ${JSON.stringify(thoughts)}
+    </thoughts>
+
+    ## Actions Taken
+    <actions>
+    ${JSON.stringify(actions)}
+    </actions>
+
+    ## Results & Outcomes
+    <results>
+    ${JSON.stringify(results)}
+    </results>
     
-    Provide a concise summary of what happened, the agent's thought process, actions taken, and the final outcome.`,
+    ## Instructions
+    Create a comprehensive episodic memory with these components:
+    
+    1. OBSERVATION: Provide a clear, concise description of the situation, context, and key elements. Include:
+       - What was the environment or scenario?
+       - What was the agent trying to accomplish?
+       - What were the initial conditions or constraints?
+    
+    2. THOUGHTS: Capture the agent's internal reasoning process that led to its actions:
+       - What was the agent's understanding of the situation?
+       - What strategies or approaches did it consider?
+       - What key insights or realizations occurred during the process?
+       - Use first-person perspective ("I realized...", "I considered...")
+    
+    3. RESULT: Summarize the outcomes and provide a retrospective analysis:
+       - What was accomplished or not accomplished?
+       - What worked well and what didn't?
+       - What lessons can be learned for future similar situations?
+       - What would be done differently next time?
+       - Use first-person perspective ("I succeeded in...", "Next time I would...")
+    
+    Make the memory detailed enough to be useful for future recall, but concise enough to be quickly processed. Focus on capturing the essence of the experience, key decision points, and lessons learned.`,
   });
 
   return {
@@ -49,96 +107,199 @@ export const generateEpisodicMemory = async (
   };
 };
 
+/**
+ * Creates a training data pair from episodic memory
+ * @param episodicMemory The episodic memory generated
+ * @returns A prompt-completion pair for training data
+ */
+export function createTrainingDataPair(episodicMemory: {
+  observation: string;
+  thoughts: string;
+  result: string;
+}): {
+  prompt: string;
+  completion: string;
+} {
+  // Create a simple prompt with the observation
+  const prompt = episodicMemory.observation;
+
+  // Create a simple completion with thoughts and result
+  const completion = `${episodicMemory.thoughts}\n\n${episodicMemory.result}`;
+
+  return {
+    prompt,
+    completion,
+  };
+}
+
+/**
+ * Saves training data to a JSON lines file
+ * @param trainingData Array of prompt-completion pairs
+ * @param filePath Path to save the file
+ */
+export async function saveTrainingData(
+  trainingData: Array<{ prompt: string; completion: string }>,
+  filePath: string
+): Promise<void> {
+  // Skip in browser environment
+  if (isBrowser) {
+    console.warn("saveTrainingData is not supported in browser environments");
+    return;
+  }
+
+  try {
+    // Ensure fs is available
+    if (!fs) {
+      console.warn("File system module not available");
+      return;
+    }
+
+    // Ensure directory exists
+    const dir = path.dirname(filePath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    // Convert each object to a JSON string and join with newlines
+    const jsonLines = trainingData
+      .map((item) => JSON.stringify(item))
+      .join("\n");
+
+    // Write to file
+    fs.writeFileSync(filePath, jsonLines, "utf8");
+  } catch (error) {
+    console.error("Error saving training data:", error);
+    throw error;
+  }
+}
+
+/**
+ * Creates an episode from working memory components
+ * @param thoughts The thoughts that led to the actions
+ * @param actions The actions taken
+ * @param results The results of the actions
+ * @param agent The agent that generated the episode
+ * @param options Optional configuration for exporting training data
+ * @param options.exportTrainingData Whether to export this episode as training data
+ * @param options.trainingDataPath Path to save the training data
+ * @returns A new Episode object
+ */
 export async function createEpisodeFromWorkingMemory(
-  memory: WorkingMemory,
-  agent: AnyAgent
+  thoughts: Thought[],
+  actions: Action[],
+  results: ActionResult[],
+  agent: AnyAgent,
+  options?: {
+    exportTrainingData?: boolean;
+    trainingDataPath?: string;
+  }
 ): Promise<Episode> {
-  // Convert working memory into conversation format for LLM
-  const conversation = formatConversation(memory);
+  const episodicMemory = await generateEpisodicMemory(
+    agent,
+    thoughts,
+    actions,
+    results
+  );
 
-  // Generate episodic memory using LLM
-  const episodicMemory = await generateEpisodicMemory(agent, conversation);
+  // If exportTrainingData is true and not in browser, create and save training data
+  if (options?.exportTrainingData && !isBrowser && fs) {
+    const trainingDataPair = createTrainingDataPair(episodicMemory);
 
-  // Extract success status from results
-  const isSuccessful =
-    memory.results.length > 0
-      ? memory.results.every((r) => !r.processed)
-      : false;
+    // Default path if not provided
+    const filePath = options.trainingDataPath || "./training-data.jsonl";
+
+    // Check if file exists to append or create new
+    let existingData: Array<{ prompt: string; completion: string }> = [];
+    if (fs.existsSync(filePath)) {
+      const fileContent = fs.readFileSync(filePath, "utf8");
+      existingData = fileContent
+        .split("\n")
+        .filter((line: string) => line.trim() !== "")
+        .map((line: string) => JSON.parse(line));
+    }
+
+    // Add new training data pair
+    existingData.push(trainingDataPair);
+
+    // Save updated training data
+    await saveTrainingData(existingData, filePath);
+  }
 
   return {
     id: randomUUIDv7(),
     timestamp: Date.now(),
     observation: episodicMemory.observation,
-    thoughts: episodicMemory.thoughts
-      .split("\n")
-      .filter((thought) => thought.trim()), // Split into array and remove empty lines
-    actions: memory.calls,
-    outputs: memory.outputs,
     result: episodicMemory.result,
-    metadata: {
-      success: isSuccessful,
-      tags: extractTags(memory),
-    },
+    thoughts: episodicMemory.thoughts,
   };
 }
 
-function formatConversation(memory: WorkingMemory): string[] {
-  const conversation: string[] = [];
-
-  // Sort all logs by timestamp
-  const logs: Log[] = [
-    ...memory.inputs,
-    ...memory.outputs,
-    ...memory.thoughts,
-    ...memory.calls,
-    ...memory.results,
-  ].sort((a, b) => a.timestamp - b.timestamp);
-
-  // Convert each log into conversation format
-  for (const log of logs) {
-    switch (log.ref) {
-      case "input":
-        conversation.push(`User: ${log.formatted || JSON.stringify(log.data)}`);
-        break;
-      case "output":
-        conversation.push(
-          `Assistant: ${log.formatted || JSON.stringify(log.data)}`
-        );
-        break;
-      case "thought":
-        conversation.push(`Assistant thought: ${log.content}`);
-        break;
-      case "action_call":
-        conversation.push(`Assistant action: ${log.name}(${log.content})`);
-        break;
-      case "action_result":
-        conversation.push(
-          `Action result: ${log.formatted || JSON.stringify(log.data)}`
-        );
-        break;
-    }
+/**
+ * Exports all episodes as training data
+ * @param episodes Array of episodes to export
+ * @param filePath Path to save the training data
+ */
+export async function exportEpisodesAsTrainingData(
+  episodes: Episode[],
+  filePath: string = "./training-data.jsonl"
+): Promise<void> {
+  // Skip in browser environment
+  if (isBrowser) {
+    console.warn(
+      "exportEpisodesAsTrainingData is not supported in browser environments"
+    );
+    return;
   }
 
-  return conversation;
+  // Ensure fs is available
+  if (!fs) {
+    console.warn("File system module not available");
+    return;
+  }
+
+  const trainingData = episodes.map((episode) => ({
+    prompt: episode.observation,
+    completion: `${episode.thoughts}\n\n${episode.result}`,
+  }));
+
+  await saveTrainingData(trainingData, filePath);
 }
 
-function extractTags(memory: WorkingMemory): string[] {
-  const tags = new Set<string>();
+export async function generateEpisode(
+  thought: Thought,
+  actionCall: ActionCall,
+  result: ActionResult,
+  agent: AnyAgent,
+  contextId: string,
+  actions: AnyAction[]
+) {
+  // Find the corresponding Action for the ActionCall
+  const action = actions.find((a) => a.name === actionCall.name);
 
-  // Extract tags from inputs
-  memory.inputs.forEach((input) => {
-    tags.add(input.type);
-  });
+  if (!action) {
+    return;
+  }
 
-  // Extract tags from outputs
-  memory.outputs.forEach((output) => {
-    tags.add(output.type);
-  });
+  const thoughts = [thought];
+  const actionsArray = [action];
+  const results = [result];
 
-  // Extract tags from actions
-  memory.calls.forEach((call) => {
-    tags.add(call.name);
-  });
+  const episode = await createEpisodeFromWorkingMemory(
+    thoughts,
+    actionsArray,
+    results,
+    agent,
+    {
+      exportTrainingData: agent.exportTrainingData === true,
+      trainingDataPath: agent.trainingDataPath || "./training-data.jsonl",
+    }
+  );
 
-  return Array.from(tags);
+  await agent.memory.vector.upsert(`${contextId}`, [
+    {
+      id: episode.id,
+      text: episode.observation,
+      metadata: episode,
+    },
+  ]);
 }

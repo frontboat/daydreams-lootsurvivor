@@ -1,9 +1,10 @@
 import { z } from "zod";
 import { createMcpClient } from "./client";
-import type { AnyAgent, Extension, ActionCall } from "../../types";
+import type { Extension, ActionCall } from "../../types";
 import { Logger } from "../../logger";
 
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { extension } from "../../utils";
 
 export interface McpServerConfig {
   id: string;
@@ -35,11 +36,11 @@ export interface McpServerConfig {
 export function createMcpExtension(servers: McpServerConfig[]): Extension {
   const clients = new Map<string, Client>();
 
-  return {
+  return extension({
     name: "mcp",
 
     // Initialize MCP clients when the extension is installed
-    async install(agent: AnyAgent) {
+    async install(agent) {
       const logger = agent.container.resolve<Logger>("logger");
 
       logger.info("mcp:extension", "Installing MCP extension", {
@@ -57,7 +58,7 @@ export function createMcpExtension(servers: McpServerConfig[]): Extension {
         try {
           const client = await createMcpClient({
             clientInfo: {
-              name: `agent-mcp-client`,
+              name: `daydreams-mcp-client`,
               version: "1.0.0",
             },
             transport: server.transport,
@@ -282,8 +283,8 @@ export function createMcpExtension(servers: McpServerConfig[]): Extension {
       {
         name: "mcp.listServers",
         description: "List all connected MCP servers",
-        schema: z.object({}),
-        async handler(call: ActionCall<{}>, ctx, agent) {
+        schema: undefined,
+        async handler() {
           const serverList = servers.map((server) => ({
             id: server.id,
             name: server.name,
@@ -326,5 +327,5 @@ export function createMcpExtension(servers: McpServerConfig[]): Extension {
         },
       },
     ],
-  };
+  });
 }

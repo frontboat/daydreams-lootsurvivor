@@ -200,3 +200,5 @@ logs/app-*.log
 !.env.example
 
 screenshots/
+
+

@@ -1,0 +1,18 @@
+{
+  "name": "twitter",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@ai-sdk/groq": "^1.1.12",
+    "@daydreamsai/core": "workspace:*",
+    "@daydreamsai/twitter": "workspace:*",
+    "zod": "^3.24.2"
+  }
+}

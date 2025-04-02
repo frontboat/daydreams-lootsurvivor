@@ -177,5 +177,3 @@ export const createContainer = (): Container => {
 
   return container;
 };
-
-export default createContainer;
