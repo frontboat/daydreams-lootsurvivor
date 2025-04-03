@@ -2,7 +2,6 @@ import { z } from "zod";
 import type {
   Action,
   ActionSchema,
-  AgentContext,
   AnyAgent,
   AnyContext,
   ExpertConfig,
@@ -11,7 +10,6 @@ import type {
   Memory,
   Optional,
   OutputConfig,
-  OutputResponse,
   OutputSchema,
   WorkingMemory,
 } from "./types";
@@ -68,9 +66,9 @@ export function action<
  */
 export function output<
   Schema extends OutputSchema = OutputSchema,
-  TResponse extends OutputResponse = OutputResponse,
+  // TResponse extends OutputResponse = OutputResponse,
   Context extends AnyContext = AnyContext,
->(config: OutputConfig<Schema, TResponse, Context>) {
+>(config: OutputConfig<Schema, Context>) {
   return config;
 }
 

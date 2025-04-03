@@ -5,32 +5,15 @@ import type {
   AnyContext,
   AnyRef,
   Context,
+  ContextConfig,
   ContextSettings,
   ContextState,
   InferSchemaArguments,
   Log,
-  Optional,
   WorkingMemory,
 } from "./types";
 import { formatContextLog } from "./formatters";
 import { memory } from "./utils";
-
-type ContextConfig<
-  TMemory = any,
-  Args extends z.ZodTypeAny | ZodRawShape = any,
-  Ctx = any,
-  Actions extends AnyAction[] = AnyAction[],
-  Events extends Record<string, z.AnyZodObject | z.ZodRawShape> = Record<
-    string,
-    z.AnyZodObject | z.ZodRawShape
-  >,
-> = Optional<
-  Omit<
-    Context<TMemory, Args, Ctx, Actions, Events>,
-    "setActions" | "setInputs" | "setOutputs"
-  >,
-  "actions" | "events" | "inputs" | "outputs"
->;
 
 /**
  * Creates a context configuration
@@ -47,9 +30,9 @@ export function context<
   Args extends z.ZodTypeAny | ZodRawShape = any,
   Ctx = any,
   Actions extends AnyAction[] = AnyAction[],
-  Events extends Record<string, z.AnyZodObject | z.ZodRawShape> = Record<
+  Events extends Record<string, z.ZodTypeAny | z.ZodRawShape> = Record<
     string,
-    z.AnyZodObject | z.ZodRawShape
+    z.ZodTypeAny | z.ZodRawShape
   >,
 >(
   config: ContextConfig<TMemory, Args, Ctx, Actions, Events>

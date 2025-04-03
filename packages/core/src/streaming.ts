@@ -18,6 +18,7 @@ import type {
   ActionResult,
   AnyAction,
   AnyAgent,
+  AnyRef,
   ContextRef,
   ContextState,
   EventRef,
@@ -45,6 +46,7 @@ export type StackElement = {
   attributes: Record<string, any>;
   content: string;
   done: boolean;
+  _depth: number;
 };
 
 export async function handleStream<Ctx = any>(
@@ -59,22 +61,23 @@ export async function handleStream<Ctx = any>(
 
   let index = initialIndex;
 
-  let sameTagDepth = 0;
-
   const parser = xmlStreamParser(tags, (tag, isClosingTag) => {
     if (current?.tag === tag && !isClosingTag && tag === "think") {
       return false;
     }
 
+    if (current?.tag === tag && !isClosingTag && tag === "response") {
+      return false;
+    }
+
     if (current?.tag === tag && !isClosingTag) {
-      console.log({ tag, sameTagDepth });
-      sameTagDepth++;
+      current._depth++;
       return false;
     }
 
     if (current?.tag === tag && isClosingTag) {
-      if (sameTagDepth > 0) {
-        sameTagDepth--;
+      if (current._depth > 0) {
+        current._depth--;
         return false;
       }
 
@@ -84,7 +87,6 @@ export async function handleStream<Ctx = any>(
 
     if (isClosingTag && stack.length > 0) {
       const stackIndex = stack.findIndex((el) => el.tag === tag);
-      console.log({ tag, stack, stackIndex, current });
       if (stackIndex === -1) return false;
 
       if (current) {
@@ -113,8 +115,6 @@ export async function handleStream<Ctx = any>(
 
       current = stack.pop();
 
-      console.log({ stack, closed, current });
-
       return true;
     }
 
@@ -134,6 +134,7 @@ export async function handleStream<Ctx = any>(
           attributes: result.value.attributes,
           content: "",
           done: false,
+          _depth: 0,
         };
         fn(current, ctx);
       }
@@ -198,6 +199,7 @@ export function createContextStreamHandler({
   workingMemory,
   stepConfig,
   abortSignal,
+  subscriptions,
 }: {
   agent: AnyAgent;
   taskRunner: TaskRunner;
@@ -208,6 +210,7 @@ export function createContextStreamHandler({
   workingMemory: WorkingMemory;
   stepConfig: StepConfig;
   abortSignal?: AbortSignal;
+  subscriptions: Set<(log: AnyRef, done: boolean) => void>;
 }) {
   const runRef: RunRef = {
     id: randomUUIDv7(),
@@ -218,7 +221,7 @@ export function createContextStreamHandler({
     timestamp: Date.now(),
   };
 
-  function createStep() {
+  async function createStep() {
     const newStep: StepRef = {
       ref: "step",
       id: randomUUIDv7(),
@@ -232,7 +235,21 @@ export function createContextStreamHandler({
     state.steps.push(newStep);
     workingMemory.steps.push(newStep);
 
+    await handlePushLog(newStep, true);
+
     return newStep;
+  }
+
+  async function prepare() {
+    const { actions, contexts, outputs, inputs } = await prepareContext({
+      agent,
+      ctxState,
+      workingMemory,
+      agentCtxState,
+      params: state.params,
+    });
+
+    Object.assign(state, { actions, contexts, outputs, inputs });
   }
 
   const state = {
@@ -244,7 +261,7 @@ export function createContextStreamHandler({
     runRef,
     controller: new AbortController(),
     steps: [] as StepRef[],
-    chain: [] as Log[],
+    chain: [] as AnyRef[],
     actions: [] as ActionCtxRef[],
     outputs: [] as Output[],
     inputs: [] as Input[],
@@ -254,7 +271,7 @@ export function createContextStreamHandler({
     promises: [] as Promise<any>[],
     response: null as null | string,
 
-    defer: pDefer<Log[]>(),
+    defer: pDefer<AnyRef[]>(),
 
     params: {} as {
       actions?: AnyAction[];
@@ -262,49 +279,26 @@ export function createContextStreamHandler({
       contexts?: ContextRef[];
     },
 
-    async start(params: {
+    async setParams(params: {
       actions?: AnyAction[];
-      outputs?: Record<string, Omit<Output<any, any, any, any>, "type">>;
+      outputs?: Record<string, Omit<Output<any, any, any>, "type">>;
       contexts?: ContextRef[];
     }) {
       state.params = params;
+    },
 
-      const { actions, contexts, outputs, inputs } = await prepareContext({
-        agent,
-        ctxState,
-        workingMemory,
-        agentCtxState,
-        params: state.params,
-      });
+    async start() {
+      await prepare();
 
-      Object.assign(state, { actions, contexts, outputs, inputs });
-
+      await handlePushLog(runRef, true);
       state.step = 1;
-
       return createStep();
     },
 
-    async startNewStep(params?: {
-      actions?: AnyAction[];
-      outputs?: Record<string, Omit<Output, "type">>;
-      contexts?: ContextRef[];
-    }) {
-      if (params) {
-        state.params = params;
-      }
-
-      const { actions, contexts, outputs, inputs } = await prepareContext({
-        agent,
-        ctxState,
-        workingMemory,
-        agentCtxState,
-        params: state.params,
-      });
-
-      Object.assign(state, { actions, contexts, outputs, inputs });
+    async nextStep() {
+      await prepare();
 
       state.index++;
-
       return createStep();
     },
 
@@ -375,7 +369,7 @@ export function createContextStreamHandler({
       Pick<PartialLog, "id" | "timestamp" | "processed">;
   }
 
-  async function pushLogStream(log: Log, done: boolean) {
+  async function pushLogStream(log: AnyRef, done: boolean) {
     if (log.ref !== "output" && done) state.chain.push(log);
 
     if (log.ref === "thought" && done) {
@@ -446,7 +440,15 @@ export function createContextStreamHandler({
 
     if (done) await saveContextWorkingMemory(agent, ctxState.id, workingMemory);
 
-    handlers?.onLogStream?.(log, done);
+    try {
+      handlers?.onLogStream?.(log, done);
+    } catch (error) {}
+
+    for (const subscriber of subscriptions) {
+      try {
+        subscriber(log, done);
+      } catch (error) {}
+    }
   }
 
   async function handleActionCallStream(call: ActionCall) {
@@ -516,7 +518,7 @@ export function createContextStreamHandler({
     }
   }
 
-  async function handlePushLog(el: Log, done: boolean) {
+  async function handlePushLog(el: AnyRef, done: boolean) {
     try {
       await pushLogStream(el, done);
     } catch (error) {

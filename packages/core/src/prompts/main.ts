@@ -10,6 +10,7 @@ import {
 import type {
   AnyAction,
   AnyContext,
+  AnyRef,
   ContextState,
   Log,
   Output,
@@ -212,7 +213,7 @@ export const mainStep = {
 
   formatter: formatPromptSections,
 
-  shouldContinue: (state: { chain: Log[] }) => {
+  shouldContinue: (state: { chain: AnyRef[] }) => {
     const pendingResults = state.chain.filter(
       (i) => i.ref !== "thought" && i.processed === false
     );

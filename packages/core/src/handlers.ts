@@ -71,7 +71,7 @@ export async function prepareActionCall({
       data = call.content.length > 0 ? JSON.parse(call.content) : {};
 
       data =
-        "parse" in action.schema
+        "parse" in schema
           ? schema.parse(data)
           : schema.validate
             ? schema.validate(data)
@@ -231,6 +231,7 @@ export async function handleOutput({
       {
         ...state,
         workingMemory,
+        outputRef,
       },
       agent
     );
@@ -533,4 +534,6 @@ export async function handleInput({
       agent
     );
   }
+
+  inputRef.formatted = input.format ? input.format(inputRef.data) : undefined;
 }

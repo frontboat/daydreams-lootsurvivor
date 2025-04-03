@@ -9,6 +9,9 @@ import type {
   Episode,
   Registry,
   InputRef,
+  WorkingMemory,
+  Log,
+  AnyRef,
 } from "./types";
 import { Logger } from "./logger";
 import { createContainer } from "./container";
@@ -47,6 +50,13 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
   const contextIds = new Set<string>();
   const contexts = new Map<string, ContextState>();
   const contextsRunning = new Map<string, RunState>();
+
+  const workingMemories = new Map<string, WorkingMemory>();
+
+  const ctxSubscriptions = new Map<
+    string,
+    Set<(ref: AnyRef, done: boolean) => void>
+  >();
 
   // todo register everything into registry, remove from agent
   const registry: Registry = {
@@ -157,6 +167,28 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
       logger.debug("agent:event", event, data);
     },
 
+    isBooted() {
+      return booted;
+    },
+
+    subscribeContext(contextId, handler) {
+      if (!ctxSubscriptions.has(contextId)) {
+        ctxSubscriptions.set(contextId, new Set());
+      }
+
+      const subs = ctxSubscriptions.get(contextId)!;
+
+      if (subs.has(handler)) {
+        throw new Error("handler already registered");
+      }
+
+      subs.add(handler);
+
+      return () => {
+        subs.delete(handler);
+      };
+    },
+
     async getContexts() {
       return getContexts(contextIds, contexts);
     },
@@ -239,6 +271,7 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
       await saveContextState(agent, ctxState);
 
       if (workingMemory) {
+        workingMemories.set(ctxState.id, workingMemory);
         await saveContextWorkingMemory(agent, ctxState.id, workingMemory);
       }
 
@@ -256,7 +289,15 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
       logger.trace("agent:getWorkingMemory", "Getting working memory", {
         contextId,
       });
-      return getContextWorkingMemory(agent, contextId);
+
+      if (!workingMemories.has(contextId)) {
+        workingMemories.set(
+          contextId,
+          await getContextWorkingMemory(agent, contextId)
+        );
+      }
+
+      return workingMemories.get(contextId)!;
     },
 
     async deleteContext(contextId) {
@@ -266,13 +307,14 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
       contextIds.delete(contextId);
 
       contextsRunning.delete(contextId);
+      workingMemories.delete(contextId);
 
       await deleteContext(agent, contextId);
     },
 
     async start(args) {
-      logger.info("agent:start", "Starting agent", { args, booted });
       if (booted) return agent;
+      logger.info("agent:start", "Starting agent", { args, booted });
 
       booted = true;
 
@@ -282,19 +324,6 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
       logger.debug("agent:start", "Installing extensions", {
         count: extensions.length,
       });
-
-      if (agent.context) {
-        logger.debug("agent:start", "Setting up agent context", {
-          type: agent.context.type,
-        });
-
-        const agentState = await agent.getContext({
-          context: agent.context,
-          args: args!,
-        });
-
-        contexts.set("agent:context", agentState);
-      }
 
       for (const extension of extensions) {
         if (extension.install) await Promise.try(extension.install, agent);
@@ -378,6 +407,19 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
         }
       }
 
+      if (agent.context) {
+        logger.debug("agent:start", "Setting up agent context", {
+          type: agent.context.type,
+        });
+
+        const agentState = await agent.getContext({
+          context: agent.context,
+          args: args!,
+        });
+
+        contexts.set("agent:context", agentState);
+      }
+
       logger.info("agent:start", "Agent started successfully");
       return agent;
     },
@@ -388,6 +430,7 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
 
     async run(params) {
       const { context, args, outputs, handlers, abortSignal } = params;
+      console.log(params.chain);
       if (!booted) {
         logger.error("agent:run", "Agent not booted");
         throw new Error("Not booted");
@@ -406,7 +449,7 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
       // we need this here now because its needed to create the handler
       // and we will use that state from contextsRunning so we need to wait before checking and creating
       const ctxState = await agent.getContext({ context, args });
-      const workingMemory = await getContextWorkingMemory(agent, ctxId);
+      const workingMemory = await agent.getWorkingMemory(ctxId);
       const agentCtxState = agent.context
         ? await agent.getContext({
             context: agent.context,
@@ -432,6 +475,10 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
         id: ctxId,
       });
 
+      if (!ctxSubscriptions.has(ctxId)) {
+        ctxSubscriptions.set(ctxId, new Set());
+      }
+
       const { state, handler, push, tags, stepConfig } =
         createContextStreamHandler({
           agent,
@@ -443,6 +490,7 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
           workingMemory,
           abortSignal,
           stepConfig: mainStep,
+          subscriptions: ctxSubscriptions.get(ctxId)!,
         });
 
       contextsRunning.set(ctxId, { state, handler, push, tags, stepConfig });
@@ -453,7 +501,7 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
         return ctxState.settings.maxSteps ?? 5;
       }
 
-      let stepRef = await state.start({
+      await state.setParams({
         actions: params.actions,
         outputs: params.outputs,
         contexts: params.contexts,
@@ -468,6 +516,8 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
         state.calls.length = 0;
       }
 
+      let stepRef = await state.start();
+
       const model =
         params.model ?? context.model ?? config.reasoningModel ?? config.model;
 
@@ -478,7 +528,7 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
 
         try {
           if (state.step > 1) {
-            stepRef = await state.startNewStep();
+            stepRef = await state.nextStep();
           }
 
           const promptData = stepConfig.formatter({
