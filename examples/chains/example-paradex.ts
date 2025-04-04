@@ -1,25 +1,15 @@
-import { shortString } from "starknet";
-import {
-    authenticate,
-    getAccountInfo,
-    getOpenOrders,
-    getPositions,
-    listAvailableMarkets,
-    openOrder,
-    cancelOrder,
-} from "../../packages/core/src/io/paradex";
+import { shortString, ec, typedData as starkTypedData, type TypedData } from "starknet";
 import { groq } from "@ai-sdk/groq";
 import { cli } from "../../packages/core/src/extensions";
 import { z } from "zod";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
-import { ParadexClient } from "../../packages/core/src/io/paradex";
 import { createContainer } from "../../packages/core/src/container";
 import { action } from "../../packages/core/src/utils";
 import { createDreams } from "../../packages/core/src/dreams";
 import { LogLevel } from "../../packages/core/src/types";
-
+import BigNumber from "bignumber.js";
 
 const container = createContainer();
 container.singleton("config", () => {
@@ -35,17 +25,11 @@ container.singleton("config", () => {
     const projectRoot = path.join(dirname, "..");
     const envFile = ".env";
     const envPath = path.resolve(projectRoot, envFile);
-    console.debug(`Loading config from ${envPath}`);
-
     dotenv.config({ path: envPath });
     const result = envSchema.safeParse(process.env);
 
     if (!result.success) {
-        console.error(
-            "❌ Invalid environment variables:",
-            result.error.format(),
-        );
-        throw new Error("Invalid environment variables");
+        throw new Error(`Invalid environment variables: ${JSON.stringify(result.error.format())}`);
     }
 
     return {
@@ -58,10 +42,18 @@ container.singleton("config", () => {
 
 container.singleton("paradex", (container) => {
     const config = container.resolve("config") as ParadexConfig;
-    return new ParadexClient(config, {
-        address: process.env.PARADEX_ACCOUNT_ADDRESS!,
-        privateKey: process.env.PARADEX_PRIVATE_KEY!
-    });
+    return {
+        authenticate: () => authenticate(config, {
+            address: process.env.PARADEX_ACCOUNT_ADDRESS!,
+            privateKey: process.env.PARADEX_PRIVATE_KEY!
+        }),
+        getAccountInfo: (account: ParadexAccount) => getAccountInfo(config, account),
+        listMarkets: (market?: string) => listAvailableMarkets(config, market),
+        getPositions: (account: ParadexAccount) => getPositions(config, account),
+        getOpenOrders: (account: ParadexAccount) => getOpenOrders(config, account),
+        placeOrder: (account: ParadexAccount, orderDetails: Record<string, string>) => openOrder(config, account, orderDetails),
+        cancelOrder: (account: ParadexAccount, orderId: string) => cancelOrder(config, account, orderId)
+    };
 });
 
 const env = container.resolve("config") as ParadexConfig;
@@ -106,6 +98,187 @@ async function getCachedMarkets(config: ParadexConfig, market?: string): Promise
     return markets;
 }
 
+const DOMAIN_TYPES = {
+    StarkNetDomain: [
+        { name: "name", type: "felt" },
+        { name: "chainId", type: "felt" },
+        { name: "version", type: "felt" },
+    ],
+};
+
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
+interface AuthRequest extends Record<string, unknown> {
+    method: string;
+    path: string;
+    body: string;
+    timestamp: number;
+    expiration: number;
+}
+
+function generateTimestamps(): {
+    timestamp: number;
+    expiration: number;
+} {
+    const dateNow = new Date();
+    const dateExpiration = new Date(dateNow.getTime() + SEVEN_DAYS_MS);
+
+    return {
+        timestamp: Math.floor(dateNow.getTime() / 1000),
+        expiration: Math.floor(dateExpiration.getTime() / 1000),
+    };
+}
+
+function buildAuthTypedData(
+    message: Record<string, unknown>,
+    starknetChainId: string,
+) {
+    const paradexDomain = buildParadexDomain(starknetChainId);
+    return {
+        domain: paradexDomain,
+        primaryType: "Request",
+        types: {
+            ...DOMAIN_TYPES,
+            Request: [
+                { name: "method", type: "felt" },
+                { name: "path", type: "felt" },
+                { name: "body", type: "felt" },
+                { name: "timestamp", type: "felt" },
+                { name: "expiration", type: "felt" },
+            ],
+        },
+        message,
+    };
+}
+
+function buildOrderTypedData(
+    message: Record<string, unknown>,
+    starknetChainId: string,
+) {
+    const paradexDomain = buildParadexDomain(starknetChainId);
+    return {
+        domain: paradexDomain,
+        primaryType: "Order",
+        types: {
+            ...DOMAIN_TYPES,
+            Order: [
+                { name: "timestamp", type: "felt" },
+                { name: "market", type: "felt" },
+                { name: "side", type: "felt" },
+                { name: "orderType", type: "felt" },
+                { name: "size", type: "felt" },
+                { name: "price", type: "felt" },
+            ],
+        },
+        message,
+    };
+}
+
+function signatureFromTypedData(account: ParadexAccount, typedData: TypedData) {
+    const msgHash = starkTypedData.getMessageHash(typedData, account.address);
+    const { r, s } = ec.starkCurve.sign(msgHash, account.privateKey);
+    return JSON.stringify([r.toString(), s.toString()]);
+}
+
+function toQuantums(
+    amount: BigNumber | string,
+    precision: number,
+): string {
+    const bnAmount = typeof amount === "string" ? new BigNumber(amount) : amount;
+    const bnQuantums = bnAmount.multipliedBy(new BigNumber(10).pow(precision));
+    return bnQuantums.integerValue(BigNumber.ROUND_FLOOR).toString();
+}
+
+function signAuthRequest(
+    config: ParadexConfig,
+    account: ParadexAccount,
+): {
+    signature: string;
+    timestamp: number;
+    expiration: number;
+} {
+    const { timestamp, expiration } = generateTimestamps();
+
+    const request: AuthRequest = {
+        method: "POST",
+        path: "/v1/auth",
+        body: "",
+        timestamp,
+        expiration,
+    };
+
+    const typedData = buildAuthTypedData(request, config.starknet.chainId);
+    const signature = signatureFromTypedData(account, typedData);
+
+    return { signature, timestamp, expiration };
+}
+
+function signOrder(
+    config: ParadexConfig,
+    account: ParadexAccount,
+    orderDetails: Record<string, string>,
+    timestamp: number,
+): string {
+    const sideForSigning = orderDetails.side === "BUY" ? "1" : "2";
+
+    const priceForSigning = toQuantums(orderDetails.price ?? "0", 8);
+    const sizeForSigning = toQuantums(orderDetails.size, 8);
+    const orderTypeForSigning = shortString.encodeShortString(
+        orderDetails.type,
+    );
+    const marketForSigning = shortString.encodeShortString(orderDetails.market);
+
+    const message = {
+        timestamp: timestamp,
+        market: marketForSigning,
+        side: sideForSigning,
+        orderType: orderTypeForSigning,
+        size: sizeForSigning,
+        price: priceForSigning,
+    };
+
+    const typedData = buildOrderTypedData(message, config.starknet.chainId);
+    const signature = signatureFromTypedData(account, typedData);
+
+    return signature;
+}
+
+async function authenticate(config: ParadexConfig, account: ParadexAccount) {
+    const { signature, timestamp, expiration } = signAuthRequest(
+        config,
+        account,
+    );
+    const headers = {
+        Accept: "application/json",
+        "PARADEX-STARKNET-ACCOUNT": account.address,
+        "PARADEX-STARKNET-SIGNATURE": signature,
+        "PARADEX-TIMESTAMP": timestamp.toString(),
+        "PARADEX-SIGNATURE-EXPIRATION": expiration.toString(),
+        "Content-Type": "application/json"
+    };
+
+    try {
+        const response = await fetch(`${config.apiBaseUrl}/auth`, {
+            method: "POST",
+            headers,
+            body: JSON.stringify({}),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(`Authentication failed: ${response.status} - ${errorData.message || response.statusText}`);
+        }
+
+        const data = await response.json();
+        if (!data.jwt_token) {
+            throw new Error('No JWT token received from authentication');
+        }
+        return data.jwt_token;
+    } catch (e) {
+        throw e;
+    }
+}
+
 async function paradexLogin(): Promise<
     { config: ParadexConfig; account: ParadexAccount }
 > {
@@ -122,8 +295,9 @@ async function paradexLogin(): Promise<
         privateKey: process.env.PARADEX_PRIVATE_KEY || "",
     };
 
-    console.log(`Authenticating Paradex account ${account.address}`);
     account.jwtToken = await authenticate(config, account);
+
+    console.log(`Authenticating Paradex account ${account.address}`);
 
     return { config, account };
 }
@@ -137,11 +311,210 @@ async function debouncedAuthRefresh(config: ParadexConfig, account: ParadexAccou
         try {
             account.jwtToken = await authenticate(config, account);
         } catch (error) {
-            console.error('Auth refresh failed:', error);
+            throw error;
         }
     }, 1000);
 }
 
+function buildParadexDomain(starknetChainId: string) {
+    return {
+        name: "Paradex",
+        chainId: starknetChainId,
+        version: "1",
+    };
+}
+
+async function getAccountInfo(config: ParadexConfig, account: ParadexAccount) {
+    if (!account.jwtToken) {
+        throw new Error('No JWT token available. Please authenticate first.');
+    }
+
+    const headers = {
+        Accept: "application/json",
+        Authorization: `Bearer ${account.jwtToken}`,
+    };
+
+    try {
+        const response = await fetch(`${config.apiBaseUrl}/account`, {
+            method: "GET",
+            headers,
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(`Failed to get account info: ${response.status} - ${errorData.message || response.statusText}`);
+        }
+
+        const responseData = await response.json();
+        return responseData;
+    } catch (e) {
+        throw e;
+    }
+}
+
+async function getPositions(config: ParadexConfig, account: ParadexAccount) {
+    if (!account.jwtToken) {
+        throw new Error('No JWT token available. Please authenticate first.');
+    }
+
+    const headers = {
+        Accept: "application/json",
+        Authorization: `Bearer ${account.jwtToken}`,
+    };
+
+    try {
+        const response = await fetch(`${config.apiBaseUrl}/positions`, {
+            method: "GET",
+            headers,
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const responseData = await response.json();
+        return responseData.results || [];
+    } catch (e) {
+        throw e;
+    }
+}
+
+async function getOpenOrders(config: ParadexConfig, account: ParadexAccount) {
+    if (!account.jwtToken) {
+        throw new Error('No JWT token available. Please authenticate first.');
+    }
+
+    const headers = {
+        Accept: "application/json",
+        Authorization: `Bearer ${account.jwtToken}`,
+    };
+
+    try {
+        const response = await fetch(`${config.apiBaseUrl}/orders`, {
+            method: "GET",
+            headers,
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const responseData = await response.json();
+        return responseData.results || [];
+    } catch (e) {
+        throw e;
+    }
+}
+
+async function openOrder(
+    config: ParadexConfig,
+    account: ParadexAccount,
+    orderDetails: Record<string, string>,
+) {
+    if (!account.jwtToken) {
+        throw new Error('No JWT token available. Please authenticate first.');
+    }
+
+    const price = Number(orderDetails.price);
+    if (price <= 0) {
+        throw new Error("Order failed: price must be a non-negative non-zero number.");
+    }
+
+    const timestamp = Date.now();
+    const signature = signOrder(config, account, orderDetails, timestamp);
+
+    const inputBody = JSON.stringify({
+        ...orderDetails,
+        signature: signature,
+        signature_timestamp: timestamp,
+    });
+
+    const headers = {
+        Accept: "application/json",
+        Authorization: `Bearer ${account.jwtToken}`,
+        "Content-Type": "application/json",
+    };
+
+    try {
+        const response = await fetch(`${config.apiBaseUrl}/orders`, {
+            method: "POST",
+            headers,
+            body: inputBody,
+        });
+
+        const responseData = await response.json();
+
+        if (!response.ok) {
+            throw new Error(`Order failed: ${responseData.message || response.status}`);
+        }
+
+        return {
+            orderId: responseData.orderId || responseData.id || 'filled-immediately',
+            status: responseData.status || 'success',
+            data: responseData
+        };
+    } catch (error) {
+        throw error;
+    }
+}
+
+async function cancelOrder(
+    config: ParadexConfig,
+    account: ParadexAccount,
+    orderId: string,
+) {
+    if (!account.jwtToken) {
+        throw new Error('No JWT token available. Please authenticate first.');
+    }
+
+    const headers = {
+        Accept: "application/json",
+        Authorization: `Bearer ${account.jwtToken}`,
+    };
+
+    try {
+        const response = await fetch(`${config.apiBaseUrl}/orders/${orderId}`, {
+            method: "DELETE",
+            headers,
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return true;
+    } catch (e) {
+        throw e;
+    }
+}
+
+async function listAvailableMarkets(config: ParadexConfig, market?: string) {
+    const headers = {
+        Accept: "application/json",
+    };
+
+    try {
+        const url = market
+            ? `${config.apiBaseUrl}/markets?market=${market}`
+            : `${config.apiBaseUrl}/markets`;
+
+        const response = await fetch(url, {
+            method: "GET",
+            headers,
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const responseData = await response.json();
+        if (!responseData.results) {
+            throw new Error('No results found in response');
+        }
+        return responseData.results;
+    } catch (e) {
+        throw e;
+    }
+}
 
 async function main() {
     const { config, account } = await paradexLogin();
@@ -150,7 +523,7 @@ async function main() {
         try {
             account.jwtToken = await authenticate(config, account);
         } catch (error) {
-            console.error('Auth refresh failed:', error);
+            throw error;
         }
     }, 1000 * 60 * 3 - 3000);
 
@@ -162,6 +535,16 @@ async function main() {
 
     process.on("SIGTERM", cleanup);
     process.on("SIGINT", cleanup);
+
+    try {
+        const accountInfo = await getAccountInfo(config, account);
+        if (!accountInfo) {
+            throw new Error('Failed to retrieve account information');
+        }
+    } catch (error) {
+        cleanup();
+        return;
+    }
 
     try {
         const accountInfo = await getAccountInfo(config, account);
@@ -211,9 +594,9 @@ async function main() {
         schema: z.object({
             text: z.string().describe("Natural language description of the order you want to place")
         }),
-        handler: async (call, _ctx, _agent) => {
+        handler: async (call: { text: string }, _ctx, _agent) => {
             try {
-                const text = call.data.text.toLowerCase();
+                const text = call.text.toLowerCase();
 
                 const orderPattern = /\b(buy|sell)\s+(\d+\.?\d*)\s+([a-zA-Z0-9]+)(?:\s+(?:at|@)\s+(market|limit)\s*(?:price\s*)?(?:(\d+\.?\d*))?)?/i;
                 const match = text.match(orderPattern);
@@ -305,7 +688,6 @@ async function main() {
                         })
                     };
                 } catch (error) {
-                    console.error('Order execution error:', error);
                     throw error;
                 }
             } catch (error) {
@@ -325,9 +707,9 @@ async function main() {
         schema: z.object({
             text: z.string().describe("Natural language request to cancel an order")
         }),
-        handler: async (call, _ctx, _agent) => {
+        handler: async (call: { text: string }, _ctx, _agent) => {
             try {
-                const text = call.data.text.toLowerCase();
+                const text = call.text.toLowerCase();
                 const orderIdMatch = text.match(/(?:order|#)\s*([a-zA-Z0-9]+)/);
 
                 if (!orderIdMatch) {
@@ -454,9 +836,18 @@ async function main() {
     });
 
     const agent = createDreams({
-        model: groq("deepseek-r1-distill-llama-70b"),
+        model: {
+            ...groq("deepseek-r1-distill-llama-70b"),
+            doStream: async (opts) => {
+                const result = await groq("deepseek-r1-distill-llama-70b").doStream(opts);
+                return {
+                    ...result,
+                    stream: result.stream as any
+                };
+            }
+        },
         extensions: [cli],
-        logger: LogLevel.DEBUG,
+        logger: LogLevel.INFO,
         actions: [
             getAccountInfoAction,
             openOrderAction,
