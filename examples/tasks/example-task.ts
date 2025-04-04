@@ -248,7 +248,9 @@ createDreams({
         const goalId = data.goalId;
 
         // Find the goal in the specified category
-        const goal = agentMemory.goal[goalType].find((g) => g.id === goalId);
+        const goal = agentMemory.goal[goalType].find(
+          (g: any) => g.id === goalId
+        );
 
         if (!goal) {
           throw new Error(

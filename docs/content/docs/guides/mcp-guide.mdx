@@ -1,0 +1,163 @@
+---
+title: Model Context Protocol (MCP) Guide for Daydreams
+---
+
+This guide explains how to use the Model Context Protocol (MCP) integration with
+Daydreams, allowing your agents to connect to MCP servers and access their
+resources, tools, and prompts.
+
+More information about MPC can be found in the
+[github](https://github.com/modelcontextprotocol/specification)
+
+## What is MCP?
+
+The Model Context Protocol (MCP) is a standardized way for applications to
+provide context to Large Language Models (LLMs). It separates the concerns of
+providing context from the actual LLM interaction, allowing for a more modular
+and flexible architecture.
+
+Key benefits of MCP include:
+
+- **Standardization**: A common protocol for context exchange between
+  applications and LLMs
+- **Separation of concerns**: Applications can focus on providing context, while
+  LLMs can focus on processing it
+- **Modularity**: Connect to multiple context sources simultaneously
+- **Extensibility**: Add new context sources without changing the core
+  application
+
+## MCP in Daydreams
+
+Daydreams provides a built-in MCP extension that allows your agents to:
+
+- Connect to multiple MCP servers simultaneously
+- Access resources from MCP servers
+- Execute tools provided by MCP servers
+- Use prompts defined on MCP servers
+
+## Getting Started
+
+### Prerequisites
+
+Before you begin, make sure you have:
+
+- Daydreams installed
+- Node.js 18 or later
+- An MCP server to connect to (or you can use the example server provided)
+
+### Installation
+
+1. Create a new Daydreams project or use an existing one
+2. Install the required dependencies:
+
+```bash
+npm install @daydreamsai/core @modelcontextprotocol/sdk @ai-sdk/anthropic
+# or
+yarn add @daydreamsai/core @modelcontextprotocol/sdk @ai-sdk/anthropic
+# or
+pnpm add @daydreamsai/core @modelcontextprotocol/sdk @ai-sdk/anthropic
+```
+
+### Basic Setup
+
+To connect your Daydreams agent to an MCP server, add the MCP extension to your
+agent configuration:
+
+```typescript
+import { createDreams } from "@daydreamsai/core";
+import { createMcpExtension } from "@daydreamsai/core/extensions";
+import { anthropic } from "@ai-sdk/anthropic";
+import path from "path";
+
+// Create an agent with the MCP extension
+const agent = createDreams({
+  model: anthropic("claude-3-7-sonnet-latest"),
+
+  // Add the MCP extension with server configuration
+  extensions: [
+    createMcpExtension([
+      {
+        id: "example-server",
+        name: "Example Resource Server",
+        transport: {
+          type: "stdio",
+          command: "node",
+          args: [path.join(__dirname, "mcp-server-example.mjs")],
+        },
+      },
+    ]),
+  ],
+}).start();
+```
+
+## Creating a Simple MCP Server
+
+Here's how to create a simple MCP server that provides a tool and a resource:
+
+```javascript
+// mcp-server-example.mjs
+import {
+  McpServer,
+  ResourceTemplate,
+} from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
+import { z } from "zod";
+
+// Create an MCP server
+const server = new McpServer({
+  name: "Demo",
+  version: "1.0.0",
+});
+
+// Add an addition tool
+server.tool("add", { a: z.number(), b: z.number() }, async ({ a, b }) => ({
+  content: [{ type: "text", text: String(a + b) }],
+}));
+
+// Add a dynamic greeting resource
+server.resource(
+  "greeting",
+  new ResourceTemplate("greeting://{name}", { list: undefined }),
+  async (uri, { name }) => ({
+    contents: [
+      {
+        uri: uri.href,
+        text: `Hello, ${name}!`,
+      },
+    ],
+  })
+);
+
+// List available tools
+server.resource(ListToolsRequestSchema, async () => {
+  return {
+    tools: [
+      {
+        name: "add",
+        description: "Add two numbers",
+        parameters: {
+          a: { type: "number" },
+          b: { type: "number" },
+        },
+      },
+    ],
+  };
+});
+
+// Start receiving messages on stdin and sending messages on stdout
+const transport = new StdioServerTransport();
+await server.connect(transport);
+```
+
+## Conclusion
+
+The MCP integration in Daydreams provides a powerful way to connect your agents
+to external data sources and tools. By following this guide, you should be able
+to create agents that can interact with MCP servers and leverage their
+capabilities to build more sophisticated AI applications.
+
+For more information, refer to:
+
+- [MCP TypeScript SDK documentation](https://github.com/model-context-protocol/typescript-sdk)
+- [Daydreams documentation](https://docs.daydreams.ai)

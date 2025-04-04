@@ -1,6 +1,6 @@
 {
   "name": "@daydreamsai/telegram",
-  "version": "0.2.16",
+  "version": "0.2.18-alpha.1",
   "type": "module",
   "exports": "./src/index.ts",
   "publishConfig": {

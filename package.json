@@ -31,7 +31,7 @@
     "typedoc": "^0.27.6",
     "typedoc-plugin-frontmatter": "^1.1.2",
     "typedoc-plugin-markdown": "^4.4.1",
-    "typescript": "~5.7.3"
+    "typescript": "^5.8.2"
   },
   "resolutions": {
     "@mysten/sui": "1.7.0"

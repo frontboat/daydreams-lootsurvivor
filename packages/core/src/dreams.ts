@@ -621,6 +621,8 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
 
           state.step++;
         } catch (error) {
+          await agent.saveContext(ctxState);
+
           console.error(error);
 
           await Promise.allSettled(
