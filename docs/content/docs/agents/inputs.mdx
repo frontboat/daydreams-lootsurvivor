@@ -23,8 +23,8 @@ Here's the basic structure of an input:
 ```ts
 input({
   schema: z.object({
-    user: z.string(),
-    text: z.string(),
+    user: string(),
+    text: string(),
   }),
   format: ({ user, text }) =>
     formatMsg({
@@ -85,8 +85,8 @@ export const myExtension = extension({
   inputs: {
     "myExtension:message": input({
       schema: z.object({
-        user: z.object({ id: z.string(), name: z.string() }),
-        text: z.string(),
+        user: z.object({ id: string(), name: string() }),
+        text: string(),
       }),
       // Format the input for the LLM
       format: ({ user, text }) => `${user.name}: ${text}`,
@@ -136,8 +136,8 @@ export const telegram = extension({
   inputs: {
     "telegram:message": input({
       schema: z.object({
-        user: z.object({ id: z.number(), username: z.string() }),
-        text: z.string(),
+        user: z.object({ id: z.number(), username: string() }),
+        text: string(),
       }),
       // Format messages for the LLM
       format: ({ user, text }) =>
@@ -195,15 +195,15 @@ export const twitter = extension({
   inputs: {
     "twitter:mentions": input({
       schema: z.object({
-        userId: z.string(),
-        tweetId: z.string(),
-        text: z.string(),
+        userId: string(),
+        tweetId: string(),
+        text: string(),
       }),
       format: (data) =>
         formatXml({
           tag: "tweet",
           params: { tweetId: data.tweetId },
-          content: data.text,
+          children: data.text,
         }),
       subscribe(send, { container }) {
         const twitter = container.resolve<TwitterClient>("twitter");
@@ -275,12 +275,12 @@ To use an extension's inputs in your agent:
 
 ```ts
 import { createDreams } from "@daydreamsai/core";
-import { telegram } from "@daydreamsai/core/extensions";
-import { groq } from "@daydreamsai/core/models";
+import { telegramExtension } from "@daydreamsai/telegram";
+import { anthropic } from "@ai-sdk/anthropic";
 
-const agent = createDreams({
-  model: groq("deepseek-r1-distill-llama-70b"),
-  extensions: [telegram], // Adds Telegram inputs and outputs
+createDreams({
+  model: anthropic("claude-3-7-sonnet-latest"),
+  extensions: [telegramExtension], // Adds Telegram inputs and outputs
 }).start();
 ```
 
@@ -292,8 +292,8 @@ specific needs:
 ```ts
 const myCustomInput = input({
   schema: z.object({
-    data: z.string(),
-    source: z.string(),
+    data: string(),
+    source: string(),
   }),
   format: (data) => `New data from ${data.source}: ${data.data}`,
   subscribe(send, { container }) {
@@ -315,8 +315,8 @@ const myCustomInput = input({
 });
 
 // Use in your agent
-const agent = createDreams({
-  model: groq("deepseek-r1-distill-llama-70b"),
+createDreams({
+  model: anthropic("claude-3-7-sonnet-latest"),
   inputs: {
     myCustom: myCustomInput,
   },
