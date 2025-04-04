@@ -15,7 +15,7 @@ of a context:
 const myContext = context({
   type: "my-context",
   schema: z.object({
-    id: z.string(),
+    id: string(),
   }),
   key({ id }) {
     return id;
@@ -52,7 +52,7 @@ receives the correct data.
 
 ```ts
 schema: z.object({
-  id: z.string(),
+  id: string(),
 }),
 ```
 
@@ -129,14 +129,14 @@ action({
   name: "addItem",
   description: "Add a new item to the list",
   schema: z.object({
-    item: z.string(),
+    item: string(),
   }),
-  handler(call, ctx, agent) {
+  handler(data, ctx, agent) {
     // Access the context memory
     const contextMemory = ctx.agentMemory;
 
     // Update the state
-    contextMemory.items.push(call.data.item);
+    contextMemory.items.push(data.item);
 
     return { success: true };
   },
@@ -173,8 +173,8 @@ Here's a more complete example of a task manager context:
 const taskManagerContext = context({
   type: "task-manager",
   schema: z.object({
-    projectId: z.string().describe("Unique identifier for the project"),
-    userId: z.string().describe("User who owns this task list"),
+    projectId: string().describe("Unique identifier for the project"),
+    userId: string().describe("User who owns this task list"),
   }),
   key({ projectId, userId }) {
     return `${userId}:${projectId}`;

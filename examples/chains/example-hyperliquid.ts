@@ -18,11 +18,8 @@ import {
   render,
   action,
   validateEnv,
-  type ActionCall,
-  type AgentContext,
-  type Agent,
 } from "@daydreamsai/core";
-import { cli } from "@daydreamsai/core/extensions";
+import { cliExtension } from "@daydreamsai/cli";
 import { z } from "zod";
 import chalk from "chalk";
 import { HyperliquidClient } from "@daydreamsai/hyperliquid";
@@ -72,270 +69,204 @@ Transaction History:
 // Create context
 const hyperliquidContexts = context({
   type: "hyperliquid",
-  schema: z.object({
+  schema: {
     id: z.string(),
-  }),
+  },
 
-  key({ id }: { id: string }) {
+  key({ id }) {
     return id;
   },
 
-  create() {
+  create(): HyperliquidMemory {
     return {
       transactions: [],
       lastTransaction: null,
     };
   },
 
-  render({ memory }: { memory: HyperliquidMemory }) {
+  render({ memory }) {
     return render(template, {
       lastTransaction: memory.lastTransaction ?? "NONE",
       transactions: memory.transactions.join("\n"),
     });
   },
-});
+}).setActions([
+  action({
+    name: "hyperliquid.place_limit_order_ioc",
+    description: "Place an instant-or-cancel limit order on Hyperliquid",
+    schema: {
+      ticker: z
+        .string()
+        .describe(
+          "Ticker must be only the letter of the ticker in uppercase without the -PERP or -SPOT suffix"
+        ),
+      sz: z.number().describe("Size of the order"),
+      limit_px: z.number().describe("Limit price for the order"),
+      is_buy: z.boolean().describe("Whether this is a buy order"),
+    },
+    async handler({ ticker, sz, limit_px, is_buy }, { memory }) {
+      const result = await hyperliquid.placeLimitOrderInstantOrCancel(
+        ticker,
+        sz,
+        limit_px,
+        is_buy
+      );
+
+      const resultStr = JSON.stringify(result, null, 2);
+      memory.lastTransaction = `IOC Order: ${is_buy ? "Buy" : "Sell"} ${sz}x${ticker} @ ${limit_px}`;
+      memory.transactions.push(memory.lastTransaction);
+
+      return { content: `Transaction: ${resultStr}` };
+    },
+  }),
+
+  action({
+    name: "hyperliquid.place_limit_order_gtc",
+    description: "Place a good-til-cancel limit order on Hyperliquid",
+    schema: {
+      ticker: z
+        .string()
+        .describe(
+          "Ticker must be only the letter of the ticker in uppercase without the -PERP or -SPOT suffix"
+        ),
+      sz: z.number().describe("Size of the order"),
+      limit_px: z.number().describe("Limit price for the order"),
+      is_buy: z.boolean().describe("Whether this is a buy order"),
+    },
+    async handler({ ticker, sz, limit_px, is_buy }, { memory }) {
+      const result = await hyperliquid.placeLimitOrderGoodTilCancel(
+        ticker,
+        sz,
+        limit_px,
+        is_buy
+      );
+
+      const resultStr = JSON.stringify(result, null, 2);
+      memory.lastTransaction = `GTC Order: ${is_buy ? "Buy" : "Sell"} ${sz}x${ticker} @ ${limit_px}`;
+      memory.transactions.push(memory.lastTransaction);
+      return { content: `Transaction: ${resultStr}` };
+    },
+  }),
+
+  action({
+    name: "hyperliquid.market_order",
+    description: "Place a market order on Hyperliquid",
+    schema: {
+      ticker: z
+        .string()
+        .describe(
+          "Ticker must be only the letter of the ticker in uppercase without the -PERP or -SPOT suffix"
+        ),
+      sz: z.number().describe("Size of the order"),
+      is_buy: z.boolean().describe("Whether this is a buy order"),
+    },
+    async handler({ ticker, sz, is_buy }, { memory }) {
+      const result = await hyperliquid.placeMarketOrder(ticker, sz, is_buy);
+
+      const resultStr = JSON.stringify(result, null, 2);
+      memory.lastTransaction = `Market Order: ${is_buy ? "Buy" : "Sell"} ${sz}x${ticker}`;
+      memory.transactions.push(memory.lastTransaction);
+
+      return { content: `Transaction: ${resultStr}` };
+    },
+  }),
+
+  action({
+    name: "hyperliquid.market_order_usd",
+    description: "Place a market order with USD amount on Hyperliquid",
+    schema: {
+      ticker: z
+        .string()
+        .describe(
+          "Ticker must be only the letter of the ticker in uppercase without the -PERP or -SPOT suffix"
+        ),
+      usdtotalprice: z.number().describe("Total USD amount to trade"),
+      is_buy: z.boolean().describe("Whether this is a buy order"),
+    },
+    async handler({ ticker, usdtotalprice, is_buy }, ctx) {
+      const result = await hyperliquid.placeMarketOrderUSD(
+        ticker,
+        usdtotalprice,
+        is_buy
+      );
+
+      const resultStr = JSON.stringify(result, null, 2);
+      ctx.memory.lastTransaction = `Market Order USD: ${is_buy ? "Buy" : "Sell"} ${ticker} for $${usdtotalprice}`;
+      ctx.memory.transactions.push(ctx.memory.lastTransaction);
+
+      return { content: `Transaction: ${resultStr}` };
+    },
+  }),
+
+  action({
+    name: "hyperliquid.get_balances",
+    description: "Get account balances and positions from Hyperliquid",
+    schema: undefined,
+    async handler(ctx) {
+      const result = await hyperliquid.getAccountBalancesAndPositions();
+      const resultStr = JSON.stringify(result, null, 2);
+      ctx.memory.lastTransaction = "Checked balances and positions";
+      ctx.memory.transactions.push(ctx.memory.lastTransaction);
+      return { content: `Balances: ${resultStr}` };
+    },
+  }),
+
+  action({
+    name: "hyperliquid.get_open_orders",
+    description: "Get open orders from Hyperliquid",
+    schema: undefined,
+    async handler({ memory }) {
+      const result = await hyperliquid.getOpenOrders();
+      const resultStr = JSON.stringify(result, null, 2);
+      memory.lastTransaction = "Checked open orders";
+      memory.transactions.push(memory.lastTransaction);
+      return { content: `Open Orders: ${resultStr}` };
+    },
+  }),
+
+  action({
+    name: "hyperliquid.cancel_order",
+    description: "Cancel an order on Hyperliquid",
+    schema: {
+      ticker: z
+        .string()
+        .describe(
+          "Ticker must be only the letter of the ticker in uppercase without the -PERP or -SPOT suffix"
+        ),
+      orderId: z.number().describe("ID of the order to cancel"),
+    },
+    async handler({ ticker, orderId }, { memory }) {
+      const result = await hyperliquid.cancelOrder(ticker, orderId);
+      const resultStr = JSON.stringify(result, null, 2);
+      memory.lastTransaction = `Cancelled order ${orderId} for ${ticker}`;
+      memory.transactions.push(memory.lastTransaction);
+      return { content: `Cancel Result: ${resultStr}` };
+    },
+  }),
+
+  action({
+    name: "hyperliquid.market_sell_positions",
+    description: "Market sell positions on Hyperliquid",
+    schema: z.object({
+      tickers: z
+        .array(z.string())
+        .describe("Array of tickers to sell positions for"),
+    }),
+    async handler({ tickers }, { memory }) {
+      const result = await hyperliquid.marketSellPositions(tickers);
+      const resultStr = JSON.stringify(result, null, 2);
+      memory.lastTransaction = `Market sold positions for ${tickers.join(", ")}`;
+      memory.transactions.push(memory.lastTransaction);
+      return { content: `Market Sell Result: ${resultStr}` };
+    },
+  }),
+]);
 
 // Create Dreams instance
 const dreams = createDreams({
   model: groq("deepseek-r1-distill-llama-70b"),
-  extensions: [cli],
+  extensions: [cliExtension],
   context: hyperliquidContexts,
-  actions: [
-    action({
-      name: "HYPERLIQUID_PLACE_LIMIT_ORDER_IOC",
-      description: "Place an instant-or-cancel limit order on Hyperliquid",
-      schema: z.object({
-        ticker: z
-          .string()
-          .describe(
-            "Ticker must be only the letter of the ticker in uppercase without the -PERP or -SPOT suffix"
-          ),
-        sz: z.number().describe("Size of the order"),
-        limit_px: z.number().describe("Limit price for the order"),
-        is_buy: z.boolean().describe("Whether this is a buy order"),
-      }),
-      async handler(call, ctx: any, agent: Agent) {
-        const { ticker, sz, limit_px, is_buy } = call;
-
-        try {
-          const result = await hyperliquid.placeLimitOrderInstantOrCancel(
-            ticker,
-            sz,
-            limit_px,
-            is_buy
-          );
-
-          const resultStr = JSON.stringify(result, null, 2);
-          ctx.memory.lastTransaction = `IOC Order: ${is_buy ? "Buy" : "Sell"} ${sz}x${ticker} @ ${limit_px}`;
-          ctx.memory.transactions.push(ctx.memory.lastTransaction);
-
-          return { content: `Transaction: ${resultStr}` };
-        } catch (error) {
-          return {
-            content: `Error: ${error instanceof Error ? error.message : String(error)}`,
-          };
-        }
-      },
-    }),
-
-    action({
-      name: "HYPERLIQUID_PLACE_LIMIT_ORDER_GTC",
-      description: "Place a good-til-cancel limit order on Hyperliquid",
-      schema: z.object({
-        ticker: z
-          .string()
-          .describe(
-            "Ticker must be only the letter of the ticker in uppercase without the -PERP or -SPOT suffix"
-          ),
-        sz: z.number().describe("Size of the order"),
-        limit_px: z.number().describe("Limit price for the order"),
-        is_buy: z.boolean().describe("Whether this is a buy order"),
-      }),
-      async handler(call, ctx: any, agent: Agent) {
-        const { ticker, sz, limit_px, is_buy } = call;
-
-        try {
-          const result = await hyperliquid.placeLimitOrderGoodTilCancel(
-            ticker,
-            sz,
-            limit_px,
-            is_buy
-          );
-
-          const resultStr = JSON.stringify(result, null, 2);
-          ctx.memory.lastTransaction = `GTC Order: ${is_buy ? "Buy" : "Sell"} ${sz}x${ticker} @ ${limit_px}`;
-          ctx.memory.transactions.push(ctx.memory.lastTransaction);
-
-          return { content: `Transaction: ${resultStr}` };
-        } catch (error) {
-          return {
-            content: `Error: ${error instanceof Error ? error.message : String(error)}`,
-          };
-        }
-      },
-    }),
-
-    action({
-      name: "HYPERLIQUID_MARKET_ORDER",
-      description: "Place a market order on Hyperliquid",
-      schema: z.object({
-        ticker: z
-          .string()
-          .describe(
-            "Ticker must be only the letter of the ticker in uppercase without the -PERP or -SPOT suffix"
-          ),
-        sz: z.number().describe("Size of the order"),
-        is_buy: z.boolean().describe("Whether this is a buy order"),
-      }),
-      async handler(call, ctx: any, agent: Agent) {
-        const { ticker, sz, is_buy } = call;
-
-        try {
-          const result = await hyperliquid.placeMarketOrder(ticker, sz, is_buy);
-
-          const resultStr = JSON.stringify(result, null, 2);
-          ctx.memory.lastTransaction = `Market Order: ${is_buy ? "Buy" : "Sell"} ${sz}x${ticker}`;
-          ctx.memory.transactions.push(ctx.memory.lastTransaction);
-
-          return { content: `Transaction: ${resultStr}` };
-        } catch (error) {
-          return {
-            content: `Error: ${error instanceof Error ? error.message : String(error)}`,
-          };
-        }
-      },
-    }),
-
-    action({
-      name: "HYPERLIQUID_MARKET_ORDER_USD",
-      description: "Place a market order with USD amount on Hyperliquid",
-      schema: z.object({
-        ticker: z
-          .string()
-          .describe(
-            "Ticker must be only the letter of the ticker in uppercase without the -PERP or -SPOT suffix"
-          ),
-        usdtotalprice: z.number().describe("Total USD amount to trade"),
-        is_buy: z.boolean().describe("Whether this is a buy order"),
-      }),
-      async handler(call, ctx: any, agent: Agent) {
-        const { ticker, usdtotalprice, is_buy } = call;
-
-        try {
-          const result = await hyperliquid.placeMarketOrderUSD(
-            ticker,
-            usdtotalprice,
-            is_buy
-          );
-
-          const resultStr = JSON.stringify(result, null, 2);
-          ctx.memory.lastTransaction = `Market Order USD: ${is_buy ? "Buy" : "Sell"} ${ticker} for $${usdtotalprice}`;
-          ctx.memory.transactions.push(ctx.memory.lastTransaction);
-
-          return { content: `Transaction: ${resultStr}` };
-        } catch (error) {
-          return {
-            content: `Error: ${error instanceof Error ? error.message : String(error)}`,
-          };
-        }
-      },
-    }),
-
-    action({
-      name: "HYPERLIQUID_GET_BALANCES",
-      description: "Get account balances and positions from Hyperliquid",
-      schema: z.object({}),
-      async handler(call, ctx: any, agent: Agent) {
-        try {
-          const result = await hyperliquid.getAccountBalancesAndPositions();
-          const resultStr = JSON.stringify(result, null, 2);
-          ctx.memory.lastTransaction = "Checked balances and positions";
-          ctx.memory.transactions.push(ctx.memory.lastTransaction);
-
-          return { content: `Balances: ${resultStr}` };
-        } catch (error) {
-          return {
-            content: `Error: ${error instanceof Error ? error.message : String(error)}`,
-          };
-        }
-      },
-    }),
-
-    action({
-      name: "HYPERLIQUID_GET_OPEN_ORDERS",
-      description: "Get open orders from Hyperliquid",
-      schema: z.object({}),
-      async handler(call, ctx: any, agent: Agent) {
-        try {
-          const result = await hyperliquid.getOpenOrders();
-          const resultStr = JSON.stringify(result, null, 2);
-          ctx.memory.lastTransaction = "Checked open orders";
-          ctx.memory.transactions.push(ctx.memory.lastTransaction);
-
-          return { content: `Open Orders: ${resultStr}` };
-        } catch (error) {
-          return {
-            content: `Error: ${error instanceof Error ? error.message : String(error)}`,
-          };
-        }
-      },
-    }),
-
-    action({
-      name: "HYPERLIQUID_CANCEL_ORDER",
-      description: "Cancel an order on Hyperliquid",
-      schema: z.object({
-        ticker: z
-          .string()
-          .describe(
-            "Ticker must be only the letter of the ticker in uppercase without the -PERP or -SPOT suffix"
-          ),
-        orderId: z.number().describe("ID of the order to cancel"),
-      }),
-      async handler(call, ctx: any, agent: Agent) {
-        const { ticker, orderId } = call;
-
-        try {
-          const result = await hyperliquid.cancelOrder(ticker, orderId);
-          const resultStr = JSON.stringify(result, null, 2);
-          ctx.memory.lastTransaction = `Cancelled order ${orderId} for ${ticker}`;
-          ctx.memory.transactions.push(ctx.memory.lastTransaction);
-
-          return { content: `Cancel Result: ${resultStr}` };
-        } catch (error) {
-          return {
-            content: `Error: ${error instanceof Error ? error.message : String(error)}`,
-          };
-        }
-      },
-    }),
-
-    action({
-      name: "HYPERLIQUID_MARKET_SELL_POSITIONS",
-      description: "Market sell positions on Hyperliquid",
-      schema: z.object({
-        tickers: z
-          .array(z.string())
-          .describe("Array of tickers to sell positions for"),
-      }),
-      async handler(call, ctx: any, agent: Agent) {
-        const { tickers } = call;
-
-        try {
-          const result = await hyperliquid.marketSellPositions(tickers);
-          const resultStr = JSON.stringify(result, null, 2);
-          ctx.memory.lastTransaction = `Market sold positions for ${tickers.join(", ")}`;
-          ctx.memory.transactions.push(ctx.memory.lastTransaction);
-
-          return { content: `Market Sell Result: ${resultStr}` };
-        } catch (error) {
-          return {
-            content: `Error: ${error instanceof Error ? error.message : String(error)}`,
-          };
-        }
-      },
-    }),
-  ],
 });
 
 // Start the Dreams instance

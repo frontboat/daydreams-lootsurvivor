@@ -16,23 +16,23 @@ LLMs. You will need to install the ai-sdk for the LLM you want to use.
 <Tabs groupId="package-manager" persist items={["npm", "pnpm", "yarn", "bun"]}>
   <Tab value="npm">
     ```bash
-    npm install @daydreamsai/core 
+    npm install @daydreamsai/core @daydreamsai/cli
     ```
   </Tab>
     <Tab value="pnpm">
     ```bash
-    pnpm add @daydreamsai/core
+    pnpm add @daydreamsai/core @daydreamsai/cli
     ```
   </Tab>
 
   <Tab value="yarn">
     ```bash
-    yarn add @daydreamsai/core
+    yarn add @daydreamsai/core @daydreamsai/cli
     ```
   </Tab>
   <Tab value="bun">
     ```bash
-    bun add @daydreamsai/core
+    bun add @daydreamsai/core @daydreamsai/cli
     ```
   </Tab>
 </Tabs>
@@ -83,7 +83,7 @@ line interface and Groq's LLM. See other examples in the
  */
 import { createGroq } from "@ai-sdk/groq";
 import { createDreams } from "@daydreamsai/core";
-import { cli } from "@daydreamsai/core/extensions";
+import { cliExtension } from "@daydreamsai/cli";
 
 // Initialize Groq client
 const groq = createGroq({
@@ -93,6 +93,6 @@ const groq = createGroq({
 // Create Dreams agent instance
 const agent = createDreams({
   model: groq("deepseek-r1-distill-llama-70b"),
-  extensions: [cli],
+  extensions: [cliExtension],
 }).start();
 ```

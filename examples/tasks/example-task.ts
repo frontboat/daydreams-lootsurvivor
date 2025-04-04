@@ -24,7 +24,7 @@ import {
   type InferContextMemory,
   validateEnv,
 } from "@daydreamsai/core";
-import { cli } from "@daydreamsai/core/extensions";
+import { cliExtension } from "@daydreamsai/cli";
 import { deepResearch } from "../deep-research/research";
 import { string, z } from "zod";
 import { tavily } from "@tavily/core";
@@ -221,7 +221,7 @@ createDreams({
     await Bun.write(`./logs/tasks/${contextId}/${id}-${type}.md`, data);
   },
   model: anthropic("claude-3-7-sonnet-latest"),
-  extensions: [cli, deepResearch],
+  extensions: [cliExtension, deepResearch],
   context: goalContexts,
   container,
   actions: [
@@ -231,21 +231,21 @@ createDreams({
     action({
       name: "decomposeGoal",
       description: "Decompose a goal into executable tasks",
-      schema: z.object({
+      schema: {
         goalId: z.string().describe("ID of the goal to decompose"),
         goalType: z
           .enum(["long_term", "medium_term", "short_term"])
           .describe("Type of goal"),
-      }),
-      handler(call, ctx, agent) {
-        const agentMemory = ctx.memory;
+      },
+      handler(data, ctx, agent) {
+        const agentMemory = ctx.agentMemory as GoalContextMemory;
 
         if (!agentMemory.goal) {
-          return { error: "No goals have been set yet" };
+          throw new Error("No goals have been set yet");
         }
 
-        const goalType = call.goalType;
-        const goalId = call.goalId;
+        const goalType = data.goalType;
+        const goalId = data.goalId;
 
         // Find the goal in the specified category
         const goal = agentMemory.goal[goalType].find(
@@ -253,9 +253,9 @@ createDreams({
         );
 
         if (!goal) {
-          return {
-            error: `Goal with ID ${goalId} not found in ${goalType} goals`,
-          };
+          throw new Error(
+            `Goal with ID ${goalId} not found in ${goalType} goals`
+          );
         }
 
         // Return the goal for task decomposition
@@ -273,11 +273,11 @@ createDreams({
       name: "setGoalPlan",
       description: "Set the complete goal plan",
       schema: z.object({ goal: goalPlanningSchema }),
-      handler(call, ctx, agent) {
+      handler(data, ctx, agent) {
         const agentMemory = ctx.agentMemory as GoalContextMemory;
-        agentMemory.goal = call.goal;
+        agentMemory.goal = data.goal;
         return {
-          plan: call.goal,
+          plan: data.goal,
           message: "Goal plan has been set successfully",
         };
       },
@@ -296,15 +296,15 @@ createDreams({
           .describe("Type of goal"),
         updates: goalSchema.partial().describe("Properties to update"),
       }),
-      handler(call, ctx, agent) {
+      handler(data, ctx, agent) {
         const agentMemory = ctx.agentMemory as GoalContextMemory;
 
         if (!agentMemory.goal) {
-          return { error: "No goals have been set yet" };
+          throw new Error("No goals have been set yet");
         }
 
-        const goalType = call.goalType;
-        const goalId = call.goalId;
+        const goalType = data.goalType;
+        const goalId = data.goalId;
 
         // Find the goal in the specified category
         const goalIndex = agentMemory.goal[goalType].findIndex(
@@ -312,15 +312,15 @@ createDreams({
         );
 
         if (goalIndex === -1) {
-          return {
-            error: `Goal with ID ${goalId} not found in ${goalType} goals`,
-          };
+          throw new Error(
+            `Goal with ID ${goalId} not found in ${goalType} goals`
+          );
         }
 
         // Update the goal with the provided updates
         agentMemory.goal[goalType][goalIndex] = {
           ...agentMemory.goal[goalType][goalIndex],
-          ...call.updates,
+          ...data.updates,
         };
 
         return {
@@ -377,10 +377,10 @@ createDreams({
   }
 }`),
       }),
-      async handler(call, ctx, agent) {
+      async handler(data, ctx, agent) {
         const result = await fetchGraphQL(
           "https://api.cartridge.gg/x/eternum-sepolia/torii/graphql",
-          call.query
+          data.query
         );
 
         if (result instanceof Error) {

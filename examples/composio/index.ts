@@ -11,7 +11,7 @@ import {
   action,
   validateEnv,
 } from "@daydreamsai/core";
-import { cli } from "@daydreamsai/core/extensions";
+import { cliExtension } from "@daydreamsai/cli";
 import { string, z } from "zod";
 import { composio } from "./composio";
 
@@ -70,31 +70,7 @@ const goalContexts = context({
 
 createDreams({
   model: groq("deepseek-r1-distill-llama-70b"),
-  extensions: [cli, composio],
+  extensions: [cliExtension, composio],
   logger: LogLevel.ERROR,
   context: goalContexts,
-  actions: [
-    action({
-      name: "addTask",
-      description: "Add a task to the goal",
-      schema: z.object({ task: z.string() }),
-      handler(call, ctx, _agent) {
-        const agentMemory = ctx.memory as GoalMemory;
-        agentMemory.tasks.push(call.task);
-        return {};
-      },
-    }),
-    action({
-      name: "completeTask",
-      description: "Complete a task",
-      schema: z.object({ task: z.string() }),
-      handler(call, ctx, _agent) {
-        const agentMemory = ctx.memory as GoalMemory;
-        agentMemory.tasks = agentMemory.tasks.filter(
-          (task) => task !== call.task
-        );
-        return {};
-      },
-    }),
-  ],
 }).start({ id: "test", initialGoal: "", initialTasks: [] });

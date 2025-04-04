@@ -1,0 +1,34 @@
+{
+  "name": "@daydreamsai/cli",
+  "version": "0.2.16",
+  "type": "module",
+  "exports": "./src/index.ts",
+  "publishConfig": {
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      "./package.json": "./package.json",
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      }
+    }
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "tsup": "^8.3.6",
+    "vitest": "^3.0.5"
+  },
+  "scripts": {
+    "test": "vitest",
+    "build": "tsup --dts-resolve"
+  },
+  "peerDependencies": {
+    "typescript": "^5.6.3"
+  },
+  "dependencies": {
+    "@daydreamsai/core": "workspace:*",
+    "zod": "^3.24.2"
+  }
+}

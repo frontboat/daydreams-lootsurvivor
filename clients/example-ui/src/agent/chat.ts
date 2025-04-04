@@ -1,23 +1,64 @@
 import {
   action,
   context,
+  ContextRef,
   extension,
-  formatMsg,
   input,
   output,
 } from "@daydreamsai/core";
 import { z } from "zod";
+import { artifact } from "./outputs";
+import { planner } from "./planner";
+import { sandboxContext } from "./sandbox";
+import { serverTools } from "./serverTools";
 
-const chatContext = context({
+export const chatContext = context({
   type: "chat",
-  schema: z.object({ chatId: z.string() }),
+  schema: { chatId: z.string() },
   key: (args) => args.chatId,
-  render() {
+  create(): { title: string | undefined } {
+    return {
+      title: undefined,
+    };
+  },
+
+  events: {
+    "chat:title:updated": {},
+  },
+
+  render({ memory }) {
     const date = new Date();
     return `\
-Current ISO time is: ${date.toISOString()}, timestamp: ${date.getTime()}`;
+Chat title: ${memory.title}
+Current ISO time is: ${date.toISOString()}, timestamp: ${date.getTime()}
+  `;
   },
-});
+  maxSteps: 20,
+  maxWorkingMemorySize: 100,
+}).setActions([
+  action({
+    name: "chat.setTitle",
+    description: "Sets the chat title",
+    instructions: `\
+The assistant should set the chat title if its undefined.
+ensure it is not more than 80 characters long
+the title should be a summary of the user's message
+do not use quotes or colons
+`,
+    schema: z.object({ title: z.string() }),
+    handler: ({ title }, { memory, emit }) => {
+      memory.title = title;
+      emit("chat:title:updated", {});
+      return "Success";
+    },
+    onSuccess(result) {
+      result.processed = true;
+    },
+    onError(err) {
+      console.log(err);
+    },
+  }),
+]);
 
 export const chat = extension({
   name: "chat",
@@ -26,38 +67,52 @@ export const chat = extension({
   },
   inputs: {
     message: input({
-      schema: z.object({ user: z.string(), content: z.string() }),
+      schema: { user: z.string(), content: z.string() },
       format(params) {
-        return formatMsg({
-          role: "user",
-          user: params.user,
-          content: params.content,
-        });
+        return {
+          tag: "input",
+          params: { type: "message", user: params.user },
+          children: params.content,
+        };
       },
     }),
   },
   outputs: {
     message: output({
-      schema: z.object({
-        user: z.string().describe("the user you are replying to"),
-        content: z.string(),
-      }),
-      handler(_params, _ctx, _agent) {
+      required: true,
+      schema: z.string(),
+      instructions: "use markdown text",
+      handler(data) {
         return {
-          data: _params,
+          data: data,
           timestamp: Date.now(),
         };
       },
-      required: true,
+      examples: [
+        `<output type="message">Hello! How can I assist you today?</output>`,
+      ],
     }),
+    artifact,
   },
-  actions: [
-    action({
-      name: "get_weather",
-      schema: z.object({ location: z.string() }),
-      handler(_call, _ctx, _agent) {
-        return "Sunny";
-      },
-    }),
-  ],
 });
+
+export const createChatSubContexts = ({
+  chatId,
+  user,
+}: {
+  chatId: string;
+  user: string;
+}): ContextRef[] => [
+  {
+    context: planner,
+    args: { id: chatId },
+  },
+  {
+    context: sandboxContext,
+    args: { user },
+  },
+  {
+    context: serverTools,
+    args: { id: "server-1", url: "/proxy/tools-server" },
+  },
+];
