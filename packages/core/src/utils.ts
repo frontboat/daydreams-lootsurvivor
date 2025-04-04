@@ -198,3 +198,18 @@ export function trimWorkingMemory(
   workingMemory.calls = workingMemory.calls.slice(-options.actions);
   workingMemory.results = workingMemory.results.slice(-options.actions);
 }
+
+/**
+ * Utility function to safely execute a function asynchronously
+ * This is an implementation of the Promise.try pattern which isn't available in standard JS
+ * @param fn The function to execute
+ * @param ...args The arguments to pass to the function
+ * @returns A promise that resolves with the result of the function
+ */
+export async function tryAsync<T>(fn: Function, ...args: any[]): Promise<T> {
+  try {
+    return await fn(...args);
+  } catch (error) {
+    return Promise.reject(error);
+  }
+}
