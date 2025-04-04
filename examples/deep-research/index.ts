@@ -1,5 +1,5 @@
 import { createContainer, createDreams, LogLevel } from "@daydreamsai/core";
-import { cli } from "@daydreamsai/core/extensions";
+import { cliExtension } from "@daydreamsai/cli";
 import { deepResearch } from "./research";
 import { tavily } from "@tavily/core";
 import { anthropic } from "@ai-sdk/anthropic";
@@ -18,6 +18,6 @@ createDreams({
     const [type, id] = keys;
     await Bun.write(`./logs/${contextId}/${id}-${type}.md`, data);
   },
-  extensions: [cli, deepResearch],
+  extensions: [cliExtension, deepResearch],
   container,
 }).start();

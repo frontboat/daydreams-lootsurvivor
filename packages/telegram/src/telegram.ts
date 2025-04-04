@@ -120,11 +120,11 @@ export const telegram = extension({
         };
       },
 
-      format: ({ data }) =>
-        formatMsg({
-          role: "assistant",
-          content: data.content,
-        }),
+      // format: ({ data }) =>
+      //   formatMsg({
+      //     role: "assistant",
+      //     content: data.content,
+      //   }),
     }),
   },
 });

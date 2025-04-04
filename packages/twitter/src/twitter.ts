@@ -102,12 +102,12 @@ export const twitter = extension({
           timestamp: Date.now(),
         };
       },
-      format: ({ data }) =>
-        formatXml({
-          tag: "tweet-reply",
-          params: { tweetId: data.tweetId },
-          children: data.content,
-        }),
+      // format: ({ data }) =>
+      //   formatXml({
+      //     tag: "tweet-reply",
+      //     params: { tweetId: data.tweetId },
+      //     children: data.content,
+      //   }),
     }),
 
     "twitter:tweet": output({
@@ -127,11 +127,11 @@ export const twitter = extension({
         };
       },
 
-      format: ({ data }) =>
-        formatXml({
-          tag: "tweet",
-          children: data.content,
-        }),
+      // format: ({ data }) =>
+      //   formatXml({
+      //     tag: "tweet",
+      //     children: data.content,
+      //   }),
     }),
   },
 });

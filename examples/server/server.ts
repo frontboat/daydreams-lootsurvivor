@@ -8,6 +8,8 @@ import { randomUUIDv7, env } from "bun";
 
 const e2bApiKey = env.E2B_API_KEY;
 
+const sandbox = await Sandbox.create("desktop", { apiKey: e2bApiKey });
+
 const container = createContainer();
 
 container.singleton("tavily", () =>
@@ -208,12 +210,8 @@ const { state, server } = createServer({
         language: z.enum(["python", "js"]),
         sandboxId: z.string(),
       }),
-      execute: async ({ code, language, sandboxId }) => {
-        const sdx = sandboxId
-          ? await Sandbox.connect(sandboxId, { apiKey: e2bApiKey })
-          : await Sandbox.create({ apiKey: e2bApiKey });
-
-        const response = await sdx.runCode(code, {
+      execute: async ({ code, language }) => {
+        const response = await sandbox.runCode(code, {
           language,
           onStdout(output) {
             console.log("out", output);
@@ -231,11 +229,8 @@ const { state, server } = createServer({
         path: z.string(),
         sandboxId: z.string(),
       }),
-      execute: async ({ path, sandboxId }) => {
-        const sdx = sandboxId
-          ? await Sandbox.connect(sandboxId, { apiKey: e2bApiKey })
-          : await Sandbox.create({ apiKey: e2bApiKey });
-        return await sdx.files.list(path);
+      execute: async ({ path }) => {
+        return await sandbox.files.list(path);
       },
     }),
     "sandbox.files.read": tool({
@@ -243,11 +238,8 @@ const { state, server } = createServer({
         path: z.string(),
         sandboxId: z.string(),
       }),
-      execute: async ({ path, sandboxId }) => {
-        const sdx = sandboxId
-          ? await Sandbox.connect(sandboxId, { apiKey: e2bApiKey })
-          : await Sandbox.create({ apiKey: e2bApiKey });
-        return await sdx.files.read(path);
+      execute: async ({ path }) => {
+        return await sandbox.files.read(path);
       },
     }),
     "sandbox.files.write": tool({
@@ -256,11 +248,8 @@ const { state, server } = createServer({
         content: z.string(),
         sandboxId: z.string(),
       }),
-      execute: async ({ path, content, sandboxId }) => {
-        const sdx = sandboxId
-          ? await Sandbox.connect(sandboxId, { apiKey: e2bApiKey })
-          : await Sandbox.create({ apiKey: e2bApiKey });
-        return await sdx.files.write(path, content);
+      execute: async ({ path, content }) => {
+        return await sandbox.files.write(path, content);
       },
     }),
     "sandbox.files.rename": tool({
@@ -269,11 +258,8 @@ const { state, server } = createServer({
         newPath: z.string(),
         sandboxId: z.string(),
       }),
-      execute: async ({ oldPath, newPath, sandboxId }) => {
-        const sdx = sandboxId
-          ? await Sandbox.connect(sandboxId, { apiKey: e2bApiKey })
-          : await Sandbox.create({ apiKey: e2bApiKey });
-        return await sdx.files.rename(oldPath, newPath);
+      execute: async ({ oldPath, newPath }) => {
+        return await sandbox.files.rename(oldPath, newPath);
       },
     }),
     "sandbox.commands.run": tool({
@@ -284,11 +270,8 @@ const { state, server } = createServer({
         // cwd: z.string().optional().describe("the working directory"),
         envs: z.record(z.string()).optional(),
       }),
-      execute: async ({ cmd, background, envs, sandboxId }) => {
-        const sdx = sandboxId
-          ? await Sandbox.connect(sandboxId, { apiKey: e2bApiKey })
-          : await Sandbox.create({ apiKey: e2bApiKey });
-        return await sdx.commands.run(cmd, {
+      execute: async ({ cmd, background, envs }) => {
+        return await sandbox.commands.run(cmd, {
           background: background as any,
           // cwd,
           envs,

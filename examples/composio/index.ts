@@ -11,7 +11,7 @@ import {
   action,
   validateEnv,
 } from "@daydreamsai/core";
-import { cli } from "@daydreamsai/core/extensions";
+import { cliExtension } from "@daydreamsai/cli";
 import { string, z } from "zod";
 import { composio } from "./composio";
 
@@ -70,7 +70,7 @@ const goalContexts = context({
 
 createDreams({
   model: groq("deepseek-r1-distill-llama-70b"),
-  extensions: [cli, composio],
+  extensions: [cliExtension, composio],
   logger: LogLevel.ERROR,
   context: goalContexts,
 }).start({ id: "test", initialGoal: "", initialTasks: [] });
