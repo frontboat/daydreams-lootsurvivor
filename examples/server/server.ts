@@ -8,7 +8,11 @@ import { randomUUIDv7, env } from "bun";
 
 const e2bApiKey = env.E2B_API_KEY;
 
-const sandbox = await Sandbox.create("desktop", { apiKey: e2bApiKey });
+const sandbox = async (sandboxId?: string) => {
+  return sandboxId
+    ? await Sandbox.create(sandboxId)
+    : await Sandbox.create("desktop", { apiKey: e2bApiKey });
+};
 
 const container = createContainer();
 
@@ -210,8 +214,9 @@ const { state, server } = createServer({
         language: z.enum(["python", "js"]),
         sandboxId: z.string(),
       }),
-      execute: async ({ code, language }) => {
-        const response = await sandbox.runCode(code, {
+      execute: async ({ code, language, sandboxId }) => {
+        const sandboxInstance = await sandbox(sandboxId);
+        const response = await sandboxInstance.runCode(code, {
           language,
           onStdout(output) {
             console.log("out", output);
@@ -229,8 +234,9 @@ const { state, server } = createServer({
         path: z.string(),
         sandboxId: z.string(),
       }),
-      execute: async ({ path }) => {
-        return await sandbox.files.list(path);
+      execute: async ({ path, sandboxId }) => {
+        const sandboxInstance = await sandbox(sandboxId);
+        return await sandboxInstance.files.list(path);
       },
     }),
     "sandbox.files.read": tool({
@@ -238,8 +244,9 @@ const { state, server } = createServer({
         path: z.string(),
         sandboxId: z.string(),
       }),
-      execute: async ({ path }) => {
-        return await sandbox.files.read(path);
+      execute: async ({ path, sandboxId }) => {
+        const sandboxInstance = await sandbox(sandboxId);
+        return await sandboxInstance.files.read(path);
       },
     }),
     "sandbox.files.write": tool({
@@ -248,8 +255,9 @@ const { state, server } = createServer({
         content: z.string(),
         sandboxId: z.string(),
       }),
-      execute: async ({ path, content }) => {
-        return await sandbox.files.write(path, content);
+      execute: async ({ path, content, sandboxId }) => {
+        const sandboxInstance = await sandbox(sandboxId);
+        return await sandboxInstance.files.write(path, content);
       },
     }),
     "sandbox.files.rename": tool({
@@ -258,8 +266,9 @@ const { state, server } = createServer({
         newPath: z.string(),
         sandboxId: z.string(),
       }),
-      execute: async ({ oldPath, newPath }) => {
-        return await sandbox.files.rename(oldPath, newPath);
+      execute: async ({ oldPath, newPath, sandboxId }) => {
+        const sandboxInstance = await sandbox(sandboxId);
+        return await sandboxInstance.files.rename(oldPath, newPath);
       },
     }),
     "sandbox.commands.run": tool({
@@ -270,8 +279,9 @@ const { state, server } = createServer({
         // cwd: z.string().optional().describe("the working directory"),
         envs: z.record(z.string()).optional(),
       }),
-      execute: async ({ cmd, background, envs }) => {
-        return await sandbox.commands.run(cmd, {
+      execute: async ({ cmd, background, envs, sandboxId }) => {
+        const sandboxInstance = await sandbox(sandboxId);
+        return await sandboxInstance.commands.run(cmd, {
           background: background as any,
           // cwd,
           envs,
