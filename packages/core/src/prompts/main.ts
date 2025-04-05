@@ -1,12 +1,21 @@
+import { formatWorkingMemory } from "../context";
 import {
   formatAction,
   formatContextLog,
+  formatContextState,
   formatOutputInterface,
+  render,
+  xml,
 } from "../formatters";
-import { createParser, createPrompt } from "../prompt";
-import type { ActionResult, AnyAction, Log, Output } from "../types";
-import { xmlStreamParser } from "../xml";
-
+import type {
+  AnyAction,
+  AnyContext,
+  AnyRef,
+  ContextState,
+  Log,
+  Output,
+  WorkingMemory,
+} from "../types";
 /*
 
 ## Instructions
@@ -16,14 +25,14 @@ import { xmlStreamParser } from "../xml";
 - IMPORTANT: If you state that you will perform an action, you MUST issue the corresponding action call. Do not say you will do something without actually issuing the action call.
 - IMPORTANT: Never end your response with a plan to do something without actually doing it. Always follow through with action calls.
 - When you determine that no further actions or outputs are needed and the flow should end, use the <finalize/> tag to indicate completion.
-
 */
 
-const promptTemplate = `
-You are tasked with analyzing messages, formulating responses, and initiating actions based on a given context. 
-You will be provided with a set of available actions, outputs, and a current context. 
-Your instructions is to analyze the situation and respond appropriately.
-
+export const templateSections = {
+  intro: `\
+  You are tasked with analyzing messages, formulating responses, and initiating actions based on a given context. 
+  You will be provided with a set of available actions, outputs, and contexts. 
+  Your instructions is to analyze the situation and respond appropriately.`,
+  instructions: `\
 Follow these steps to process the updates:
 
 1. Analyze the updates and available data:
@@ -57,7 +66,7 @@ Follow these steps to process the updates:
    - Acknowledging that certain information may not be immediately available
    - Setting appropriate expectations about action processing time
    - Indicating what will happen after actions complete
-   - You can only use outputs listed in the <outputs> section
+   - You can only use outputs listed in the <available_outputs> section
    - Follow the schemas provided for each output
   
 4. Initiate actions (if needed):
@@ -68,31 +77,29 @@ Follow these steps to process the updates:
    - You can only use actions listed in the <available_actions> section
    - Follow the schemas provided for each action
    - Actions should be used when necessary to fulfill requests or provide information that cannot be conveyed through a simple response
-   - IMPORTANT: If you say you will perform an action, you MUST issue the corresponding action call here
 
 5. No output or action:
-   If you determine that no output or action is necessary, don't respond to that message.
+   If you determine that no output or action is necessary, don't respond to that message.`,
+  /*
+  - To reference results from previous actions in your current action calls, use the template syntax \${calls[callIndex].property}. This allows you to chain actions and use results from earlier steps in your workflow.
+*/
 
+  content: `\
 Here are the available actions you can initiate:
-<available_actions>
 {{actions}}
-</available_actions>
 
 Here are the available outputs you can use:
-<outputs>
 {{outputs}}
-</outputs>
 
 Here is the current contexts:
-<contexts>
-{{context}}
-</contexts>
+{{contexts}}
 
-Now, analyze the following updates to contexts:
-<contexts>
-{{updates}}
-</contexts>
+Here is the current working memory:
+{{workingMemory}}
 
+Now, analyze the following updates:
+{{updates}}`,
+  response: `\
 Here's how you structure your response:
 <response>
 <reasoning>
@@ -104,192 +111,15 @@ Here's how you structure your response:
 
 [List of outputs, if applicable]
 <output type="[Output type]" {...output attributes using the schema}>
-[output content using the content schema and type]
+[output content using the content_schema]
 </output>
-</response>
+</response>`,
 
-IMPORTANT: 
-Always include the 'type' attribute in the output tag and ensure it matches one of the available output types listed above.
-Remember to include the other attribute in the output tag and ensure it matches the output attributes schema.
-`;
-
-export const prompt = createPrompt(
-  promptTemplate,
-  ({
-    outputs,
-    actions,
-    updates,
-    context,
-  }: {
-    context: string | string[];
-    outputs: Output[];
-    updates: string | string[];
-    actions: AnyAction[];
-  }) => ({
-    context: context,
-    outputs: outputs.map(formatOutputInterface),
-    actions:
-      actions.length > 0 ? actions.map(formatAction) : "NO ACTIONS AVAILABLE",
-    updates: updates,
-    examples: [],
-  })
-);
-
-export const parse = createParser<
-  {
-    think: string[];
-    response: string | undefined;
-    reasonings: string[];
-    calls: { name: string; data: any; error?: any }[];
-    outputs: { type: string; content: string }[];
-  },
-  {
-    action: { name: string };
-    output: { type: string };
-  }
->(
-  () => ({
-    think: [],
-    reasonings: [],
-    calls: [],
-    outputs: [],
-    response: undefined,
-  }),
-  {
-    response: (state, element, parse) => {
-      state.response = element.content;
-      return parse();
-    },
-
-    action_call: (state, element) => {
-      let [data, error] = [undefined, undefined] as [any, any];
-
-      try {
-        data = JSON.parse(element.content);
-      } catch (_error) {
-        error = _error;
-      }
-
-      state.calls.push({
-        name: element.attributes.name,
-        data,
-        error,
-      });
-    },
-
-    think: (state, element) => {
-      state.think.push(element.content);
-    },
-
-    reasoning: (state, element) => {
-      state.reasonings.push(element.content);
-    },
-
-    output: (state, element) => {
-      state.outputs.push({
-        type: element.attributes.type,
-        content: element.content,
-      });
-    },
-  }
-);
-
-const resultsTemplate = `
-You are an AI agent tasked with analyzing the results of previously initiated actions and formulating appropriate responses based on these results. 
-You will be provided with the original context, your previous analysis, and the results of the actions you initiated.
-
-Follow these steps to process the <action_results>:
-
-1. Analyze the results:
-   Wrap your thinking process in <reasoning> tags. Consider:
-
-   - The original context and your previous analysis
-   - The results of each <action_call> by their id
-   - Any dependencies between action results
-   - Success or failure status of each action
-   - Whether the combined results fulfill the original request
-
-2. Correlate results with previous actions:
-   For each action result:
-
-   - Match it with the corresponding action using callId
-   - Validate if the result meets the expected outcome
-   - Identify any missing or incomplete results
-   - You must determine if additional actions are needed based on these results
-
-3. Formulate a response (if needed):
-   If you decide to respond to the message, use <response> tags to enclose your response.
-   Consider:
-
-   - Using available data when possible
-   - Acknowledging that certain information may not be immediately available
-   - Setting appropriate expectations about action processing time
-   - Addressing any failures or unexpected results
-   - Providing relevant insights from the combined results
-   - Indicating if any follow-up actions are needed
-
-4. Initiate follow-up actions (if needed):
-   Use <action_call> tags to initiate actions. Remember:
-
-   - Actions are processed asynchronously after your response
-   - Results will not be immediately available
-   - You can only use actions listed in the <available_actions> section
-   - Follow the schemas provided for each action
-   - Actions should be used when necessary to fulfill requests or provide information that cannot be conveyed through a simple response
-   - IMPORTANT: If you say you will perform an action, you MUST issue the corresponding action call here
-   - IMPORTANT: Never end your response with a plan to do something without actually doing it. Always follow through with action calls.
-
-Here are the available actions you can initiate:
-<available_actions>
-{{actions}}
-</available_actions>
-
-Here are the available outputs you can use:
-<outputs>
-{{outputs}}
-</outputs>
-
-Here is the current contexts:
-<contexts>
-{{context}}
-</contexts>
-
-Here is the contexts that triggered the actions:
-<contexts>
-{{updates}}
-</contexts>
-
-Now, review your current chain of reasoning/actions/outputs:
-
-<chain>
-{{logs}}
-</chain>
-
-Now, analyze the latests action results:
-
-<action_results>
-{{results}}
-</action_results>
-
-Here's how you should structure your next response:
-<response>
-<reasoning>
-[Your reasoning of the context, think, messages, and planned actions]
-</reasoning>
-
-[List of async action calls to be initiated, if applicable]
-<action_call name="[Action name]">[action arguments using the schema as JSON]</action_call>
-
-[List of outputs, if applicable]
-<output type="[Output type]" {...output attributes using the schema}>
-[output content using the content schema and type]
-</output>
-</response>
-
+  footer: `\
 Remember:
 - Always correlate results with their original actions using callId
 - Never repeat your outputs
-- Consider the complete chain of results when formulating responses
+- Consider the complete chain of events when formulating responses
 - Address any failures or unexpected results explicitly
 - Initiate follow-up actions only when necessary
 - Provide clear, actionable insights based on the combined results
@@ -298,34 +128,97 @@ Remember:
 IMPORTANT: 
 Always include the 'type' attribute in the output tag and ensure it matches one of the available output types listed above.
 Remember to include the other attribute in the output tag and ensure it matches the output attributes schema.
+If you say you will perform an action, you MUST issue the corresponding action call here`,
+} as const;
+
+export const promptTemplate = `\
+{{intro}}
+
+{{instructions}}
+
+{{content}}
+
+{{response}}
+
+{{footer}}
 `;
 
-export const resultsPrompt = createPrompt(
-  resultsTemplate,
-  ({
-    outputs,
-    actions,
-    updates,
-    context,
-    logs,
-    results,
-  }: {
-    context: string | string[];
-    outputs: Output[];
-    updates: string | string[];
-    actions: AnyAction[];
-    logs: Log[];
-    results: ActionResult[];
-  }) => ({
-    logs: logs
-      // .sort((a, b) => (a.timestamp > b.timestamp ? 1 : -1))
-      .map((i) => formatContextLog(i))
-      .flat(),
-    results: results.map(formatContextLog),
-    context: context,
-    outputs: outputs.map(formatOutputInterface),
-    actions: actions.map(formatAction),
-    updates: updates,
-    examples: [],
-  })
-);
+export function formatPromptSections({
+  contexts,
+  outputs,
+  actions,
+  workingMemory,
+  maxWorkingMemorySize,
+  chainOfThoughtSize,
+}: {
+  contexts: ContextState<AnyContext>[];
+  outputs: Output[];
+  actions: AnyAction[];
+  workingMemory: WorkingMemory;
+  maxWorkingMemorySize?: number;
+  chainOfThoughtSize?: number;
+}) {
+  return {
+    actions: xml("available-actions", undefined, actions.map(formatAction)),
+    outputs: xml(
+      "available-outputs",
+      undefined,
+      outputs.map(formatOutputInterface)
+    ),
+    contexts: xml("contexts", undefined, contexts.map(formatContextState)),
+    workingMemory: xml(
+      "working-memory",
+      undefined,
+      formatWorkingMemory({
+        memory: workingMemory,
+        size: maxWorkingMemorySize,
+        processed: true,
+      })
+    ),
+    thoughts: xml(
+      "thoughts",
+      undefined,
+      workingMemory.thoughts
+        .map((log) => formatContextLog(log))
+        .slice(-(chainOfThoughtSize ?? 5))
+    ),
+    updates: xml(
+      "updates",
+      undefined,
+      formatWorkingMemory({
+        memory: workingMemory,
+        processed: false,
+      })
+    ),
+  };
+}
+
+// WIP
+export const mainStep = {
+  name: "main",
+  template: promptTemplate,
+  sections: templateSections,
+  render: (data: ReturnType<typeof formatPromptSections>) => {
+    const sections = Object.fromEntries(
+      Object.entries(mainStep.sections).map(([key, templateSection]) => [
+        key,
+        render(templateSection, data),
+      ])
+    ) as Record<keyof typeof templateSections, string>;
+
+    const prompt = render(mainStep.template, sections);
+
+    return prompt;
+  },
+
+  formatter: formatPromptSections,
+
+  shouldContinue: (state: { chain: AnyRef[] }) => {
+    const pendingResults = state.chain.filter(
+      (i) => i.ref !== "thought" && i.processed === false
+    );
+    return pendingResults.length > 0;
+  },
+} as const;
+
+export type StepConfig = typeof mainStep;

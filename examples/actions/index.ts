@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { action } from "../utils";
+import { action } from "../../packages/core/src/utils";
 import { tavily, type TavilyClient } from "@tavily/core";
 
 export const searchWebAction = action({
@@ -20,10 +20,10 @@ export const searchWebAction = action({
       .describe("The depth of search - basic is faster, deep is more thorough"),
   }),
 
-  async handler(call, ctx, agent) {
+  async handler(data, ctx, agent) {
     const response = await agent.container
       .resolve<TavilyClient>("tavily")
-      .search(call.data.query, {
+      .search(data.query, {
         searchDepth: "advanced",
       });
 

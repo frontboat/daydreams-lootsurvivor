@@ -1,17 +1,17 @@
 {
   "name": "@daydreamsai/twitter",
-  "version": "0.2.18-alpha.1",
+  "version": "0.3.0-alpha.0",
   "type": "module",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "exports": {
-    "./package.json": "./package.json",
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": {
-        "development": "./src/index.ts",
-        "default": "./dist/index.js"
+  "exports": "./src/index.ts",
+  "publishConfig": {
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      "./package.json": "./package.json",
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
       }
     }
   },

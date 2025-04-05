@@ -2,7 +2,6 @@ import { z } from "zod";
 import type {
   Action,
   ActionSchema,
-  AgentContext,
   AnyAgent,
   AnyContext,
   ExpertConfig,
@@ -11,45 +10,10 @@ import type {
   Memory,
   Optional,
   OutputConfig,
-  OutputResponse,
   OutputSchema,
-  TemplateVariables,
   WorkingMemory,
 } from "./types";
 export { v7 as randomUUIDv7 } from "uuid";
-
-/**
- * Renders a template string by replacing variables with provided values
- * @template Template - The template string type containing variables in {{var}} format
- * @param str - The template string to render
- * @param data - Object containing values for template variables
- * @returns The rendered string with variables replaced
- */
-export function render<Template extends string>(
-  str: Template,
-  data: TemplateVariables<Template>
-) {
-  return str
-    .trim()
-    .replace(/\{\{(\w+)\}\}/g, (match, key: string) =>
-      formatValue(data[key as keyof typeof data] ?? "")
-    );
-}
-
-/**
- * Formats a value for template rendering
- * @param value - The value to format
- * @returns Formatted string representation of the value
- */
-export function formatValue(value: any): string {
-  if (Array.isArray(value)) return value.map((t) => formatValue(t)).join("\n");
-  if (typeof value !== "string")
-    return JSON.stringify(value, (_, value) => {
-      if (typeof value === "bigint") return value.toString();
-      return value;
-    });
-  return value.trim();
-}
 
 /**
  * Creates an input configuration
@@ -59,9 +23,10 @@ export function formatValue(value: any): string {
  * @returns Typed input configuration
  */
 export function input<
-  Schema extends z.AnyZodObject = z.AnyZodObject,
+  Schema extends z.AnyZodObject | z.ZodString | z.ZodRawShape = z.ZodString,
+  TContext extends AnyContext = AnyContext,
   TAgent extends AnyAgent = AnyAgent,
->(config: InputConfig<Schema, TAgent>) {
+>(config: InputConfig<Schema, TContext, TAgent>) {
   return config;
 }
 
@@ -101,9 +66,9 @@ export function action<
  */
 export function output<
   Schema extends OutputSchema = OutputSchema,
-  Context extends AgentContext<any> = AgentContext<any>,
-  TResponse extends OutputResponse = OutputResponse,
->(config: OutputConfig<Schema, Context, TResponse>) {
+  // TResponse extends OutputResponse = OutputResponse,
+  Context extends AnyContext = AnyContext,
+>(config: OutputConfig<Schema, Context>) {
   return config;
 }
 
@@ -232,4 +197,19 @@ export function trimWorkingMemory(
   workingMemory.outputs = workingMemory.outputs.slice(-options.outputs);
   workingMemory.calls = workingMemory.calls.slice(-options.actions);
   workingMemory.results = workingMemory.results.slice(-options.actions);
+}
+
+/**
+ * Utility function to safely execute a function asynchronously
+ * This is an implementation of the Promise.try pattern which isn't available in standard JS
+ * @param fn The function to execute
+ * @param ...args The arguments to pass to the function
+ * @returns A promise that resolves with the result of the function
+ */
+export async function tryAsync<T>(fn: Function, ...args: any[]): Promise<T> {
+  try {
+    return await fn(...args);
+  } catch (error) {
+    return Promise.reject(error);
+  }
 }

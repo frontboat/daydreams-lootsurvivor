@@ -84,20 +84,20 @@ const agent = createDreams({
           .optional()
           .describe("Optional specific path within the repository"),
       }),
-      async handler(call, ctx, app) {
+      async handler(data, ctx, app) {
         const octokit = app.container.resolve<Octokit>("octokit");
         try {
           const contents = await fetchRepoContent({
             octokit,
-            ...call,
+            ...data,
           });
 
           return {
             contents,
             repoInfo: {
-              owner: call.owner,
-              repo: call.repo,
-              path: call.path || "",
+              owner: data.owner,
+              repo: data.repo,
+              path: data.path || "",
             },
           };
         } catch (error) {

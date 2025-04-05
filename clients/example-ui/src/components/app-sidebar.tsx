@@ -8,12 +8,17 @@ import {
   Wrench,
   Twitter,
   Github,
+  Brain,
 } from "lucide-react";
 import { NavMain } from "@/components/nav-main";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarRail,
@@ -23,6 +28,7 @@ import { Link } from "@tanstack/react-router";
 import { useAgent } from "@/hooks/use-agent";
 import { useQuery } from "@tanstack/react-query";
 import { NavUser } from "./nav-user";
+import { chatContext } from "@/agent/chat";
 // This is sample data.
 const data = {
   user: {
@@ -98,6 +104,26 @@ const data = {
   projects: [],
 };
 
+function ChatLinkTitle({ chatId }: { chatId: string }) {
+  const dreams = useAgent();
+
+  const state = useQuery({
+    queryKey: ["chat:memory", chatId],
+    queryFn: async () => {
+      const state = await dreams.getContext({
+        context: chatContext,
+        args: {
+          chatId,
+        },
+      });
+
+      return state;
+    },
+  });
+
+  return <div>{state.data?.memory.title ?? chatId}</div>;
+}
+
 // Create a new ChatHistory component
 function ChatHistoryList() {
   const agent = useAgent();
@@ -126,15 +152,23 @@ function ChatHistoryList() {
   return (
     <div>
       <SidebarSeparator className="my-4" />
-      {chats.data?.map((chat) => (
-        <SidebarMenuSubItem key={chat.id}>
-          <SidebarMenuSubButton asChild>
-            <Link to={"/chats/$chatId"} params={{ chatId: chat.args.chatId }}>
-              <div className="font-medium truncate">{chat.args.chatId}</div>
-            </Link>
-          </SidebarMenuSubButton>
-        </SidebarMenuSubItem>
-      ))}
+      {chats.data?.map((chat) => {
+        const chatId = chat.args?.chatId ?? chat.id.split(":")[1];
+        return (
+          <SidebarMenuSubItem key={chat.id}>
+            <SidebarMenuSubButton
+              asChild
+              size="sm"
+              className="h-auto mb-1 py-1"
+            >
+              <Link to="/chats/$chatId" params={{ chatId }}>
+                <ChatLinkTitle chatId={chatId} />
+              </Link>
+              {/* <ChatLink chatId={chatId} /> */}
+            </SidebarMenuSubButton>
+          </SidebarMenuSubItem>
+        );
+      })}
     </div>
   );
 }
@@ -146,6 +180,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       collapsible="icon"
       {...props}
     >
+      <SidebarHeader>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg">
+              <img src="/Daydreams.svg" className="h-6" />
+              {/* <Brain></Brain> */}
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
         {/* <NavProjects projects={data.projects} /> */}

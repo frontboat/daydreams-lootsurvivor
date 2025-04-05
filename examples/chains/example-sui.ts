@@ -3,17 +3,8 @@
  */
 
 import { createGroq } from "@ai-sdk/groq";
-import {
-  createDreams,
-  context,
-  render,
-  action,
-  validateEnv,
-  type ActionCall,
-  type AgentContext,
-  type Agent,
-} from "@daydreamsai/core";
-import { cli } from "@daydreamsai/core/extensions";
+import { createDreams, context, action, validateEnv } from "@daydreamsai/core";
+import { cliExtension } from "@daydreamsai/cli";
 import { z } from "zod";
 import chalk from "chalk";
 import { SuiChain, supportedSuiTokens } from "@daydreamsai/defai";
@@ -42,154 +33,116 @@ const suiChain = new SuiChain({
 
 // Define memory type
 type SuiMemory = {
+  wallet: string;
   transactions: string[];
   lastTransaction: string | null;
 };
 
 // Define context template
-const template = `
-Last Transaction: {{lastTransaction}}
+const template = ({ wallet, lastTransaction, transactions }: SuiMemory) => `\
+Wallet: ${wallet}
+Last Transaction: ${lastTransaction ?? "NONE"}
 Transaction History:
-{{transactions}}
-`;
+${transactions.join("\n")}`;
 
 // Create context
 const suiContexts = context({
   type: "sui",
-  schema: z.object({
-    id: z.string(),
-  }),
-
-  key({ id }: { id: string }) {
-    return id;
+  schema: {
+    wallet: z.string(),
   },
-
-  create() {
+  key: ({ wallet }) => wallet,
+  create({ args }): SuiMemory {
     return {
+      wallet: args.wallet,
       transactions: [],
       lastTransaction: null,
     };
   },
-
-  render({ memory }: { memory: SuiMemory }) {
-    return render(template, {
-      lastTransaction: memory.lastTransaction ?? "NONE",
-      transactions: memory.transactions.join("\n"),
-    });
+  render({ memory }) {
+    return template(memory);
   },
-});
+}).setActions([
+  action({
+    name: "sui.faucet",
+    description: "Request SUI tokens from a faucet",
+    schema: {
+      network: z
+        .enum(["testnet", "devnet", "localnet"])
+        .default("testnet")
+        .describe("The network to request SUI from."),
+      recipient: z.string().describe("The account address to receive SUI"),
+    },
+    async handler({ network, recipient }, { memory }) {
+      const result = await suiChain.requestSui({
+        network: network as FaucetNetwork,
+        recipient,
+      });
+
+      const resultStr = JSON.stringify(result, null, 2);
+
+      memory.lastTransaction = `Faucet Request: ${resultStr}`;
+      memory.transactions.push(memory.lastTransaction);
+
+      return { content: `Transaction: ${resultStr}` };
+    },
+  }),
+  action({
+    name: "sui.swap",
+    description: "Swap tokens on the Sui blockchain",
+    schema: {
+      fromToken: z
+        .string()
+        .describe(
+          `The token name to be swapped. It can be one of these: ${supportedSuiTokens}. This token and target token should not be same.`
+        ),
+      targetToken: z
+        .string()
+        .describe(
+          `The token name to be swapped. It can be one of these: ${supportedSuiTokens}. This token and from token should not be same.`
+        ),
+      amount: z
+        .string()
+        .describe(
+          "The amount of token to be swapped. It should be in MIST. 1 SUI = 10^9 MIST. User mostly doesn't provide the value in mist, if he does, use that. Or else, do the conversation of multiplication and provide the value. However, for the case of USDC, the amount should be provided by multiplying 10^6. If a user says 1 USDC, amount you should add is 10^6. Take note of the amount of the from token."
+        ),
+      out_min_amount: z
+        .number()
+        .optional()
+        .describe(
+          "This is the minimum expected output token amount. If not provided should be null and will execute the swap anyhow."
+        ),
+    },
+    async handler(
+      { fromToken, amount, out_min_amount, targetToken },
+      { memory }
+    ) {
+      const result = await suiChain.swapToken({
+        fromToken,
+        amount,
+        out_min_amount: out_min_amount || null,
+        targetToken,
+      });
+
+      const resultStr = JSON.stringify(result, null, 2);
+
+      memory.lastTransaction = `Swap: ${fromToken} to ${targetToken}, Amount: ${amount}, Result: ${resultStr}`;
+      memory.transactions.push(memory.lastTransaction);
+
+      return { content: `Transaction: ${resultStr}` };
+    },
+  }),
+]);
 
 // Create Dreams instance
 const dreams = createDreams({
   model: groq("deepseek-r1-distill-llama-70b"),
-  extensions: [cli],
+  extensions: [cliExtension],
   context: suiContexts,
-  actions: [
-    action({
-      name: "SUI_FAUCET",
-      description: "Request SUI tokens from a faucet",
-      schema: z.object({
-        network: z
-          .string()
-          .describe(
-            "The network to request SUI from. This should be taken from the input data. Default is testnet if the user does not provide a valid network"
-          ),
-        recipient: z
-          .string()
-          .describe(
-            "The account address to receive SUI. This should be taken from the input data"
-          ),
-      }),
-      async handler(
-        call: ActionCall<{ network: string; recipient: string }>,
-        ctx: AgentContext<any, any> & { memory: SuiMemory },
-        _agent: Agent
-      ) {
-        const { network, recipient } = call.data;
-
-        try {
-          const result = await suiChain.requestSui({
-            network: network as FaucetNetwork,
-            recipient,
-          });
-
-          const resultStr = JSON.stringify(result, null, 2);
-
-          ctx.memory.lastTransaction = `Faucet Request: ${resultStr}`;
-          ctx.memory.transactions.push(ctx.memory.lastTransaction);
-
-          return { content: `Transaction: ${resultStr}` };
-        } catch (error) {
-          return {
-            content: `Error: ${error instanceof Error ? error.message : String(error)}`,
-          };
-        }
-      },
-    }),
-    action({
-      name: "SUI_SWAP",
-      description: "Swap tokens on the Sui blockchain",
-      schema: z.object({
-        fromToken: z
-          .string()
-          .describe(
-            `The token name to be swapped. It can be one of these: ${supportedSuiTokens}. This token and target token should not be same.`
-          ),
-        targetToken: z
-          .string()
-          .describe(
-            `The token name to be swapped. It can be one of these: ${supportedSuiTokens}. This token and from token should not be same.`
-          ),
-        amount: z
-          .string()
-          .describe(
-            "The amount of token to be swapped. It should be in MIST. 1 SUI = 10^9 MIST. User mostly doesn't provide the value in mist, if he does, use that. Or else, do the conversation of multiplication and provide the value. However, for the case of USDC, the amount should be provided by multiplying 10^6. If a user says 1 USDC, amount you should add is 10^6. Take note of the amount of the from token."
-          ),
-        out_min_amount: z
-          .number()
-          .optional()
-          .describe(
-            "This is the minimum expected output token amount. If not provided should be null and will execute the swap anyhow."
-          ),
-      }),
-      async handler(
-        call: ActionCall<{
-          fromToken: string;
-          amount: string;
-          targetToken: string;
-          out_min_amount?: number;
-        }>,
-        ctx: AgentContext<any, any> & { memory: SuiMemory },
-        _agent: Agent
-      ) {
-        const { fromToken, amount, out_min_amount, targetToken } = call.data;
-
-        try {
-          const result = await suiChain.swapToken({
-            fromToken,
-            amount,
-            out_min_amount: out_min_amount || null,
-            targetToken,
-          });
-
-          const resultStr = JSON.stringify(result, null, 2);
-
-          ctx.memory.lastTransaction = `Swap: ${fromToken} to ${targetToken}, Amount: ${amount}, Result: ${resultStr}`;
-          ctx.memory.transactions.push(ctx.memory.lastTransaction);
-
-          return { content: `Transaction: ${resultStr}` };
-        } catch (error) {
-          return {
-            content: `Error: ${error instanceof Error ? error.message : String(error)}`,
-          };
-        }
-      },
-    }),
-  ],
 });
 
 // Start the Dreams instance
-dreams.start({ id: "sui-example" });
+await dreams.start({ wallet: suiChain.getAddress() });
 
 // Handle graceful shutdown
 process.on("SIGINT", async () => {

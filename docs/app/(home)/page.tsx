@@ -1792,7 +1792,7 @@ function Chains() {
     },
     {
       name: "StarkNet",
-      logo: "/chains/StarkNet.svg",
+      logo: "/chains/Starknet.svg",
       color: "#00FFD1",
     },
     {

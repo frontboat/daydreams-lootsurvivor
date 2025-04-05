@@ -65,17 +65,17 @@ agent configuration:
 
 ```typescript
 import { createDreams } from "@daydreamsai/core";
-import { createMcpExtension } from "@daydreamsai/core/extensions";
+import { mcpExtension } from "@daydreamsai/mcp";
 import { anthropic } from "@ai-sdk/anthropic";
 import path from "path";
 
 // Create an agent with the MCP extension
-const agent = createDreams({
+createDreams({
   model: anthropic("claude-3-7-sonnet-latest"),
 
   // Add the MCP extension with server configuration
   extensions: [
-    createMcpExtension([
+    mcpExtension([
       {
         id: "example-server",
         name: "Example Resource Server",

@@ -1,6 +1,6 @@
 import OpenAI from "openai/index.mjs";
 import { OpenAIToolSet } from "composio-core";
-import { extension } from "@daydreamsai/core";
+import { action, extension } from "@daydreamsai/core";
 import { z } from "zod";
 
 const openai_client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -110,12 +110,12 @@ export const composio = extension({
   inputs: {},
   outputs: {},
   actions: [
-    {
+    action({
       name: "composio.getTodaysDate",
       description:
         "Get the current date and hour. You must call that whenever there is a mention to today or tomorrow or any kind of temporal position based on today's date.",
-      schema: z.object({}),
-      async handler(call: { data: {} }, ctx, agent) {
+      schema: undefined,
+      handler() {
         const date = new Date();
         const formattedDate = date.toLocaleDateString("en-US", {
           year: "numeric",
@@ -127,29 +127,29 @@ export const composio = extension({
         });
         return formattedDate;
       },
-    },
-    {
+    }),
+    action({
       name: "composio.checkActiveConnection",
       description: "Check if there's an active connection for a specific tool",
-      schema: z.object({
+      schema: {
         tool: z
           .enum(COMPOSIO_APPNAMES as [string, ...string[]])
           .describe("The tool name to initiate connection for."),
-      }),
-      async handler(call: { data: { tool: string } }, ctx, agent) {
+      },
+      async handler({ tool }) {
         const tools = await composio_toolset.getTools({
           actions: ["COMPOSIO_CHECK_ACTIVE_CONNECTION"],
         });
 
         const response = await makeOpenAIRequest(
-          `Check connection for ${call.data.tool}`,
+          `Check connection for ${tool}`,
           tools
         );
         const tool_response = await composio_toolset.handleToolCall(response);
         return tool_response;
       },
-    },
-    {
+    }),
+    action({
       name: "composio.initiateConnection",
       description: "Initiate a connection for a specific tool",
       schema: z.object({
@@ -157,21 +157,21 @@ export const composio = extension({
           .enum(COMPOSIO_APPNAMES as [string, ...string[]])
           .describe("The tool name to initiate connection for."),
       }),
-      async handler(call: { data: { tool: string } }, ctx, agent) {
+      async handler({ tool }) {
         const tools = await composio_toolset.getTools({
           actions: ["COMPOSIO_INITIATE_CONNECTION"],
         });
 
         const response = await makeOpenAIRequest(
-          `Initiate connection for ${call.data.tool}`,
+          `Initiate connection for ${tool}`,
           tools
         );
         const tool_response = await composio_toolset.handleToolCall(response);
         return tool_response;
       },
-    },
+    }),
 
-    {
+    action({
       name: "composio.retrieveActions",
       description:
         "Retrieve available actions for a specific app. Mandatory to call before doing an action for the first time to get the exact name of action_name for executeAction. Also you will find the required parameters",
@@ -182,17 +182,13 @@ export const composio = extension({
         usecase: z.string().describe("Explanation of the action"),
         limit: z.number().default(1).describe("Number of actions to retrieve"),
       }),
-      async handler(
-        call: { data: { app_name: string; usecase: string; limit: number } },
-        ctx,
-        agent
-      ) {
+      async handler({ app_name, usecase, limit }) {
         const tools = await composio_toolset.getTools({
           actions: ["COMPOSIO_RETRIEVE_ACTIONS"],
         });
 
         const response = await makeOpenAIRequest(
-          `Retrieve actions for ${call.data.app_name} with usecase: ${call.data.usecase}`,
+          `Retrieve actions for ${app_name} with usecase: ${usecase}`,
           tools
         );
         const tool_response = simplifyActions(
@@ -202,12 +198,12 @@ export const composio = extension({
         );
         return tool_response;
       },
-    },
-    {
+    }),
+    action({
       name: "composio.executeAction",
       description:
         "Execute a specific Composio action with provided parameters. You must always call retrieveActions to get the exact name of the action_name else it will break.",
-      schema: z.object({
+      schema: {
         action_name: z
           .string()
           .describe(
@@ -218,29 +214,25 @@ export const composio = extension({
           .describe(
             "Request data parameters as defined in the action's schema"
           ),
-      }),
-      async handler(
-        call: { data: { action_name: string; request: Record<string, any> } },
-        ctx,
-        agent
-      ) {
+      },
+      async handler(data) {
         const tools = await composio_toolset.getTools({
           actions: ["COMPOSIO_EXECUTE_ACTION"],
         });
 
         // Create a structured message that includes both the action name and its parameters
         const executionMessage = {
-          action: call.data.action_name,
-          parameters: call.data.request,
+          action: data.action_name,
+          parameters: data.request,
         };
 
         const response = await makeOpenAIRequest(
-          `Execute action ${call.data.action_name} with parameters: ${JSON.stringify(executionMessage)}`,
+          `Execute action ${data.action_name} with parameters: ${JSON.stringify(executionMessage)}`,
           tools
         );
         const tool_response = await composio_toolset.handleToolCall(response);
         return tool_response;
       },
-    },
+    }),
   ],
 });

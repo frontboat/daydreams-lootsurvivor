@@ -27,7 +27,7 @@ import {
   type ActionCall,
   type Agent,
 } from "@daydreamsai/core";
-import { cli } from "@daydreamsai/core/extensions";
+import { cliExtension } from "@daydreamsai/cli";
 import { string, z } from "zod";
 
 const env = validateEnv(
@@ -89,7 +89,7 @@ const goalContexts = context({
 createDreams({
   logger: LogLevel.INFO,
   model: anthropic("claude-3-7-sonnet-latest"),
-  extensions: [cli],
+  extensions: [cliExtension],
   context: goalContexts,
   actions: [
     // start run (sends the starting 1-2 dungeon)
@@ -121,9 +121,9 @@ createDreams({
         .describe(
           "You use this to make an action in a dungeon. If the lootPhase == true then you can select the Loot option, which will then take you to the next phase. If the lootPhase == false then you can select the Rock, Paper, Scissors option."
         ),
-      async handler(call, ctx: any, agent: Agent) {
+      async handler(data, ctx: any, agent: Agent) {
         try {
-          const { action, dungeonId } = call;
+          const { action, dungeonId } = data;
 
           const payload = {
             action: action,
@@ -176,7 +176,7 @@ createDreams({
       description:
         "Fetch information about all upcoming enemies in the dungeon",
       schema: z.object({}), // No parameters needed for this GET request
-      async handler(call, ctx: any, agent: Agent) {
+      async handler(data, ctx: any, agent: Agent) {
         try {
           const response = await fetch(
             "https://gigaverse.io/api/indexer/enemies",
@@ -221,7 +221,7 @@ createDreams({
       name: "getPlayerState",
       description: "Fetch the current state of the player in the dungeon",
       schema: z.object({}), // No parameters needed for this GET request
-      async handler(call, ctx: any, agent: Agent) {
+      async handler(data, ctx: any, agent: Agent) {
         try {
           const response = await fetch(
             "https://gigaverse.io/api/game/dungeon/state",
@@ -272,9 +272,9 @@ createDreams({
           .default(1)
           .describe("The ID of the dungeon to start. Default is 1."),
       }),
-      async handler(call, ctx: any, agent: Agent) {
+      async handler(data, ctx: any, agent: Agent) {
         try {
-          const { dungeonId } = call;
+          const { dungeonId } = data;
 
           const payload = {
             action: "start_run",

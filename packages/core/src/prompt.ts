@@ -2,8 +2,8 @@ import { ZodType } from "zod";
 import zodToJsonSchema from "zod-to-json-schema";
 import type { Node, ElementNode } from "./xml";
 import { parse as parseXML } from "./xml";
-import { render } from "./utils";
 import type { TemplateVariables } from "./types";
+import { render } from "./formatters";
 
 export type Formatter<
   Variables extends Record<string, any> = Record<string, any>,

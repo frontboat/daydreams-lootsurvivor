@@ -32,14 +32,11 @@ interface NavItem {
 export function NavMain({ items }: { items: NavItem[] }) {
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>
-        <img src="/Daydreams.svg" className=" h-6" />
-      </SidebarGroupLabel>
-      <SidebarMenu className="my-4">
-        {items.map((item) =>
+      <SidebarMenu>
+        {items.map((item, i) =>
           item.items ? (
             <Collapsible
-              key={item.title}
+              key={[i, item.title].join(":")}
               asChild
               defaultOpen={item.isActive}
               className="group/collapsible"
@@ -54,11 +51,11 @@ export function NavMain({ items }: { items: NavItem[] }) {
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <SidebarMenuSub>
-                    {item.items?.map((subItem) =>
+                    {item.items?.map((subItem, t) =>
                       subItem.component ? (
-                        <subItem.component />
+                        <subItem.component key={[t, subItem.title].join(":")} />
                       ) : (
-                        <SidebarMenuSubItem key={subItem.title}>
+                        <SidebarMenuSubItem key={[t, subItem.title].join(":")}>
                           <SidebarMenuSubButton asChild>
                             <Link to={subItem.url}>
                               <span>{subItem.title}</span>
@@ -72,7 +69,7 @@ export function NavMain({ items }: { items: NavItem[] }) {
               </SidebarMenuItem>
             </Collapsible>
           ) : (
-            <SidebarMenuItem>
+            <SidebarMenuItem key={[i, item.title].join(":")}>
               <SidebarMenuButton tooltip={item.title} asChild>
                 <Link to={item.url}>
                   {item.icon && <item.icon />}

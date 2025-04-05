@@ -1,4 +1,4 @@
-import { MessagesList } from "@/components/message-list";
+// import { MessagesList } from "@/components/message-list";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -140,7 +140,7 @@ function RouteComponent() {
           <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
             <ScrollArea className="flex-1">
               <div className="px-4 py-4">
-                <MessagesList messages={messages} />
+                {/* <MessagesList messages={messages} /> */}
                 <div ref={messagesEndRef} />
               </div>
             </ScrollArea>

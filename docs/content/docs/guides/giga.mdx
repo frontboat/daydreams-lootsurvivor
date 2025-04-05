@@ -17,7 +17,6 @@ Before starting, make sure you have:
    - `ANTHROPIC_API_KEY`: Your Anthropic API key
    - `GIGA_TOKEN`: Your Gigaverse authentication token (Bearer token from
      browser)
-   - `OPENAI_API_KEY`: Your OpenAI API key
 
 ## Creating the Agent
 
@@ -32,18 +31,16 @@ import {
   action,
   validateEnv,
   LogLevel,
-  type ActionCall,
   type Agent,
 } from "@daydreamsai/core";
-import { cli } from "@daydreamsai/core/extensions";
-import { z } from "zod";
+import { cliExtension } from "@daydreamsai/cli";
+import { string, z } from "zod";
 
 // Validate environment variables
 const env = validateEnv(
   z.object({
     ANTHROPIC_API_KEY: z.string().min(1, "ANTHROPIC_API_KEY is required"),
     GIGA_TOKEN: z.string().min(1, "GIGA_TOKEN is required"),
-    OPENAI_API_KEY: z.string().min(1, "OPENAI_API_KEY is required"),
   })
 );
 
@@ -51,7 +48,7 @@ const env = validateEnv(
 const goalContexts = context({
   type: "goal",
   schema: z.object({
-    id: z.string(),
+    id: string(),
     initialGoal: z.string(),
     initialTasks: z.array(z.string()),
   }),
@@ -78,18 +75,15 @@ const goalContexts = context({
 });
 
 // Create the Gigaverse agent
-const agent = createDreams({
+createDreams({
   logger: LogLevel.INFO,
   model: anthropic("claude-3-7-sonnet-latest"),
-  extensions: [cli],
+  extensions: [cliExtension],
   context: goalContexts,
   actions: [
     // Actions will be defined below
   ],
-});
-
-// Start the agent
-await agent.start({
+}).start({
   id: "gigaverse-agent",
   initialGoal: "Successfully complete a dungeon run in Gigaverse",
   initialTasks: [
@@ -167,20 +161,35 @@ This action handles both combat (rock-paper-scissors) and loot selection:
 action({
   name: "attackInDungeon",
   description: "Attack in the dungeon using rock-paper-scissors game mechanics",
-  schema: z.object({
-    action: z.enum([
-      "rock",
-      "paper",
-      "scissor",
-      "loot_one",
-      "loot_two",
-      "loot_three",
-    ]).describe("The attack move to make"),
-    dungeonId: z.number().default(0).describe("The ID of the dungeon"),
-  }),
-  async handler(call, ctx, agent) {
+  schema: z
+    .object({
+      action: z
+        .enum([
+          "rock",
+          "paper",
+          "scissor",
+          "loot_one",
+          "loot_two",
+          "loot_three",
+        ])
+        .describe("The attack move to make"),
+      dungeonId: z
+        .number()
+        .default(0)
+        .describe("The ID of the dungeon"),
+    })
+    .describe(
+      "You use this to make an action in a dungeon. If the lootPhase == true then you can select the Loot option, which will then take you to the next phase. If the lootPhase == false then you can select the Rock, Paper, Scissors option."
+    ),
+  async handler(data, ctx, agent) {
     try {
-      const { action, dungeonId } = call.data;
+      const { action, dungeonId } = data;
+
+      const payload = {
+        action: action,
+        actionToken: new Date().getTime().toString(),
+        dungeonId: dungeonId,
+      };
 
       const response = await fetch(
         "https://gigaverse.io/api/game/dungeon/action",
@@ -190,24 +199,26 @@ action({
             "Content-Type": "application/json",
             Authorization: `Bearer ${env.GIGA_TOKEN}`,
           },
-          body: JSON.stringify({
-            action: action,
-            actionToken: new Date().getTime().toString(),
-            dungeonId: dungeonId,
-          }),
+          body: JSON.stringify(payload),
         }
       );
+
+      if (!response.ok) {
+        throw new Error(`Attack action failed with status ${response.status}`);
+      }
 
       const result = await response.json();
       return {
         success: true,
-        result: result,
-        message: `Successfully performed ${action} in dungeon ${dungeonId}`,
+        result,
+        message: `Successfully performed ${action} attack in dungeon ${dungeonId}`,
       };
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : String(error),
+        error: errorMessage,
         message: "Attack action failed",
       };
     }
@@ -224,7 +235,7 @@ action({
   name: "getPlayerState",
   description: "Get the current state of the player in the dungeon",
   schema: z.object({}),
-  async handler(call, ctx, agent) {
+  async handler(data, ctx, agent) {
     try {
       const response = await fetch(
         "https://gigaverse.io/api/game/dungeon/state",
@@ -237,6 +248,10 @@ action({
         }
       );
 
+      if (!response.ok) {
+        throw new Error(`Fetch player state failed with status ${response.status}`);
+      }
+
       const result = await response.json();
       return {
         success: true,
@@ -244,9 +259,11 @@ action({
         message: "Successfully fetched player's dungeon state",
       };
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : String(error),
+        error: errorMessage,
         message: "Failed to fetch player's dungeon state",
       };
     }
@@ -263,11 +280,20 @@ action({
   name: "startNewRun",
   description: "Start a new dungeon run. Use this when the player dies or wants to start a new run from outside the dungeon.",
   schema: z.object({
-    dungeonId: z.number().default(1).describe("The ID of the dungeon to start. Default is 1."),
+    dungeonId: z
+      .number()
+      .default(1)
+      .describe("The ID of the dungeon to start. Default is 1."),
   }),
-  async handler(call, ctx, agent) {
+  async handler(data, ctx, agent) {
     try {
-      const { dungeonId } = call.data;
+      const { dungeonId } = data;
+
+      const payload = {
+        action: "start_run",
+        actionToken: new Date().getTime().toString(),
+        dungeonId: dungeonId,
+      };
 
       const response = await fetch(
         "https://gigaverse.io/api/game/dungeon/action",
@@ -277,25 +303,27 @@ action({
             "Content-Type": "application/json",
             Authorization: `Bearer ${env.GIGA_TOKEN}`,
           },
-          body: JSON.stringify({
-            action: "start_run",
-            actionToken: new Date().getTime().toString(),
-            dungeonId: dungeonId,
-          }),
+          body: JSON.stringify(payload),
         }
       );
+
+      if (!response.ok) {
+        throw new Error(`Start new run failed with status ${response.status}`);
+      }
 
       const result = await response.json();
       return {
         success: true,
-        result: result,
-        message: `Successfully started new run in dungeon ${dungeonId}`,
+        result,
+        message: `Successfully started a new run in dungeon ${dungeonId}`,
       };
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : String(error),
-        message: "Failed to start new dungeon run",
+        error: errorMessage,
+        message: "Failed to start a new dungeon run",
       };
     }
   },

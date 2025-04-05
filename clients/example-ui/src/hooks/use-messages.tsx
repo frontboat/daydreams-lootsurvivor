@@ -1,11 +1,10 @@
-import { MessageType } from "@/components/message-list";
-import { Log } from "@daydreamsai/core";
+import { AnyRef, Log } from "@daydreamsai/core";
 import { useState } from "react";
 
 export function useMessages() {
-  const [messages, setMessages] = useState<MessageType[]>([]);
+  const [messages, setMessages] = useState<any[]>([]);
 
-  function handleLog(log: Log, _done: boolean) {
+  function handleLog(log: AnyRef, _done: boolean) {
     if (log.ref === "input") {
       setMessages((msgs) => [
         ...msgs.filter((msg) => msg.id !== log.id),
@@ -27,15 +26,40 @@ export function useMessages() {
       ]);
     }
 
-    if (log.ref === "output" && log.type === "message") {
-      setMessages((msgs) => [
-        ...msgs.filter((msg) => msg.id !== log.id),
-        {
-          id: log.id,
-          type: "assistant",
-          message: log.data.content,
-        },
-      ]);
+    if (log.ref === "output") {
+      if (log.type === "message") {
+        setMessages((msgs) => [
+          ...msgs.filter((msg) => msg.id !== log.id),
+          {
+            id: log.id,
+            type: "assistant",
+            message: log.data ?? log.content,
+            params: log.params,
+          },
+        ]);
+      }
+      if (log.type === "document") {
+        setMessages((msgs) => [
+          ...msgs.filter((msg) => msg.id !== log.id),
+          {
+            id: log.id,
+            type: "document",
+            message: log.data ?? log.content,
+            params: log.params,
+          },
+        ]);
+      }
+      if (log.type === "artifact") {
+        setMessages((msgs) => [
+          ...msgs.filter((msg) => msg.id !== log.id),
+          {
+            id: log.id,
+            type: "artifact",
+            message: log.data ?? log.content,
+            params: log.params,
+          },
+        ]);
+      }
     }
     if (log.ref === "action_call") {
       setMessages((msgs) => [

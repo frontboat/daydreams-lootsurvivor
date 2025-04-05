@@ -28,7 +28,7 @@ const discordChannelContext = context({
   key: ({ channelId }) => channelId,
   schema: z.object({ channelId: z.string() }),
 
-  async setup(args, {}, { container }) {
+  async setup(args, setttings, { container }) {
     const channel = await container
       .resolve<DiscordClient>("discord")
       .client.channels.fetch(args.channelId);
@@ -62,15 +62,15 @@ export const discord = extension({
           user: user.name,
           content: text,
         }),
-      subscribe(send, agent) {
-        const { container } = agent;
+      subscribe(send, { container }) {
         function listener(message: Message) {
           if (
             message.author.displayName ==
-            container.resolve("discord").credentials.discord_bot_name
+            container.resolve<DiscordClient>("discord").credentials
+              .discord_bot_name
           ) {
             console.log(
-              `Skipping message from ${container.resolve("discord").credentials.discord_bot_name}`
+              `Skipping message from ${container.resolve<DiscordClient>("discord").credentials.discord_bot_name}`
             );
             return;
           }
@@ -90,8 +90,7 @@ export const discord = extension({
           );
         }
 
-        const discordClient = container.resolve("discord");
-        const { client } = discordClient;
+        const { client } = container.resolve<DiscordClient>("discord");
 
         client.on(Events.MessageCreate, listener);
         return () => {
@@ -135,11 +134,11 @@ export const discord = extension({
         }
         throw new Error("Invalid channel id");
       },
-      format: ({ data }) =>
-        formatMsg({
-          role: "assistant",
-          content: data.content,
-        }),
+      // format: (res) =>
+      //   formatMsg({
+      //     role: "assistant",
+      //     content: res.data.content,
+      //   }),
     }),
   },
 });

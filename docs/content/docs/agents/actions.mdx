@@ -40,8 +40,8 @@ action({
   }),
 
   // Handler function that executes when the action is called
-  handler(call, ctx, agent) {
-    const { query, limit = 10 } = call.data;
+  handler(data, ctx, agent) {
+    const { query, limit = 10 } = data;
 
     // Perform the actual operation
     const results = database.search(query, limit);
@@ -71,16 +71,16 @@ action({
     priority: z.enum(["low", "medium", "high"]).describe("Task priority"),
     dueDate: z.string().optional().describe("Due date in YYYY-MM-DD format"),
   }),
-  handler(call, ctx, agent) {
+  handler(data, ctx, agent) {
     // Access the context memory
     const contextMemory = ctx.agentMemory;
 
     // Create a new task object
     const newTask = {
       id: generateId(),
-      title: call.data.title,
-      priority: call.data.priority,
-      dueDate: call.data.dueDate,
+      title: data.title,
+      priority: data.priority,
+      dueDate: data.dueDate,
       status: "pending",
       createdAt: new Date().toISOString(),
     };
@@ -90,7 +90,7 @@ action({
 
     return {
       task: newTask,
-      message: `Added task "${call.data.title}" with ${call.data.priority} priority`,
+      message: `Added task "${data.title}" with ${data.priority} priority`,
     };
   },
 });
@@ -117,27 +117,27 @@ action({
     subject: z.string().describe("Email subject"),
     body: z.string().describe("Email body content"),
   }),
-  async handler(call, ctx, agent) {
+  async handler(data, ctx, agent) {
     try {
       // Call an external email service
       await emailService.send({
-        to: call.data.to,
-        subject: call.data.subject,
-        body: call.data.body,
+        to: data.to,
+        subject: data.subject,
+        body: data.body,
         from: "agent@daydreams.ai",
       });
 
       // Update the context to record this action
       ctx.agentMemory.sentEmails = ctx.agentMemory.sentEmails || [];
       ctx.agentMemory.sentEmails.push({
-        to: call.data.to,
-        subject: call.data.subject,
+        to: data.to,
+        subject: data.subject,
         timestamp: new Date().toISOString(),
       });
 
       return {
         success: true,
-        message: `Email sent to ${call.data.to}`,
+        message: `Email sent to ${data.to}`,
       };
     } catch (error) {
       return {
@@ -171,16 +171,16 @@ action({
   schema: z.object({
     location: z.string().describe("City or coordinates"),
   }),
-  async handler(call, ctx, agent) {
-    const data = await weatherAPI.fetch(call.data.location);
+  async handler(data, ctx, agent) {
+    const weatherData = await weatherAPI.fetch(data.location);
 
     // Store in context for other actions to use
-    ctx.agentMemory.weatherData = data;
+    ctx.agentMemory.weatherData = weatherData;
 
     return {
-      temperature: data.temperature,
-      conditions: data.conditions,
-      location: data.location,
+      temperature: weatherData.temperature,
+      conditions: weatherData.conditions,
+      location: weatherData.location,
     };
   },
 });
@@ -190,7 +190,7 @@ action({
   name: "analyzeWeatherTrend",
   description: "Analyze weather trends based on fetched data",
   schema: z.object({}),
-  handler(call, ctx, agent) {
+  handler(data, ctx, agent) {
     // Use data from previous action
     const { weatherData } = ctx.agentMemory;
 
@@ -223,14 +223,14 @@ action({
   schema: z.object({
     taskId: z.string().describe("ID of the task to complete"),
   }),
-  handler(call, ctx, agent) {
+  handler(data, ctx, agent) {
     const { tasks } = ctx.agentMemory;
-    const taskIndex = tasks.findIndex((t) => t.id === call.data.taskId);
+    const taskIndex = tasks.findIndex((t) => t.id === data.taskId);
 
     if (taskIndex === -1) {
       return {
         success: false,
-        message: `Task with ID ${call.data.taskId} not found`,
+        message: `Task with ID ${data.taskId} not found`,
       };
     }
 
@@ -299,8 +299,8 @@ action({
     content: z.string().describe("Document content"),
     tags: z.array(z.string()).optional().describe("Tags for categorization"),
   }),
-  handler(call, ctx, agent) {
-    const { title, content, tags = [] } = call.data;
+  handler(data, ctx, agent) {
+    const { title, content, tags = [] } = data;
 
     const newDoc = {
       id: generateId(),
@@ -332,9 +332,9 @@ action({
       .array(z.enum(["title", "content", "tags"]))
       .default(["title", "content"]),
   }),
-  handler(call, ctx, agent) {
+  handler(data, ctx, agent) {
     const { documents = [] } = ctx.agentMemory;
-    const { query, searchIn } = call.data;
+    const { query, searchIn } = data;
 
     const results = documents.filter((doc) => {
       return searchIn.some((field) => {
@@ -367,9 +367,9 @@ action({
       tags: z.array(z.string()).optional(),
     }),
   }),
-  handler(call, ctx, agent) {
+  handler(data, ctx, agent) {
     const { documents = [] } = ctx.agentMemory;
-    const { documentId, updates } = call.data;
+    const { documentId, updates } = data;
 
     const docIndex = documents.findIndex((d) => d.id === documentId);
 
