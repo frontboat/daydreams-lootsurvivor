@@ -264,6 +264,39 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
       return contexts.get(id)! as ContextState<typeof params.context>;
     },
 
+    async loadContext(params) {
+      if (!registry.contexts.has(params.context.type))
+        registry.contexts.set(params.context.type, params.context);
+
+      const ctxSchema =
+        "parse" in params.context.schema
+          ? params.context.schema
+          : z.object(params.context.schema);
+
+      const args = ctxSchema.parse(params.args);
+      const id = getContextId(params.context, args);
+
+      if (!contexts.has(id) && contextIds.has(id)) {
+        console.log({ id });
+
+        const stateSnapshot = await loadContextState(agent, params.context, id);
+
+        if (stateSnapshot) {
+          await this.saveContext(
+            await createContextState({
+              agent,
+              context: params.context,
+              args: params.args,
+              settings: stateSnapshot.settings,
+              contexts: stateSnapshot.contexts,
+            })
+          );
+        }
+      }
+
+      return (contexts.get(id) as ContextState<typeof params.context>) ?? null;
+    },
+
     async saveContext(ctxState, workingMemory) {
       contextIds.add(ctxState.id);
       contexts.set(ctxState.id, ctxState);
@@ -310,6 +343,8 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
       workingMemories.delete(contextId);
 
       await deleteContext(agent, contextId);
+
+      await saveContextsIndex(agent, contextIds);
     },
 
     async start(args) {
@@ -576,12 +611,12 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
 
           await handleStream(stream, state.index, tags, handler, {});
 
-          const response = await getTextResponse();
-          stepRef.data.response = response;
-
           if (streamError) {
             throw streamError;
           }
+
+          const response = await getTextResponse();
+          stepRef.data.response = response;
 
           unprocessed.forEach((i) => {
             i.processed = true;

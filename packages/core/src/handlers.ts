@@ -40,6 +40,14 @@ export class ParsingError extends Error {
   }
 }
 
+function parseJSONContent(content: string) {
+  if (content.startsWith("```json")) {
+    content = content.slice("```json".length, -3);
+  }
+
+  return JSON.parse(content);
+}
+
 export async function prepareActionCall({
   call,
   actions,
@@ -68,7 +76,8 @@ export async function prepareActionCall({
           ? action.schema
           : z.object(action.schema);
 
-      data = call.content.length > 0 ? JSON.parse(call.content) : {};
+      data =
+        call.content.length > 0 ? parseJSONContent(call.content.trim()) : {};
 
       data =
         "parse" in schema
@@ -358,9 +367,9 @@ export async function prepareContext({
     contexts?: ContextRef[];
   };
 }) {
-  await agentCtxState?.context.loader?.(agentCtxState);
+  await agentCtxState?.context.loader?.(agentCtxState, agent);
 
-  await ctxState?.context.loader?.(ctxState);
+  await ctxState?.context.loader?.(ctxState, agent);
 
   const inputs: Input[] = Object.entries({
     ...agent.inputs,
@@ -421,7 +430,7 @@ export async function prepareContext({
   ]).then((res) => res.filter((r) => !!r));
 
   await Promise.all(
-    subCtxsStates.map((state) => state.context.loader?.(state))
+    subCtxsStates.map((state) => state.context.loader?.(state, agent))
   );
 
   const subCtxsStatesInputs: Input[] = subCtxsStates
@@ -524,7 +533,7 @@ export async function handleInput({
       type: inputRef.type,
     });
 
-    await Promise.try(
+    const { data, params } = await Promise.try(
       input.handler,
       inputRef.data,
       {
@@ -533,7 +542,15 @@ export async function handleInput({
       },
       agent
     );
+
+    inputRef.data = data;
+    if (params) {
+      inputRef.params = {
+        ...inputRef.params,
+        ...params,
+      };
+    }
   }
 
-  inputRef.formatted = input.format ? input.format(inputRef.data) : undefined;
+  inputRef.formatted = input.format ? input.format(inputRef) : undefined;
 }

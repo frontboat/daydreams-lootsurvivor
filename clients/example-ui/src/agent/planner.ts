@@ -1,16 +1,17 @@
 import { action, context } from "@daydreamsai/core";
 import { z } from "zod";
 
-type Task = {
+export type PlannerTask = {
   id: number;
   task: string;
   completed: boolean;
   active: boolean;
 };
 
-type PlannerMemory = {
+export type PlannerMemory = {
   plan: string | null;
-  tasks: Task[];
+  tasks: PlannerTask[];
+  finalized?: boolean;
 };
 
 export const planner = context({
@@ -47,6 +48,9 @@ Only work on the active tasks, if u need update the state.
       tasks: [],
     };
   },
+  // shouldContinue({ memory }) {
+  //   return memory.plan ? memory.finalized === false : false;
+  // },
 }).setActions([
   action({
     name: "planner.initialize",
@@ -54,7 +58,7 @@ Only work on the active tasks, if u need update the state.
       plan: z.string(),
       tasks: z.array(z.string()),
     },
-    enabled: ({ memory }) => memory.plan === null,
+    enabled: ({ memory }) => memory.plan === null || memory.finalized === true,
     handler: ({ plan, tasks }, { memory, emit }) => {
       memory.plan = plan;
       memory.tasks = tasks.map((task, id) => ({
@@ -63,8 +67,25 @@ Only work on the active tasks, if u need update the state.
         active: false,
         completed: false,
       }));
+      memory.finalized = false;
 
       emit("plan:initialized", {});
+      return "Success";
+    },
+  }),
+  action({
+    name: "planner.finalize",
+    schema: undefined,
+    enabled: ({ memory }) => (memory.plan ? memory.finalized !== true : false),
+    handler: ({ memory, emit }) => {
+      memory.tasks = memory.tasks.map((task) => ({
+        ...task,
+        completed: true,
+      }));
+
+      memory.finalized = true;
+
+      emit("plan:finalized", {});
       return "Success";
     },
   }),

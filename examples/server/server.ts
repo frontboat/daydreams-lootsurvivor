@@ -1,28 +1,9 @@
-import { generateText, tool, type CoreMessage, type Tool } from "ai";
-import { z } from "zod";
-import { Sandbox } from "@e2b/code-interpreter";
+import { type CoreMessage } from "ai";
 import zodToJsonSchema from "zod-to-json-schema";
-import { createContainer, http } from "@daydreamsai/core";
-import { tavily, type TavilyClient } from "@tavily/core";
-import { randomUUIDv7, env } from "bun";
-
-const e2bApiKey = env.E2B_API_KEY;
-
-const sandbox = async (sandboxId?: string) => {
-  return sandboxId
-    ? await Sandbox.create(sandboxId)
-    : await Sandbox.create("desktop", { apiKey: e2bApiKey });
-};
-
-const container = createContainer();
-
-container.singleton("tavily", () =>
-  tavily({
-    apiKey: env.TAVILY_API_KEY!,
-  })
-);
-
-type ToolSet = Record<string, Tool<any, any>>;
+import { randomUUIDv7 } from "bun";
+import type { ToolSet } from "./utils";
+import { sanboxTools } from "./tools/sandbox";
+import { basicTools } from "./tools/utils";
 
 export function createServer<Tools extends ToolSet>({
   tools,
@@ -105,191 +86,13 @@ export function createServer<Tools extends ToolSet>({
     },
   });
 
-  return { state, server };
+  return { state, server, tools };
 }
 
-const { state, server } = createServer({
+export type ServerTools = typeof tools;
+const { state, server, tools } = createServer({
   tools: {
-    getWeather: tool({
-      parameters: z.object({ location: z.string() }),
-      description: "get the weather for a location",
-      execute: async ({ location }, options) => {
-        const geolocation = await http.get.json<{
-          results: { latitude: number; longitude: number }[];
-        }>("https://geocoding-api.open-meteo.com/v1/search", {
-          name: location,
-          count: 1,
-          language: "en",
-          format: "json",
-        });
-        if (geolocation.results[0]) {
-          const res = await http.get.json<{ test: true }>(
-            "https://api.open-meteo.com/v1/forecast",
-            {
-              latitude: geolocation.results[0].latitude,
-              longitude: geolocation.results[0].longitude,
-              current_weather: "true", // Request current weather data
-            }
-          );
-
-          return res;
-        }
-
-        return "Failed";
-      },
-    }),
-    "tavily.search": tool({
-      description: "Execute a search query using Tavily Search.",
-      parameters: z.object({
-        query: z.string().describe("The search query to execute with Tavily."),
-        topic: z
-          .enum(["general", "news"])
-          .optional()
-          .default("general")
-          .describe(
-            "The category of the search.news is useful for retrieving real-time updates, particularly about politics, sports, and major current events covered by mainstream media sources. general is for broader, more general-purpose searches that may include a wide range of sources."
-          ),
-        searchDepth: z
-          .enum(["basic", "advanced"])
-          .default("basic")
-          .optional()
-          .describe(
-            "The depth of the search. advanced search is tailored to retrieve the most relevant sources and content snippets for your query, while basic search provides generic content snippets from each source."
-          ),
-      }),
-      async execute({ query, topic, searchDepth }) {
-        const response = await container
-          .resolve<TavilyClient>("tavily")
-          .search(query, {
-            searchDepth,
-            topic,
-          });
-
-        return {
-          results: response.results.map((result) => ({
-            title: result.title,
-            url: result.url,
-            content: result.content,
-          })),
-          totalResults: response.results.length,
-        };
-      },
-    }),
-    "tavily.extract": tool({
-      description:
-        "Extract web page content from one or more specified URLs using Tavily Extract.",
-      parameters: z.object({
-        urls: z
-          .array(z.string())
-          .describe("A list of URLs to extract content from."),
-
-        extractDepth: z
-          .enum(["basic", "advanced"])
-          .default("basic")
-          .optional()
-          .describe(
-            "The depth of the extraction process. advanced extraction retrieves more data, including tables and embedded content, with higher success but may increase latency.basic extraction costs 1 credit per 5 successful URL extractions, while advanced extraction costs 2 credits per 5 successful URL extractions."
-          ),
-      }),
-      async execute({ urls, extractDepth }) {
-        const response = await container
-          .resolve<TavilyClient>("tavily")
-          .extract(urls, {
-            extractDepth,
-          });
-
-        return {
-          results: response.results.map((result) => ({
-            url: result.url,
-            content: result.rawContent,
-            images: result.images,
-          })),
-          totalResults: response.results.length,
-        };
-      },
-    }),
-    "sandbox.runCode": tool({
-      parameters: z.object({
-        code: z.string(),
-        language: z.enum(["python", "js"]),
-        sandboxId: z.string(),
-      }),
-      execute: async ({ code, language, sandboxId }) => {
-        const sandboxInstance = await sandbox(sandboxId);
-        const response = await sandboxInstance.runCode(code, {
-          language,
-          onStdout(output) {
-            console.log("out", output);
-          },
-          onStderr(output) {
-            console.log("err", output);
-          },
-        });
-
-        return response;
-      },
-    }),
-    "sandbox.files.list": tool({
-      parameters: z.object({
-        path: z.string(),
-        sandboxId: z.string(),
-      }),
-      execute: async ({ path, sandboxId }) => {
-        const sandboxInstance = await sandbox(sandboxId);
-        return await sandboxInstance.files.list(path);
-      },
-    }),
-    "sandbox.files.read": tool({
-      parameters: z.object({
-        path: z.string(),
-        sandboxId: z.string(),
-      }),
-      execute: async ({ path, sandboxId }) => {
-        const sandboxInstance = await sandbox(sandboxId);
-        return await sandboxInstance.files.read(path);
-      },
-    }),
-    "sandbox.files.write": tool({
-      parameters: z.object({
-        path: z.string(),
-        content: z.string(),
-        sandboxId: z.string(),
-      }),
-      execute: async ({ path, content, sandboxId }) => {
-        const sandboxInstance = await sandbox(sandboxId);
-        return await sandboxInstance.files.write(path, content);
-      },
-    }),
-    "sandbox.files.rename": tool({
-      parameters: z.object({
-        oldPath: z.string(),
-        newPath: z.string(),
-        sandboxId: z.string(),
-      }),
-      execute: async ({ oldPath, newPath, sandboxId }) => {
-        const sandboxInstance = await sandbox(sandboxId);
-        return await sandboxInstance.files.rename(oldPath, newPath);
-      },
-    }),
-    "sandbox.commands.run": tool({
-      parameters: z.object({
-        sandboxId: z.string(),
-        cmd: z.string(),
-        background: z.boolean().optional().default(false),
-        // cwd: z.string().optional().describe("the working directory"),
-        envs: z.record(z.string()).optional(),
-      }),
-      execute: async ({ cmd, background, envs, sandboxId }) => {
-        const sandboxInstance = await sandbox(sandboxId);
-        return await sandboxInstance.commands.run(cmd, {
-          background: background as any,
-          // cwd,
-          envs,
-          onStdout(data) {
-            console.log(data);
-          },
-        });
-      },
-    }),
+    ...sanboxTools,
+    ...basicTools,
   },
 });

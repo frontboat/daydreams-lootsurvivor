@@ -81,7 +81,11 @@ export function formatXml(el: XMLElement): string {
  * @returns XML string representation of the input
  */
 export function formatInput(input: InputRef) {
-  return xml("input", { name: input.type, ...input.params }, input.data);
+  return xml(
+    "input",
+    { name: input.type, timestamp: input.timestamp, ...input.params },
+    input.data
+  );
 }
 
 /**
@@ -90,7 +94,11 @@ export function formatInput(input: InputRef) {
  * @returns XML string representation of the output
  */
 export function formatOutput(output: OutputRef) {
-  return xml("output", { name: output.type, ...output.params }, output.data);
+  return xml(
+    "output",
+    { name: output.type, timestamp: output.timestamp, ...output.params },
+    output.data
+  );
 }
 
 export function formatSchema(schema: any, key: string = "schema") {
@@ -229,41 +237,47 @@ export function formatMsg(msg: Msg): XMLElement {
 export function formatContextLog(i: Log) {
   switch (i.ref) {
     case "input":
-      return (
-        i.formatted ??
-        xml(
-          i.ref,
-          {
-            type: i.type,
-            ...i.params,
-          },
-          i.data
-        )
-      );
+      return i.formatted ?? formatInput(i);
     case "output":
-      return (
-        i.formatted ??
-        xml(
-          i.ref,
-          {
-            type: i.type,
-            ...i.params,
-          },
-          i.data ?? i.content
-        )
-      );
+      return i.formatted ?? formatOutput(i);
     case "thought":
       return xml("reasoning", {}, i.content);
     case "action_call":
       return xml(
         "action_call",
-        { id: i.id, name: i.name },
+        { id: i.id, name: i.name, timestamp: i.timestamp },
         i.data ?? i.content
       );
     case "action_result":
       return xml(
         "action_result",
-        { callId: i.callId, name: i.name },
+        { callId: i.callId, name: i.name, timestamp: i.timestamp },
+        i.formatted ?? i.data
+      );
+    case "event":
+      return xml("event", { name: i.name, ...i.params }, i.formatted ?? i.data);
+    default:
+      throw new Error("invalid context");
+  }
+}
+export function formatContextLog2(i: Log) {
+  switch (i.ref) {
+    case "input":
+      return formatInput(i);
+    case "output":
+      return formatOutput(i);
+    case "thought":
+      return xml("reasoning", {}, i.content);
+    case "action_call":
+      return xml(
+        "action_call",
+        { id: i.id, name: i.name, timestamp: i.timestamp },
+        i.data ?? i.content
+      );
+    case "action_result":
+      return xml(
+        "action_result",
+        { callId: i.callId, name: i.name, timestamp: i.timestamp },
         i.formatted ?? i.data
       );
     case "event":

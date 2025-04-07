@@ -187,7 +187,7 @@ export async function createContextState<TContext extends AnyContext>({
     (await agent.memory.store.get(`memory:${id}`)) ??
     (context.create
       ? await Promise.resolve(
-          context.create({ key, args, id, options, settings })
+          context.create({ key, args, id, options, settings }, agent)
         )
       : {});
 
@@ -290,7 +290,7 @@ export async function saveContextsIndex(
 ) {
   await agent.memory.store.set<string[]>(
     "contexts",
-    Array.from(contextIds.values()).map((id) => id)
+    Array.from(contextIds.values())
   );
 }
 
