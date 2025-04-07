@@ -134,11 +134,11 @@ export const discord = extension({
         }
         throw new Error("Invalid channel id");
       },
-      format: ({ data }) =>
-        formatMsg({
-          role: "assistant",
-          content: data.content,
-        }),
+      // format: (res) =>
+      //   formatMsg({
+      //     role: "assistant",
+      //     content: res.data.content,
+      //   }),
     }),
   },
 });

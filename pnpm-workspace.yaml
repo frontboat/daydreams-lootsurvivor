@@ -2,3 +2,4 @@ packages:
   - "packages/*"
   - "clients/**/*"
   - "examples/**/*"
+  - "docs"

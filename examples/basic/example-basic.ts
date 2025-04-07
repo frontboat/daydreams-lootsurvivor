@@ -12,7 +12,7 @@ import {
   validateEnv,
   output,
 } from "@daydreamsai/core";
-import { cli } from "@daydreamsai/core/extensions";
+import { cliExtension } from "@daydreamsai/cli";
 import { string, z } from "zod";
 
 const env = validateEnv(
@@ -94,11 +94,8 @@ const goalContexts = context({
     return id;
   },
 
-  create(state) {
+  create() {
     return {
-      goal: state.args.initialGoal,
-      tasks: state.args.initialTasks ?? [],
-      currentTask: state.args.initialTasks?.[0],
       name: character.name,
       speechExamples: character.speechExamples,
       // traits: JSON.stringify(character.traits),
@@ -115,11 +112,8 @@ const goalContexts = context({
     };
   },
 
-  render({ memory }) {
+  render() {
     return render(template, {
-      goal: memory.goal,
-      tasks: memory.tasks.join("\n"),
-      currentTask: memory.currentTask ?? "NONE",
       name: character.name,
       speechExamples: character.speechExamples,
       // traits: character.traits,
@@ -139,16 +133,16 @@ const goalContexts = context({
 
 createDreams({
   model: anthropic("claude-3-7-sonnet-latest"),
-  extensions: [cli],
+  extensions: [cliExtension],
   context: goalContexts,
   actions: [
     action({
       name: "addTask",
       description: "Add a task to the goal",
       schema: z.object({ task: z.string() }),
-      handler(call, ctx, _agent) {
+      handler(data, ctx, _agent) {
         const agentMemory = ctx.agentMemory as GoalMemory;
-        agentMemory.tasks.push(call.data.task);
+        agentMemory.tasks.push(data.task);
         return {};
       },
     }),
@@ -156,10 +150,10 @@ createDreams({
       name: "completeTask",
       description: "Complete a task",
       schema: z.object({ task: z.string() }),
-      handler(call, ctx, _agent) {
+      handler(data, ctx, _agent) {
         const agentMemory = ctx.agentMemory as GoalMemory;
         agentMemory.tasks = agentMemory.tasks.filter(
-          (task) => task !== call.data.task
+          (task) => task !== data.task
         );
         return {};
       },

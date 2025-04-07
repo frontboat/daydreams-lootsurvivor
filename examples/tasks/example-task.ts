@@ -24,7 +24,7 @@ import {
   type InferContextMemory,
   validateEnv,
 } from "@daydreamsai/core";
-import { cli } from "@daydreamsai/core/extensions";
+import { cliExtension } from "@daydreamsai/cli";
 import { deepResearch } from "../deep-research/research";
 import { string, z } from "zod";
 import { tavily } from "@tavily/core";
@@ -221,7 +221,7 @@ createDreams({
     await Bun.write(`./logs/tasks/${contextId}/${id}-${type}.md`, data);
   },
   model: anthropic("claude-3-7-sonnet-latest"),
-  extensions: [cli, deepResearch],
+  extensions: [cliExtension, deepResearch],
   context: goalContexts,
   container,
   actions: [
@@ -248,7 +248,9 @@ createDreams({
         const goalId = data.goalId;
 
         // Find the goal in the specified category
-        const goal = agentMemory.goal[goalType].find((g) => g.id === goalId);
+        const goal = agentMemory.goal[goalType].find(
+          (g: any) => g.id === goalId
+        );
 
         if (!goal) {
           throw new Error(
@@ -375,10 +377,10 @@ createDreams({
   }
 }`),
       }),
-      async handler(call, ctx, agent) {
+      async handler(data, ctx, agent) {
         const result = await fetchGraphQL(
           "https://api.cartridge.gg/x/eternum-sepolia/torii/graphql",
-          call.data.query
+          data.query
         );
 
         if (result instanceof Error) {

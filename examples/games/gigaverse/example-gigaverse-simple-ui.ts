@@ -28,14 +28,12 @@ import {
   action,
   validateEnv,
   LogLevel,
-  type ActionCall,
   type Agent,
   createMemoryStore,
   createVectorStore,
   extension,
 } from "@daydreamsai/core";
-import { cli } from "@daydreamsai/core/extensions";
-import { createChromaVectorStore } from "@daydreamsai/chromadb";
+import { cliExtension } from "@daydreamsai/cli";
 import { string, z } from "zod";
 import { simpleUI } from "./simple-ui";
 import { openai } from "@ai-sdk/openai";
@@ -285,25 +283,12 @@ const gigaExtension = extension({
         .describe(
           "You use this to make an action in a dungeon. If the lootPhase == true then you can select the Loot option, which will then take you to the next phase. If the lootPhase == false then you can select the Rock, Paper, Scissors option."
         ),
-      async handler(
-        call: ActionCall<{
-          action:
-            | "rock"
-            | "paper"
-            | "scissor"
-            | "loot_one"
-            | "loot_two"
-            | "loot_three";
-          dungeonId: number;
-        }>,
-        ctx: any,
-        agent: Agent
-      ) {
+      async handler(data, ctx: any, agent: Agent) {
         try {
           // Log the action to the UI
-          simpleUI.logAgentAction(`Attack with ${call.data.action}`, null);
+          simpleUI.logAgentAction(`Attack with ${data.action}`, null);
 
-          const { action, dungeonId } = call.data;
+          const { action, dungeonId } = data;
 
           const payload = {
             action: action,
@@ -463,10 +448,7 @@ const gigaExtension = extension({
             error: errorMessage,
             message: "Failed to perform attack action",
           };
-          simpleUI.logAgentAction(
-            `Attack with ${call.data.action}`,
-            failureResult
-          );
+          simpleUI.logAgentAction(`Attack with ${data.action}`, failureResult);
 
           return {
             success: false,
@@ -485,7 +467,7 @@ const gigaExtension = extension({
       description:
         "Fetch information about all upcoming enemies in the dungeon",
       schema: z.object({}), // No parameters needed for this GET request
-      async handler(call: ActionCall<{}>, ctx: any, agent: Agent) {
+      async handler(data, ctx: any, agent: Agent) {
         try {
           // Log the action to the UI
           simpleUI.logAgentAction("Fetching upcoming enemies", null);
@@ -553,7 +535,7 @@ const gigaExtension = extension({
       name: "getPlayerState",
       description: "Fetch the current state of the player in the dungeon",
       schema: z.object({}), // No parameters needed for this GET request
-      async handler(call: ActionCall<{}>, ctx: any, agent: Agent) {
+      async handler(data, ctx: any, agent: Agent) {
         try {
           // Log the action to the UI
           simpleUI.logAgentAction("Fetching player state", null);
@@ -711,21 +693,15 @@ const gigaExtension = extension({
           .default(1)
           .describe("The ID of the dungeon to start. Default is 1."),
       }),
-      async handler(
-        call: ActionCall<{
-          dungeonId: number;
-        }>,
-        ctx: any,
-        agent: Agent
-      ) {
+      async handler(data, ctx: any, agent: Agent) {
         try {
           // Log the action to the UI
           simpleUI.logAgentAction(
-            `Starting new run in dungeon ${call.data.dungeonId}`,
+            `Starting new run in dungeon ${data.dungeonId}`,
             null
           );
 
-          const { dungeonId } = call.data;
+          const { dungeonId } = data;
 
           const payload = {
             action: "start_run",
@@ -844,7 +820,7 @@ const gigaExtension = extension({
             message: "Failed to start a new dungeon run",
           };
           simpleUI.logAgentAction(
-            `Starting new run in dungeon ${call.data.dungeonId}`,
+            `Starting new run in dungeon ${data.dungeonId}`,
             failureResult
           );
 
@@ -863,7 +839,7 @@ const gigaExtension = extension({
 const agent = createDreams({
   logger: LogLevel.DEBUG,
   model: anthropic("claude-3-7-sonnet-latest"),
-  extensions: [cli, gigaExtension],
+  extensions: [cliExtension, gigaExtension],
   exportTrainingData: true,
   trainingDataPath: "./training-data.jsonl",
   memory: {

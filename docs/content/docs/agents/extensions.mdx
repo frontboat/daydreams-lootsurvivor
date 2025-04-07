@@ -1,0 +1,21 @@
+---
+title: Extensions
+---
+
+Extensions are pre-packaged bundles of inputs, outputs, and actions that add
+specific capabilities to your agent. For example, the `cli` extension adds
+terminal input/output capabilities.
+
+## Using Extensions
+
+Extensions are added to an agent using the `extensions` option in the
+`createDreams` function.
+
+```ts
+import { createDreams } from "@daydreamsai/core";
+import { cli } from "@daydreamsai/core/extensions";
+
+const agent = createDreams({
+  extensions: [cli],
+});
+```
