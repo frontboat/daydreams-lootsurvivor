@@ -353,10 +353,10 @@ export type Output<
   examples?: string[];
 };
 
-export type AnyAction = Action<any, any, any, any, any, any>;
+export type AnyAction = Action<any, any, any, any, AnyAgent, any>;
 
 export type AnyActionWithContext<Ctx extends Context<any, any, any, any, any>> =
-  Action<any, any, any, Ctx, any, any>;
+  Action<any, any, any, Ctx, AnyAgent, any>;
 
 /**
  * Represents an input handler with validation and subscription capability
@@ -375,16 +375,17 @@ export type Input<
   description?: string;
   schema?: Schema;
   context?: TContext;
-  format?: (
-    data: InferSchemaArguments<Schema>
-  ) => string | string[] | XMLElement;
+
   install?: (agent: TAgent) => MaybePromise<void>;
   enabled?: (state: AgentContext<TContext>) => Promise<boolean> | boolean;
   handler?: (
     data: InferSchemaArguments<Schema>,
     ctx: AgentContext<TContext>,
     agent: TAgent
-  ) => Promise<boolean> | boolean;
+  ) => MaybePromise<Pick<InputRef, "params" | "data">>;
+  format?: (
+    ref: InputRef<InferSchemaArguments<Schema>>
+  ) => string | string[] | XMLElement;
   subscribe?: (
     send: <TContext extends AnyContext>(
       context: TContext,
@@ -809,7 +810,7 @@ export interface Agent<TContext extends AnyContext = AnyContext>
    * @param params - Parameters for retrieving the context ID.
    * @returns The context ID.
    */
-  getContextId<TContext extends AnyContext>(params: {
+  getContextId<TContext extends AnyContext = AnyContext>(params: {
     context: TContext;
     args: InferSchemaArguments<TContext["schema"]>;
   }): string;
@@ -823,6 +824,11 @@ export interface Agent<TContext extends AnyContext = AnyContext>
     context: TContext;
     args: InferSchemaArguments<TContext["schema"]>;
   }): Promise<ContextState<TContext>>;
+
+  loadContext<TContext extends AnyContext>(params: {
+    context: TContext;
+    args: InferSchemaArguments<TContext["schema"]>;
+  }): Promise<ContextState<TContext> | null>;
 
   saveContext(
     state: ContextState<AnyContext>,
@@ -1090,13 +1096,16 @@ export interface Context<
   ) => Promise<Ctx> | Ctx;
 
   /** Optional function to create new memory for this context */
-  create?: (params: {
-    id: string;
-    key: string;
-    args: InferSchemaArguments<Schema>;
-    options: Ctx;
-    settings: ContextSettings;
-  }) => TMemory | Promise<TMemory>;
+  create?: (
+    params: {
+      id: string;
+      key: string;
+      args: InferSchemaArguments<Schema>;
+      options: Ctx;
+      settings: ContextSettings;
+    },
+    agent: AnyAgent
+  ) => TMemory | Promise<TMemory>;
 
   /** Optional instructions for this context */
   instructions?: Instruction | ((state: ContextState<this>) => Instruction);
@@ -1113,7 +1122,9 @@ export interface Context<
   save?: (state: ContextState<this>) => Promise<void>;
 
   /** Optional function to render memory state */
-  render?: (state: ContextState<this>) => string | string[];
+  render?: (
+    state: ContextState<this>
+  ) => string | string[] | XMLElement | XMLElement[] | (string | XMLElement)[];
 
   model?: LanguageModelV1;
 
@@ -1129,7 +1140,7 @@ export interface Context<
     agent: AnyAgent
   ) => Promise<void>;
 
-  loader?: (state: ContextState<this>) => Promise<void>;
+  loader?: (state: ContextState<this>, agent: AnyAgent) => Promise<void>;
 
   maxSteps?: number;
 

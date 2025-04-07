@@ -1,6 +1,14 @@
-import { action, context, extension } from "@daydreamsai/core";
+import {
+  action,
+  context,
+  extension,
+  memory,
+  randomUUIDv7,
+} from "@daydreamsai/core";
 import { Sandbox, SandboxInfo } from "@e2b/code-interpreter";
 import { z } from "zod";
+import { createToolClient, createToolClientProxy } from "./serverTools";
+import { SandboxTools } from "../../../../examples/server/tools/sandbox";
 
 export const sandbox = extension({
   name: "sanddox",
@@ -11,25 +19,48 @@ export const sandboxContext = context({
   description: "Access a Linux sandbox environment with internet connection",
   instructions: `\
 <command_rules>
-- You must wait for the sandboxId to start using commands
-- Only run commands using the sandboxIds from this context state
-- Avoid commands requiring confirmation; actively use -y or -f flags for automatic confirmation
-- Avoid commands with excessive output; save to files when necessary
-- Chain multiple commands with && operator to minimize interruptions
-- Use pipe operator to pass command outputs, simplifying operations
+- Avoid commands requiring interactive confirmation; use flags like -y or -f for automatic confirmation where appropriate.
+- Avoid commands that produce excessively large amounts of output directly to stdout/stderr. Redirect lengthy output to files within the sandbox when necessary.
+- Chain multiple related commands using &amp;&amp; to minimize interruptions and separate action calls.
+- Use the pipe operator (|) to pass output between commands within a single cmd execution for efficient processing.
 </command_rules>
+
 <file_rules>
-- Use file tools for reading, writing, appending, and editing to avoid string escape issues in shell commands
-- Actively save intermediate results and store different types of reference information in separate files
-- When merging text files, must use append mode of file writing tool to concatenate content to target file
+- Key Principle: Manage files efficiently, especially large ones. Avoid transferring large amounts of raw file data directly into the chat context unless absolutely necessary.
+
+- Reading Files (sandbox.files.read):
+    - Use sandbox.files.read primarily for small configuration files, scripts, or text-based data that you need to process or analyze directly.
+    - AVOID using sandbox.files.read for large files, such as images, PDFs, executables, large datasets, or extensive logs. Reading large files directly into the context is inefficient and often provides data in an unusable format (e.g., base64 encoding).
+    
+- Writing Files (sandbox.files.write):
+    - Use file writing tools for creating or modifying files. This is generally safer and more reliable than using complex shell commands like echo "..." > file for substantial content, as it avoids shell escaping issues.
+    - Actively save intermediate results of commands or analyses to files within the sandbox.
+    - Store different types of reference information or outputs in separate, appropriately named files.
+    - When merging text files, use the append capability of file writing tools if available, or appropriate shell commands like cat file1 file2 >> target_file.
+    
+- Transferring Files Out (sandbox.files.download):
+    - This is the preferred method for sharing files (especially larger ones or binary files) generated in the sandbox with the user.
+    - This makes the file's content accessible to the user without loading it into the chat context.
+
+- Transferring Files Out (artifact.createFromSandboxFile):
+    - This is the method for sharing files (especially small files, or files that has the same contentTypes available in artifacts) generated in the sandbox with the user.
+    - Use artifact.createFromSandboxFile to create an artifact directly from a file within the sandbox, this will also load the file into the chat context.
+    
+- Transferring Files In (sandbox.files.createFromArtifact):
+  - Use this action to load data from an existing artifact into a file within the sandbox for processing.
 </file_rules>
 `,
   schema: z.object({ user: z.string() }),
   key: ({ user }) => user,
   async setup(args, agent) {
+    const tools = createToolClientProxy<SandboxTools>(
+      createToolClient("/proxy/tools-server")
+    );
+
     // get key by user
     return {
       apiKey: import.meta.env.VITE_EB2_API_KEY,
+      tools,
     };
   },
   create({}): { sandboxes: SandboxInfo[] } {
@@ -102,6 +133,90 @@ Maximum time a sandbox can be kept alive is 1 hour`,
       console.log({ context });
       const success = await Sandbox.kill(sandboxId, { apiKey: options.apiKey });
       return { success };
+    },
+  }),
+  action({
+    name: "sandbox.files.createFromArtifact",
+    schema: {
+      artifactId: z.string().describe("The identifier of the source artifact."),
+      sandboxId: z.string(),
+      path: z.string(),
+    },
+    handler: async (
+      { sandboxId, path, artifactId },
+      { workingMemory, options }
+    ) => {
+      const artifact = workingMemory.outputs.findLast(
+        (output) =>
+          output.type === "artifact" && output.params!.identifier === artifactId
+      );
+
+      const res = await options.tools["sandbox.files.write"]({
+        path,
+        sandboxId,
+        content: artifact!.content,
+      });
+
+      return res;
+    },
+  }),
+  action({
+    name: "sandbox.files.download",
+    schema: {
+      path: z.string(),
+      sandboxId: z.string(),
+    },
+    handler: async ({ sandboxId, path }, { options }, agent) => {
+      const content = await options.tools["sandbox.files.read"]({
+        path,
+        sandboxId,
+      });
+
+      console.log(`sandbox:://${sandboxId}/${path}`);
+
+      await agent.memory.store.set(`sandbox:://${sandboxId}/${path}`, content);
+
+      return "Saved";
+    },
+  }),
+  action({
+    name: "artifact.createFromSandboxFile",
+    schema: {
+      sandboxId: z.string(),
+      path: z
+        .string()
+        .describe("The path within the sandbox of the file to read."),
+
+      identifier: z.string().describe("Identifier of the artifact"),
+      title: z.string().describe("The title of the artifact"),
+
+      contentType: z
+        .string()
+        .describe(
+          "Content type hint for the artifact (e.g., 'application/vnd.ant.code', 'text/markdown')"
+        ),
+    },
+    handler: async (
+      { path, sandboxId, identifier, title, contentType },
+      { workingMemory, options }
+    ) => {
+      const content = await options.tools["sandbox.files.read"]({
+        path,
+        sandboxId,
+      });
+
+      workingMemory.outputs.push({
+        ref: "output",
+        id: randomUUIDv7(),
+        type: "artifact",
+        content: "",
+        processed: true,
+        timestamp: Date.now(),
+        params: { identifier, title, contentType },
+        data: content,
+      });
+
+      return "Success";
     },
   }),
 ]);

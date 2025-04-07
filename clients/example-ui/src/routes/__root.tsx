@@ -5,6 +5,8 @@ import {
   createRootRouteWithContext,
   Link,
   Outlet,
+  useRouter,
+  useRouterState,
 } from "@tanstack/react-router";
 
 import { Separator } from "@/components/ui/separator";
@@ -14,7 +16,33 @@ import { AnyAgent } from "@daydreamsai/core";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { ReactElement } from "react";
+import { ReactElement, useEffect } from "react";
+import { ErrorBoundary, FallbackProps } from "react-error-boundary";
+
+function Fallback({ error, resetErrorBoundary }: FallbackProps) {
+  // Call resetErrorBoundary() to reset the error boundary and retry the render.
+
+  const router = useRouter();
+  const context = Route.useRouteContext();
+
+  console.log(error);
+
+  return (
+    <div role="alert">
+      <p>Something went wrong:</p>
+      <pre style={{ color: "red" }}>{error.message}</pre>
+      <Button
+        onClick={async () => {
+          await router.invalidate();
+
+          resetErrorBoundary();
+        }}
+      >
+        Reset
+      </Button>
+    </div>
+  );
+}
 
 export const Route = createRootRouteWithContext<{
   agent: AnyAgent;
@@ -26,14 +54,19 @@ export const Route = createRootRouteWithContext<{
   },
 
   component: () => {
-    const { agent, queryClient, sidebar } = Route.useRouteContext();
+    const { agent, queryClient } = Route.useRouteContext();
+
+    const matches = useRouterState({ select: (s) => s.matches });
+
+    const sidebar = matches.reverse().find((d) => d.context.sidebar);
+
     return (
       <>
         <QueryClientProvider client={queryClient}>
           <ThemeProvider>
             <SidebarProvider className="font-body">
               <AppSidebar className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60" />
-              <SidebarInset className="bg-transparent bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] dark:bg-[radial-gradient(#1f2937_1px,transparent_1px)] relative">
+              <SidebarInset className="bg-background relative">
                 <header className="sticky top-0 flex shrink-0 items-center gap-2 py-2.5 px-4 border-b bg-background z-40">
                   <div className="flex items-center gap-2">
                     <SidebarTrigger className="-ml-1" />
@@ -49,7 +82,9 @@ export const Route = createRootRouteWithContext<{
                 </header>
                 <Outlet />
               </SidebarInset>
-              {sidebar}
+              <ErrorBoundary FallbackComponent={Fallback}>
+                {sidebar?.context.sidebar}
+              </ErrorBoundary>
             </SidebarProvider>
           </ThemeProvider>
         </QueryClientProvider>

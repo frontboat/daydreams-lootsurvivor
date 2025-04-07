@@ -110,7 +110,7 @@ function ChatLinkTitle({ chatId }: { chatId: string }) {
   const state = useQuery({
     queryKey: ["chat:memory", chatId],
     queryFn: async () => {
-      const state = await dreams.getContext({
+      const state = await dreams.loadContext({
         context: chatContext,
         args: {
           chatId,
@@ -152,23 +152,26 @@ function ChatHistoryList() {
   return (
     <div>
       <SidebarSeparator className="my-4" />
-      {chats.data?.map((chat) => {
-        const chatId = chat.args?.chatId ?? chat.id.split(":")[1];
-        return (
-          <SidebarMenuSubItem key={chat.id}>
-            <SidebarMenuSubButton
-              asChild
-              size="sm"
-              className="h-auto mb-1 py-1"
-            >
-              <Link to="/chats/$chatId" params={{ chatId }}>
-                <ChatLinkTitle chatId={chatId} />
-              </Link>
-              {/* <ChatLink chatId={chatId} /> */}
-            </SidebarMenuSubButton>
-          </SidebarMenuSubItem>
-        );
-      })}
+      {chats.data
+        ?.slice()
+        .reverse()
+        .map((chat) => {
+          const chatId = chat.id.split(":").slice(1).join(":");
+          return (
+            <SidebarMenuSubItem key={chat.id}>
+              <SidebarMenuSubButton
+                asChild
+                size="sm"
+                className="h-auto mb-1 py-1"
+              >
+                <Link to="/chats/$chatId" params={{ chatId }}>
+                  <ChatLinkTitle chatId={chatId} />
+                </Link>
+                {/* <ChatLink chatId={chatId} /> */}
+              </SidebarMenuSubButton>
+            </SidebarMenuSubItem>
+          );
+        })}
     </div>
   );
 }

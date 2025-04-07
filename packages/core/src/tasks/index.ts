@@ -139,16 +139,18 @@ export const runGenerate = task(
       ] as CoreMessage["content"];
     }
 
+    try {
     const stream = streamText({
       model,
       messages,
       stopSequences: ["\n</response>"],
       temperature: 0.6,
       abortSignal,
-      experimental_transform: smoothStream({
-        chunking: "word",
-      }),
+        // experimental_transform: smoothStream({
+        //   chunking: "word",
+        // }),
       onError: (event) => {
+          console.log({ event });
         onError(event.error);
       },
     });
@@ -158,6 +160,10 @@ export const runGenerate = task(
       stream,
       isReasoningModel,
     });
+    } catch (error) {
+      console.log({ error });
+      throw error;
+    }
   }
 );
 
@@ -196,7 +202,7 @@ export const runAction = task(
       const result =
         action.schema === undefined
           ? await Promise.try((action as Action<undefined>).handler, ctx, agent)
-          : await Promise.try(action.handler, ctx.call.data, ctx, agent);
+          : await Promise.try(action.handler as any, ctx.call.data, ctx, agent);
 
       logger.debug("agent:action_result:" + ctx.call.id, ctx.call.name, result);
       return result;

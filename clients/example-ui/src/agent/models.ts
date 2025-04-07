@@ -61,6 +61,10 @@ export const openrouterModels = [
   "google/gemini-2.0-flash-001",
   "google/gemini-2.0-flash-lite-preview-02-05:free",
   "google/gemini-flash-1.5-8b",
+  "meta-llama/llama-4-scout",
+  "meta-llama/llama-4-scout:free",
+  "meta-llama/llama-4-maverick",
+  "meta-llama/llama-4-maverick:free",
 ];
 
 export const google = createGoogleGenerativeAI({

@@ -1,5 +1,5 @@
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
-import React, { useEffect, useRef, useState } from "react";
+import React, { forwardRef, useEffect, useRef, useState } from "react";
 import {
   type AnyAction,
   AnyRef,
@@ -7,31 +7,9 @@ import {
   getWorkingMemoryAllLogs,
 } from "@daydreamsai/core";
 import { useAgent } from "@/hooks/use-agent";
-import { chat, chatContext, createChatSubContexts } from "@/agent/chat";
+import { chatContext, createChatSubContexts } from "@/agent/chat";
 import { v7 as randomUUIDv7 } from "uuid";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  anthropic,
-  anthropicModels,
-  google,
-  googleModels,
-  groq,
-  groqModels,
-  openai,
-  openaiModels,
-  openrouter,
-  openrouterModels,
-} from "@/agent/models";
-import type { LanguageModelV1 } from "ai";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { LogsList } from "@/components/message-list";
@@ -39,9 +17,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { z } from "zod";
 import { ChatSidebar } from "@/components/chat-sidebar";
 import { getModel, ModelSelect } from "@/components/model-select";
+import { useSendMessage } from "@/hooks/use-send-message";
+import { useLogs } from "@/hooks/use-logs";
 
 export const Route = createFileRoute("/chats/$chatId")({
   component: RouteComponent,
+
+  beforeLoad(ctx) {
+    return {
+      sidebar: <ChatSidebar />,
+    };
+  },
 
   validateSearch: z.object({
     page: z.enum(["artifact", "run", "sandbox"]).optional(),
@@ -68,94 +54,49 @@ export const Route = createFileRoute("/chats/$chatId")({
   },
 });
 
-const SelfResizingTextarea = ({
-  className,
-  ...props
-}: React.ComponentProps<"textarea">) => {
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
+const SelfResizingTextarea = forwardRef<
+  HTMLTextAreaElement,
+  React.ComponentProps<"textarea">
+>(({ className, ...props }, ref) => {
   return (
     <Textarea
-      ref={textareaRef}
+      ref={ref}
       className={cn(
         "resize-none border rounded-md py-2 px-3 w-full h-10 max-h-[500px]",
         className
       )}
-      onChange={(e) => {
-        if (textareaRef.current) {
-          textareaRef.current.style.height = "inherit";
-          textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
-        }
-      }}
       {...props}
+      onChange={(e) => {
+        e.currentTarget.style.height = `inherit`;
+        e.currentTarget.style.height = `${e.currentTarget.scrollHeight}px`;
+        props.onChange?.(e);
+      }}
+      onReset={(e) => {
+        e.currentTarget.style.height = `inherit`;
+        e.currentTarget.style.height = `${e.currentTarget.scrollHeight}px`;
+        props.onReset?.(e);
+      }}
     />
   );
-};
+});
 
 function RouteComponent() {
   const { chatId } = Route.useParams();
-  const context = Route.useRouteContext();
   const { user, subContexts } = Route.useLoaderData();
-  const router = useRouter();
 
   const dreams = useAgent();
+  const [model, setModel] = useState<string>("default");
 
-  const contextId = dreams.getContextId({
+  const queryClient = useQueryClient();
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const { logs, newLog, workingMemory, setLogs, setNewLog } = useLogs({
     context: chatContext,
     args: {
       chatId,
     },
   });
-
-  useEffect(() => {
-    router.update({
-      context: { ...context, sidebar: <ChatSidebar key={chatId} /> },
-    });
-    router.invalidate();
-    return () => {
-      router.update({
-        context: {
-          ...context,
-          sidebar: undefined,
-        },
-      });
-      router.invalidate();
-    };
-  }, [chatId]);
-
-  const [model, setModel] = useState<string>("default");
-
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  const [logs, setLogs] = useState<AnyRef[]>([]);
-  const [newLog, setNewLog] = useState<AnyRef | undefined>(undefined);
-
-  const workingMemory = useQuery({
-    queryKey: ["chat:workingMemory", chatId],
-    queryFn: async () => {
-      const workingMemory = await dreams.getWorkingMemory(contextId);
-      return getWorkingMemoryAllLogs(structuredClone(workingMemory));
-    },
-    initialData: () => [],
-  });
-
-  const queryClient = useQueryClient();
-
-  useEffect(() => {
-    const unsubscribe = dreams.subscribeContext(contextId, (log, done) => {
-      if (done) {
-        setNewLog((current) =>
-          current && current.id === log.id ? undefined : current
-        );
-        setLogs((logs) => [...logs.filter((l) => l.id !== log.id), log]);
-      } else {
-        setNewLog(log);
-      }
-    });
-    return () => {
-      unsubscribe();
-    };
-  }, [contextId]);
 
   // useEffect(() => {
   //   const SCROLL_THRESHOLD = 200;
@@ -199,73 +140,20 @@ function RouteComponent() {
   //   };
   // }, [logs]);
 
-  const abortControllerRef = useRef<AbortController | null>(null);
-
-  const currentChatIdRef = useRef(chatId);
-
-  currentChatIdRef.current = chatId;
-
-  const send = useMutation({
-    mutationKey: ["send", chatId],
-    mutationFn: async ({
-      chatId,
-      user,
-      msg,
-      modelName,
-      actions,
-      contexts,
-    }: {
-      chatId: string;
-      user: string;
-      msg: string;
-      modelName?: string;
-      actions?: AnyAction[];
-      contexts?: ContextRef[];
-    }) => {
-      // abortControllerRef.current?.abort();
-
-      const controller = new AbortController();
-      abortControllerRef.current = controller;
-
-      return await dreams.send({
-        context: chatContext,
-        args: {
-          chatId,
-        },
-        input: {
-          type: "message",
-          data: {
-            user,
-            content: msg,
-          },
-        },
-        contexts,
-        abortSignal: controller.signal,
-        model: modelName ? getModel(modelName) : undefined,
-      });
-    },
-
-    async onSuccess(data, variables) {
-      console.log({ data });
-      await queryClient.invalidateQueries({
-        queryKey: ["chat:workingMemory", variables.chatId],
-      });
-
+  const { send, abortControllerRef } = useSendMessage({
+    agent: dreams,
+    context: chatContext,
+    args: { chatId },
+    async onSuccess(data) {
+      console.log(data);
+      setNewLog(undefined);
       await queryClient.invalidateQueries({
         queryKey: ["agent:chats"],
       });
 
-      setNewLog(undefined);
-    },
-
-    onError(error) {
-      console.error(error);
+      await workingMemory.refetch();
     },
   });
-
-  useEffect(() => {
-    setLogs([]);
-  }, [chatId]);
 
   useEffect(() => {
     if (send.isPending) return;
@@ -287,57 +175,65 @@ function RouteComponent() {
   }, [workingMemory.data, send.status]);
 
   return (
-    <div className="max-w-screen-lg grow flex flex-col">
-      <div className="flex flex-col flex-1 relative">
-        <div className="flex flex-col">
-          <div className="flex-1 px-6 pt-8 pb-36" ref={scrollRef}>
-            <LogsList logs={newLog ? [...logs, newLog] : logs} />
-          </div>
-        </div>
-        <form
-          className="bg-background flex flex-col mt-auto sticky bottom-5 left-0 right-0 mx-20 rounded-xl border overflow-hidden"
-          onSubmit={async (e) => {
-            e.preventDefault();
-            const msg = new FormData(e.currentTarget).get("message") as string;
-            e.currentTarget.reset();
-            send.mutate({
-              user,
-              chatId,
-              msg,
-              modelName: model,
-              actions: [],
-              contexts: subContexts,
-            });
-          }}
-        >
-          <SelfResizingTextarea
-            name="message"
-            placeholder="Type your message..."
-            className="border-0 min-h-20 resize-none px-6 py-4 rounded-xl bg-background placeholder:text-primary focus:outline-none focus:border-transparent focus-visible:ring-0"
-            disabled={false} // Disable input while loading history
-          />
-          <div className="flex items-center">
-            <ModelSelect
-              defaultValue="default"
-              value={model}
-              onValueChange={(v) => setModel(v)}
-            />
-
-            {send.isPending ? (
-              <Button
-                type="button"
-                onClick={() => {
-                  abortControllerRef.current?.abort();
-                }}
-              >
-                Abort
-              </Button>
-            ) : (
-              <Button>Send</Button>
-            )}
-          </div>
-        </form>
+    <>
+      <div className="px-4 pt-8 pb-36" ref={scrollRef}>
+        <LogsList logs={newLog ? [...logs, newLog] : logs} />
       </div>
-    </div>
+      <form
+        className="bg-background flex flex-col mt-auto sticky bottom-5 left-0 right-0 mx-20 rounded-xl border overflow-hidden"
+        onSubmit={async (e) => {
+          e.preventDefault();
+          const msg = new FormData(e.currentTarget).get("message") as string;
+          // e.currentTarget.reset();
+          const textarea = e.currentTarget.elements.namedItem(
+            "message"
+          )! as HTMLTextAreaElement;
+
+          textarea.value = "";
+
+          textarea.style.height = `inherit`;
+
+          send.mutate({
+            input: {
+              type: "message",
+              data: {
+                user,
+                content: msg,
+              },
+            },
+            modelName: model,
+            actions: [],
+            contexts: subContexts,
+          });
+        }}
+      >
+        <SelfResizingTextarea
+          name="message"
+          placeholder="Type your message..."
+          className="border-0 min-h-20 resize-none px-6 py-4 rounded-xl bg-background placeholder:text-primary focus:outline-none focus:border-transparent focus-visible:ring-0"
+          disabled={false} // Disable input while loading history
+        />
+        <div className="flex items-center">
+          <ModelSelect
+            defaultValue="default"
+            value={model}
+            onValueChange={(v) => setModel(v)}
+          />
+
+          {send.isPending ? (
+            <Button
+              type="button"
+              onClick={() => {
+                abortControllerRef.current?.abort();
+              }}
+            >
+              Abort
+            </Button>
+          ) : (
+            <Button>Send</Button>
+          )}
+        </div>
+      </form>
+    </>
   );
 }

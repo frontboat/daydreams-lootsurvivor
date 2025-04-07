@@ -2,6 +2,9 @@ import { action, AnyAction, context, Schema } from "@daydreamsai/core";
 import { JSONSchema7 } from "@ai-sdk/provider";
 import { jsonSchema } from "@ai-sdk/ui-utils";
 import { z } from "zod";
+import type { SandboxTools } from "../../../../examples/server/tools/sandbox";
+import { ToolSet } from "../../../../examples/server/utils";
+import { Tool } from "ai";
 
 export function createToolClient(server: string) {
   return {
@@ -46,6 +49,35 @@ export function createActionsFromTools(
       },
     })
   );
+}
+
+type InferToolResult<T extends Tool<any, any>> =
+  T extends Tool<any, infer Result> ? Result : never;
+
+type ClientProxy<T extends ToolSet> = {
+  [K in keyof T]: (
+    args: z.infer<T[K]["parameters"]>
+  ) => Promise<InferToolResult<T[K]>>;
+};
+
+export function createToolClientProxy<T extends ToolSet>(
+  client: ToolClient
+): ClientProxy<T> {
+  const handler: ProxyHandler<any> = {
+    get(_, name) {
+      console.log(name);
+      if (typeof name === "symbol") throw new Error("symbol as key");
+      return async (args: any) => {
+        console.log({ args });
+
+        return client.callTool({ name, args });
+      };
+    },
+  };
+
+  const proxy = new Proxy({}, handler);
+
+  return proxy as ClientProxy<T>;
 }
 
 export const serverTools = context({

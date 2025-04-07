@@ -14,7 +14,6 @@ import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import darcula from "react-syntax-highlighter/dist/esm/styles/hljs/darcula";
 import { ScrollArea, ScrollBar } from "./ui/scroll-area";
-import { IFrameArtifact } from "./chat-sidebar";
 
 function LogContainer({
   children,
@@ -47,30 +46,8 @@ type ComponentsRecord<T extends AnyRef = AnyRef> = Partial<{
 }>;
 
 function Artifact({ artifact }: { artifact: OutputRef<string> }) {
-  if (artifact.params!.contentType === "text/html" && artifact.data) {
-    let content = artifact.data.trim();
-
-    if (content.startsWith("```html")) {
-      content = content.slice("```html".length, -3).trim();
-    }
-
-    return (
-      <div className="px-4 pb-8 min-w-full min-h-[80vh]">
-        {/* <div>{JSON.stringify(content)}</div> */}
-        <IFrameArtifact>{content}</IFrameArtifact>
-      </div>
-    );
-  }
-
   if (artifact.params!.contentType === "text/markdown") {
-    console.log(artifact);
-    let content = (
-      artifact.data
-        ? typeof artifact.data !== "string"
-          ? JSON.stringify(artifact.data)
-          : artifact.data
-        : artifact.content
-    ).trim();
+    let content = (artifact.data ?? artifact.content).trim();
 
     if (content.startsWith("```markdown")) {
       content = content.slice("```markdown".length, -3).trim();
@@ -139,7 +116,7 @@ const components: ComponentsRecord = {
                 {
                   id: log.id,
                   action: log.name,
-                  params: log.data ?? log.content,
+                  params: log.data,
                   timestamp: log.timestamp,
                   processed: log.processed,
                   result: result
@@ -160,7 +137,7 @@ const components: ComponentsRecord = {
     );
   },
   action_result: ({ log, getLog }) => {
-    // return null;
+    return null;
     const call = getLog<ActionCall>(log.callId);
     return (
       <LogContainer className="p-0 w-full">
@@ -193,14 +170,12 @@ const components: ComponentsRecord = {
     return (
       <LogContainer>
         <div className="mb-1 text-xs font-medium uppercase tracking-wider opacity-80">
-          {log.ref} {log.type} from {log.params?.user}
+          {log.ref}
         </div>
         {log.type === "message" ? (
           <pre className="whitespace-pre-wrap break-all">
-            {log.data.content ?? log.data}
+            {log.data.content}
           </pre>
-        ) : typeof log.data === "string" ? (
-          <pre className="whitespace-pre-wrap break-all">{log.data}</pre>
         ) : (
           <pre className="whitespace-pre-wrap break-all">
             {JSON.stringify(log)}
@@ -340,38 +315,9 @@ const components: ComponentsRecord = {
       </LogContainer>
     );
   },
-  event: ({ log }) => {
-    return (
-      <LogContainer className="p-0">
-        <Collapsible>
-          <div className="text-xs pr-2 font-medium uppercase tracking-wider opacity-80 flex justify-between items-center">
-            <div className="p-4">
-              {log.ref} {log.name}
-            </div>
-            <CollapsibleButton />
-          </div>
-          <CollapsibleContent className="p-4">
-            <pre className="whitespace-pre-wrap break-all">
-              {JSON.stringify(
-                {
-                  id: log.id,
-                  action: log.name,
-                  params: log.data,
-                  timestamp: log.timestamp,
-                  processed: log.processed,
-                },
-                null,
-                2
-              )}
-            </pre>
-          </CollapsibleContent>
-        </Collapsible>
-      </LogContainer>
-    );
-  },
 };
 
-export function LogsList({ logs }: { logs: AnyRef[] }) {
+export function LogsList2({ logs }: { logs: AnyRef[] }) {
   function getLog(arg: string | ((log: AnyRef) => boolean)) {
     return logs.find(typeof arg === "function" ? arg : (log) => log.id === arg);
   }

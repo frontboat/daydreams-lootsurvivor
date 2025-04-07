@@ -1,11 +1,13 @@
-import { Route } from "@/routes/chats/$chatId";
+import { Route as ChatRoute } from "@/routes/chats/$chatId";
+import { Route as ReviewRoute } from "@/routes/review/$chatId";
 import { useAgent } from "@/hooks/use-agent";
-import { chatContext } from "@/agent/chat";
+import { chatContext, systemContext } from "@/agent/chat";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ActionCtxRef,
   AnyContext,
   AnyRef,
+  ContextRef,
   ContextState,
   formatSchema,
   getWorkingMemoryAllLogs,
@@ -13,9 +15,25 @@ import {
   prepareContext,
   WorkingMemory,
 } from "@daydreamsai/core";
-import { useRouter } from "@tanstack/react-router";
+import {
+  MakeRouteMatch,
+  RouteMatch,
+  useRouter,
+  useRouterState,
+} from "@tanstack/react-router";
+import { MakeRouteMatchFromRoute } from "@tanstack/router-core";
 import { cn } from "@/lib/utils";
-import { RefreshCw, Trash, X } from "lucide-react";
+import {
+  CheckCircle,
+  ChevronRight,
+  Circle,
+  File,
+  Folder,
+  RefreshCw,
+  Trash,
+  X,
+  Loader,
+} from "lucide-react";
 import {
   ColumnDef,
   flexRender,
@@ -41,7 +59,17 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Input } from "@/components/ui/input";
-import { Sidebar, SidebarContent } from "@/components/ui/sidebar";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSub,
+} from "@/components/ui/sidebar";
 import {
   Card,
   CardContent,
@@ -61,24 +89,139 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ReactNode, useEffect, useMemo, useState } from "react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "./ui/collapsible";
+import { planner, PlannerTask } from "@/agent/planner";
+
+// This is sample data.
+const data = {
+  changes: [
+    {
+      file: "README.md",
+      state: "M",
+    },
+    {
+      file: "api/hello/route.ts",
+      state: "U",
+    },
+    {
+      file: "app/layout.tsx",
+      state: "M",
+    },
+  ],
+  tree: [
+    [
+      "app",
+      [
+        "api",
+        ["hello", ["route.ts"]],
+        "page.tsx",
+        "layout.tsx",
+        ["blog", ["page.tsx"]],
+      ],
+    ],
+    [
+      "components",
+      ["ui", "button.tsx", "card.tsx"],
+      "header.tsx",
+      "footer.tsx",
+    ],
+    ["lib", ["util.ts"]],
+    ["public", "favicon.ico", "vercel.svg"],
+    ".eslintrc.json",
+    ".gitignore",
+    "next.config.js",
+    "tailwind.config.js",
+    "package.json",
+    "README.md",
+  ],
+};
+
+function Tree({ item }: { item: string | any[] }) {
+  const [name, ...items] = Array.isArray(item) ? item : [item];
+  if (!items.length) {
+    return (
+      <SidebarMenuButton
+        isActive={name === "button.tsx"}
+        className="data-[active=true]:bg-transparent"
+      >
+        <File />
+        {name}
+      </SidebarMenuButton>
+    );
+  }
+  return (
+    <SidebarMenuItem>
+      <Collapsible
+        className="group/collapsible [&[data-state=open]>button>svg:first-child]:rotate-90"
+        defaultOpen={name === "components" || name === "ui"}
+      >
+        <CollapsibleTrigger asChild>
+          <SidebarMenuButton>
+            <ChevronRight className="transition-transform" />
+            <Folder />
+            {name}
+          </SidebarMenuButton>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <SidebarMenuSub>
+            {items.map((subItem, index) => (
+              <Tree key={index} item={subItem} />
+            ))}
+          </SidebarMenuSub>
+        </CollapsibleContent>
+      </Collapsible>
+    </SidebarMenuItem>
+  );
+}
+
+type ChatRouteMatch = MakeRouteMatchFromRoute<typeof ChatRoute>;
+type ReviewRouteMatch = MakeRouteMatchFromRoute<typeof ReviewRoute>;
 
 export function ChatSidebar({
   ...props
 }: React.ComponentProps<typeof Sidebar>) {
-  const { chatId } = Route.useParams({
-    // shouldThrow: true,
+  const routerState = useRouterState({
+    select(state) {
+      return state.matches;
+    },
   });
 
-  const { user, subContexts } = Route.useLoaderData();
+  const match = routerState.find((match) => {
+    if (match.routeId === "/chats/$chatId") return true;
+    if (match.routeId === "/review/$chatId") return true;
+
+    return false;
+  })! as ChatRouteMatch | ReviewRouteMatch;
+
+  const { chatId } = match.params;
+  const loaderData = match.loaderData!;
+
+  const contextRef: ContextRef =
+    match.routeId === "/chats/$chatId"
+      ? {
+          context: chatContext,
+          args: {
+            chatId,
+          },
+        }
+      : {
+          context: systemContext,
+          args: {
+            id: "review-chat:" + chatId,
+          },
+        };
+
+  console.log({ routerState });
+
+  console.log({ loaderData });
 
   const dreams = useAgent();
 
-  const contextId = dreams.getContextId({
-    context: chatContext,
-    args: {
-      chatId,
-    },
-  });
+  const contextId = dreams.getContextId(contextRef);
 
   const state = useQuery({
     queryKey: ["chat:state", chatId],
@@ -88,14 +231,10 @@ export function ChatSidebar({
         args: {},
       });
 
-      const ctxState = await dreams.getContext({
-        context: chatContext,
-        args: {
-          chatId,
-        },
-      });
+      const ctxState = await dreams.getContext(contextRef);
 
       const workingMemory = await dreams.getWorkingMemory(contextId);
+      console.log({ loaderData });
 
       const { contexts, actions, outputs } = await prepareContext({
         agent: dreams,
@@ -103,7 +242,7 @@ export function ChatSidebar({
         workingMemory,
         agentCtxState,
         params: {
-          contexts: subContexts,
+          contexts: loaderData.subContexts,
         },
       });
 
@@ -125,28 +264,25 @@ export function ChatSidebar({
     mutationFn: async () => {
       await dreams.deleteContext(contextId);
     },
+    async onMutate(variables) {},
     async onSuccess(data, variables, context) {
-      await queryClient.invalidateQueries({
-        queryKey: ["chat:state", chatId],
-      });
-
-      await queryClient.invalidateQueries({
-        queryKey: ["chat:workingMemory", chatId],
-      });
-
       await queryClient.invalidateQueries({
         queryKey: ["agent:chats"],
       });
 
-      router.navigate({
+      await queryClient.invalidateQueries({
+        queryKey: ["chat:memory", chatId],
+      });
+
+      await router.navigate({
         to: "/",
       });
     },
   });
 
-  const searchParams = Route.useSearch({});
+  const searchParams = match.search;
 
-  console.log({ searchParams });
+  console.log({ state });
 
   const artifacts =
     state.data?.workingMemory.outputs.filter(
@@ -164,15 +300,45 @@ export function ChatSidebar({
     <Sidebar
       collapsible="none"
       className={cn(
-        "sticky hidden lg:flex top-0 min-h-svh max-h-svh border-l shrink-0 h-full",
+        "sticky hidden lg:flex  top-0 min-h-svh max-h-svh border-l shrink-0 h-full",
         searchParams.page ? "w-6/12" : "w-5/12"
       )}
       side="right"
       {...props}
     >
+      {/* <div className="grow">
+        <SidebarGroup>
+          <SidebarGroupLabel>Files</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {data.tree.map((item, index) => (
+                <Tree key={index} item={item} />
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </div>
+      <div className="border-l flex flex-col">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-11 w-11 [&_svg]:size-5"
+        >
+          <File size={48} />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-11 w-11 [&_svg]:size-5"
+        >
+          <File size={48} />
+        </Button>
+      </div> */}
+
       {searchParams.page === "artifact" &&
         searchParams.pageId !== undefined && (
           <ArtifactPage
+            chatId={chatId}
             artifacts={artifacts.filter(
               (output) => output.params!.identifier === searchParams.pageId
             )}
@@ -263,7 +429,9 @@ export function ChatSidebar({
               {state.data?.contexts.map((ctxState) => (
                 <ContextStateCard ctxState={ctxState} key={ctxState.id} />
               ))}
-              {artifacts.length > 0 && <Artifacts artifacts={artifacts} />}
+              {artifacts.length > 0 && (
+                <Artifacts artifacts={artifacts} chatId={chatId} />
+              )}
               <Actions actions={state.data?.actions ?? []}></Actions>
               {state.data && (
                 <WorkingMemoryCard workingMemory={state.data.workingMemory} />
@@ -290,6 +458,64 @@ function formatContextDescription(ctxState: ContextState<AnyContext>) {
   return formatContent(description);
 }
 
+// Props definition for the component
+interface PlannerTasksProps {
+  tasks?: PlannerTask[];
+}
+
+const PlannerTasksDisplay: React.FC<PlannerTasksProps> = ({ tasks = [] }) => {
+  return (
+    <div className="p-4 border rounded-lg shadow-md">
+      <h2 className="text-lg font-semibold mb-3">Tasks</h2>
+      {tasks.length === 0 ? (
+        <p className="">No tasks in the planner yet.</p>
+      ) : (
+        <ul className="space-y-2">
+          {tasks.map((task) => (
+            <li
+              key={task.id}
+              className={`flex items-center p-2 rounded ${task.active ? "" : ""} ${task.completed ? "opacity-60" : ""}`}
+            >
+              {task.completed ? (
+                <CheckCircle
+                  size={18}
+                  className="mr-2 text-green-500 flex-shrink-0"
+                />
+              ) : task.active ? (
+                <Loader
+                  size={18}
+                  className="mr-2 text-blue-500 animate-spin flex-shrink-0"
+                />
+              ) : (
+                <Circle
+                  size={18}
+                  className="mr-2 text-gray-400 flex-shrink-0"
+                />
+              )}
+              <span
+                className={`flex-grow ${task.completed ? "line-through text-gray-500 dark:text-gray-400" : "text-gray-800 dark:text-gray-200"}`}
+              >
+                {task.task}
+              </span>
+              {/* Optional: Add more details or actions per task */}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
+
+const contextComponents: Record<
+  string,
+  <T extends AnyContext>(ctxState: ContextState<T>) => ReactNode
+> = {
+  planner(ctxState: ContextState<typeof planner>) {
+    const { tasks } = ctxState.memory;
+    return <PlannerTasksDisplay tasks={tasks} />;
+  },
+};
+
 function ContextStateCard({
   ctxState,
 }: {
@@ -302,16 +528,22 @@ function ContextStateCard({
         <CardDescription className="text-xs">{ctxState.id}</CardDescription>
       </CardHeader>
       <CardContent className="px-4 pb-4 grid gap-2">
-        {ctxState.context.description && (
-          <div className="text-muted-foreground">
-            {formatContextDescription(ctxState)}
-          </div>
+        {contextComponents[ctxState.context.type] ? (
+          contextComponents[ctxState.context.type](ctxState)
+        ) : (
+          <>
+            {ctxState.context.description && (
+              <div className="text-muted-foreground">
+                {formatContextDescription(ctxState)}
+              </div>
+            )}
+            <pre className="text-sm text-muted-foreground whitespace-pre-wrap break-all">
+              {ctxState.context.render
+                ? formatContent(ctxState.context.render(ctxState))
+                : JSON.stringify(ctxState.memory, null, 2)}
+            </pre>
+          </>
         )}
-        <pre className="text-sm text-muted-foreground whitespace-pre-wrap break-all">
-          {ctxState.context.render
-            ? formatContent(ctxState.context.render(ctxState))
-            : JSON.stringify(ctxState.memory, null, 2)}
-        </pre>
       </CardContent>
       <CardFooter className="px-4 pb-4">
         <div className="mt-2 flex gap-2">
@@ -338,8 +570,14 @@ function ContextStateCard({
   );
 }
 
-function Artifacts({ artifacts }: { artifacts: OutputRef<any>[] }) {
-  const { chatId } = Route.useParams();
+function Artifacts({
+  artifacts,
+  chatId,
+}: {
+  chatId: string;
+  artifacts: OutputRef<any>[];
+}) {
+  // const { chatId } = Route.useParams();
   const router = useRouter();
 
   const artifactsIds = new Set(
@@ -405,30 +643,20 @@ const artifactContentTypes: Record<
   string,
   (artifact: OutputRef<any>) => ReactNode
 > = {
-  "text/markdown": (artifact) => (
-    <ScrollArea className="h-full flex flex-col">
-      <div className="px-4 pb-8">
-        <Markdown
-          remarkPlugins={[remarkGfm]}
-          components={{
-            h1: (e) => <h1 className="text-xl font-bold">{e.children}</h1>,
-            h2: (e) => <h1 className="text-lg font-bold">{e.children}</h1>,
-            ul: (e) => (
-              <ul className="list-disc list-inside grid pb-2">{e.children}</ul>
-            ),
-            ol: (e) => (
-              <ol className="list-decimal list-inside grid pb-2">
-                {e.children}
-              </ol>
-            ),
-            li: (e) => <li className="">{e.children}</li>,
-          }}
-        >
-          {artifact.data.trim()}
-        </Markdown>
-      </div>
-    </ScrollArea>
-  ),
+  "text/markdown": (artifact) => {
+    let content = (artifact.data ?? artifact.content).trim();
+
+    if (content.startsWith("```markdown")) {
+      content = content.slice("```markdown".length, -3).trim();
+    }
+    return (
+      <ScrollArea className="h-full flex flex-col">
+        <div className="prose prose-invert px-4 pb-8 min-w-full">
+          <Markdown remarkPlugins={[remarkGfm]}>{content}</Markdown>
+        </div>
+      </ScrollArea>
+    );
+  },
   "text/html": (artifact) => (
     <div className="px-4 pb-8 flex-1 grid">
       <IFrameArtifact>{artifact.data.trim()}</IFrameArtifact>
@@ -436,8 +664,14 @@ const artifactContentTypes: Record<
   ),
 };
 
-function ArtifactPage({ artifacts }: { artifacts: OutputRef[] }) {
-  const { chatId } = Route.useParams();
+function ArtifactPage({
+  chatId,
+  artifacts,
+}: {
+  chatId: string;
+  artifacts: OutputRef[];
+}) {
+  // const { chatId } = Route.useParams();
   const router = useRouter();
 
   const [artifactId, selectArtifactId] = useState(
@@ -659,7 +893,7 @@ function StepsTable({ data }: { data: AnyRef[] }) {
   );
 }
 
-function IFrameArtifact({ children }: { children: string }) {
+export function IFrameArtifact({ children }: { children: string }) {
   const iframeUrl = useMemo(() => {
     const blob = new Blob([children], { type: "text/html" });
     const iframeUrl = URL.createObjectURL(blob);
@@ -668,8 +902,9 @@ function IFrameArtifact({ children }: { children: string }) {
 
   return (
     <iframe
-      src={iframeUrl}
-      className="w-full h-full bg-white overflow-hidden"
+      tabIndex={0}
+      srcDoc={children}
+      className="w-full h-full bg-white overflow-hidden z-40"
     ></iframe>
   );
 }

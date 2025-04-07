@@ -71,6 +71,22 @@ function NewsCard({
   );
 }
 
+export function NewsExample() {
+  return (
+    <div className="space-y-4">
+      {newsItems.map((news) => (
+        <NewsCard
+          key={news.id}
+          title={news.title}
+          description={news.description}
+          timestamp={news.timestamp}
+          category={news.category}
+        />
+      ))}
+    </div>
+  );
+}
+
 export function SidebarRight({
   ...props
 }: React.ComponentProps<typeof Sidebar>) {
@@ -82,17 +98,7 @@ export function SidebarRight({
       {...props}
     >
       <SidebarContent className="px-4 py-4">
-        <div className="space-y-4">
-          {newsItems.map((news) => (
-            <NewsCard
-              key={news.id}
-              title={news.title}
-              description={news.description}
-              timestamp={news.timestamp}
-              category={news.category}
-            />
-          ))}
-        </div>
+        <NewsExample />
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
