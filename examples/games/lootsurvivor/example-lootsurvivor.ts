@@ -45,7 +45,7 @@ const starknet = new StarknetChain({
 
 // Game contract addresses
 const GAME_CONTRACT_ADDRESS =
-  "0x018108b32cea514a78ef1b0e4a0753e855cdf620bc0565202c02456f618c4dc4"; // Replace with actual contract address
+  "0x018108b32cea514a78ef1b0e4a0753e855cdf620bc0565202c02456f618c4dc4"; // Loot Survivor contract address
 
 // Define an interface for the Loot Survivor state
 interface LootSurvivorState {
@@ -479,6 +479,7 @@ function parseAdventurerData(adventurerResult: any): {
   battle_action_count: string;
 } {
   if (!adventurerResult || !Array.isArray(adventurerResult)) {
+    console.error(`[ERROR] Invalid adventurer data format:`, adventurerResult);
     return {
       health: "0",
       xp: "0",
@@ -509,6 +510,9 @@ function parseAdventurerData(adventurerResult: any): {
   }
 
   try {
+    // Debug log the raw data to better understand it
+    console.log(`[DEBUG] Parsing adventurer data with ${adventurerResult.length} fields:`, adventurerResult);
+
     // Based on the Adventurer struct in the contract
     const health = hexToDec(adventurerResult[0]);
     const xp = hexToDec(adventurerResult[1]);
@@ -565,7 +569,19 @@ function parseAdventurerData(adventurerResult: any): {
     };
 
     // Battle action count
-    const battle_action_count = hexToDec(adventurerResult[28]);
+    const battle_action_count = adventurerResult.length > 28 ? hexToDec(adventurerResult[28]) : "0";
+
+    // Debug log the parsed data
+    console.log(`[DEBUG] Parsed adventurer data:`, {
+      health,
+      xp,
+      gold,
+      beast_health,
+      stat_upgrades_available,
+      stats,
+      equipment,
+      battle_action_count
+    });
 
     return {
       health,
@@ -579,6 +595,7 @@ function parseAdventurerData(adventurerResult: any): {
     };
   } catch (error) {
     console.error(`[ERROR] Failed to parse adventurer data: ${error}`);
+    console.error(`[ERROR] Raw data:`, adventurerResult);
     return {
       health: "0",
       xp: "0",
@@ -839,6 +856,8 @@ async function getAdventurerState(
       adventurerResult.result || adventurerResult
     );
 
+    console.log(`[DEBUG] Adventurer data after parsing:`, adventurerData);
+
     // Calculate level
     const xpNumber = parseInt(adventurerData.xp);
     const level = Math.floor(Math.sqrt(xpNumber));
@@ -1043,9 +1062,29 @@ async function getAdventurerState(
       // Bag/Inventory
       bagItems: [],
 
-      // Market
+      // Market - Initialize as empty array
       marketItems: [],
     };
+
+    console.log(`[DEBUG] Created initial state:`, {
+      adventurerId: state.adventurerId,
+      health: state.adventurerHealth,
+      maxHealth: state.adventurerMaxHealth,
+      level: state.level,
+      xp: state.xp,
+      gold: state.gold,
+      inBattle: state.inBattle,
+      stats: {
+        strength: state.strength,
+        dexterity: state.dexterity,
+        vitality: state.vitality,
+        intelligence: state.intelligence,
+        wisdom: state.wisdom,
+        charisma: state.charisma,
+        luck: state.luck,
+      },
+      upgrades: state.statUpgrades,
+    });
 
     // If in battle, get beast details
     if (inBattle) {
@@ -1129,9 +1168,11 @@ async function getAdventurerState(
       }
     } catch (bagError) {
       console.log(`[STARKNET] Could not retrieve bag items: ${bagError}`);
+      // Initialize empty bag array if we couldn't fetch it
+      state.bagItems = [];
     }
 
-    // Try to get market items
+    // Always try to get market items, especially if there are stat upgrades available
     try {
       console.log(`[STARKNET] Calling get_market function`);
       const marketResult = await starknet.read({
@@ -1189,10 +1230,23 @@ async function getAdventurerState(
         console.log(
           `[MARKET] Total items available: ${state.marketItems.length}`
         );
+      } else {
+        // Initialize as empty array if market fetch failed
+        state.marketItems = [];
+        console.log(
+          `[MARKET] Could not retrieve market items or market is not available yet.`
+        );
       }
     } catch (marketError) {
       console.log(`[STARKNET] Could not retrieve market items: ${marketError}`);
+      // Initialize as empty array if we couldn't fetch it
+      state.marketItems = [];
     }
+
+    // Log the final complete state for debugging
+    console.log(`[DEBUG] Final complete state created for adventurer ${adventurerId}`);
+    // Print the complete state to the console
+    printGameState(state);
 
     return state;
   } catch (error) {
@@ -1307,7 +1361,52 @@ function printGameState(state: LootSurvivorState) {
   console.log("===================\n");
 }
 
-// Fix the initializeLootSurvivorMemory function to initialize the new equipment XP fields
+// Function to generate a formatted state summary for the agent
+function generateStateSummary(state: LootSurvivorState): string {
+  return `
+Current Adventurer State:
+- ID: ${state.adventurerId}
+- Health: ${state.adventurerHealth}/${state.adventurerMaxHealth}
+- Level: ${state.level} (XP: ${state.xp})
+- Gold: ${state.gold}
+- In Battle: ${state.inBattle === "true" ? "Yes" : "No"}
+${state.inBattle === "true" ? `- Fighting: ${state.currentBeast} (Level ${state.beastLevel})
+- Beast Health: ${state.beastHealth}/${state.beastMaxHealth}
+- Beast Type: ${state.beastType}` : ''}
+
+Stats:
+- Strength: ${state.strength}
+- Dexterity: ${state.dexterity}
+- Vitality: ${state.vitality}
+- Intelligence: ${state.intelligence}
+- Wisdom: ${state.wisdom}
+- Charisma: ${state.charisma}
+- Luck: ${state.luck}
+- Available Stat Upgrades: ${state.statUpgrades}
+
+Equipment:
+- Weapon: ${state.weapon}
+- Chest: ${state.chest}
+- Head: ${state.head}
+- Waist: ${state.waist}
+- Foot: ${state.foot}
+- Hand: ${state.hand}
+- Neck: ${state.neck}
+- Ring: ${state.ring}
+
+Inventory:
+- Bag Items: ${Array.isArray(state.bagItems) && state.bagItems.length > 0 ? state.bagItems.join(", ") : "None"}
+
+Market:
+- Available Items: ${Array.isArray(state.marketItems) && state.marketItems.length > 0
+      ? state.marketItems.map(item => `${item.name} (${item.price} gold)`).join(", ")
+      : "None"}
+
+Last Action: ${state.lastAction}
+`;
+}
+
+// Fix the initializeLootSurvivorMemory function to properly initialize marketItems
 export function initializeLootSurvivorMemory(ctx: any): LootSurvivorState {
   if (!ctx.agentMemory) {
     ctx.agentMemory = {
@@ -1364,11 +1463,148 @@ export function initializeLootSurvivorMemory(ctx: any): LootSurvivorState {
       battleActionCount: "0",
 
       bagItems: [],
-      marketItems: [], // Empty array of {id, name, price}
+      marketItems: [], // Ensure this is always initialized as an empty array
     };
+  } else {
+    // Ensure critical fields are always initialized
+    ctx.agentMemory.bagItems = ctx.agentMemory.bagItems || [];
+    ctx.agentMemory.marketItems = ctx.agentMemory.marketItems || [];
   }
   return ctx.agentMemory as LootSurvivorState;
 }
+
+// Create a centralized game state manager
+const gameStateManager = {
+  // Current state cache
+  currentState: null as LootSurvivorState | null,
+
+  // Last fetch timestamp to avoid excessive refetching
+  lastFetchTime: 0,
+
+  // Minimum time between state refreshes (in milliseconds)
+  minRefreshInterval: 1000,
+
+  // Initialize state for a given adventurer ID
+  async initialize(adventurerId: string): Promise<LootSurvivorState | null> {
+    console.log(`[STATE_MANAGER] Initializing state for adventurer: ${adventurerId}`);
+    this.currentState = await this._fetchLatestState(adventurerId);
+    return this.currentState;
+  },
+
+  // Get current state, refreshing if necessary
+  async getState(adventurerId: string, forceRefresh = false): Promise<LootSurvivorState | null> {
+    const now = Date.now();
+
+    // Check if we need to fetch a fresh state
+    if (
+      forceRefresh ||
+      !this.currentState ||
+      this.currentState.adventurerId !== adventurerId ||
+      now - this.lastFetchTime > this.minRefreshInterval
+    ) {
+      console.log(`[STATE_MANAGER] Fetching fresh state for adventurer: ${adventurerId}`);
+      this.currentState = await this._fetchLatestState(adventurerId);
+      this.lastFetchTime = now;
+    }
+
+    return this.currentState;
+  },
+
+  // Update state after an action
+  async updateAfterAction(
+    adventurerId: string,
+    actionName: string,
+    txHash?: string
+  ): Promise<LootSurvivorState | null> {
+    // No need to manually wait for transaction confirmation
+    // starknet.write() already includes waitForTransaction
+
+    // Always fetch fresh state after an action
+    console.log(`[STATE_MANAGER] Updating state after ${actionName}`);
+    this.currentState = await this._fetchLatestState(adventurerId);
+    this.lastFetchTime = Date.now();
+
+    if (this.currentState) {
+      // Update last action if not already set
+      if (actionName && this.currentState.lastAction === "None") {
+        console.log(`[STATE_MANAGER] Setting last action to: ${actionName}`);
+        this.currentState.lastAction = actionName;
+      }
+
+      // Print the state for debugging too
+      console.log(`[STATE_MANAGER] Updated state details:`, {
+        adventurerId: this.currentState.adventurerId,
+        health: this.currentState.adventurerHealth,
+        maxHealth: this.currentState.adventurerMaxHealth,
+        level: this.currentState.level,
+        xp: this.currentState.xp,
+        gold: this.currentState.gold,
+        inBattle: this.currentState.inBattle,
+        lastAction: this.currentState.lastAction
+      });
+    }
+
+    return this.currentState;
+  },
+
+  // Apply state to agent memory context
+  applyToMemory(ctx: any): LootSurvivorState {
+    // Initialize memory first
+    const memoryState = initializeLootSurvivorMemory(ctx);
+
+    // Then apply current state if available
+    if (this.currentState) {
+      // Create a deep copy of important objects to avoid reference issues
+      const stateCopy = { ...this.currentState };
+
+      // Copy arrays to avoid reference issues
+      if (Array.isArray(this.currentState.bagItems)) {
+        stateCopy.bagItems = [...this.currentState.bagItems];
+      }
+
+      if (Array.isArray(this.currentState.marketItems)) {
+        stateCopy.marketItems = this.currentState.marketItems.map(item => ({ ...item }));
+      }
+
+      // Apply the copied state to memory
+      Object.assign(memoryState, stateCopy);
+
+      console.log(`[STATE_MANAGER] Applied state to agent memory for adventurer: ${this.currentState.adventurerId}`);
+      console.log(`[STATE_MANAGER] Memory state now has:`, {
+        adventurerId: memoryState.adventurerId,
+        health: memoryState.adventurerHealth,
+        maxHealth: memoryState.adventurerMaxHealth,
+        level: memoryState.level,
+        gold: memoryState.gold,
+        inBattle: memoryState.inBattle,
+        stats: {
+          strength: memoryState.strength,
+          dexterity: memoryState.dexterity,
+          vitality: memoryState.vitality,
+          intelligence: memoryState.intelligence,
+          wisdom: memoryState.wisdom,
+          charisma: memoryState.charisma,
+          luck: memoryState.luck,
+        },
+        bagItems: Array.isArray(memoryState.bagItems) ? memoryState.bagItems.length : 0,
+        marketItems: Array.isArray(memoryState.marketItems) ? memoryState.marketItems.length : 0,
+      });
+    } else {
+      console.warn(`[STATE_MANAGER] No current state to apply to memory`);
+    }
+
+    return memoryState;
+  },
+
+  // Private method to fetch the latest state
+  async _fetchLatestState(adventurerId: string): Promise<LootSurvivorState | null> {
+    const state = await getAdventurerState(GAME_CONTRACT_ADDRESS, adventurerId);
+    if (!state) {
+      console.error(`[STATE_MANAGER] Failed to fetch state for adventurer: ${adventurerId}`);
+    }
+    return state;
+  }
+};
 
 // Define item names array based on the ItemString module in constants.cairo
 // Items are 1-indexed in the contract, so we'll match that here
@@ -1480,11 +1716,30 @@ const ITEM_NAMES = [
 export const template = `
 You are an expert AI agent playing Loot Survivor, a roguelike dungeon crawler game on Starknet blockchain. Your goal is to progress as far as possible, defeat beasts, collect loot, and upgrade your character to become stronger.
 
+CRITICAL RULES - YOU MUST FOLLOW THESE EXACTLY:
+1. If stat_upgrades_available > 0, you MUST use upgradeAdventurer to allocate ALL stat points BEFORE doing anything else.
+2. When stat upgrades are available, the market is also available - you can buy items and potions.
+3. You CANNOT explore if stat_upgrades_available > 0 - the game mechanics prevent this.
+4. If in battle (inBattle = true), you MUST resolve it (attack or flee) before doing any other action.
+
 Game Overview:
 - Roguelike dungeon crawler with permadeath (once you die, you need to start over)
 - Turn-based combat system with elemental effectiveness mechanics
 - Character progression through XP, level-ups, and equipment upgrades
 - Resource management (health, gold, items)
+- Battle increasingly difficult beasts
+- Collect gold and items
+- Level up your character
+- Manage health and resources
+- Make strategic combat decisions
+- Track XP for level-up timing
+
+IMPORTANT RULES:
+- If stat_upgrades_available is non-zero, you MUST allocate those stat points before exploring
+- You can only upgrade stats if you have available stat points (1 point = 1 stat upgrade)
+- When stat points are available, the market is also available for purchases
+- If in battle, you MUST resolve the battle (attack or flee) before doing anything else
+- When confused or stuck, check: Are you in battle? Do you have available stat points?
 
 Combat Mechanics:
 - Weapon types: Blade, Bludgeon, and Magic
@@ -1494,6 +1749,34 @@ Combat Mechanics:
   - Bludgeon: Fair vs Metal, Strong vs Hide, Weak vs Cloth
   - Magic: Strong vs Metal, Weak vs Hide, Fair vs Cloth
 - Stats affect combat: Strength boosts damage, Vitality increases health, etc.
+- Combat calculations:
+  - Base damage = Item Greatness * (6 - Tier)
+  - Beast damage = Beast Level * (6 - Beast Tier)
+  - Final damage = Weapon power - Armor defense
+- Critical hits chance = luck / 100
+- Critical damage bonus = random(20-100%)
+
+Beast Types:
+- Magical Beasts: Weak to Blade weapons, Strong against Metal armor
+- Hunter Beasts: Weak to Bludgeon weapons, Strong against Cloth armor
+- Brute Beasts: Weak to Magic weapons, Strong against Hide armor
+- Beast Tiers affect power: Tier 1 (highest) to Tier 5 (lowest)
+
+Resource Management:
+- HP management is critical for survival
+- XP gained through successful actions
+- Gold for purchasing items and potions
+- Potion cost = adventurer_level - (2 * charisma)
+- Each potion adds 10HP
+
+Stats System:
+- Strength: +10% attack damage
+- Vitality: +15HP max and current health
+- Dexterity: Better flee chances
+- Intelligence: Better obstacle avoidance
+- Wisdom: Better ambush evasion
+- Charisma: Item/potion discount
+- Luck: Critical hit chance (only from items)
 
 Current Game State:
 <adventurer_stats>
@@ -1549,21 +1832,60 @@ Bag Items: {{bagItems}}
 Available Items: {{marketItems}}
 </market>
 
+Available Actions:
+1. Combat Actions:
+   - attack(adventurer_id, to_the_death): 
+     * Single attack when to_the_death = false
+     * Fight until victory/death when to_the_death = true
+   - flee(adventurer_id, to_the_death):
+     * Single escape attempt when to_the_death = false
+     * Keep trying until escape/death when to_the_death = true
+
+2. Exploration Actions:
+   - explore(adventurer_id, till_beast):
+     * Single exploration when till_beast = false
+     * Keep exploring until beast when till_beast = true
+
+3. Inventory Management:
+   - equipItems(adventurer_id, items): Equip items from bag
+   - upgradeAdventurer(adventurer_id, potions, stats, items):
+     * Buy and use potions
+     * Upgrade character stats
+     * Purchase and optionally equip items
+
+4. Character Management:
+   - newGame(starting_weapon, name, character_class): Start new adventure
+   - getAdventurerState(adventurer_id): Refresh game state
+
 Strategic Guidelines:
-1. Prioritize survival - manage your health and know when to flee
-2. Choose equipment upgrades that complement your playstyle
-3. Be aware of weapon effectiveness against different armor types
-4. Upgrade stats strategically - Vitality for health, Strength for damage, etc.
-5. Save gold for important purchases rather than buying every item
-6. Assess beast difficulty before engaging in combat
-7. Use your strongest equipment and keep your bag organized
+1. ALWAYS check for available stat upgrades first - you MUST allocate them before exploring
+2. Prioritize survival - manage your health and know when to flee
+3. Choose equipment upgrades that complement your playstyle
+4. Be aware of weapon effectiveness against different armor types
+5. Upgrade stats strategically - Vitality for health, Strength for damage, etc.
+6. Save gold for important purchases rather than buying every item
+7. Assess beast difficulty before engaging in combat
+8. Use your strongest equipment and keep your bag organized
+9. Calculate flee probability: Dexterity / Level
+10. Combat assessment: Compare your weapon type vs beast armor type
+11. Calculate potion costs vs benefits: Consider potion cost = level - (2 * charisma)
+12. Consider strategic fleeing for long-term survival
+
+DECISION MAKING PRIORITY ORDER:
+1. If stat_upgrades_available > 0: MUST use upgradeAdventurer to allocate points
+2. If in battle (inBattle = true): MUST attack or flee
+3. If health is low: Consider buying potions
+4. If market has good items: Consider buying equipment
+5. Otherwise: Explore to find beasts and loot
 
 Your task is to analyze the current game state and make strategic decisions. Follow these steps:
 
-1. Analyze your current stats, health, equipment, and resources
-2. Evaluate the current situation (exploring, in battle, shopping)
-3. Consider the best action based on the game state
-4. Explain your reasoning and decision clearly
+1. First, check if you have available stat upgrades that MUST be allocated
+2. Check if you're in battle that needs immediate resolution
+3. Analyze your current stats, health, equipment, and resources
+4. Evaluate the current situation (exploring, in battle, shopping)
+5. Consider the best action based on the game state
+6. Explain your reasoning and decision clearly
 
 Inside your thinking block, use <strategy_planning> tags to show your thought process:
 
@@ -1594,6 +1916,12 @@ export const goalContexts = context({
         "Make strategic decisions",
         "Manage resources",
         "Defeat beasts",
+        "Upgrade your adventurer",
+        "Collect loot",
+        "Explore the world",
+        "Shop for items",
+        "Sell items",
+        "Buy items",
       ]),
   }),
 
@@ -1661,25 +1989,53 @@ export const goalContexts = context({
   },
 
   render({ memory }) {
+    // Add debug logging to see what's in memory before rendering
+    console.log(`[RENDER] Starting render with memory:`, {
+      adventurerId: memory.adventurerId ?? "0",
+      health: memory.adventurerHealth ?? "0",
+      maxHealth: memory.adventurerMaxHealth ?? "0",
+      level: memory.level ?? "1",
+      xp: memory.xp ?? "0",
+      gold: memory.gold ?? "0",
+      statUpgrades: memory.statUpgrades ?? "0",
+      inBattle: memory.inBattle ?? "false",
+    });
+
     // Calculate potion price for the UI
     const potionPrice =
       memory.level && memory.charisma
         ? getPotionPrice(parseInt(memory.level), parseInt(memory.charisma))
         : 1;
 
+    // Debug log to see what's in memory.marketItems
+    console.log(`[RENDER] Market items before formatting:`, memory.marketItems);
+
+    // Ensure memory.marketItems is always an array
+    const marketItems = Array.isArray(memory.marketItems) ? memory.marketItems : [];
+
     // Format market items to include potion at the top
     const formattedMarketItems =
-      memory.marketItems && memory.marketItems.length > 0
+      marketItems.length > 0
         ? `Potion: ${potionPrice} gold (Restores 10 HP), ` +
-          memory.marketItems
-            .map(
-              (item: { name: string; price: string }) =>
-                `${item.name} (${item.price} gold)`
-            )
-            .join(", ")
+        marketItems
+          .map(
+            (item: { name: string; price: string }) =>
+              `${item.name} (${item.price} gold)`
+          )
+          .join(", ")
         : `Potion: ${potionPrice} gold (Restores 10 HP)`;
 
-    return render(template, {
+    console.log(`[RENDER] Formatted market items for agent:`, formattedMarketItems);
+
+    // Format bag items for display
+    const bagItemsString = Array.isArray(memory.bagItems) && memory.bagItems.length > 0
+      ? memory.bagItems.join(", ")
+      : "None";
+
+    console.log(`[RENDER] Bag items for agent:`, bagItemsString);
+
+    // Create template parameters
+    const templateParams = {
       adventurerId: memory.adventurerId ?? "0",
       adventurerHealth: memory.adventurerHealth ?? "0",
       adventurerMaxHealth: memory.adventurerMaxHealth ?? "0",
@@ -1738,9 +2094,22 @@ export const goalContexts = context({
       lastDamageTaken: memory.lastDamageTaken ?? "0",
       lastCritical: memory.lastCritical ?? "false",
 
-      bagItems: memory.bagItems?.join(", ") ?? "None",
+      bagItems: bagItemsString,
       marketItems: formattedMarketItems,
-    } as any);
+    };
+
+    // Log the final template parameters for debugging
+    console.log(`[RENDER] Rendering template with parameters:`, {
+      adventurerId: templateParams.adventurerId,
+      health: `${templateParams.adventurerHealth}/${templateParams.adventurerMaxHealth}`,
+      level: templateParams.level,
+      gold: templateParams.gold,
+      inBattle: templateParams.inBattle,
+      statUpgrades: templateParams.statUpgrades,
+      lastAction: templateParams.lastAction
+    });
+
+    return render(template, templateParams as any);
   },
 });
 
@@ -1760,29 +2129,27 @@ export const lootSurvivor = extension({
       schema: z
         .object({
           startingWeapon: z
-            .enum(["Katana", "Warhammer", "Ghost Wand"])
+            .enum(["Wand", "Book", "Club", "ShortSword"])
             .describe(
-              "The weapon to start with (Blade, Bludgeon, or Magic type)"
+              "The weapon to start with (Blade, Bludgeon, or Magic type. Wand and Book are magic types.)"
             ),
           name: z.string().describe("The name of your adventurer"),
-          characterClass: z
-            .enum(["Warrior", "Ranger", "Mage", "Rogue", "Paladin"])
-            .describe("The class of your adventurer"),
         })
-        .describe("Start a new game with a chosen weapon, name, and class."),
+        .describe("Start a new game with a chosen weapon, and name"),
       async handler(data, ctx: any, _agent: Agent) {
         try {
           console.log(
-            `[ACTION] Starting New Game - Weapon: ${data.startingWeapon}, Class: ${data.characterClass}`
+            `[ACTION] Starting New Game - Weapon: ${data.startingWeapon}, Name: ${data.name}`
           );
 
-          const { startingWeapon, name, characterClass } = data;
+          const { startingWeapon, name } = data;
 
           // Map starting weapon to weapon ID
           const weaponIdMap: Record<string, number> = {
-            Katana: 1,
-            Warhammer: 6,
-            "Ghost Wand": 11,
+            Club: 76,
+            Book: 16,
+            Wand: 12,
+            ShortSword: 46,
           };
 
           const weaponId = weaponIdMap[startingWeapon] || 1;
@@ -1812,10 +2179,12 @@ export const lootSurvivor = extension({
           // Create a new adventurer ID from the transaction hash or result
           const adventurerId = result.transaction_hash || "unknown";
 
-          // Get the new adventurer state
-          const state = await getAdventurerState(
-            GAME_CONTRACT_ADDRESS,
-            adventurerId
+          // Initialize adventurer state through state manager
+          console.log(`[NEWGAME] Waiting for transaction and initializing game state`);
+          const state = await gameStateManager.updateAfterAction(
+            adventurerId,
+            "New Game Created",
+            result.transaction_hash
           );
 
           if (!state) {
@@ -1826,22 +2195,23 @@ export const lootSurvivor = extension({
             };
           }
 
-          // Update the memory state
-          const memoryState = initializeLootSurvivorMemory(ctx);
-          Object.assign(memoryState, state);
-
-          // Also set a few additional values specific to new game
-          memoryState.lastAction = "New Game";
-          memoryState.weapon = startingWeapon; // Make sure the correct weapon name is set
+          // Apply the state to agent memory
+          gameStateManager.applyToMemory(ctx);
 
           console.log(
-            `[ACTION] New Game Created - Adventurer ID: ${memoryState.adventurerId}`
+            `[ACTION] New Game Created - Adventurer ID: ${state.adventurerId}`
           );
-          printGameState(memoryState);
+
+          // Set initial weapon and action in state directly, since blockchain might not reflect it immediately
+          if (state) {
+            state.weapon = ITEM_NAMES[weaponId - 1] || startingWeapon;
+            state.lastAction = "New Game Created";
+          }
 
           return {
             success: true,
-            message: `Successfully started a new game with ${startingWeapon} and character class ${characterClass}`,
+            message: `Successfully started a new game with ${startingWeapon} and name ${name}. Your adventurer ID is ${adventurerId}.`,
+            adventurerId: adventurerId // Return the ID so the agent can reference it
           };
         } catch (error: unknown) {
           const errorMessage =
@@ -1878,24 +2248,27 @@ export const lootSurvivor = extension({
         ),
       async handler(data, ctx: any, _agent: Agent) {
         try {
+          // Get current state through the state manager
+          const currentState = await gameStateManager.getState(data.adventurerId);
+
+          // Check if there are any stat upgrades available - if so, reject the action
+          if (currentState && parseInt(currentState.statUpgrades) > 0) {
+            console.log("[ACTION] Rejecting explore - stat upgrades available:", currentState.statUpgrades);
+            return {
+              success: false,
+              error: "Cannot explore when stat upgrades are available",
+              message: "You must allocate all available stat points before exploring. Use upgradeAdventurer action first.",
+            };
+          }
+
           console.log(
             `[ACTION] Exploring - Adventurer ID: ${data.adventurerId}, Till Beast: ${data.tillBeast}`
           );
 
           const { adventurerId, tillBeast } = data;
 
-          // Get the initial state to compare later
-          const initialState = await getAdventurerState(
-            GAME_CONTRACT_ADDRESS,
-            adventurerId
-          );
-          if (!initialState) {
-            return {
-              success: false,
-              error: "Failed to retrieve initial adventurer state",
-              message: "Failed to explore: could not get adventurer state",
-            };
-          }
+          // Store initial state to compare later
+          const initialState = currentState ? { ...currentState } : null;
 
           // Use Starknet to call explore function
           console.log(`[STARKNET] Calling explore function on contract`);
@@ -1911,93 +2284,113 @@ export const lootSurvivor = extension({
           console.log(
             `[STARKNET] Transaction hash: ${exploreResult.transaction_hash}`
           );
-          console.log(`[STARKNET] Waiting for transaction confirmation...`);
 
-          // Get updated state after exploring
-          const updatedState = await getAdventurerState(
-            GAME_CONTRACT_ADDRESS,
-            adventurerId
+          // Update state through the state manager
+          const updatedState = await gameStateManager.updateAfterAction(
+            adventurerId,
+            "Exploring",
+            exploreResult.transaction_hash
           );
+
           if (!updatedState) {
             return {
               success: false,
               error: "Failed to retrieve updated adventurer state",
-              message:
-                "Failed to explore: could not get updated adventurer state",
+              message: "Failed to explore: could not get updated adventurer state",
             };
           }
 
-          // Update the agent memory with the state
-          const state = initializeLootSurvivorMemory(ctx);
-          Object.assign(state, updatedState);
-
           // Determine what happened during exploration by comparing before/after states
+          let actionDescription = "Explored area";
 
           // Check for beast encounter
           if (updatedState.inBattle === "true") {
-            state.lastAction = "Discovered Beast";
+            actionDescription = "Discovered Beast";
             console.log(
-              `[ENCOUNTER] Found Beast: ${state.currentBeast} (Level ${state.beastLevel})`
+              `[ENCOUNTER] Found Beast: ${updatedState.currentBeast || "Unknown"} (Level ${updatedState.beastLevel || "Unknown"})`
             );
           }
           // Check for health decrease (obstacle)
           else if (
-            parseInt(updatedState.adventurerHealth) <
-            parseInt(initialState.adventurerHealth)
+            initialState &&
+            parseInt(updatedState.adventurerHealth) < parseInt(initialState.adventurerHealth || "0")
           ) {
             const damageTaken =
-              parseInt(initialState.adventurerHealth) -
+              parseInt(initialState.adventurerHealth || "0") -
               parseInt(updatedState.adventurerHealth);
-            state.lastAction = "Encountered Obstacle";
-            state.lastDamageTaken = damageTaken.toString();
+            actionDescription = `Encountered Obstacle (-${damageTaken} HP)`;
+            updatedState.lastDamageTaken = damageTaken.toString();
             console.log(`[ENCOUNTER] Obstacle: Took ${damageTaken} damage`);
           }
           // Check for gold increase (discovery)
-          else if (parseInt(updatedState.gold) > parseInt(initialState.gold)) {
+          else if (
+            initialState &&
+            parseInt(updatedState.gold) > parseInt(initialState.gold || "0")
+          ) {
             const goldFound =
-              parseInt(updatedState.gold) - parseInt(initialState.gold);
-            state.lastAction = `Found ${goldFound} Gold`;
+              parseInt(updatedState.gold) - parseInt(initialState.gold || "0");
+            actionDescription = `Found ${goldFound} Gold`;
             console.log(`[DISCOVERY] Found ${goldFound} Gold`);
           }
           // Check if health increased (health discovery)
           else if (
-            parseInt(updatedState.adventurerHealth) >
-            parseInt(initialState.adventurerHealth)
+            initialState &&
+            parseInt(updatedState.adventurerHealth) > parseInt(initialState.adventurerHealth || "0")
           ) {
             const healthFound =
               parseInt(updatedState.adventurerHealth) -
-              parseInt(initialState.adventurerHealth);
-            state.lastAction = `Found ${healthFound} Health`;
+              parseInt(initialState.adventurerHealth || "0");
+            actionDescription = `Found ${healthFound} Health`;
             console.log(`[DISCOVERY] Found ${healthFound} Health`);
           }
           // Check if bag items count changed (item discovery)
           else if (
+            initialState &&
+            Array.isArray(initialState.bagItems) &&
+            Array.isArray(updatedState.bagItems) &&
             updatedState.bagItems.length > initialState.bagItems.length
           ) {
             // Find the new item by comparing arrays
             const newItems = updatedState.bagItems.filter(
-              (item) => !initialState.bagItems.includes(item)
+              (item: string) => !initialState.bagItems.includes(item)
             );
             if (newItems.length > 0) {
-              state.lastAction = `Found Item: ${newItems[0]}`;
+              actionDescription = `Found Item: ${newItems[0]}`;
               console.log(`[DISCOVERY] Found Item: ${newItems[0]}`);
             } else {
-              state.lastAction = "Found an Item";
+              actionDescription = "Found an Item";
               console.log(`[DISCOVERY] Found an item`);
             }
           }
           // Nothing interesting happened
           else {
-            state.lastAction = "Explored area, found nothing";
+            actionDescription = "Explored area, found nothing";
             console.log(`[EXPLORATION] Found nothing of interest`);
           }
 
-          console.log(`[ACTION] Exploration Complete - ${state.lastAction}`);
-          printGameState(state);
+          // Update last action in state
+          updatedState.lastAction = actionDescription;
+
+          // Check if level up occurred
+          if (
+            initialState &&
+            parseInt(updatedState.statUpgrades) > parseInt(initialState.statUpgrades || "0")
+          ) {
+            console.log(`[LEVEL UP] Gained stat points! Available: ${updatedState.statUpgrades}`);
+          }
+
+          // Apply updated state to agent memory
+          gameStateManager.applyToMemory(ctx);
+
+          // Update the return statement in the explore handler
+          console.log(`[ACTION] Exploration Complete - ${actionDescription}`);
+
+          const stateSummary = generateStateSummary(updatedState);
+          console.log(`[EXPLORE] Sending state summary to agent`);
 
           return {
             success: true,
-            message: `Exploration complete. ${state.lastAction}`,
+            message: `${actionDescription}\n\n${stateSummary}`,
           };
         } catch (error: unknown) {
           const errorMessage =
@@ -2038,27 +2431,24 @@ export const lootSurvivor = extension({
 
           const { adventurerId, toTheDeath } = data;
 
-          // Get initial state to compare with later
-          const initialState = await getAdventurerState(
-            GAME_CONTRACT_ADDRESS,
-            adventurerId
-          );
-          if (!initialState) {
-            return {
-              success: false,
-              error: "Failed to retrieve initial adventurer state",
-              message: "Failed to attack: could not get adventurer state",
-            };
-          }
+          // Get current state through the state manager
+          const currentState = await gameStateManager.getState(adventurerId);
 
           // Make sure we're in battle
-          if (initialState.inBattle !== "true") {
+          if (!currentState || currentState.inBattle !== "true") {
             return {
               success: false,
               error: "Not in battle",
               message: "Cannot attack: you are not in battle with a beast",
             };
           }
+
+          // Store initial state to compare later for damage calculation
+          const initialState = { ...currentState };
+          console.log(`[ATTACK] Initial beast health: ${initialState.beastHealth}, adventurer health: ${initialState.adventurerHealth}`);
+
+          // Record the name of the beast we're fighting for better messaging
+          const beastName = initialState.currentBeast || "Beast";
 
           console.log(`[STARKNET] Calling attack function on contract`);
           const attackResult = await starknet.write({
@@ -2073,92 +2463,129 @@ export const lootSurvivor = extension({
           console.log(
             `[STARKNET] Transaction hash: ${attackResult.transaction_hash}`
           );
-          console.log(`[STARKNET] Waiting for transaction confirmation...`);
 
-          // Get updated state after attacking
-          const updatedState = await getAdventurerState(
-            GAME_CONTRACT_ADDRESS,
-            adventurerId
+          // Update state through the state manager but use a descriptive action name for better logs
+          const updatedState = await gameStateManager.updateAfterAction(
+            adventurerId,
+            `Attacking ${beastName}`,
+            attackResult.transaction_hash
           );
+
           if (!updatedState) {
             return {
               success: false,
               error: "Failed to retrieve updated adventurer state",
-              message:
-                "Failed to attack: could not get updated adventurer state",
+              message: "Failed to attack: could not get updated adventurer state",
             };
           }
 
-          // Update the agent memory with the state
-          const state = initializeLootSurvivorMemory(ctx);
-          Object.assign(state, updatedState);
-
-          // Determine what happened during battle by comparing before/after states
-
-          // Calculate damage dealt to beast
-          const damageDealt =
-            parseInt(initialState.beastHealth) -
-            parseInt(updatedState.beastHealth);
-          state.lastDamageDealt = Math.max(0, damageDealt).toString();
+          // Calculate damage dealt to beast - ensure we handle undefined values
+          const initialBeastHealth = parseInt(initialState.beastHealth || "0");
+          const updatedBeastHealth = parseInt(updatedState.beastHealth || "0");
+          const damageDealt = Math.max(0, initialBeastHealth - updatedBeastHealth);
 
           // Calculate damage taken by adventurer
-          const damageTaken =
-            parseInt(initialState.adventurerHealth) -
-            parseInt(updatedState.adventurerHealth);
-          state.lastDamageTaken = Math.max(0, damageTaken).toString();
+          const initialAdvHealth = parseInt(initialState.adventurerHealth || "0");
+          const updatedAdvHealth = parseInt(updatedState.adventurerHealth || "0");
+          const damageTaken = Math.max(0, initialAdvHealth - updatedAdvHealth);
+
+          // Store damage values in state for reference
+          updatedState.lastDamageDealt = damageDealt.toString();
+          updatedState.lastDamageTaken = damageTaken.toString();
 
           // We don't know if it was critical without event logs, so default is false
-          state.lastCritical = "false";
+          updatedState.lastCritical = "false";
+
+          // Log detailed attack results for debugging
+          console.log(`[ATTACK] Damage calculation:`, {
+            initialBeastHealth,
+            updatedBeastHealth,
+            damageDealt,
+            initialAdvHealth,
+            updatedAdvHealth,
+            damageTaken
+          });
 
           // Check if beast was defeated
-          const beastDefeated = parseInt(updatedState.beastHealth) <= 0;
+          const beastDefeated = updatedBeastHealth <= 0;
 
           // Check if adventurer died
-          const adventurerDied = parseInt(updatedState.adventurerHealth) <= 0;
+          const adventurerDied = updatedAdvHealth <= 0;
 
           // Check for XP and gold gains
-          const xpGained =
-            parseInt(updatedState.xp) - parseInt(initialState.xp);
-          const goldGained =
-            parseInt(updatedState.gold) - parseInt(initialState.gold);
+          const initialXP = parseInt(initialState.xp || "0");
+          const updatedXP = parseInt(updatedState.xp || "0");
+          const xpGained = Math.max(0, updatedXP - initialXP);
 
-          // Set appropriate action based on outcome
+          const initialGold = parseInt(initialState.gold || "0");
+          const updatedGold = parseInt(updatedState.gold || "0");
+          const goldGained = Math.max(0, updatedGold - initialGold);
+
+          // Create detailed action description with specific numbers for the agent
+          let actionDescription = "";
+
           if (adventurerDied) {
-            state.lastAction = "Adventurer Died";
+            actionDescription = `Died while attacking ${beastName}`;
             console.log(`[DEATH] Your adventurer has been slain!`);
           } else if (beastDefeated) {
-            state.lastAction = "Slayed Beast";
-            console.log(`[VICTORY] Beast slain!`);
-
-            if (xpGained > 0) {
-              console.log(`[REWARD] Earned ${xpGained} XP`);
+            actionDescription = `Defeated ${beastName}`;
+            if (xpGained > 0 || goldGained > 0) {
+              actionDescription += ` (Gained`;
+              if (xpGained > 0) actionDescription += ` ${xpGained} XP`;
+              if (xpGained > 0 && goldGained > 0) actionDescription += `,`;
+              if (goldGained > 0) actionDescription += ` ${goldGained} Gold`;
+              actionDescription += `)`;
             }
-
-            if (goldGained > 0) {
-              console.log(`[REWARD] Earned ${goldGained} Gold`);
-            }
+            console.log(`[VICTORY] ${beastName} slain!`);
           } else {
-            state.lastAction = "Attacked Beast";
+            // Most important case - clearly describe attack results
+            actionDescription = `Attacked ${beastName}: Dealt ${damageDealt} damage`;
+            if (damageTaken > 0) {
+              actionDescription += `, took ${damageTaken} damage`;
+            }
+            actionDescription += ` (Beast health: ${updatedBeastHealth}/${initialState.beastMaxHealth})`;
+
             console.log(
-              `[BATTLE] Attacked beast, dealt ${state.lastDamageDealt} damage, took ${state.lastDamageTaken} damage`
+              `[BATTLE] Attacked ${beastName}, dealt ${damageDealt} damage, took ${damageTaken} damage`
             );
           }
 
+          // Update the last action in state
+          updatedState.lastAction = actionDescription;
+          console.log(`[ATTACK] Set lastAction to: "${actionDescription}"`);
+
           // Check for level up
-          const initialLevel = parseInt(initialState.level);
-          const updatedLevel = parseInt(updatedState.level);
+          const initialLevel = parseInt(initialState.level || "1");
+          const updatedLevel = parseInt(updatedState.level || "1");
           if (updatedLevel > initialLevel) {
             console.log(
               `[LEVEL UP] Advanced to level ${updatedLevel}! Available stat points: ${updatedState.statUpgrades}`
             );
           }
 
-          console.log(`[ACTION] Attack Complete - ${state.lastAction}`);
-          printGameState(state);
+          // Apply updated state to agent memory
+          gameStateManager.applyToMemory(ctx);
 
+          console.log(`[ACTION] Attack Complete - ${actionDescription}`);
+
+          // Return a clear, detailed message about the attack outcome
+          const stateSummary = generateStateSummary(updatedState);
+          console.log(`[ATTACK] Sending state summary to agent`);
           return {
             success: true,
-            message: `${state.lastAction}. Damage dealt: ${state.lastDamageDealt}, Damage taken: ${state.lastDamageTaken}`,
+            message: `${actionDescription}\n\n${stateSummary}`,
+            // Include additional details that might be useful to the agent
+            details: {
+              beastName,
+              damageDealt,
+              damageTaken,
+              beastHealth: updatedBeastHealth,
+              beastMaxHealth: initialState.beastMaxHealth,
+              beastDefeated,
+              xpGained,
+              goldGained,
+              levelUp: updatedLevel > initialLevel
+            }
           };
         } catch (error: unknown) {
           const errorMessage =
@@ -2169,6 +2596,67 @@ export const lootSurvivor = extension({
             success: false,
             error: errorMessage,
             message: "Failed to attack beast",
+          };
+        }
+      },
+    }),
+
+    /**
+     * Action to get the current state of the adventurer
+     */
+    action({
+      name: "getAdventurerState",
+      description: "Get the current state of your adventurer",
+      schema: z
+        .object({
+          adventurerId: z.string().describe("The ID of your adventurer"),
+        })
+        .describe("Get the current state of your adventurer"),
+      async handler(data, ctx, _agent: Agent) {
+        try {
+          console.log(
+            `[ACTION] Getting Adventurer State - ID: ${data.adventurerId}`
+          );
+
+          const { adventurerId } = data;
+
+          // Force refresh state through state manager
+          const updatedState = await gameStateManager.getState(adventurerId, true);
+
+          if (!updatedState) {
+            return {
+              success: false,
+              error: "Failed to retrieve adventurer state",
+              message: "Failed to get adventurer state",
+            };
+          }
+
+          // Apply the updated state to agent memory
+          const memoryState = gameStateManager.applyToMemory(ctx);
+
+          console.log(`[ACTION] State Retrieved Successfully`);
+
+          // Create a detailed state summary to return directly to the agent
+          const stateSummary = generateStateSummary(updatedState);
+
+          console.log(`[ACTION] Sending state summary to agent`);
+
+          return {
+            success: true,
+            message: `State retrieved successfully. ${stateSummary}`,
+          };
+        } catch (error: unknown) {
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          console.error(
+            "[ERROR] Failed to get adventurer state:",
+            errorMessage
+          );
+
+          return {
+            success: false,
+            error: errorMessage,
+            message: "Failed to get adventurer state",
           };
         }
       },
@@ -2197,27 +2685,24 @@ export const lootSurvivor = extension({
 
           const { adventurerId, toTheDeath } = data;
 
-          // Get initial state to compare with later
-          const initialState = await getAdventurerState(
-            GAME_CONTRACT_ADDRESS,
-            adventurerId
-          );
-          if (!initialState) {
-            return {
-              success: false,
-              error: "Failed to retrieve initial adventurer state",
-              message: "Failed to flee: could not get adventurer state",
-            };
-          }
+          // Get current state through the state manager
+          const currentState = await gameStateManager.getState(adventurerId);
 
           // Make sure we're in battle
-          if (initialState.inBattle !== "true") {
+          if (!currentState || currentState.inBattle !== "true") {
             return {
               success: false,
               error: "Not in battle",
               message: "Cannot flee: you are not in battle with a beast",
             };
           }
+
+          // Store initial state to compare later
+          const initialState = { ...currentState };
+
+          // Record the name of the beast we're fleeing from
+          const beastName = initialState.currentBeast || "Beast";
+          console.log(`[FLEE] Attempting to flee from ${beastName}`);
 
           // Use Starknet to call flee function
           console.log(`[STARKNET] Calling flee function on contract`);
@@ -2233,13 +2718,14 @@ export const lootSurvivor = extension({
           console.log(
             `[STARKNET] Transaction hash: ${fleeResult.transaction_hash}`
           );
-          console.log(`[STARKNET] Waiting for transaction confirmation...`);
 
-          // Get updated state after flee attempt
-          const updatedState = await getAdventurerState(
-            GAME_CONTRACT_ADDRESS,
-            adventurerId
+          // Update state through the state manager
+          const updatedState = await gameStateManager.updateAfterAction(
+            adventurerId,
+            `Fleeing from ${beastName}`,
+            fleeResult.transaction_hash
           );
+
           if (!updatedState) {
             return {
               success: false,
@@ -2248,52 +2734,69 @@ export const lootSurvivor = extension({
             };
           }
 
-          // Update the agent memory with the state
-          const state = initializeLootSurvivorMemory(ctx);
-          Object.assign(state, updatedState);
-
           // Determine what happened during flee attempt by comparing before/after states
 
           // Calculate damage taken during flee attempt
-          const damageTaken =
-            parseInt(initialState.adventurerHealth) -
-            parseInt(updatedState.adventurerHealth);
-          state.lastDamageTaken = Math.max(0, damageTaken).toString();
-          state.lastDamageDealt = "0"; // We don't deal damage during flee attempts
+          const initialHealth = parseInt(initialState.adventurerHealth || "0");
+          const updatedHealth = parseInt(updatedState.adventurerHealth || "0");
+          const damageTaken = Math.max(0, initialHealth - updatedHealth);
 
-          // Check if flee was successful
-          // If we're no longer in battle after fleeing, it was successful
+          // Update state with damage information
+          updatedState.lastDamageTaken = damageTaken.toString();
+          updatedState.lastDamageDealt = "0"; // We don't deal damage during flee attempts
+
+          // Check if flee was successful - we're no longer in battle
           const fleeSuccessful = updatedState.inBattle === "false";
 
           // Check if adventurer died
-          const adventurerDied = parseInt(updatedState.adventurerHealth) <= 0;
+          const adventurerDied = updatedHealth <= 0;
 
-          // Set appropriate action based on outcome
+          // Create detailed action description
+          let actionDescription = "";
+
           if (adventurerDied) {
-            state.lastAction = "Adventurer Died while Fleeing";
-            console.log(
-              `[DEATH] Your adventurer died while attempting to flee!`
-            );
+            actionDescription = `Died while fleeing from ${beastName}`;
+            console.log(`[DEATH] Your adventurer died while attempting to flee!`);
           } else if (fleeSuccessful) {
-            state.lastAction = "Fled Successfully";
-            console.log(`[FLEE] Successfully escaped from the beast!`);
-          } else {
-            state.lastAction = "Failed to Flee";
+            actionDescription = `Successfully fled from ${beastName}`;
             if (damageTaken > 0) {
-              console.log(
-                `[FLEE] Failed to escape and took ${damageTaken} damage!`
-              );
-            } else {
-              console.log(`[FLEE] Failed to escape!`);
+              actionDescription += ` (took ${damageTaken} damage)`;
             }
+            console.log(`[FLEE] Successfully escaped from ${beastName}!`);
+          } else {
+            actionDescription = `Failed to flee from ${beastName}`;
+            if (damageTaken > 0) {
+              actionDescription += ` (took ${damageTaken} damage)`;
+            }
+            console.log(
+              `[FLEE] Failed to escape from ${beastName}!${damageTaken > 0 ? ` Took ${damageTaken} damage!` : ''}`
+            );
           }
 
-          console.log(`[ACTION] Flee Attempt Complete - ${state.lastAction}`);
-          printGameState(state);
+          // Update the last action in state
+          updatedState.lastAction = actionDescription;
+          console.log(`[FLEE] Set lastAction to: "${actionDescription}"`);
+
+          // Apply state to agent memory
+          gameStateManager.applyToMemory(ctx);
+
+          console.log(`[ACTION] Flee Attempt Complete - ${actionDescription}`);
+
+          const stateSummary = generateStateSummary(updatedState);
+          console.log(`[FLEE] Sending state summary to agent`);
 
           return {
             success: true,
-            message: state.lastAction,
+            message: `${actionDescription}\n\n${stateSummary}`,
+            details: {
+              beastName,
+              fleeSuccessful,
+              damageTaken,
+              adventurerDied,
+              // Include the current health so the agent knows its situation
+              currentHealth: updatedHealth,
+              maxHealth: parseInt(updatedState.adventurerMaxHealth || "100")
+            }
           };
         } catch (error: unknown) {
           const errorMessage =
@@ -2308,648 +2811,72 @@ export const lootSurvivor = extension({
         }
       },
     }),
-
-    /**
-     * Action to equip items
-     */
-    action({
-      name: "equipItems",
-      description: "Equip items from your bag",
-      schema: z
-        .object({
-          adventurerId: z.string().describe("The ID of your adventurer"),
-          items: z.array(z.number()).describe("Array of item IDs to equip"),
-        })
-        .describe("Equip items from your bag"),
-      async handler(data, ctx, _agent: Agent) {
-        try {
-          console.log(
-            `[ACTION] Equipping Items - Adventurer ID: ${data.adventurerId}, Items: ${data.items.join(", ")}`
-          );
-
-          const { adventurerId, items } = data;
-
-          // Get initial state to compare with later
-          const initialState = await getAdventurerState(
-            GAME_CONTRACT_ADDRESS,
-            adventurerId
-          );
-          if (!initialState) {
-            return {
-              success: false,
-              error: "Failed to retrieve initial adventurer state",
-              message: "Failed to equip items: could not get adventurer state",
-            };
-          }
-
-          // Use Starknet to call equip function
-          console.log(`[STARKNET] Calling equip function on contract`);
-
-          // Prepare items for the ABI format
-          const equipResult = await starknet.write({
-            contractAddress: GAME_CONTRACT_ADDRESS,
-            entrypoint: "equip",
-            calldata: [
-              adventurerId,
-              items.length, // First provide the array length
-              ...items, // Then the items themselves
-            ],
-          });
-
-          console.log(
-            `[STARKNET] Transaction hash: ${equipResult.transaction_hash}`
-          );
-          console.log(`[STARKNET] Waiting for transaction confirmation...`);
-
-          // Get updated state after equipping items
-          const updatedState = await getAdventurerState(
-            GAME_CONTRACT_ADDRESS,
-            adventurerId
-          );
-          if (!updatedState) {
-            return {
-              success: false,
-              error: "Failed to retrieve updated adventurer state",
-              message:
-                "Failed to equip items: could not get updated adventurer state",
-            };
-          }
-
-          // Update the agent memory with the state
-          const state = initializeLootSurvivorMemory(ctx);
-          Object.assign(state, updatedState);
-
-          // Find items that were equipped (by comparing before/after equipment)
-          const initialEquipment = [
-            initialState.weapon,
-            initialState.chest,
-            initialState.head,
-            initialState.waist,
-            initialState.foot,
-            initialState.hand,
-            initialState.neck,
-            initialState.ring,
-          ].filter((item) => item !== "None");
-
-          const updatedEquipment = [
-            updatedState.weapon,
-            updatedState.chest,
-            updatedState.head,
-            updatedState.waist,
-            updatedState.foot,
-            updatedState.hand,
-            updatedState.neck,
-            updatedState.ring,
-          ].filter((item) => item !== "None");
-
-          // Get newly equipped items
-          const newlyEquipped = updatedEquipment.filter(
-            (item) => !initialEquipment.includes(item)
-          );
-
-          // Log the results
-          console.log(`[EQUIP] Updated equipment:`);
-          console.log(`  Weapon: ${state.weapon}`);
-          console.log(`  Chest: ${state.chest}`);
-          console.log(`  Head: ${state.head}`);
-          console.log(`  Waist: ${state.waist}`);
-          console.log(`  Foot: ${state.foot}`);
-          console.log(`  Hand: ${state.hand}`);
-          console.log(`  Neck: ${state.neck}`);
-          console.log(`  Ring: ${state.ring}`);
-
-          if (newlyEquipped.length > 0) {
-            console.log(
-              `[EQUIP] Newly equipped items: ${newlyEquipped.join(", ")}`
-            );
-          }
-
-          if (updatedState.bagItems.length < initialState.bagItems.length) {
-            console.log(
-              `[BAG] Updated bag contents: ${state.bagItems.join(", ") || "Empty"}`
-            );
-          }
-
-          state.lastAction = "Equipped Items";
-
-          console.log(`[ACTION] Equipment Complete`);
-          printGameState(state);
-
-          return {
-            success: true,
-            message: `Successfully equipped items`,
-          };
-        } catch (error: unknown) {
-          const errorMessage =
-            error instanceof Error ? error.message : String(error);
-          console.error("[ERROR] Failed to equip items:", errorMessage);
-
-          return {
-            success: false,
-            error: errorMessage,
-            message: "Failed to equip items",
-          };
-        }
-      },
-    }),
-
-    /**
-     * Action to upgrade stats and buy items
-     */
-    action({
-      name: "upgradeAdventurer",
-      description: "Upgrade stats and purchase items",
-      schema: z
-        .object({
-          adventurerId: z.string().describe("The ID of your adventurer"),
-          potions: z
-            .number()
-            .default(0)
-            .describe(
-              "Number of potions to purchase (costs level - (2 * charisma) gold each, restores 10 HP)"
-            ),
-          statUpgrades: z
-            .object({
-              strength: z.number().default(0),
-              dexterity: z.number().default(0),
-              vitality: z.number().default(0),
-              intelligence: z.number().default(0),
-              wisdom: z.number().default(0),
-              charisma: z.number().default(0),
-            })
-            .describe("Stats to upgrade"),
-          items: z
-            .array(
-              z.object({
-                item_id: z.number(),
-                equip: z.boolean(),
-              })
-            )
-            .default([])
-            .describe("Items to purchase and optionally equip"),
-        })
-        .describe("Upgrade stats and purchase items"),
-      async handler(data, ctx, _agent: Agent) {
-        try {
-          console.log(
-            `[ACTION] Upgrading Adventurer - ID: ${data.adventurerId}`
-          );
-
-          const { adventurerId, potions, statUpgrades, items } = data;
-
-          // Log stat upgrades
-          const statKeys = Object.keys(statUpgrades);
-          for (const key of statKeys) {
-            const val = statUpgrades[key as keyof typeof statUpgrades];
-            if (val > 0) {
-              console.log(
-                `[UPGRADE] ${key.charAt(0).toUpperCase() + key.slice(1)}: +${val} points`
-              );
-            }
-          }
-
-          // Simplify the potion logging to avoid errors
-          if (potions > 0) {
-            // Use reasonable default values for now - will be calculated properly when data is available
-            const estimatedLevel = 1;
-            const estimatedCharisma = statUpgrades.charisma;
-            const potionPrice = Math.max(
-              estimatedLevel - 2 * estimatedCharisma,
-              1
-            );
-
-            console.log(
-              `[PURCHASE] Buying ${potions} potions (estimated cost: ${potionPrice} gold each)`
-            );
-          }
-
-          // Log item purchases
-          if (items.length > 0) {
-            console.log(`[PURCHASE] Buying ${items.length} items`);
-          }
-
-          // The ABI shows we can do this all in one call with the "upgrade" function
-          console.log(`[STARKNET] Calling upgrade function on contract`);
-
-          // Create StatUpgrades structure according to the ABI
-          // For the ABI, we need to match the exact structure of adventurer::stats::Stats
-
-          // Convert items array to the format expected by the contract
-          const itemsArray = items.map((item) => ({
-            item_id: item.item_id,
-            equip: item.equip ? 1 : 0, // Convert boolean to 0/1
-          }));
-
-          // Replace the upgradeResult section with better error handling
-          // Around line ~2055
-          let upgradeResult = null;
-          let retryCount = 0;
-          const maxRetries = 3;
-
-          while (!upgradeResult && retryCount < maxRetries) {
-            try {
-              console.log(
-                `[STARKNET] Submitting upgrade transaction (attempt ${retryCount + 1}/${maxRetries})`
-              );
-              upgradeResult = await starknet.write({
-                contractAddress: GAME_CONTRACT_ADDRESS,
-                entrypoint: "upgrade",
-                calldata: [
-                  adventurerId,
-                  potions,
-                  // Stats structure
-                  statUpgrades.strength,
-                  statUpgrades.dexterity,
-                  statUpgrades.vitality,
-                  statUpgrades.intelligence,
-                  statUpgrades.wisdom,
-                  statUpgrades.charisma,
-                  0, // luck (not in our input schema, default to 0)
-                  // Items array length first, followed by items
-                  items.length,
-                  ...items.flatMap((item) => [
-                    item.item_id,
-                    item.equip ? 1 : 0,
-                  ]),
-                ],
-              });
-
-              // At this point, we received some response from the node
-              // If we don't have a transaction hash, we still consider it a successful submission
-              // but need to wait for the hash
-              if (!upgradeResult?.transaction_hash) {
-                console.log(
-                  `[STARKNET] Transaction submitted, but no hash received yet. Waiting for confirmation...`
-                );
-                // Instead of retrying, we'll exit the loop and continue with state updates
-                break;
-              } else {
-                console.log(
-                  `[STARKNET] Upgrade transaction hash: ${upgradeResult.transaction_hash}`
-                );
-              }
-            } catch (error: unknown) {
-              console.error(
-                `[ERROR] Failed to submit upgrade transaction (attempt ${retryCount + 1}/${maxRetries}): ${error instanceof Error ? error.message : String(error)}`
-              );
-              // Wait before retrying - only retry on actual errors
-              await new Promise((resolve) => setTimeout(resolve, 1000));
-              retryCount++;
-              // Only continue retry loop if we had an actual error
-              continue;
-            }
-
-            // If we got here, we successfully got a response, so exit retry loop
-            break;
-          }
-
-          // We always wait a bit after submitting transactions to let them propagate
-          console.log(`[STARKNET] Waiting for transaction to be processed...`);
-          await new Promise((resolve) => setTimeout(resolve, 3000));
-
-          // Now get updated adventurer state
-          console.log(`[STARKNET] Getting updated adventurer state`);
-          const adventurerResult = await starknet.read({
-            contractAddress: GAME_CONTRACT_ADDRESS,
-            entrypoint: "get_adventurer",
-            calldata: [adventurerId],
-          });
-
-          // Update the state based on upgrade results
-          const state = initializeLootSurvivorMemory(ctx);
-
-          if (adventurerResult && !adventurerResult.message) {
-            // Use our parser function to handle the flat array response
-            const adventurerData = parseAdventurerData(
-              adventurerResult.result || adventurerResult
-            );
-
-            // Calculate level
-            const xpNumber = parseInt(adventurerData.xp);
-            const level = Math.floor(Math.sqrt(xpNumber));
-
-            // Map item IDs to names
-            const getItemName = (
-              item: { id: string; xp: string },
-              special1?: string,
-              special2?: string,
-              special3?: string
-            ): string => {
-              const itemId = parseInt(item.id);
-              if (itemId <= 0) {
-                return "None";
-              }
-
-              // Get XP value
-              const xp = item.xp ? parseInt(item.xp) : 0;
-
-              // Use our helper function to get the full name with special properties
-              return getFullItemName(itemId, xp, special1, special2, special3);
-            };
-
-            // Update adventurer stats
-            state.adventurerHealth = adventurerData.health;
-            // Calculate max health correctly
-            const baseHealth = 100;
-            const vitalityBonus = parseInt(adventurerData.stats.vitality) * 15;
-            const maxHealth = Math.min(baseHealth + vitalityBonus, 1023);
-            state.adventurerMaxHealth = maxHealth.toString();
-            state.xp = adventurerData.xp;
-            state.gold = adventurerData.gold;
-            state.level = level.toString();
-            state.statUpgrades = adventurerData.stat_upgrades_available;
-
-            // Update stats
-            state.strength = adventurerData.stats.strength;
-            state.dexterity = adventurerData.stats.dexterity;
-            state.vitality = adventurerData.stats.vitality;
-            state.intelligence = adventurerData.stats.intelligence;
-            state.wisdom = adventurerData.stats.wisdom;
-            state.charisma = adventurerData.stats.charisma;
-            state.luck = adventurerData.stats.luck;
-
-            // Update equipment
-            state.weapon = getItemName(adventurerData.equipment.weapon);
-            state.chest = getItemName(adventurerData.equipment.chest);
-            state.head = getItemName(adventurerData.equipment.head);
-            state.waist = getItemName(adventurerData.equipment.waist);
-            state.foot = getItemName(adventurerData.equipment.foot);
-            state.hand = getItemName(adventurerData.equipment.hand);
-            state.neck = getItemName(adventurerData.equipment.neck);
-            state.ring = getItemName(adventurerData.equipment.ring);
-
-            // Beast health
-            state.beastHealth = adventurerData.beast_health;
-
-            // Check if in battle
-            state.inBattle =
-              parseInt(adventurerData.beast_health) > 0 ? "true" : "false";
-
-            // If in battle, get beast details
-            if (parseInt(adventurerData.beast_health) > 0) {
-              try {
-                console.log(`[STARKNET] Calling get_attacking_beast function`);
-                const beastResult = await starknet.read({
-                  contractAddress: GAME_CONTRACT_ADDRESS,
-                  entrypoint: "get_attacking_beast",
-                  calldata: [adventurerId],
-                });
-
-                console.log(
-                  `[STARKNET] Raw beast result:`,
-                  JSON.stringify(beastResult)
-                );
-
-                if (beastResult && !beastResult.message) {
-                  const beastData = parseBeastData(
-                    beastResult.result || beastResult
-                  );
-
-                  state.currentBeast = getBeastName(beastData.id);
-                  state.beastMaxHealth = beastData.starting_health;
-                  state.beastLevel = beastData.combat_spec.level;
-                  state.beastTier = getBeastTier(beastData.combat_spec.tier);
-                  state.beastType = getBeastType(
-                    beastData.combat_spec.item_type
-                  );
-
-                  // Get formatted special properties for display
-                  const special1 = beastData.combat_spec.specials.special1;
-                  const special2 = beastData.combat_spec.specials.special2;
-                  const special3 = beastData.combat_spec.specials.special3;
-
-                  // Format special1 (item suffix like "of Power")
-                  state.beastSpecial1 =
-                    parseInt(special1) > 0 ? getItemSuffix(special1) : "None";
-
-                  // Format special2 (prefix1 like "Agony")
-                  state.beastSpecial2 =
-                    parseInt(special2) > 0 ? getPrefix1(special2) : "None";
-
-                  // Format special3 (prefix2 like "Bane")
-                  state.beastSpecial3 =
-                    parseInt(special3) > 0 ? getPrefix2(special3) : "None";
-                }
-              } catch (beastError) {
-                console.log(
-                  `[STARKNET] Could not retrieve beast details: ${beastError}`
-                );
-              }
-            }
-
-            // battle action count
-            state.battleActionCount = adventurerData.battle_action_count;
-
-            // Get bag contents
-            try {
-              const bagResult = await starknet.read({
-                contractAddress: GAME_CONTRACT_ADDRESS,
-                entrypoint: "get_bag",
-                calldata: [adventurerId],
-              });
-
-              if (
-                bagResult &&
-                !bagResult.message &&
-                (bagResult.result || bagResult)
-              ) {
-                const rawBag = bagResult.result || bagResult;
-                state.bagItems = [];
-
-                // The bag in the contract is a struct with 15 items
-                // Each item has id and xp fields
-                for (let i = 0; i < 15; i++) {
-                  // In the array response, items are consecutive
-                  // item1.id, item1.xp, item2.id, item2.xp, ...
-                  const itemIdIndex = i * 2; // ID at even indices
-                  const itemXpIndex = i * 2 + 1; // XP at odd indices
-
-                  if (
-                    itemIdIndex < rawBag.length &&
-                    rawBag[itemIdIndex] !== "0x0"
-                  ) {
-                    const itemId = hexToDec(rawBag[itemIdIndex]);
-                    if (itemId !== "0") {
-                      const itemName = getItemName({
-                        id: itemId.toString(),
-                        xp: "0",
-                      });
-                      state.bagItems.push(itemName);
-                    }
-                  }
-                }
-              }
-            } catch (bagError) {
-              console.log(
-                `[STARKNET] Could not retrieve bag items: ${bagError}`
-              );
-            }
-
-            // Try to get market items
-            try {
-              console.log(`[STARKNET] Calling get_market function`);
-              const marketResult = await starknet.read({
-                contractAddress: GAME_CONTRACT_ADDRESS,
-                entrypoint: "get_market",
-                calldata: [adventurerId],
-              });
-
-              console.log(
-                `[STARKNET] Raw market result:`,
-                JSON.stringify(marketResult)
-              );
-
-              if (
-                marketResult &&
-                !marketResult.message &&
-                (marketResult.result || marketResult)
-              ) {
-                const rawMarket = marketResult.result || marketResult;
-                state.marketItems = [];
-
-                // Log the raw market for further debugging
-                console.log(
-                  `[MARKET] Raw market data (${rawMarket.length} items):`,
-                  rawMarket
-                );
-
-                // Process each market item ID
-                // The data appears to be a flattened array of item IDs
-                for (let i = 0; i < rawMarket.length; i++) {
-                  const itemId = hexToDec(rawMarket[i]);
-                  if (itemId !== "0") {
-                    const itemName = getItemName({
-                      id: itemId.toString(),
-                      xp: "0",
-                    });
-                    const tier = getItemTier(parseInt(itemId));
-                    // Apply charisma discount to price
-                    const price = getItemPrice(
-                      tier,
-                      parseInt(adventurerData.stats.charisma)
-                    );
-
-                    state.marketItems.push({
-                      id: itemId.toString(),
-                      name: itemName,
-                      price: price.toString(),
-                    });
-
-                    // Debug log
-                    console.log(
-                      `[MARKET] Added item: ${itemName} (ID: ${itemId}, Tier: ${tier}, Price: ${price} gold, with CHA discount)`
-                    );
-                  }
-                }
-
-                // Log total market items
-                console.log(
-                  `[MARKET] Total items available: ${state.marketItems.length}`
-                );
-              }
-            } catch (marketError) {
-              console.log(
-                `[STARKNET] Could not retrieve market items: ${marketError}`
-              );
-            }
-
-            // Store equipment XP values
-            state.weaponXP = adventurerData.equipment.weapon.xp;
-            state.chestXP = adventurerData.equipment.chest.xp;
-            state.headXP = adventurerData.equipment.head.xp;
-            state.waistXP = adventurerData.equipment.waist.xp;
-            state.footXP = adventurerData.equipment.foot.xp;
-            state.handXP = adventurerData.equipment.hand.xp;
-            state.neckXP = adventurerData.equipment.neck.xp;
-            state.ringXP = adventurerData.equipment.ring.xp;
-
-            state.lastAction = "Upgraded Adventurer";
-          }
-
-          console.log(`[ACTION] Upgrade Complete`);
-          printGameState(state);
-
-          return {
-            success: true,
-            result: adventurerResult,
-            message: `Successfully upgraded adventurer stats and purchased items`,
-          };
-        } catch (error: unknown) {
-          const errorMessage =
-            error instanceof Error ? error.message : String(error);
-          console.error("[ERROR] Failed to upgrade adventurer:", errorMessage);
-
-          return {
-            success: false,
-            error: errorMessage,
-            message: "Failed to upgrade adventurer",
-          };
-        }
-      },
-    }),
-
-    /**
-     * Action to get the current state of the adventurer
-     */
-    action({
-      name: "getAdventurerState",
-      description: "Get the current state of your adventurer",
-      schema: z
-        .object({
-          adventurerId: z.string().describe("The ID of your adventurer"),
-        })
-        .describe("Get the current state of your adventurer"),
-      async handler(data, ctx, _agent: Agent) {
-        try {
-          console.log(
-            `[ACTION] Getting Adventurer State - ID: ${data.adventurerId}`
-          );
-
-          const { adventurerId } = data;
-
-          // Use the utility function to get the state
-          const state = await getAdventurerState(
-            GAME_CONTRACT_ADDRESS,
-            adventurerId
-          );
-
-          if (!state) {
-            return {
-              success: false,
-              error: "Failed to retrieve adventurer state",
-              message: "Failed to get adventurer state",
-            };
-          }
-
-          // Update the agent memory with the state
-          const memoryState = initializeLootSurvivorMemory(ctx);
-          Object.assign(memoryState, state);
-
-          console.log(`[ACTION] State Retrieved Successfully`);
-          printGameState(memoryState);
-
-          return {
-            success: true,
-            message: "Successfully retrieved adventurer state",
-          };
-        } catch (error: unknown) {
-          const errorMessage =
-            error instanceof Error ? error.message : String(error);
-          console.error(
-            "[ERROR] Failed to get adventurer state:",
-            errorMessage
-          );
-
-          return {
-            success: false,
-            error: errorMessage,
-            message: "Failed to get adventurer state",
-          };
-        }
-      },
-    }),
   ],
 });
+
+// Add a utility function to wait for transaction confirmation
+async function waitForTransaction(txHash: string, waitTime: number = 5000): Promise<void> {
+  console.log(`[STARKNET] Waiting for transaction ${txHash} to be confirmed...`);
+
+  try {
+    // First add a small delay to allow transaction to propagate
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Then poll until the transaction is confirmed
+    let status = "RECEIVED";
+    let attempts = 0;
+    const maxAttempts = 30; // Prevent infinite loops
+    const pollInterval = 2000; // 2 seconds between checks
+
+    while (!["ACCEPTED_ON_L2", "ACCEPTED_ON_L1"].includes(status) && attempts < maxAttempts) {
+      try {
+        // Use the direct account.waitForTransaction method with polling
+        const receipt = await starknet.write({
+          contractAddress: GAME_CONTRACT_ADDRESS,
+          entrypoint: "check_transaction_status", // Using a read-only entrypoint to get access to provider
+          calldata: [txHash],
+        });
+
+        // Extract status from receipt if available
+        if (receipt && typeof receipt === 'object' && 'execution_status' in receipt) {
+          const executionStatus = receipt.execution_status;
+          if (executionStatus === "SUCCEEDED") {
+            status = "ACCEPTED_ON_L2";
+          } else if (executionStatus === "REVERTED") {
+            console.error(`[STARKNET] Transaction ${txHash} failed with status: REVERTED`);
+            throw new Error(`Transaction failed: REVERTED`);
+          }
+        }
+
+        if (!["ACCEPTED_ON_L2", "ACCEPTED_ON_L1"].includes(status)) {
+          console.log(`[STARKNET] Transaction ${txHash} not confirmed yet. Waiting...`);
+          await new Promise(resolve => setTimeout(resolve, pollInterval));
+        }
+      } catch (error) {
+        console.warn(`[STARKNET] Error checking transaction status: ${error}`);
+        await new Promise(resolve => setTimeout(resolve, pollInterval));
+      }
+
+      attempts++;
+    }
+
+    if (attempts >= maxAttempts) {
+      console.warn(`[STARKNET] Transaction confirmation timed out after ${attempts} attempts. Proceeding anyway.`);
+    } else {
+      console.log(`[STARKNET] Transaction ${txHash} confirmed with status: ${status}`);
+    }
+  } catch (error) {
+    console.error(`[STARKNET] Error waiting for transaction: ${error}`);
+    // Fall back to simple delay in case of errors with receipt fetching
+    console.log(`[STARKNET] Falling back to delay of ${waitTime}ms`);
+    await new Promise(resolve => setTimeout(resolve, waitTime));
+  }
+
+  console.log(`[STARKNET] Resuming after transaction confirmation`);
+}
+
+// Add back the createDreams initialization at the end of the file
+// Add this at the very end of the file
 
 // Initialize the agent
 createDreams({
