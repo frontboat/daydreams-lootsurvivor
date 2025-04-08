@@ -33,6 +33,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace("/proxy/tools-server", ""),
       },
+      "/proxy/mcp": {
+        target: "http://localhost:8787",
+        changeOrigin: true,
+        rewrite: (path) => path.replace("/proxy/mcp", ""),
+      },
     },
   },
 });

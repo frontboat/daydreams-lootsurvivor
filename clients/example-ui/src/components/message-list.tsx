@@ -1,12 +1,25 @@
-import { ChevronsUpDown, Copy } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronsUpDown,
+  Copy,
+  Download,
+  FileText,
+  Terminal,
+} from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "./ui/collapsible";
 import { Button } from "./ui/button";
-import { ActionCall, ActionResult, AnyRef, OutputRef } from "@daydreamsai/core";
-import React from "react";
+import {
+  ActionCall,
+  ActionResult,
+  AnyAction,
+  AnyRef,
+  OutputRef,
+} from "@daydreamsai/core";
+import React, { useState } from "react";
 import { ReactNode } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 import SyntaxHighlighter from "react-syntax-highlighter";
@@ -15,6 +28,7 @@ import remarkGfm from "remark-gfm";
 import darcula from "react-syntax-highlighter/dist/esm/styles/hljs/darcula";
 import { ScrollArea, ScrollBar } from "./ui/scroll-area";
 import { IFrameArtifact } from "./chat-sidebar";
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 
 function LogContainer({
   children,
@@ -61,9 +75,18 @@ function Artifact({ artifact }: { artifact: OutputRef<string> }) {
       </div>
     );
   }
+  if (artifact.params!.contentType === "application/pdf" && artifact.data) {
+    return (
+      <div className="px-4 pb-8 min-w-full min-h-[80vh]">
+        {/* <div>{JSON.stringify(content)}</div> */}
+        <IFrameArtifact contentType="application/pdf">
+          {artifact.data}
+        </IFrameArtifact>
+      </div>
+    );
+  }
 
   if (artifact.params!.contentType === "text/markdown") {
-    console.log(artifact);
     let content = (
       artifact.data
         ? typeof artifact.data !== "string"
@@ -83,7 +106,11 @@ function Artifact({ artifact }: { artifact: OutputRef<string> }) {
       </div>
     );
   }
-  if (artifact.params!.contentType === "application/vnd.ant.code")
+
+  if (
+    artifact.params!.contentType === "application/vnd.ant.code" ||
+    artifact.params!.contentType === "application/vnd.ant.react"
+  )
     return (
       <div className="grid">
         <ScrollArea className="h-[500px]">
@@ -103,7 +130,7 @@ function Artifact({ artifact }: { artifact: OutputRef<string> }) {
     );
 
   return (
-    <pre className="whitespace-pre-wrap">
+    <pre className="whitespace-pre-wrap px-4">
       {artifact.data ?? artifact.content}
     </pre>
   );
@@ -119,6 +146,201 @@ function CollapsibleButton() {
     </CollapsibleTrigger>
   );
 }
+interface CliCommandProps {
+  command: string;
+  title?: string;
+  stdout?: string;
+  stderr?: string;
+}
+
+const CliCommandComponent: React.FC<CliCommandProps> = ({
+  command,
+  title = "Sandbox Command",
+  stdout,
+  stderr,
+}) => {
+  return (
+    <Alert className="font-mono">
+      <Terminal className="h-4 w-4 mt-1" />
+      <AlertDescription className="mt-2">
+        <code className="font-semibold">{command}</code>
+        {stdout && ( // Use && for conditional rendering
+          <pre className="text-sm whitespace-pre-wrap border-t mt-2 pt-2">
+            {stdout.trim()}
+          </pre>
+        )}
+        {stderr && ( // Use && for conditional rendering
+          <pre className="text-sm whitespace-pre-wrap border-t mt-2 pt-2 text-red-600">
+            {stderr.trim()}
+          </pre>
+        )}
+      </AlertDescription>
+    </Alert>
+  );
+};
+
+interface FileWriteProps {
+  filePath: string;
+  fileContent: string;
+  title?: string;
+}
+
+const FileWriteComponent: React.FC<FileWriteProps> = ({
+  filePath,
+  fileContent,
+  title = "Sandbox Write File",
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handleDownload = () => {
+    // Basic browser download logic
+    const blob = new Blob([fileContent], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filePath.split("/").pop() || "download.txt"; // Get filename from path
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    // Note: This download logic relies on standard browser APIs.
+    // Its behavior might vary depending on the execution environment.
+  };
+
+  return (
+    <Alert className="font-mono">
+      <FileText className="h-4 w-4" />
+      <AlertTitle>{title}</AlertTitle>
+      <AlertDescription className="flex justify-between items-center">
+        <span>{filePath}</span>
+        <Button variant="outline" size="sm" onClick={handleDownload}>
+          <Download className="h-3 w-3 mr-1" />
+          Download
+        </Button>
+      </AlertDescription>
+
+      <Collapsible
+        open={isOpen}
+        onOpenChange={setIsOpen}
+        className="mt-2 border-t pt-2 !pl-0"
+      >
+        <CollapsibleTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start px-1"
+          >
+            <ChevronDown
+              className={`h-4 w-4 mr-1 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+            />
+            {isOpen ? "Hide" : "Show"} Content ({fileContent.split("\n").length}{" "}
+            lines)
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <pre className="mt-1 text-xs bg-muted p-2 rounded overflow-auto max-h-96">
+            {fileContent}
+          </pre>
+        </CollapsibleContent>
+      </Collapsible>
+    </Alert>
+  );
+};
+
+type ActionProps<Schema = any, Result = any> = {
+  call: ActionCall<Schema>;
+  result?: ActionResult<Result>;
+};
+
+const actionComponents: Record<string, React.FC<ActionProps<any, any>>> = {
+  "tavily.search": ({
+    call,
+    result,
+  }: ActionProps<
+    { query: string },
+    {
+      results: { url: string; title: string; content: string }[];
+      totalResults: number;
+    }
+  >) => {
+    return (
+      <div>
+        <div>Query:{call.data.query}</div>
+        <div className="mt-2">Results:{result?.data.totalResults}</div>
+        {result === undefined && <div>Loading...</div>}
+        <div className="list-disc">
+          <ul className="grid gap-4 mt-4 list list-disc">
+            {result?.data.results.map((r, i) => {
+              return (
+                <li key={i} className="grid gap-1">
+                  <div className="">{r.title}</div>
+                  <a href={r.url} target="_blank">
+                    {r.url}
+                  </a>
+                  <div className="prose prose-invert prose-sm min-w-full">
+                    {r.content}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </div>
+    );
+  },
+  "planner.initialize": ({
+    call,
+    result,
+  }: ActionProps<{ plan: string; tasks: string[] }>) => {
+    console.log({ call, result });
+    return (
+      <div className="grid gap-2">
+        <div className="">{call.data.plan}</div>
+        <div>Tasks</div>
+        <div className="grid gap-1">
+          {call.data.tasks.map((task, i) => (
+            <div key={i} className="list-item list-inside">
+              {task}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  },
+  "sandbox.commands.run": ({
+    call,
+    result,
+  }: ActionProps<
+    { sandboxId: string; cmd: string },
+    { error?: any; stdout: string; stderr: string }
+  >) => {
+    console.log(call.data?.cmd, { call: call.data, result: result?.data });
+    const error = result?.data?.error
+      ? [
+          result?.data?.error?.name,
+          JSON.stringify(result?.data?.error?.result, null, 2),
+        ].join("\n")
+      : result?.data?.stderr;
+    return (
+      <CliCommandComponent
+        command={call.data?.cmd ?? ""}
+        stdout={result?.data?.stdout}
+        stderr={error}
+      />
+    );
+  },
+  "sandbox.files.write": ({
+    call,
+    result,
+  }: ActionProps<{ sandboxId: string; path: string; content: string }, {}>) => {
+    return (
+      <FileWriteComponent
+        filePath={call.data?.path}
+        fileContent={call.data?.content ?? ""}
+      />
+    );
+  },
+};
 
 const components: ComponentsRecord = {
   action_call: ({ log, getLog }) => {
@@ -133,34 +355,37 @@ const components: ComponentsRecord = {
             <div className="p-4">Action Call for {log.name}</div>
             <CollapsibleButton />
           </div>
-          <CollapsibleContent className="p-4">
-            <pre className="whitespace-pre-wrap break-all">
-              {JSON.stringify(
-                {
-                  id: log.id,
-                  action: log.name,
-                  params: log.data ?? log.content,
-                  timestamp: log.timestamp,
-                  processed: log.processed,
-                  result: result
-                    ? {
-                        data: result.data,
-                        processed: result.processed,
-                        timestamp: result.timestamp,
-                      }
-                    : null,
-                },
-                null,
-                2
-              )}
-            </pre>
+          <CollapsibleContent className="px-4 pb-4">
+            {actionComponents[log.name] ? (
+              actionComponents[log.name]({ call: log, result })
+            ) : (
+              <pre className="whitespace-pre-wrap break-all">
+                {JSON.stringify(
+                  {
+                    id: log.id,
+                    action: log.name,
+                    params: log.data ?? log.content,
+                    timestamp: log.timestamp,
+                    processed: log.processed,
+                    result: result
+                      ? {
+                          data: result.data,
+                          processed: result.processed,
+                          timestamp: result.timestamp,
+                        }
+                      : null,
+                  },
+                  null,
+                  2
+                )}
+              </pre>
+            )}
           </CollapsibleContent>
         </Collapsible>
       </LogContainer>
     );
   },
   action_result: ({ log, getLog }) => {
-    // return null;
     const call = getLog<ActionCall>(log.callId);
     return (
       <LogContainer className="p-0 w-full">
@@ -371,7 +596,13 @@ const components: ComponentsRecord = {
   },
 };
 
-export function LogsList({ logs }: { logs: AnyRef[] }) {
+export function LogsList({
+  logs,
+  hide,
+}: {
+  logs: AnyRef[];
+  hide?: Partial<Record<AnyRef["ref"], true>>;
+}) {
   function getLog(arg: string | ((log: AnyRef) => boolean)) {
     return logs.find(typeof arg === "function" ? arg : (log) => log.id === arg);
   }
@@ -382,6 +613,9 @@ export function LogsList({ logs }: { logs: AnyRef[] }) {
           log: AnyRef;
           getLog: (id: string) => AnyRef | undefined;
         }>;
+
+        if (hide?.[log.ref] === true) return null;
+
         return Component ? (
           <Component key={log.id} log={log} getLog={getLog} />
         ) : null;

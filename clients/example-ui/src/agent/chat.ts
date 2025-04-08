@@ -18,6 +18,7 @@ import { artifact } from "./outputs";
 import { planner } from "./planner";
 import { sandboxContext } from "./sandbox";
 import { serverTools } from "./serverTools";
+import { mcpContext } from "./mcp";
 
 export const chatContext = context({
   type: "chat",
@@ -267,7 +268,7 @@ const shortTermMemory = context({
   type: "shortTermMemory",
   schema: { id: z.string() },
   key: ({ id }) => id,
-  create(params): Record<string, any> {
+  create(): Record<string, any> {
     return {};
   },
   //   instructions: `\
@@ -379,6 +380,10 @@ export const createChatSubContexts = ({
   {
     context: sandboxContext,
     args: { user },
+  },
+  {
+    context: mcpContext,
+    args: { id: "main" },
   },
   {
     context: serverTools,

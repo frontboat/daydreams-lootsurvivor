@@ -94,7 +94,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "./ui/collapsible";
-import { planner, PlannerTask } from "@/agent/planner";
+import { planner, PlannerMemory, PlannerTask } from "@/agent/planner";
 
 // This is sample data.
 const data = {
@@ -458,19 +458,15 @@ function formatContextDescription(ctxState: ContextState<AnyContext>) {
   return formatContent(description);
 }
 
-// Props definition for the component
-interface PlannerTasksProps {
-  tasks?: PlannerTask[];
-}
-
-const PlannerTasksDisplay: React.FC<PlannerTasksProps> = ({ tasks = [] }) => {
+function PlannerComponent({ plan, tasks }: PlannerMemory) {
   return (
-    <div className="p-4 border rounded-lg shadow-md">
-      <h2 className="text-lg font-semibold mb-3">Tasks</h2>
+    <div className="p-4 border rounded-lg shadow-md grid gap-3">
+      <div>{plan}</div>
+      <h2 className="text-lg font-semibold">Tasks</h2>
       {tasks.length === 0 ? (
         <p className="">No tasks in the planner yet.</p>
       ) : (
-        <ul className="space-y-2">
+        <ul className="gap-2">
           {tasks.map((task) => (
             <li
               key={task.id}
@@ -504,15 +500,14 @@ const PlannerTasksDisplay: React.FC<PlannerTasksProps> = ({ tasks = [] }) => {
       )}
     </div>
   );
-};
+}
 
 const contextComponents: Record<
   string,
-  <T extends AnyContext>(ctxState: ContextState<T>) => ReactNode
+  (ctxState: ContextState<AnyContext>) => ReactNode
 > = {
   planner(ctxState: ContextState<typeof planner>) {
-    const { tasks } = ctxState.memory;
-    return <PlannerTasksDisplay tasks={tasks} />;
+    return <PlannerComponent {...ctxState.memory} />;
   },
 };
 
@@ -893,9 +888,15 @@ function StepsTable({ data }: { data: AnyRef[] }) {
   );
 }
 
-export function IFrameArtifact({ children }: { children: string }) {
+export function IFrameArtifact({
+  children,
+  contentType = "text/html",
+}: {
+  children: string;
+  contentType?: string;
+}) {
   const iframeUrl = useMemo(() => {
-    const blob = new Blob([children], { type: "text/html" });
+    const blob = new Blob([children], { type: contentType });
     const iframeUrl = URL.createObjectURL(blob);
     return iframeUrl;
   }, [children]);

@@ -139,6 +139,31 @@ export function createWorkingMemory(): WorkingMemory {
   };
 }
 
+export function pushToWorkingMemory(workingMemory: WorkingMemory, ref: Log) {
+  switch (ref.ref) {
+    case "action_call":
+      workingMemory.calls.push(ref);
+      break;
+    case "action_result":
+      workingMemory.results.push(ref);
+      break;
+    case "input":
+      workingMemory.inputs.push(ref);
+      break;
+    case "output":
+      workingMemory.outputs.push(ref);
+      break;
+    case "thought":
+      workingMemory.thoughts.push(ref);
+      break;
+    case "event":
+      workingMemory.events.push(ref);
+      break;
+    default:
+      throw new Error("invalid ref");
+  }
+}
+
 /**
  * Default working memory config
  * Provides a memory container with standard working memory structure

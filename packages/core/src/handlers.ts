@@ -24,6 +24,7 @@ import type {
   WorkingMemory,
 } from "./types";
 import { randomUUIDv7 } from "./utils";
+import { pushToWorkingMemory } from "./context";
 
 export class NotFoundError extends Error {
   constructor(public ref: ActionCall | OutputRef | InputRef) {
@@ -133,6 +134,10 @@ export async function handleActionCall({
     agentMemory: agentState?.memory,
     abortSignal,
     call,
+    push(ref) {
+      if (pushLog) pushLog(ref);
+      else pushToWorkingMemory(workingMemory, ref);
+    },
     emit(event, args, options) {
       console.log("emitting", { event, args });
 
@@ -150,7 +155,19 @@ export async function handleActionCall({
     },
   };
 
-  const resultData = await taskRunner.enqueueTask(
+  call.processed = true;
+
+  const result: ActionResult = {
+    ref: "action_result",
+    id: randomUUIDv7(),
+    callId: call.id,
+    data: undefined,
+    name: call.name,
+    timestamp: Date.now(),
+    processed: false,
+  };
+
+  result.data = await taskRunner.enqueueTask(
     runAction,
     {
       action,
@@ -164,18 +181,6 @@ export async function handleActionCall({
       abortSignal,
     }
   );
-
-  call.processed = true;
-
-  const result: ActionResult = {
-    ref: "action_result",
-    id: randomUUIDv7(),
-    callId: call.id,
-    data: resultData,
-    name: call.name,
-    timestamp: Date.now(),
-    processed: false,
-  };
 
   if (action.format) result.formatted = action.format(result);
 
@@ -544,6 +549,7 @@ export async function handleInput({
     );
 
     inputRef.data = data;
+
     if (params) {
       inputRef.params = {
         ...inputRef.params,
