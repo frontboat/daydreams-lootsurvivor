@@ -219,7 +219,7 @@ export const mainStep = {
     const sections = Object.fromEntries(
       Object.entries(mainStep.sections).map(([key, templateSection]) => [
         key,
-        render(templateSection, data),
+        render(templateSection, data as any),
       ])
     ) as Record<keyof typeof templateSections, string>;
 
