@@ -14,7 +14,7 @@ import {
   xml,
 } from "@daydreamsai/core";
 import { z } from "zod";
-import { artifact } from "./outputs";
+import { artifact, secureForm } from "./outputs";
 import { planner } from "./planner";
 import { sandboxContext } from "./sandbox";
 import { serverTools } from "./serverTools";
@@ -42,7 +42,7 @@ Current ISO time is: ${date.toISOString()}, timestamp: ${date.getTime()}
   `;
   },
   maxSteps: 20,
-  maxWorkingMemorySize: 100,
+  maxWorkingMemorySize: 200,
 }).setActions([
   action({
     name: "chat.setTitle",
@@ -100,6 +100,7 @@ export const chat = extension({
       ],
     }),
     artifact,
+    "secure-form": secureForm,
   },
 });
 
@@ -387,7 +388,7 @@ export const createChatSubContexts = ({
   },
   {
     context: serverTools,
-    args: { id: "server-1", url: "/proxy/tools-server" },
+    args: { id: "server-1", url: "/api" },
   },
 ];
 
@@ -436,6 +437,6 @@ export const createChatReviewSubContexts = ({
   },
   {
     context: serverTools,
-    args: { id: "server-1", url: "/proxy/tools-server" },
+    args: { id: "server-1", url: "/api" },
   },
 ];

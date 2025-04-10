@@ -29,9 +29,9 @@ import type {
 
 export const templateSections = {
   intro: `\
-  You are tasked with analyzing messages, formulating responses, and initiating actions based on a given context. 
+  You are tasked with analyzing inputs, formulating outputs, and initiating actions based on the given contexts. 
   You will be provided with a set of available actions, outputs, and contexts. 
-  Your instructions is to analyze the situation and respond appropriately.`,
+  Your instructions are to analyze the situation and respond appropriately.`,
   instructions: `\
 Follow these steps to process the updates:
 
@@ -81,9 +81,14 @@ Follow these steps to process the updates:
 5. No output or action:
    If you determine that no output or action is necessary, don't respond to that message.`,
   /*
-  - To reference results from previous actions in your current action calls, use the template syntax \${calls[callIndex].property}. This allows you to chain actions and use results from earlier steps in your workflow.
-*/
+   */
+  /*
 
+Configuration: Access pre-defined configuration values using {{config.key.name}} (e.g., {{config.default_user_id}}). (Assumption: Configuration is structured)
+
+ (e.g., {{shortTermMemory.current_project_file}}).
+
+*/
   content: `\
 Here are the available actions you can initiate:
 {{actions}}
@@ -93,6 +98,18 @@ Here are the available outputs you can use:
 
 Here is the current contexts:
 {{contexts}}
+
+<template-engine>
+Purpose: Utilize the template engine ({{...}} syntax) primarily to streamline workflows by transferring data between different components within the same turn. This includes passing outputs from actions into subsequent action arguments, or embedding data from various sources directly into response outputs. This enhances efficiency and reduces interaction latency.
+
+Data Referencing: You can reference data from:
+Action Results: Use {{calls[index].path.to.value}} to access outputs from preceding actions in the current turn (e.g., {{calls[0].sandboxId}}). Ensure the index correctly points to the intended action call.
+Short-Term Memory: Retrieve values stored in short-term memory using {{shortTermMemory.key}}
+
+When to Use:
+Data Injection: Apply templating when an action argument or a response output requires specific data (like an ID, filename, status, or content) from an action result, configuration, or short-term memory available within the current turn.
+Direct Dependencies: Particularly useful when an action requires a specific result from an action called immediately before it in the same turn.
+</template-engine>
 
 Here is the current working memory:
 {{workingMemory}}

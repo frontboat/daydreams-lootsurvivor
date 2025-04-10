@@ -29,6 +29,18 @@ import darcula from "react-syntax-highlighter/dist/esm/styles/hljs/darcula";
 import { ScrollArea, ScrollBar } from "./ui/scroll-area";
 import { IFrameArtifact } from "./chat-sidebar";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
+import { JSONSchema7Definition } from "@ai-sdk/provider";
+import { JSONSchema4, JSONSchema4Object } from "json-schema";
+import { Label } from "./ui/label";
+import { Input } from "./ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "./ui/card";
 
 function LogContainer({
   children,
@@ -265,7 +277,7 @@ const actionComponents: Record<string, React.FC<ActionProps<any, any>>> = {
   >) => {
     return (
       <div>
-        <div>Query:{call.data.query}</div>
+        <div>Query:{call.data?.query}</div>
         <div className="mt-2">Results:{result?.data.totalResults}</div>
         {result === undefined && <div>Loading...</div>}
         <div className="list-disc">
@@ -509,8 +521,17 @@ const components: ComponentsRecord = {
               {log.data ?? log.content}
             </Markdown>
           </div>
+        ) : log.type === "secure-form" ? (
+          <>
+            {/* <pre className="px-4 whitespace-pre-wrap">
+              {JSON.stringify(log, null, 2)}
+            </pre> */}
+            <SecureForm params={log.params! as any} schema={log.data} />
+          </>
         ) : (
-          <div className="px-4">{JSON.stringify(log)}</div>
+          <pre className="px-4 whitespace-pre-wrap">
+            {JSON.stringify(log, null, 2)}
+          </pre>
         )}
       </LogContainer>
     );
@@ -595,6 +616,43 @@ const components: ComponentsRecord = {
     );
   },
 };
+
+function SecureForm({
+  params,
+  schema,
+}: {
+  params: { title: string; description: string };
+  schema: JSONSchema4;
+}) {
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+      }}
+    >
+      <Card className="border-0">
+        <CardHeader className="p-4">
+          <CardTitle>{params.title}</CardTitle>
+          <CardDescription>{params.description}</CardDescription>
+        </CardHeader>
+        <CardContent className="p-4 grid gap-4">
+          {Object.keys(schema.properties ?? {}).map((key) => (
+            <div className="grid gap-2">
+              <Label className="">{key}</Label>
+              <Input name={key}></Input>
+            </div>
+          ))}
+        </CardContent>
+        <CardFooter className="p-4 justify-between">
+          <Button type="button" variant="outline">
+            Cancel
+          </Button>
+          <Button type="submit">Save</Button>
+        </CardFooter>
+      </Card>
+    </form>
+  );
+}
 
 export function LogsList({
   logs,

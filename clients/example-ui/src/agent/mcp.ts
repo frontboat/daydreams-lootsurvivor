@@ -27,11 +27,11 @@ function createMcpProxyClient(url: string) {
 
   return {
     async listServers() {
-      const { servers } = await client.get("/api/servers");
+      const { servers } = await client.get("/mcp/servers");
       return servers;
     },
     async listTools(serverId: string) {
-      const { tools } = await client.get(`/api/servers/${serverId}/tools`);
+      const { tools } = await client.get(`/mcp/servers/${serverId}/tools`);
       return tools;
     },
     async callTool({
@@ -44,7 +44,7 @@ function createMcpProxyClient(url: string) {
       args: any;
     }) {
       const { result } = await client.post(
-        `/api/servers/${serverId}/tools/${name}`,
+        `/mcp/servers/${serverId}/tools/${name}`,
         {
           args,
         }
@@ -62,7 +62,7 @@ export const mcpContext = context({
   key: ({ id }) => id,
   setup() {
     return {
-      client: createMcpProxyClient("/proxy/mcp"),
+      client: createMcpProxyClient("/api"),
     };
   },
   async create({ options }): Promise<{ servers: string[] }> {
