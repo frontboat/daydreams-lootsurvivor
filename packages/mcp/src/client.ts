@@ -30,6 +30,7 @@ export async function createMcpClient(options: {
     resources?: Record<string, unknown>;
     tools?: Record<string, unknown>;
   };
+  env?: Record<string, string>;
 }) {
   // Set default client info if not provided
   const clientInfo = options.clientInfo || {
@@ -54,6 +55,7 @@ export async function createMcpClient(options: {
     transport = new StdioClientTransport({
       command: options.transport.command,
       args: options.transport.args || [],
+      env: options.env,
     });
   } else if (options.transport.type === "sse") {
     if (!options.transport.serverUrl) {

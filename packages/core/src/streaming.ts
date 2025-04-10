@@ -1,5 +1,8 @@
+import { z, type ZodSchema } from "zod";
 import { saveContextWorkingMemory } from "./context";
 import {
+  getPathSegments,
+  getValueByPath,
   handleActionCall,
   handleInput,
   handleOutput,
@@ -7,6 +10,8 @@ import {
   ParsingError,
   prepareActionCall,
   prepareContext,
+  resolvePathSegments,
+  resolveTemplates,
 } from "./handlers";
 import type { Logger } from "./logger";
 import { generateEpisode } from "./memory/utils";
@@ -70,6 +75,10 @@ export async function handleStream<Ctx = any>(
       return false;
     }
 
+    if (current?.tag === tag && !isClosingTag && tag === "reasoning") {
+      return false;
+    }
+
     if (current?.tag === tag && !isClosingTag) {
       current._depth++;
       return false;
@@ -83,6 +92,7 @@ export async function handleStream<Ctx = any>(
 
       return true;
     }
+
     if (current === undefined || current?.tag === "response") return true;
 
     if (isClosingTag && stack.length > 0) {
@@ -156,6 +166,8 @@ export async function handleStream<Ctx = any>(
           current.content += result.value.content;
           fn(current, ctx);
         }
+
+        // todo: we need to handle text when !current to a default output?
       }
       result = parser.next();
     }
@@ -452,13 +464,66 @@ export function createContextStreamHandler({
   }
 
   async function handleActionCallStream(call: ActionCall) {
-    const { action } = await prepareActionCall({
+    const { action, json, templates } = await prepareActionCall({
       call,
       actions: state.actions,
       logger,
     });
 
     if (abortSignal?.aborted) return;
+
+    if (templates.length > 0)
+      await resolveTemplates(
+        json,
+        templates,
+        async function templateResolver(key, path) {
+          if (key === "calls") {
+            const [index, ...resultPath] = getPathSegments(path);
+            const call = resolvePathSegments<Promise<ActionResult>>(
+              state.calls,
+              [index]
+            );
+            if (!call) throw new Error("invalid callIndex");
+            console.log("waiting for call to finish");
+            const results = await call;
+            // todo: handle call error
+            console.log({ resultPath, results, calls: state.calls });
+            const value = resolvePathSegments(results.data, resultPath);
+            if (value === undefined) throw new Error("invalid resultPath");
+            return value;
+          }
+
+          if (key === "shortTermMemory") {
+            const shortTermMemory = state.contexts.find(
+              (state) => state.context.type === "shortTermMemory"
+            );
+            if (!shortTermMemory)
+              throw new Error("short term memory not found");
+            const value = getValueByPath(shortTermMemory.memory, path);
+            if (value === undefined)
+              throw new Error("invalid short term memory resultPath");
+            return value;
+          }
+
+          throw new Error("not implemented");
+        }
+      );
+
+    if (action.schema) {
+      const schema =
+        "parse" in action.schema || "validate" in action.schema
+          ? action.schema
+          : z.object(action.schema);
+
+      call.data =
+        "parse" in schema
+          ? (schema as ZodSchema).parse(json)
+          : schema.validate
+            ? schema.validate(json)
+            : json;
+    } else {
+      call.data = json;
+    }
 
     state.calls.push(
       handleActionCall({

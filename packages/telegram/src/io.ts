@@ -58,11 +58,11 @@ export const telegramExtension = extension({
         user: z.object({ id: z.number(), username: z.string() }),
         text: z.string(),
       }),
-      format: ({ user, text }) =>
+      format: ({ data }) =>
         formatMsg({
           role: "user",
-          content: text,
-          user: user.username,
+          content: data.text,
+          user: data.user.username,
         }),
       subscribe(send, agent) {
         const { container } = agent;
@@ -117,12 +117,6 @@ export const telegramExtension = extension({
           timestamp: Date.now(),
         };
       },
-
-      format: ({ data }) =>
-        formatMsg({
-          role: "assistant",
-          content: data.content,
-        }),
     }),
   },
 });

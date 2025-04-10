@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z, ZodSchema } from "zod";
 import type { Logger } from "./logger";
 import type { TaskRunner } from "./task";
 import { runAction } from "./tasks";
@@ -24,6 +24,7 @@ import type {
   WorkingMemory,
 } from "./types";
 import { randomUUIDv7 } from "./utils";
+import { pushToWorkingMemory } from "./context";
 
 export class NotFoundError extends Error {
   constructor(public ref: ActionCall | OutputRef | InputRef) {
@@ -48,6 +49,194 @@ function parseJSONContent(content: string) {
   return JSON.parse(content);
 }
 
+export interface TemplateInfo {
+  path: (string | number)[];
+  template_string: string;
+  expression: string;
+  primary_key: string | null;
+}
+
+function detectTemplates(obj: unknown): TemplateInfo[] {
+  const foundTemplates: TemplateInfo[] = [];
+  const templatePattern = /^\{\{(.*)\}\}$/; // Matches strings that *only* contain {{...}}
+  const primaryKeyPattern = /^([a-zA-Z_][a-zA-Z0-9_]*)/; // Extracts the first identifier (simple version)
+
+  function traverse(
+    currentObj: unknown,
+    currentPath: (string | number)[]
+  ): void {
+    if (typeof currentObj === "object" && currentObj !== null) {
+      if (Array.isArray(currentObj)) {
+        currentObj.forEach((item, index) => {
+          traverse(item, [...currentPath, index]);
+        });
+      } else {
+        // Handle non-array objects (assuming Record<string, unknown> or similar)
+        for (const key in currentObj) {
+          if (Object.prototype.hasOwnProperty.call(currentObj, key)) {
+            // Use type assertion if necessary, depending on your exact object types
+            traverse((currentObj as Record<string, unknown>)[key], [
+              ...currentPath,
+              key,
+            ]);
+          }
+        }
+      }
+    } else if (typeof currentObj === "string") {
+      const match = currentObj.match(templatePattern);
+      if (match) {
+        const expression = match[1].trim();
+        const primaryKeyMatch = expression.match(primaryKeyPattern);
+        const primaryKey = primaryKeyMatch ? primaryKeyMatch[1] : null;
+
+        foundTemplates.push({
+          path: currentPath,
+          template_string: currentObj,
+          expression: expression,
+          primary_key: primaryKey,
+        });
+      }
+    }
+  }
+
+  traverse(obj, []);
+  return foundTemplates;
+}
+
+export function getPathSegments(pathString: string) {
+  const segments = pathString.split(/[.\[\]]+/).filter(Boolean);
+  return segments;
+}
+
+export function resolvePathSegments<T = any>(
+  source: any,
+  segments: string[]
+): T | undefined {
+  let current: any = source;
+
+  for (const segment of segments) {
+    if (current === null || current === undefined) {
+      return undefined;
+    }
+
+    // Check if segment is an array index
+    const index = parseInt(segment, 10);
+    if (!isNaN(index) && Array.isArray(current)) {
+      current = current[index];
+    } else if (typeof current === "object") {
+      current = current[segment];
+    } else {
+      return undefined; // Cannot access property on non-object/non-array
+    }
+  }
+
+  return current;
+}
+
+/**
+ * Native implementation to safely get a nested value from an object/array
+ * using a string path like 'a.b[0].c'.
+ */
+export function getValueByPath(source: any, pathString: string): any {
+  if (!pathString) {
+    return source; // Return the source itself if path is empty
+  }
+
+  // Basic path segment splitting (handles dot notation and array indices)
+  // More robust parsing might be needed for complex cases (e.g., keys with dots/brackets)
+  const segments = getPathSegments(pathString);
+
+  return resolvePathSegments(source, segments);
+}
+
+/**
+ * Native implementation to safely set a nested value in an object/array
+ * using a path array (like the one from detectTemplates).
+ * Creates nested structures if they don't exist.
+ */
+function setValueByPath(
+  target: any,
+  path: (string | number)[],
+  value: any
+): void {
+  let current: any = target;
+  const lastIndex = path.length - 1;
+
+  for (let i = 0; i < lastIndex; i++) {
+    const key = path[i];
+    const nextKey = path[i + 1];
+
+    if (current[key] === null || current[key] === undefined) {
+      // If the next key looks like an array index, create an array, otherwise an object
+      current[key] = typeof nextKey === "number" ? [] : {};
+    }
+    current = current[key];
+
+    // Safety check: if current is not an object/array, we can't proceed
+    if (typeof current !== "object" || current === null) {
+      console.error(
+        `Cannot set path beyond non-object at segment ${i} ('${key}') for path ${path.join(".")}`
+      );
+      return;
+    }
+  }
+
+  // Set the final value
+  const finalKey = path[lastIndex];
+  if (typeof current === "object" && current !== null) {
+    current[finalKey] = value;
+  } else {
+    console.error(
+      `Cannot set final value, parent at path ${path.slice(0, -1).join(".")} is not an object.`
+    );
+  }
+}
+
+/**
+ * Resolves detected templates in an arguments object using provided data sources.
+ * Modifies the input object directly. Uses native helper functions.
+ */
+export async function resolveTemplates(
+  argsObject: any, // The object containing templates (will be mutated)
+  detectedTemplates: TemplateInfo[],
+  resolver: (primary_key: string, path: string) => Promise<any>
+): Promise<void> {
+  for (const templateInfo of detectedTemplates) {
+    let resolvedValue: any = undefined;
+
+    if (!templateInfo.primary_key) {
+      console.warn(
+        `Template at path ${templateInfo.path.join(".")} has no primary key: ${templateInfo.template_string}`
+      );
+      continue;
+    }
+
+    const valuePath = templateInfo.expression
+      .substring(templateInfo.primary_key.length)
+      .replace(/^\./, "");
+
+    try {
+      resolvedValue = await resolver(templateInfo.primary_key, valuePath);
+    } catch (error) {
+      console.error(
+        `Error resolving template at path ${templateInfo.path.join(".")}: ${error}`
+      );
+    }
+
+    if (resolvedValue === undefined) {
+      console.warn(
+        `Could not resolve template "${templateInfo.template_string}" at path ${templateInfo.path.join(".")}. Path or source might be invalid.`
+      );
+      throw new Error(
+        `Could not resolve template "${templateInfo.template_string}" at path ${templateInfo.path.join(".")}. Path or source might be invalid.`
+      );
+    }
+
+    // Use the native setValueByPath function
+    setValueByPath(argsObject, templateInfo.path, resolvedValue);
+  }
+}
+
 export async function prepareActionCall({
   call,
   actions,
@@ -69,27 +258,12 @@ export async function prepareActionCall({
   }
 
   try {
-    let data: any = undefined;
-    if (action.schema) {
-      const schema =
-        "parse" in action.schema || "validate" in action.schema
-          ? action.schema
-          : z.object(action.schema);
+    const content = call.content.trim();
+    const json = content.length > 0 ? parseJSONContent(content) : {};
 
-      data =
-        call.content.length > 0 ? parseJSONContent(call.content.trim()) : {};
+    const templates = detectTemplates(json);
 
-      data =
-        "parse" in schema
-          ? schema.parse(data)
-          : schema.validate
-            ? schema.validate(data)
-            : data;
-    }
-
-    call.data = data;
-
-    return { action, data };
+    return { action, json, templates };
   } catch (error) {
     throw new ParsingError(call, error);
   }
@@ -133,6 +307,10 @@ export async function handleActionCall({
     agentMemory: agentState?.memory,
     abortSignal,
     call,
+    push(ref) {
+      if (pushLog) pushLog(ref);
+      else pushToWorkingMemory(workingMemory, ref);
+    },
     emit(event, args, options) {
       console.log("emitting", { event, args });
 
@@ -150,7 +328,19 @@ export async function handleActionCall({
     },
   };
 
-  const resultData = await taskRunner.enqueueTask(
+  call.processed = true;
+
+  const result: ActionResult = {
+    ref: "action_result",
+    id: randomUUIDv7(),
+    callId: call.id,
+    data: undefined,
+    name: call.name,
+    timestamp: Date.now(),
+    processed: false,
+  };
+
+  result.data = await taskRunner.enqueueTask(
     runAction,
     {
       action,
@@ -164,18 +354,6 @@ export async function handleActionCall({
       abortSignal,
     }
   );
-
-  call.processed = true;
-
-  const result: ActionResult = {
-    ref: "action_result",
-    id: randomUUIDv7(),
-    callId: call.id,
-    data: resultData,
-    name: call.name,
-    timestamp: Date.now(),
-    processed: false,
-  };
 
   if (action.format) result.formatted = action.format(result);
 
@@ -544,6 +722,7 @@ export async function handleInput({
     );
 
     inputRef.data = data;
+
     if (params) {
       inputRef.params = {
         ...inputRef.params,

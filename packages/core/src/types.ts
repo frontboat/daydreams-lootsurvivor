@@ -1196,6 +1196,7 @@ type ContextEventEmitter<TContext extends AnyContext> = <
 //wip
 export type ContextStateApi<TContext extends AnyContext> = {
   emit: ContextEventEmitter<TContext>;
+  push: (log: Log) => void;
 };
 
 export type ContextState<TContext extends AnyContext = AnyContext> = {

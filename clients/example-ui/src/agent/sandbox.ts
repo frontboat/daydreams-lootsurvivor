@@ -1,10 +1,4 @@
-import {
-  action,
-  context,
-  extension,
-  memory,
-  randomUUIDv7,
-} from "@daydreamsai/core";
+import { action, context, extension, randomUUIDv7 } from "@daydreamsai/core";
 import { Sandbox, SandboxInfo } from "@e2b/code-interpreter";
 import { z } from "zod";
 import { createToolClient, createToolClientProxy } from "./serverTools";
@@ -198,22 +192,22 @@ Maximum time a sandbox can be kept alive is 1 hour`,
     },
     handler: async (
       { path, sandboxId, identifier, title, contentType },
-      { workingMemory, options }
+      { options, push }
     ) => {
       const content = await options.tools["sandbox.files.read"]({
         path,
         sandboxId,
       });
 
-      workingMemory.outputs.push({
+      push({
         ref: "output",
         id: randomUUIDv7(),
         type: "artifact",
-        content: "",
+        content: content,
         processed: true,
         timestamp: Date.now(),
         params: { identifier, title, contentType },
-        data: content,
+        data: undefined,
       });
 
       return "Success";

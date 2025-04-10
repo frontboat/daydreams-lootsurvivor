@@ -177,7 +177,13 @@ function RouteComponent() {
   return (
     <>
       <div className="px-4 pt-8 pb-36" ref={scrollRef}>
-        <LogsList logs={newLog ? [...logs, newLog] : logs} />
+        <LogsList
+          logs={newLog ? [...logs, newLog] : logs}
+          hide={{
+            action_result: true,
+            event: true,
+          }}
+        />
       </div>
       <form
         className="bg-background flex flex-col mt-auto sticky bottom-5 left-0 right-0 mx-20 rounded-xl border overflow-hidden"

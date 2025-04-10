@@ -56,11 +56,11 @@ export const discord = extension({
         user: z.object({ id: z.string(), name: z.string() }),
         text: z.string(),
       }),
-      format: ({ user, text }) =>
+      format: ({ data }) =>
         formatMsg({
           role: "user",
-          user: user.name,
-          content: text,
+          user: data.user.name,
+          content: data.text,
         }),
       subscribe(send, { container }) {
         function listener(message: Message) {
@@ -134,11 +134,6 @@ export const discord = extension({
         }
         throw new Error("Invalid channel id");
       },
-      // format: (res) =>
-      //   formatMsg({
-      //     role: "assistant",
-      //     content: res.data.content,
-      //   }),
     }),
   },
 });

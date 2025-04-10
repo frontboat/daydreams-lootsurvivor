@@ -103,3 +103,22 @@ When collaborating with the user on creating content that falls into compatible 
 </example>`,
   ],
 });
+
+export const secureForm = output({
+  attributes: {
+    indentifier: z.string(),
+    title: z.string().optional(),
+    description: z.string().optional(),
+  },
+  schema: z
+    .object({})
+    .passthrough()
+    .describe("JSON Schema object defining the form fields"),
+  instructions: `\
+Use this output only when requesting information explicitly identified as sensitive or private (PII, credentials, keys, etc.).
+Define the necessary fields using a valid JSON schema within the output content.
+Clearly explain to the user why the information is needed before presenting the form output.
+Await the reference key after the form is submitted.
+Use the received reference key in subsequent actions designed to handle secure references.
+Do not attempt to solicit sensitive information directly via other outputs.`,
+});

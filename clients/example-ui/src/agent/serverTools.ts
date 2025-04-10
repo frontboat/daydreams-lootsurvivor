@@ -13,11 +13,11 @@ export function createToolClient(server: string) {
       return res.text();
     },
     async listTools() {
-      const res = await fetch(`${server}/api/tools`);
+      const res = await fetch(`${server}/tools`);
       return res.json();
     },
     async callTool({ name, args }: { name: string; args: any }) {
-      const res = await fetch(`${server}/api/tools/${name}`, {
+      const res = await fetch(`${server}/tools/${name}`, {
         method: "POST",
         body: JSON.stringify({ args }),
       });
