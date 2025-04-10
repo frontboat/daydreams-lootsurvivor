@@ -53,8 +53,10 @@ export const twitter = extension({
           params: { tweetId: data.tweetId },
           children: data.text,
         }),
-      subscribe(send, { container }) {
-        const twitter = container.resolve<TwitterClient>("twitter");
+      subscribe(send, agent) {
+        const { container } = agent;
+
+        const twitter = container.resolve("twitter") as TwitterClient;
 
         // Check mentions every minute
         const interval = setInterval(async () => {

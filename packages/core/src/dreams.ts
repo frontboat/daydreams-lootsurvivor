@@ -34,7 +34,7 @@ import { createVectorStore } from "./memory/base";
 import { runGenerate } from "./tasks";
 import { exportEpisodesAsTrainingData } from "./memory/utils";
 import { LogLevel } from "./types";
-import { randomUUIDv7 } from "./utils";
+import { randomUUIDv7, tryAsync } from "./utils";
 import { createContextStreamHandler, handleStream } from "./streaming";
 import { mainStep, promptTemplate } from "./prompts/main";
 
@@ -361,7 +361,7 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
       });
 
       for (const extension of extensions) {
-        if (extension.install) await Promise.try(extension.install, agent);
+        if (extension.install) await tryAsync(extension.install, agent);
       }
 
       logger.debug("agent:start", "Setting up inputs", {
@@ -379,14 +379,14 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
       for (const [type, input] of Object.entries(inputs)) {
         if (input.install) {
           logger.trace("agent:start", "Installing input", { type });
-          await Promise.try(input.install, agent);
+          await tryAsync(input.install, agent);
         }
 
         if (input.subscribe) {
           logger.trace("agent:start", "Subscribing to input", { type });
-          let subscription = await Promise.try(
+          let subscription = await tryAsync<Subscription>(
             input.subscribe,
-            (context, args, data) => {
+            (context: any, args: any, data: any) => {
               logger.debug("agent", "input", { context, args, data });
               agent
                 .send({
@@ -412,7 +412,7 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
       for (const [type, output] of Object.entries(outputs)) {
         if (output.install) {
           logger.trace("agent:start", "Installing output", { type });
-          await Promise.try(output.install, agent);
+          await tryAsync(output.install, agent);
         }
       }
 
@@ -425,7 +425,7 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
           logger.trace("agent:start", "Installing action", {
             name: action.name,
           });
-          await Promise.try(action.install, agent);
+          await tryAsync(action.install, agent);
         }
       }
 
@@ -485,12 +485,14 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
       // and we will use that state from contextsRunning so we need to wait before checking and creating
       const ctxState = await agent.getContext({ context, args });
       const workingMemory = await agent.getWorkingMemory(ctxId);
-      const agentCtxState = agent.context
-        ? await agent.getContext({
-            context: agent.context,
-            args: contexts.get("agent:context")!.args,
-          })
-        : undefined;
+      const agentContextEntry = contexts.get("agent:context");
+      const agentCtxState =
+        agent.context && agentContextEntry
+          ? await agent.getContext({
+              context: agent.context,
+              args: agentContextEntry.args,
+            })
+          : undefined;
 
       // todo: allow to control what happens when new input is sent while the ctx is running
       // context.onInput?
@@ -656,6 +658,8 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
 
           state.step++;
         } catch (error) {
+          await agent.saveContext(ctxState);
+
           console.error(error);
 
           await Promise.allSettled(

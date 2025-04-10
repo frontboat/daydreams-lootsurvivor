@@ -19,7 +19,7 @@ import {
   action,
   validateEnv,
 } from "@daydreamsai/core";
-import { cli } from "@daydreamsai/core/extensions";
+import { cliExtension } from "@daydreamsai/cli";
 import { z } from "zod";
 import chalk from "chalk";
 import { HyperliquidClient } from "@daydreamsai/hyperliquid";
@@ -265,7 +265,7 @@ const hyperliquidContexts = context({
 // Create Dreams instance
 const dreams = createDreams({
   model: groq("deepseek-r1-distill-llama-70b"),
-  extensions: [cli],
+  extensions: [cliExtension],
   context: hyperliquidContexts,
 });
 
