@@ -25,6 +25,7 @@ import type {
 } from "./types";
 import { randomUUIDv7 } from "./utils";
 import { pushToWorkingMemory } from "./context";
+import { getRefs } from "zod-to-json-schema";
 
 export class NotFoundError extends Error {
   constructor(public ref: ActionCall | OutputRef | InputRef) {
@@ -433,7 +434,7 @@ export async function handleOutput({
           ...res,
         };
 
-        ref.formatted = output.format ? output.format(response) : undefined;
+        ref.formatted = output.format ? output.format(ref) : undefined;
         refs.push(ref);
       }
       return refs;
@@ -444,7 +445,7 @@ export async function handleOutput({
         processed: response.processed ?? true,
       };
 
-      ref.formatted = output.format ? output.format(response) : undefined;
+      ref.formatted = output.format ? output.format(ref) : undefined;
 
       return ref;
     }

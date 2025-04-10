@@ -47,7 +47,7 @@ export const twitter = extension({
         tweetId: z.string(),
         text: z.string(),
       }),
-      format: (data) =>
+      format: ({ data }) =>
         formatXml({
           tag: "tweet",
           params: { tweetId: data.tweetId },

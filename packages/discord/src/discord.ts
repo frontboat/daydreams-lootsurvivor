@@ -56,7 +56,7 @@ export const discord = extension({
         user: z.object({ id: z.string(), name: z.string() }),
         text: z.string(),
       }),
-      format: ({ user, text }) =>
+      format: ({ data: { user, text } }) =>
         formatMsg({
           role: "user",
           user: user.name,

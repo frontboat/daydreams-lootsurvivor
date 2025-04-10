@@ -327,7 +327,7 @@ export type OutputResponse =
 
 export type Output<
   Schema extends OutputSchema = OutputSchema,
-  // Response extends OutputResponse = OutputResponse,
+  Response extends OutputRefResponse = OutputRefResponse,
   TContext extends AnyContext = AnyContext,
   TAgent extends AnyAgent = AnyAgent,
 > = {
@@ -345,8 +345,8 @@ export type Output<
       outputRef: OutputRef<InferOutputSchemaParams<Schema>>;
     },
     agent: TAgent
-  ) => MaybePromise<OutputResponse>;
-  format?: (res: OutputResponse) => string | string[] | XMLElement;
+  ) => MaybePromise<Response | Response[]>;
+  format?: (res: OutputRef<Response["data"]>) => string | string[] | XMLElement;
   /** Optional evaluator for this specific output */
   evaluator?: Evaluator<OutputResponse, AgentContext<Context>, TAgent>;
 
@@ -676,7 +676,7 @@ interface AgentDef<TContext extends AnyContext = AnyContext> {
   /**
    * A record of output configurations for the agent.
    */
-  outputs: Record<string, Omit<Output<any, TContext, any>, "type">>;
+  outputs: Record<string, Omit<Output<any, any, TContext, any>, "type">>;
 
   /**
    * A record of event schemas for the agent.
@@ -747,7 +747,7 @@ export interface Agent<TContext extends AnyContext = AnyContext>
     args: InferSchemaArguments<TContext["schema"]>;
     model?: LanguageModelV1;
     contexts?: ContextRefArray<SubContextRefs>;
-    outputs?: Record<string, Omit<Output<any, TContext, any>, "type">>;
+    outputs?: Record<string, Omit<Output<any, any, TContext, any>, "type">>;
     actions?: AnyAction[];
     handlers?: Partial<Handlers>;
     abortSignal?: AbortSignal;
@@ -768,7 +768,7 @@ export interface Agent<TContext extends AnyContext = AnyContext>
     input: { type: string; data: any };
     model?: LanguageModelV1;
     contexts?: ContextRefArray<SubContextRefs>;
-    outputs?: Record<string, Omit<Output<any, SContext, any>, "type">>;
+    outputs?: Record<string, Omit<Output<any, any, SContext, any>, "type">>;
     actions?: AnyAction[];
     handlers?: Partial<Handlers>;
     abortSignal?: AbortSignal;
@@ -884,10 +884,10 @@ export type InputConfig<
 /** Configuration type for outputs without type field */
 export type OutputConfig<
   Schema extends OutputSchema = OutputSchema,
-  // Response extends OutputResponse = OutputResponse,
+  Response extends OutputRefResponse = OutputRefResponse,
   TContext extends AnyContext = AnyContext,
   TAgent extends AnyAgent = AnyAgent,
-> = Omit<Output<Schema, TContext, TAgent>, "type">;
+> = Omit<Output<Schema, Response, TContext, TAgent>, "type">;
 
 /** Configuration type for experts without type field */
 export type ExpertConfig = Omit<Expert, "type">;
@@ -1040,6 +1040,7 @@ interface ContextConfigApi<
   >(outputs: {
     [K in keyof TSchemas]: Output<
       TSchemas[K],
+      any,
       Context<TMemory, Schema, Ctx, Actions, Events>,
       AnyAgent
     >;
@@ -1160,7 +1161,7 @@ export interface Context<
   /**
    * A record of output configurations for the context.
    */
-  outputs: Record<string, Omit<Output<any, AnyContext, any>, "type">>;
+  outputs: Record<string, Omit<Output<any, any, AnyContext, any>, "type">>;
 }
 
 export type ContextSettings = {
