@@ -47,7 +47,7 @@ export const twitter = extension({
         tweetId: z.string(),
         text: z.string(),
       }),
-      format: (data) =>
+      format: ({ data }) =>
         formatXml({
           tag: "tweet",
           params: { tweetId: data.tweetId },
@@ -102,12 +102,6 @@ export const twitter = extension({
           timestamp: Date.now(),
         };
       },
-      format: ({ data }) =>
-        formatXml({
-          tag: "tweet-reply",
-          params: { tweetId: data.tweetId },
-          children: data.content,
-        }),
     }),
 
     "twitter:tweet": output({
@@ -126,12 +120,6 @@ export const twitter = extension({
           timestamp: Date.now(),
         };
       },
-
-      format: ({ data }) =>
-        formatXml({
-          tag: "tweet",
-          children: data.content,
-        }),
     }),
   },
 });

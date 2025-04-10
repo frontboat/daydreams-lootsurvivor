@@ -30,12 +30,12 @@ const telegramService = service({
 const telegramChat = context({
   type: "telegram:chat",
   key: ({ chatId }) => chatId.toString(),
-  schema: { chatId: z.number() },
-  async setup(args, settings, { container }) {
+  schema: z.object({ chatId: z.number() }),
+  async setup(args, {}, { container }) {
     const telegraf = container.resolve<Telegraf>("telegraf");
-    const chat: Chat = await telegraf.telegram.getChat(args.chatId);
+    const chat = await telegraf.telegram.getChat(args.chatId);
     return {
-      chat,
+      chat: chat as Chat,
     };
   },
   description({ options: { chat } }) {
@@ -46,7 +46,7 @@ const telegramChat = context({
   },
 });
 
-export const telegram = extension({
+export const telegramExtension = extension({
   name: "telegram",
   services: [telegramService],
   contexts: {
@@ -54,20 +54,20 @@ export const telegram = extension({
   },
   inputs: {
     "telegram:message": input({
-      schema: {
+      schema: z.object({
         user: z.object({ id: z.number(), username: z.string() }),
         text: z.string(),
-      },
+      }),
       format: ({ data }) =>
         formatMsg({
           role: "user",
           content: data.text,
           user: data.user.username,
         }),
-      subscribe(send, { container }) {
-        const tg = container.resolve<Telegraf>("telegraf");
-
-        tg.on("message", (ctx) => {
+      subscribe(send, agent) {
+        const { container } = agent;
+        const telegraf = container.resolve("telegraf") as Telegraf;
+        telegraf.on("message", (ctx: any) => {
           const chat = ctx.chat;
           const user = ctx.msg.from;
 
@@ -92,12 +92,12 @@ export const telegram = extension({
   },
   outputs: {
     "telegram:message": output({
-      schema: {
+      schema: z.object({
         userId: z
           .string()
           .describe("the userId to send the message to, you must include this"),
         content: z.string().describe("the content of the message to send"),
-      },
+      }),
       description: "use this to send a telegram message to user",
       enabled({ context }) {
         return context.type === telegramChat.type;
@@ -108,10 +108,8 @@ export const telegram = extension({
           maxChunkSize: 4096,
         });
 
-        for (const chunk of chunks) {
-          await tg.sendMessage(data.userId, chunk, {
-            parse_mode: "Markdown",
-          });
+        for (const chunck of chunks) {
+          await tg.sendMessage(data.userId, chunck);
         }
 
         return {

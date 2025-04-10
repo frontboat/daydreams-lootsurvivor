@@ -36,11 +36,11 @@ export const cli = extension({
         user: z.string(),
         text: z.string(),
       }),
-      format: ({ user, text }) =>
+      format: ({ data }) =>
         formatMsg({
           role: "user",
-          content: text,
-          user,
+          content: data.text,
+          user: data.user,
         }),
       // Subscribe to CLI input
       async subscribe(send, { container }: AnyAgent) {
@@ -78,18 +78,13 @@ export const cli = extension({
     "cli:message": output({
       description: "Send messages to the user",
       schema: z.string().describe("The message to send"),
-      handler(content) {
+      handler({ content }) {
         console.log("Agent:", { content });
         return {
           data: content,
           timestamp: Date.now(),
         };
       },
-      format: ({ data }) =>
-        formatMsg({
-          role: "assistant",
-          content: data,
-        }),
     }),
   },
 });
