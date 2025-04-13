@@ -1,0 +1,175 @@
+---
+title: Prompting
+description:
+  How Daydreams structures prompts to guide LLM reasoning and actions.
+---
+
+The interaction between the Daydreams framework and the Large Language Model
+(LLM) is mediated through carefully structured prompts. These prompts provide
+the LLM with the necessary context, instructions, available tools (actions and
+outputs), and current state, guiding its reasoning process and constraining its
+output format.
+
+## The Main Prompt Template (`mainStep`)
+
+The core prompt structure is defined in `packages/core/src/prompts/main.ts`
+within the `mainStep` configuration object. It uses a template string
+(`mainStep.template` or `promptTemplate`) composed of several sections:
+
+```text
+{{intro}}      # General instructions for the agent's task
+{{instructions}} # Step-by-step guide on how to process updates
+{{content}}    # Dynamically generated section with available tools and state
+{{response}}   # Structure definition for the LLM's expected output
+{{footer}}     # Final reminders and important notes
+```
+
+Each section (`{{intro}}`, `{{instructions}}`, etc.) contains static text
+providing overall guidance to the LLM on how it should behave within the
+framework.
+
+## Dynamic Prompt Generation
+
+At each step of the [Agent Lifecycle](./agent-lifecycle), the framework
+dynamically generates the content for the `{{content}}` section of the prompt
+template. This ensures the LLM always has the most up-to-date information.
+
+1.  **Gathering Data (`formatPromptSections`)**: The `formatPromptSections`
+    function (in `prompts/main.ts`) collects the current state, including:
+    - Available `actions`.
+    - Available `outputs`.
+    - Active `contexts` and their rendered state.
+    - Recent `WorkingMemory` logs (both processed and unprocessed).
+2.  **Formatting to XML (`formatters.ts`)**: Various helper functions
+    (`formatAction`, `formatContextState`, `formatOutputInterface`,
+    `formatContextLog`, `formatValue`, `formatXml`) convert these JavaScript
+    objects and data structures into standardized XML strings. This XML format
+    is designed to be clearly parsable by both the LLM and the framework's
+    stream parser.
+3.  **Rendering (`render`)**: The `render` function (from `formatters.ts`)
+    injects these dynamically generated XML strings into the main
+    `promptTemplate`, replacing placeholders like `{{actions}}`, `{{outputs}}`,
+    `{{contexts}}`, `{{workingMemory}}`, and `{{updates}}`.
+
+## Key XML Sections in the Prompt
+
+The dynamically generated `{{content}}` section typically includes these crucial
+XML blocks:
+
+- **`<available-actions>`**: Lists all actions currently enabled for the agent.
+  Each action includes its `name`, `description`, `instructions`, and argument
+  `schema` (as JSON schema).
+  ```xml
+  <available-actions>
+    <action name="getWeather">
+      <description>Fetches the current weather...</description>
+      <schema>{ "type": "object", "properties": { ... } }</schema>
+    </action>
+    ...
+  </available-actions>
+  ```
+- **`<available-outputs>`**: Lists all outputs the agent can generate. Each
+  output includes its `type`, `description`, `instructions`, content `schema`
+  (`content_schema`), attribute `schema` (`attributes_schema`), and `examples`.
+  ```xml
+  <available-outputs>
+    <output type="discord:message">
+      <description>Sends a message...</description>
+      <attributes_schema>{ "type": "object", ... }</attributes_schema>
+      <content_schema>{ "type": "string", ... }</content_schema>
+      <examples>...</examples>
+    </output>
+    ...
+  </available-outputs>
+  ```
+- **`<contexts>`**: Displays the state of currently active contexts, as rendered
+  by their respective `render` functions.
+  ```xml
+  <contexts>
+    <context type="chat" key="session123">
+      user1: Hi there!
+      agent: Hello! How can I help?
+    </context>
+    ...
+  </contexts>
+  ```
+- **`<working-memory>`**: Shows processed logs (`InputRef`, `OutputRef`,
+  `ActionCall`, `ActionResult`, `Thought`, `EventRef`) from previous steps
+  within the _current_ run.
+  ```xml
+  <working-memory>
+    <input type="cli:message" timestamp="...">User message</input>
+    <action_call name="lookupUser" id="..." timestamp="...">...</action_call>
+    <action_result callId="..." name="lookupUser" timestamp="...">...</action_result>
+    <output type="cli:message" timestamp="...">Agent response</output>
+  </working-memory>
+  ```
+- **`<updates>`**: Shows _new_, unprocessed logs (typically new `InputRef`s or
+  `ActionResult`s from the previous step) that the LLM needs to analyze and
+  react to in the _current_ step.
+  ```xml
+  <updates>
+    <input type="discord:message" timestamp="...">A new message requiring a response</input>
+    <action_result callId="..." name="complexCalculation" timestamp="...">Result is 42</action_result>
+  </updates>
+  ```
+
+## Expected LLM Response Structure
+
+The framework instructs the LLM (via the `{{response}}` section of the template)
+to structure its output using specific XML tags:
+
+```xml
+<response>
+  <reasoning>
+    [LLM's thought process explaining its analysis and plan]
+  </reasoning>
+
+  [Optional: Action calls]
+  <action_call name="actionName">[JSON arguments matching the action's schema]</action_call>
+
+  [Optional: Outputs]
+  <output type="outputType" attribute1="value1">[Content matching the output's schema]</output>
+</response>
+```
+
+- **`<response>`**: The root tag for the entire response.
+- **`<reasoning>`**: Contains the LLM's step-by-step thinking process. This is
+  logged as a `Thought`.
+- **`<action_call>`**: Used to invoke an action. The `name` must match an
+  available action, and the content must be valid JSON matching the action's
+  argument `schema`.
+- **`<output>`**: Used to generate an output. The `type` must match an available
+  output. Any required `attributes` must be included, and the content must match
+  the output's content `schema`.
+
+The framework parses this XML structure from the LLM's response stream to
+trigger the corresponding handlers for actions and outputs.
+
+## Template Engine (`{{...}}`)
+
+The prompt template includes a mention of a simple template engine using
+`{{...}}` syntax (e.g., `{{calls[0].someValue}}`, `{{shortTermMemory.key}}`). As
+noted in the prompt comments, its primary intended use is for **intra-turn data
+referencing**. This means allowing an action call within the _same_ LLM response
+to reference the anticipated result of a _previous_ action call in that _same_
+response.
+
+Example:
+
+```xml
+<response>
+  <reasoning>First, I need to create a file, then write to it.</reasoning>
+  <action_call name="createFile">{ "directory": "/tmp" }</action_call>
+  <action_call name="writeFile">{ "fileId": "{{calls[0].fileId}}", "content": "Hello!" }</action_call>
+</response>
+```
+
+Here, the `writeFile` call references the `fileId` expected to be returned by
+the `createFile` action called just before it within the same LLM response turn.
+The framework resolves these templates before executing the action handlers (see
+`resolveTemplates` in `handlers.ts`).
+
+This dynamic and structured prompting approach allows Daydreams to effectively
+leverage LLMs for complex orchestration tasks, providing them with the necessary
+information and tools while ensuring their output can be reliably processed.
