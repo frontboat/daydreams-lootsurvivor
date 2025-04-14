@@ -1,0 +1,15 @@
+{
+  "pages": [
+    "index",
+    "agent-lifecycle",
+    "contexts",
+    "actions",
+    "inputs",
+    "outputs",
+    "memory",
+    "prompting",
+    "streaming-parsing",
+    "task-runner",
+    "services-extensions"
+  ]
+}
