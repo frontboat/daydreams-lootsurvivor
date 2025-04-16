@@ -4,6 +4,7 @@ import type { Container } from "./container";
 import type { ServiceProvider } from "./serviceProvider";
 import type { BaseMemory } from "./memory";
 import type { TaskRunner } from "./task";
+import type { Logger } from "./logger";
 
 export { type LanguageModelV1, type Schema } from "ai";
 
@@ -73,8 +74,9 @@ export interface MemoryStore {
    * Removes all data from memory
    */
   clear(): Promise<void>;
-}
 
+  keys(base?: string): Promise<string[]>;
+}
 /**
  * Interface for storing and retrieving vector data
  */
@@ -261,7 +263,9 @@ export interface Action<
   name: string;
   description?: string;
   instructions?: string;
+
   schema: Schema;
+
   memory?: TMemory;
   install?: (agent: TAgent) => Promise<void> | void;
 
@@ -301,10 +305,41 @@ export interface Action<
       TMemory
     >,
     agent: TAgent
-  ) => Promise<void> | void;
+  ) => MaybePromise<any>;
+
+  queueKey?:
+    | string
+    | ((
+        ctx: ActionCallContext<
+          Schema,
+          TContext,
+          InferAgentContext<TAgent>,
+          TMemory
+        >
+      ) => string);
+
+  examples?: string[];
+
+  parser?: (ref: ActionCall) => InferActionArguments<Schema>;
+
+  callFormat?: "json" | "xml";
 }
 
-export type ActionCtxRef = AnyAction & { ctxId: string };
+export type ActionCtxRef = AnyAction & {
+  ctxRef: {
+    type: string;
+    id: string;
+    key: string;
+  };
+};
+
+export type OutputCtxRef = AnyOutput & {
+  ctxRef: {
+    type: string;
+    id: string;
+    key: string;
+  };
+};
 
 export type OutputSchema = z.AnyZodObject | z.ZodString | ZodRawShape;
 
@@ -337,6 +372,7 @@ export type Output<
   required?: boolean;
   schema?: Schema;
   attributes?: OutputSchema;
+  context?: TContext;
   install?: (agent: TAgent) => MaybePromise<void>;
   enabled?: (ctx: AgentContext<TContext>) => boolean;
   handler?: (
@@ -352,6 +388,8 @@ export type Output<
 
   examples?: string[];
 };
+
+export type AnyOutput = Output<any, any, any, AnyAgent>;
 
 export type AnyAction = Action<any, any, any, any, AnyAgent, any>;
 
@@ -463,6 +501,7 @@ export type ActionCall<Data = any> = {
   name: string;
   content: string;
   data: Data;
+  params?: Record<string, string>;
   timestamp: number;
   processed: boolean;
 };
@@ -628,6 +667,8 @@ export type Registry = {
 };
 
 interface AgentDef<TContext extends AnyContext = AnyContext> {
+  logger: Logger;
+
   /**
    * The memory store and vector store used by the agent.
    */
@@ -815,6 +856,8 @@ export interface Agent<TContext extends AnyContext = AnyContext>
     args: InferSchemaArguments<TContext["schema"]>;
   }): string;
 
+  getAgentContext(): Promise<ContextState<TContext> | undefined>;
+
   /**
    * Retrieves the state of a given context and arguments.
    * @param params - Parameters for retrieving the context state.
@@ -861,7 +904,7 @@ export type Config<TContext extends AnyContext = AnyContext> = Partial<
 > & {
   model: Agent["model"];
   reasoningModel?: Agent["reasoningModel"];
-  logger?: LogLevel;
+  logLevel?: LogLevel;
   contexts?: AnyContext[];
   services?: ServiceProvider[];
   extensions?: Extension<TContext>[];
@@ -1038,7 +1081,7 @@ interface ContextConfigApi<
       z.AnyZodObject | z.ZodString | z.ZodRawShape
     >,
   >(outputs: {
-    [K in keyof TSchemas]: Output<
+    [K in keyof TSchemas]: OutputConfig<
       TSchemas[K],
       any,
       Context<TMemory, Schema, Ctx, Actions, Events>,
@@ -1179,7 +1222,7 @@ export type ContextsRefRecord<T extends Record<string, AnyContext>> = {
   [K in keyof T]: ContextRef<T[K]>;
 };
 
-export type ContextRefArray<T extends Context<any>[]> = {
+export type ContextRefArray<T extends AnyContext[] = AnyContext[]> = {
   [K in keyof T]: ContextRef<T[K]>;
 };
 
