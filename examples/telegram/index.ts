@@ -22,5 +22,4 @@ createDreams({
   logger: LogLevel.DEBUG,
   model: groq("deepseek-r1-distill-llama-70b"),
   extensions: [telegram, deepResearch],
-  actions: [searchWebAction],
 }).start();

@@ -1,0 +1,141 @@
+---
+title: Getting Started
+description: Build your first Daydreams agent.
+---
+
+> ⚠️ **Warning**: This is alpha software under active development. Expect
+> frequent breaking changes and bugs. The API is not yet stable.
+
+## Overview
+
+Daydreams is a framework for building autonomous AI agents. At its core, an
+agent analyzes incoming information (inputs), reasons about it using a Large
+Language Model (LLM), and decides on the next steps, which could be generating a
+response (output) or performing a task (action). The results of actions feed
+back into the agent's awareness, creating a continuous loop orchestrated by the
+LLM.
+
+This allows you to build agents that can interact with various systems like
+blockchains, social media, APIs, and more, based on goals and context.
+
+## Installation
+
+You can install the core Daydreams package and the CLI helper using npm or bun:
+
+```bash
+npm install @daydreamsai/core @daydreamsai/cli
+# or
+bun add @daydreamsai/core @daydreamsai/cli
+```
+
+You will also need an LLM provider SDK, for example, OpenAI:
+
+```bash
+npm install @ai-sdk/openai
+# or
+bun add @ai-sdk/openai
+```
+
+Make sure you have an `OPENAI_API_KEY` environment variable set.
+
+## Core Concepts
+
+Daydreams is built around a few key ideas:
+
+- **[Agent](./concepts/index):** The central orchestrator that runs the main
+  loop.
+- **[Context](./concepts/contexts):** Manages the state and memory for a
+  specific task or interaction (e.g., a chat session).
+- **[Inputs](./concepts/inputs):** How agents receive information (e.g., CLI
+  messages, API events).
+- **[Outputs](./concepts/outputs):** How agents respond or send information out
+  (e.g., CLI responses, tweets).
+- **[Actions](./concepts/actions):** Tasks agents can perform (e.g., calling an
+  API, executing a transaction).
+- **[Memory](./concepts/memory):** How agents store and recall information
+  (working memory, episodic memory).
+
+Dive deeper into these in the [Core Concepts](./concepts/index) section.
+
+## Your First Agent (CLI Echo Bot)
+
+Let's create a simple agent that echoes back whatever you type in the command
+line.
+
+**1. Set up your project:**
+
+```bash
+mkdir my-first-agent
+cd my-first-agent
+npm init -y
+npm install @daydreamsai/core @daydreamsai/cli @ai-sdk/openai zod
+# or use bun
+# bun init
+# bun add @daydreamsai/core @daydreamsai/cli @ai-sdk/openai zod
+```
+
+**2. Create `agent.ts`:**
+
+```typescript
+import { createDreams, context, input, output } from "@daydreamsai/core";
+import { cliExtension } from "@daydreamsai/cli";
+import { openai } from "@ai-sdk/openai";
+import { z } from "zod";
+
+// 1. Define the main context for our agent
+const echoContext = context({
+  type: "echo",
+  // No specific args needed for this simple context
+  schema: z.object({}),
+  // Instructions for the LLM
+  instructions:
+    "You are a simple echo bot. Repeat the user's message back to them.",
+});
+
+// 2. Create the agent instance
+const agent = createDreams({
+  // Use the OpenAI model
+  model: openai("gpt-4o-mini"),
+  // Include the CLI extension for input/output
+  extensions: [cliExtension],
+  // Register our custom context
+  contexts: [echoContext],
+});
+
+// 3. Start the agent and run the context
+async function main() {
+  // Start the agent (initializes services like readline)
+  await agent.start();
+
+  console.log("Echo agent started. Type 'exit' to quit.");
+
+  // Run our echo context. Since it uses the cliExtension,
+  // it will automatically start listening for console input.
+  // We use {} for args because our context schema is an empty object.
+  await agent.run({
+    context: echoContext,
+    args: {},
+  });
+
+  // Agent stops when the input loop (in cliExtension) breaks (e.g., on "exit")
+  console.log("Agent stopped.");
+}
+
+main();
+```
+
+**3. Run the agent:**
+
+Make sure your `OPENAI_API_KEY` environment variable is set.
+
+```bash
+node agent.ts
+```
+
+Now you can type messages, and the agent should echo them back using the CLI
+input and output handlers provided by `cliExtension`.
+
+---
+
+_Next Steps: Explore the [Core Concepts](./concepts/index) or check out the
+[Guides](./guides/index) for more complex examples._

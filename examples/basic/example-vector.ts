@@ -9,7 +9,7 @@ import {
 } from "@daydreamsai/core";
 import { createChromaVectorStore } from "@daydreamsai/chromadb";
 import { z } from "zod";
-import { readlineService, cli } from "@daydreamsai/cli";
+import { cliExtension } from "@daydreamsai/cli";
 
 const env = validateEnv(
   z.object({
@@ -26,7 +26,7 @@ const agent = createDreams({
   logger: LogLevel.DEBUG,
   container: createContainer(),
   model: groq("deepseek-r1-distill-llama-70b"),
-  contexts: [cli],
+  extensions: [cliExtension],
   memory: {
     store: createMemoryStore(),
     vector: createChromaVectorStore("agent", "http://localhost:8000"),

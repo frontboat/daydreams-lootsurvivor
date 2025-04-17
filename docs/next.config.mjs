@@ -1,10 +1,10 @@
-import nextra from "nextra";
+import { createMDX } from 'fumadocs-mdx/next';
 
-const withNextra = nextra({
-  // ... Other Nextra config options
-});
+const withMDX = createMDX();
 
-// You can include other Next.js configuration options here, in addition to Nextra settings:
-export default withNextra({
-  // ... Other Next.js config options
-});
+/** @type {import('next').NextConfig} */
+const config = {
+  reactStrictMode: true,
+};
+
+export default withMDX(config);

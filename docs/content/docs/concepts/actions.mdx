@@ -1,0 +1,204 @@
+---
+title: Actions
+description: Defining agent capabilities and task execution.
+---
+
+Actions represent the capabilities of a Daydreams agent – the specific tasks it
+can perform in response to inputs or its internal reasoning. They are the
+primary way agents interact with external systems, APIs, or execute complex
+logic.
+
+Examples of actions could include:
+
+- Sending a tweet.
+- Fetching data from an API.
+- Executing a smart contract transaction.
+- Querying a database.
+- Writing to a file.
+
+## Defining an Action
+
+Actions are defined using the `action` helper function exported from
+`@daydreamsai/core`.
+
+```typescript
+import {
+  action,
+  type ActionCallContext,
+  type AnyAgent,
+} from "@daydreamsai/core";
+import { z } from "zod";
+import { type MyContext } from "./my-context"; // Assuming you have a context defined
+
+// Example: An action to fetch weather data
+const getWeather = action({
+  // Required: A unique name for the action. Used by the LLM in <action_call name="...">
+  name: "getWeather",
+
+  // Optional: Description for the LLM to understand what the action does.
+  description: "Fetches the current weather for a given city.",
+
+  // Optional: More specific instructions for the LLM on how/when to use the action.
+  instructions: "Use this action when the user asks for the weather.",
+
+  // Optional: Zod schema defining the arguments the action expects.
+  // If omitted, the handler receives no `args` parameter.
+  schema: z.object({
+    city: z.string().describe("The city name to get the weather for."),
+    unit: z.enum(["Celsius", "Fahrenheit"]).default("Celsius").optional(),
+  }),
+
+  // Required: The function that executes the action's logic.
+  handler: async (args, ctx, agent) => {
+    // 'args' contains the validated arguments based on the schema.
+    console.log(`Fetching weather for ${args.city} in ${args.unit}`);
+
+    // 'ctx' is the ActionCallContext, providing access to context state, memory, etc.
+    const apiKey = ctx.memory.apiKey; // Accessing context-specific memory
+    const url = `https://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${args.city}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch weather: ${response.statusText}`);
+    }
+    const data = await response.json();
+
+    // The return value becomes the data in the ActionResult
+    return {
+      temperature:
+        args.unit === "Celsius" ? data.current.temp_c : data.current.temp_f,
+      condition: data.current.condition.text,
+      unit: args.unit,
+    };
+  },
+
+  // Optional: Zod schema defining the expected structure of the return value.
+  // Useful for documentation and potentially for type checking.
+  returns: z.object({
+    temperature: z.number(),
+    condition: z.string(),
+    unit: z.string(),
+  }),
+
+  // Optional: Function to format the ActionResult data for logging or display.
+  format: (result) => {
+    const data = result.data; // Access the return value from the handler
+    return `The weather is ${data.temperature}°${data.unit} and ${data.condition}.`;
+  },
+
+  // Optional: Define persistent memory specific to this action.
+  // memory: myActionMemory, // See Memory concept page
+
+  // Optional: Conditionally enable/disable this action based on context state.
+  enabled: (ctx) => {
+    // Example: Only enable if an API key exists in the context memory
+    // return !!ctx.memory.apiKey; // Assumes ctx is ActionContext here
+    return true;
+  },
+
+  // Optional: Specify retry behavior on failure.
+  retry: 3, // Retry up to 3 times
+
+  // Optional: Custom error handler.
+  onError: async (error, ctx, agent) => {
+    console.error(`Action ${ctx.call.name} failed:`, error);
+    // Maybe emit an event or try a fallback
+    ctx.emit("actionError", { action: ctx.call.name, error: error.message });
+  },
+
+  // Optional: Associate this action with a specific context type.
+  // context: MyContext, // Only available when MyContext is active
+});
+```
+
+**Key Parameters:**
+
+- `name` (string): Unique identifier used in `<action_call name="...">`.
+- `description`/`instructions` (string, optional): Help the LLM understand the
+  action's purpose and usage. Included in the `<available-actions>` section of
+  the prompt.
+- `schema` (Zod Schema, optional): Defines and validates arguments passed by the
+  LLM. Arguments are parsed from the JSON content within the `<action_call>`
+  tag.
+- `handler` (Function): The core logic. Receives validated `args` (if schema is
+  defined) and the `ActionCallContext`. The return value is wrapped in an
+  `ActionResult`.
+- `returns` (Zod Schema, optional): Documents the expected return shape of the
+  handler.
+- `format` (Function, optional): Customizes how the `ActionResult` is logged or
+  displayed.
+- `memory` (Memory, optional): Allows associating persistent state specifically
+  with this action across multiple calls.
+- `enabled` (Function, optional): Dynamically determines if the action should be
+  available to the LLM based on the current context.
+- `retry` (boolean | number | Function, optional): Configures automatic retries
+  if the handler throws an error.
+- `onError` (Function, optional): Custom logic to execute if the handler fails
+  (after retries).
+- `context` (Context, optional): Restricts the action to be available only when
+  a specific context type is active.
+
+### `ActionCallContext`
+
+The `handler` function receives a context object (`ctx`) with useful properties:
+
+```typescript
+type ActionCallContext = {
+  // From the active ContextState
+  id: string;
+  key: string;
+  context: AnyContext;
+  args: Record<string, any>; // Context arguments
+  options: Record<string, any>; // Context setup options
+  memory: Record<string, any>; // Context persistent memory
+  settings: ContextSettings;
+
+  // Specific to the run
+  workingMemory: WorkingMemory;
+  agentMemory?: Record<string, any>; // Agent's top-level context memory, if any
+  actionMemory?: Record<string, any>; // Action's persistent memory, if defined
+
+  // Details about this specific call
+  call: ActionCall; // The parsed <action_call> log object
+
+  // Utilities
+  abortSignal?: AbortSignal; // Signal for aborting long-running tasks
+  push: (log: Log) => void; // Push a new Log entry into the current run's working memory
+  emit: (event: string, data: any, options?: { processed?: boolean }) => void; // Emit an EventRef
+};
+```
+
+## LLM Interaction
+
+1.  **Availability:** Enabled actions are presented to the LLM within the
+    `<available-actions>` tag in the prompt, including their name, description,
+    instructions, and argument schema.
+2.  **Invocation:** The LLM requests an action by including an
+    `<action_call name="actionName">...</action_call>` tag in its response
+    stream. The content inside the tag should be a JSON object matching the
+    action's `schema`.
+
+## Execution Flow
+
+1.  **Parsing:** When the framework parses an `<action_call>` from the LLM
+    stream (`handleActionCallStream` in `streaming.ts`), it identifies the
+    action by `name`.
+2.  **Argument Handling:** `prepareActionCall` (`handlers.ts`) parses the JSON
+    content inside the tag.
+3.  **Template Resolution:** It resolves any template variables (e.g.,
+    `{{calls[0].id}}`, `{{shortTermMemory.someKey}}`) within the parsed
+    arguments against the current run's state.
+4.  **Validation:** If a `schema` is defined for the action, the resolved
+    arguments are validated against it.
+5.  **Execution:** `handleActionCall` (`handlers.ts`) enqueues the actual
+    execution using the `runAction` task (`tasks/index.ts`) via the
+    `TaskRunner`.
+6.  **Handler Invocation:** The `runAction` task executes the action's `handler`
+    function with the validated arguments and the `ActionCallContext`.
+7.  **Result:** The return value of the `handler` is wrapped in an
+    `ActionResult` object.
+8.  **Feedback:** The `ActionResult` is pushed back into the processing loop
+    (`handlePushLog` in `streaming.ts`), making the result available to the
+    agent (and potentially the LLM in the next step's prompt).
+
+Actions are the fundamental mechanism for agents to interact with the world and
+perform tasks beyond simple text generation.

@@ -3,15 +3,8 @@
  */
 
 import { createGroq } from "@ai-sdk/groq";
-import {
-  createDreams,
-  context,
-  render,
-  action,
-  validateEnv,
-  type Agent,
-} from "@daydreamsai/core";
-import { cli } from "@daydreamsai/core/extensions";
+import { createDreams, context, action, validateEnv } from "@daydreamsai/core";
+import { cliExtension } from "@daydreamsai/cli";
 import { z } from "zod";
 import chalk from "chalk";
 import { SuiChain, supportedSuiTokens } from "@daydreamsai/defai";
@@ -144,7 +137,7 @@ const suiContexts = context({
 // Create Dreams instance
 const dreams = createDreams({
   model: groq("deepseek-r1-distill-llama-70b"),
-  extensions: [cli],
+  extensions: [cliExtension],
   context: suiContexts,
 });
 
