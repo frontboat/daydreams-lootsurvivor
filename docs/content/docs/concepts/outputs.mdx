@@ -1,0 +1,182 @@
+---
+title: Outputs
+description: How Daydreams agents send information and responses.
+---
+
+Outputs are how Daydreams agents communicate results or send information to
+external systems or users. If Inputs are how agents "listen," Outputs are how
+they "speak" or "act" based on the LLM's reasoning.
+
+Examples of outputs include:
+
+- Sending a message to a Discord channel or Telegram chat.
+- Posting a tweet.
+- Returning a response in a CLI session.
+- Calling an external API based on the agent's decision.
+
+## Defining an Output
+
+Outputs are defined using the `output` helper function exported from
+`@daydreamsai/core`. Each definition specifies how the agent should structure
+information for a particular output channel and how to execute the sending
+logic.
+
+```typescript
+import {
+  output,
+  context,
+  type AnyAgent,
+  type AgentContext,
+} from "@daydreamsai/core";
+import { z } from "zod";
+
+// Assume myDiscordClient.sendMessage exists
+declare const myDiscordClient: {
+  sendMessage: (channelId: string, content: string) => Promise<any>;
+};
+declare const myContext: any;
+
+const discordMessageOutput = output({
+  // Required: A unique identifier for this output type. Used by the LLM.
+  type: "discord:message",
+
+  // Optional: Description for the LLM.
+  description: "Sends a message to a specific Discord channel.",
+
+  // Optional: Instructions for the LLM on usage.
+  instructions: "Use this to reply to the user in the Discord channel.",
+
+  // Optional: Zod schema for the main content of the output.
+  // The LLM provides this content *inside* the <output> tag.
+  // Defaults to z.string() if omitted.
+  schema: z.string().describe("The message content to send."),
+
+  // Optional: Zod schema for additional attributes the LLM must provide
+  // *on* the <output> tag itself.
+  attributes: z.object({
+    channelId: z.string().describe("The ID of the Discord channel to send to."),
+    replyToUserId: z
+      .string()
+      .optional()
+      .describe("User ID to mention in the reply."),
+  }),
+
+  // Required (usually): The function that performs the actual sending logic.
+  handler: async (data, ctx, agent) => {
+    // 'data' contains the validated content (from schema) and attributes.
+    const { channelId, replyToUserId } = ctx.outputRef.params ?? {}; // Access attributes via outputRef
+    const content = data; // Access content from schema
+
+    let messageContent = content;
+    if (replyToUserId) {
+      messageContent = `<@${replyToUserId}> ${content}`;
+    }
+
+    console.log(`Sending to Discord channel ${channelId}: ${messageContent}`);
+    await myDiscordClient.sendMessage(channelId, messageContent);
+
+    // Optional: Return data to update the OutputRef log.
+    // Can also return an array of OutputRefResponse for multiple logs.
+    return {
+      data: { content: messageContent, channelId }, // Updated data for the log
+      params: ctx.outputRef.params,
+      processed: true, // Mark this output as fully handled
+    };
+  },
+
+  // Optional: Custom formatting for the OutputRef log.
+  format: (res) => {
+    const outputData = Array.isArray(res) ? res[0]?.data : res?.data;
+    return `Sent Discord message to ${outputData?.channelId}: "${outputData?.content}"`;
+  },
+
+  // Optional: Examples for the LLM.
+  examples: [
+    `<output type="discord:message" channelId="12345">Hello there!</output>`,
+    `<output type="discord:message" channelId="67890" replyToUserId="user123">Got it!</output>`,
+  ],
+
+  // Optional: Setup logic run when the agent starts.
+  install: async (agent) => {
+    /* ... */
+  },
+
+  // Optional: Conditionally enable this output based on context.
+  enabled: (ctx: AgentContext) => {
+    // Example: Only enable if the current context is a discord channel
+    // return ctx.context.type === 'discord:channel';
+    return true;
+  },
+
+  // Optional: Associate with a specific context type.
+  // context: myContext,
+});
+```
+
+**Key Parameters:**
+
+- `type` (string): Unique identifier used in `<output type="...">`.
+- `description`/`instructions` (string, optional): Help the LLM understand what
+  the output does and when to use it.
+- `schema` (Zod Schema, optional): Defines the structure and validates the
+  _content_ placed _inside_ the `<output>` tag by the LLM. Defaults to
+  `z.string()`.
+- `attributes` (Zod Schema, optional): Defines and validates _attributes_ placed
+  _on_ the `<output>` tag itself (e.g.,
+  `<output type="discord:message" channelId="...">`). These provide necessary
+  parameters for the `handler`.
+- `handler` (Function): Executes the logic to send the information externally.
+  It receives:
+  - `data`: The validated content from the `schema`.
+  - `ctx`: The `AgentContext`, including `ctx.outputRef` which contains the
+    parsed `params` (attributes) and original `content`.
+  - `agent`: The agent instance.
+  - It can optionally return an `OutputRefResponse` (or array thereof) to update
+    the log entry or mark it as processed.
+- `format` (Function, optional): Customizes the log representation of the
+  `OutputRef`.
+- `examples` (string[], optional): Provides concrete examples to the LLM on how
+  to structure the `<output>` tag.
+- `install` / `enabled` / `context` (Functions/Context, optional): Similar to
+  Actions and Inputs for setup, conditional availability, and context scoping.
+
+## LLM Interaction
+
+1.  **Availability:** Enabled outputs are presented to the LLM within the
+    `<available-outputs>` tag in the prompt, including their type, description,
+    instructions, content schema (`content_schema`), attribute schema
+    (`attributes_schema`), and examples.
+2.  **Invocation:** The LLM generates an output by including an `<output>` tag
+    in its response stream, matching one of the available types. It must provide
+    any required attributes defined in the `attributes` schema and the content
+    inside the tag matching the `schema`.
+    ```xml
+    <output type="discord:message" channelId="123456789">
+      This is the message content generated by the LLM.
+    </output>
+    ```
+
+## Execution Flow
+
+1.  **Parsing:** When the framework parses an `<output>` tag from the LLM stream
+    (`handleStream` in `streaming.ts`), it extracts the `type`, `attributes`,
+    and `content`.
+2.  **Log Creation:** An initial `OutputRef` log is created (`getOrCreateRef` in
+    `streaming.ts`).
+3.  **Processing:** Once the tag is fully parsed (`el.done`), `handlePushLog`
+    calls `handleOutputStream` (local) which in turn calls `handleOutput`
+    (`handlers.ts`).
+4.  **Validation:** `handleOutput` finds the corresponding output definition by
+    `type`. It validates the extracted `content` against the `output.schema` and
+    the extracted `attributes` against the `output.attributes` schema.
+5.  **Handler Execution:** If validation passes, `handleOutput` executes the
+    `output.handler` function, passing the validated content (`data`) and the
+    `AgentContext` (which includes the `outputRef` containing parsed attributes
+    in `outputRef.params`).
+6.  **External Action:** The `handler` performs the necessary external operation
+    (e.g., sending the Discord message).
+7.  **Logging:** The `handler` can optionally return data to update the
+    `OutputRef` log. The `OutputRef` is added to the `WorkingMemory`.
+
+Outputs allow the agent to respond and communicate, completing the interaction
+loop initiated by Inputs and guided by Actions.

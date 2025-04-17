@@ -1,98 +1,141 @@
 ---
-title: Installation
-description:
-  This guide will walk you through the installation process for Daydreams.
+title: Getting Started
+description: Build your first Daydreams agent.
 ---
 
-import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+> ⚠️ **Warning**: This is alpha software under active development. Expect
+> frequent breaking changes and bugs. The API is not yet stable.
 
-## Prerequisites
+## Overview
 
-- Node.js 18+ using [nvm](https://github.com/nvm-sh/nvm)
+Daydreams is a framework for building autonomous AI agents. At its core, an
+agent analyzes incoming information (inputs), reasons about it using a Large
+Language Model (LLM), and decides on the next steps, which could be generating a
+response (output) or performing a task (action). The results of actions feed
+back into the agent's awareness, creating a continuous loop orchestrated by the
+LLM.
 
-We use [ai-sdk](https://sdk.vercel.ai/docs/introduction) to support multiple
-LLMs. You will need to install the ai-sdk for the LLM you want to use.
+This allows you to build agents that can interact with various systems like
+blockchains, social media, APIs, and more, based on goals and context.
 
-<Tabs groupId="package-manager" persist items={["npm", "pnpm", "yarn", "bun"]}>
-  <Tab value="npm">
-    ```bash
-    npm install @daydreamsai/core @daydreamsai/cli
-    ```
-  </Tab>
-    <Tab value="pnpm">
-    ```bash
-    pnpm add @daydreamsai/core @daydreamsai/cli
-    ```
-  </Tab>
+## Installation
 
-  <Tab value="yarn">
-    ```bash
-    yarn add @daydreamsai/core @daydreamsai/cli
-    ```
-  </Tab>
-  <Tab value="bun">
-    ```bash
-    bun add @daydreamsai/core @daydreamsai/cli
-    ```
-  </Tab>
-</Tabs>
+You can install the core Daydreams package and the CLI helper using npm or bun:
 
-### Install ai-sdk
+```bash
+npm install @daydreamsai/core @daydreamsai/cli
+# or
+bun add @daydreamsai/core @daydreamsai/cli
+```
 
-See all available ai-sdk packages
-[here](https://sdk.vercel.ai/docs/introduction).
+You will also need an LLM provider SDK, for example, OpenAI:
 
-<Tabs groupId="package-manager" persist items={["npm", "pnpm", "yarn", "bun"]}>
-  <Tab value="npm">
-    ```bash
-    npm install @ai-sdk/groq
-    ```
-  </Tab>
-    <Tab value="pnpm">
-    ```bash
-    pnpm add @ai-sdk/groq
-    ```
-  </Tab>
+```bash
+npm install @ai-sdk/openai
+# or
+bun add @ai-sdk/openai
+```
 
-  <Tab value="yarn">
-    ```bash
-    yarn add @ai-sdk/groq
-    ```
-  </Tab>
-  <Tab value="bun">
-    ```bash
-    bun add @ai-sdk/groq
-    ```
-  </Tab>
-</Tabs>
+Make sure you have an `OPENAI_API_KEY` environment variable set.
 
-### Basic Usage
+## Core Concepts
 
-Dreams agents are all functional. `createDreams` is a function that returns an
-agent object, which can be run with `agent.start()`. Inject discord, telegram,
-or any other input/output to the agent and define your own actions.
+Daydreams is built around a few key ideas:
 
-This example demonstrates a simple chat interface using Dreams with a command
-line interface and Groq's LLM. See other examples in the
-[examples](https://github.com/daydreamsai/daydreams/tree/main/examples)
+- **[Agent](./concepts/index):** The central orchestrator that runs the main
+  loop.
+- **[Context](./concepts/contexts):** Manages the state and memory for a
+  specific task or interaction (e.g., a chat session).
+- **[Inputs](./concepts/inputs):** How agents receive information (e.g., CLI
+  messages, API events).
+- **[Outputs](./concepts/outputs):** How agents respond or send information out
+  (e.g., CLI responses, tweets).
+- **[Actions](./concepts/actions):** Tasks agents can perform (e.g., calling an
+  API, executing a transaction).
+- **[Memory](./concepts/memory):** How agents store and recall information
+  (working memory, episodic memory).
+
+Dive deeper into these in the [Core Concepts](./concepts/index) section.
+
+## Your First Agent (CLI Echo Bot)
+
+Let's create a simple agent that echoes back whatever you type in the command
+line.
+
+**1. Set up your project:**
+
+```bash
+mkdir my-first-agent
+cd my-first-agent
+npm init -y
+npm install @daydreamsai/core @daydreamsai/cli @ai-sdk/openai zod
+# or use bun
+# bun init
+# bun add @daydreamsai/core @daydreamsai/cli @ai-sdk/openai zod
+```
+
+**2. Create `agent.ts`:**
 
 ```typescript
-/**
- * Basic example demonstrating a simple chat interface using Dreams
- * with a command line interface and Groq's LLM.
- */
-import { createGroq } from "@ai-sdk/groq";
-import { createDreams } from "@daydreamsai/core";
+import { createDreams, context, input, output } from "@daydreamsai/core";
 import { cliExtension } from "@daydreamsai/cli";
+import { openai } from "@ai-sdk/openai";
+import { z } from "zod";
 
-// Initialize Groq client
-const groq = createGroq({
-  apiKey: process.env.GROQ_API_KEY!,
+// 1. Define the main context for our agent
+const echoContext = context({
+  type: "echo",
+  // No specific args needed for this simple context
+  schema: z.object({}),
+  // Instructions for the LLM
+  instructions:
+    "You are a simple echo bot. Repeat the user's message back to them.",
 });
 
-// Create Dreams agent instance
+// 2. Create the agent instance
 const agent = createDreams({
-  model: groq("deepseek-r1-distill-llama-70b"),
+  // Use the OpenAI model
+  model: openai("gpt-4o-mini"),
+  // Include the CLI extension for input/output
   extensions: [cliExtension],
-}).start();
+  // Register our custom context
+  contexts: [echoContext],
+});
+
+// 3. Start the agent and run the context
+async function main() {
+  // Start the agent (initializes services like readline)
+  await agent.start();
+
+  console.log("Echo agent started. Type 'exit' to quit.");
+
+  // Run our echo context. Since it uses the cliExtension,
+  // it will automatically start listening for console input.
+  // We use {} for args because our context schema is an empty object.
+  await agent.run({
+    context: echoContext,
+    args: {},
+  });
+
+  // Agent stops when the input loop (in cliExtension) breaks (e.g., on "exit")
+  console.log("Agent stopped.");
+}
+
+main();
 ```
+
+**3. Run the agent:**
+
+Make sure your `OPENAI_API_KEY` environment variable is set.
+
+```bash
+node agent.ts
+```
+
+Now you can type messages, and the agent should echo them back using the CLI
+input and output handlers provided by `cliExtension`.
+
+---
+
+_Next Steps: Explore the [Core Concepts](./concepts/index) or check out the
+[Guides](./guides/index) for more complex examples._
