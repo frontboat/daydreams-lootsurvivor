@@ -9,10 +9,12 @@ interacts with APIs dynamically using a single, generic fetch action
 > TODO: add in rendering api contexts tool call for injection into state when
 > needed.
 
-This agent uses a modern, flexible approach to interacting with APIs:
+This agent uses a single fetch to learn what data is available and how to
+interact with it:
 
 - **No Pre-loading:** It does **not** require an API schema URL to be set as an
-  environment variable beforehand.
+  environment variable beforehand, loads via an action. Downside is exactly
+  that, no control of context - check TODO
 - **Generic `fetchAction`:** It utilizes `fetchAction.ts`, a reusable action
   that can make arbitrary HTTP requests based on parameters provided by the
   agent (URL, method, headers, params, body, responseType). It uses
@@ -41,7 +43,9 @@ This agent uses a modern, flexible approach to interacting with APIs:
     ```bash
     bun run examples/api/example-api-schema.ts
     ```
-    (The agent will ask you for a schema URL first)
+    Send a message like "using this schema
+    https://raw.githubusercontent.com/open-meteo/open-meteo/main/openapi.yml
+    tell me what the temperature is in Los Angeles"
 
 ---
 
