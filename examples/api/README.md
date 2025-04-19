@@ -1,6 +1,6 @@
 # API Agent using Generic Fetch Action
 
-This directory demonstrates a Daydreams agent (`apiAgentOnlyFetch.ts`) that
+This directory demonstrates a Daydreams agent (`example-api-schema.ts`) that
 interacts with APIs dynamically using a single, generic fetch action
 (`fetchAction.ts`).
 
@@ -26,7 +26,7 @@ This agent uses a modern, flexible approach to interacting with APIs:
   necessary parameters (like URL, query params based on the schema, and setting
   `responseType: 'json'` if appropriate) to call the target API.
 
-- `apiAgentOnlyFetch.ts`: The main script for the agent.
+- `example-api-schema.ts`: The main script for the agent.
 - `fetchAction.ts`: Defines the generic `fetch` action.
 
 **TLDR:**
@@ -39,7 +39,7 @@ This agent uses a modern, flexible approach to interacting with APIs:
     ```
 3.  Run the agent (from workspace root):
     ```bash
-    bun run examples/api/apiAgentOnlyFetch.ts
+    bun run examples/api/example-api-schema.ts
     ```
     (The agent will ask you for a schema URL first)
 
@@ -74,11 +74,11 @@ This agent only requires the standard LLM provider API key (e.g.,
 necessary so that it can correctly load the `.env` file from the root.
 
 ```bash
-bun run examples/api/apiAgentOnlyFetch.ts
+bun run examples/api/example-api-schema.ts
 ```
 
-The agent will start. Right now\* it works by providing a schema. (e.g., the
-Open-Meteo URL:
+The agent will start. Right now\* it works by user providing a URL to a schema.
+(e.g., the Open-Meteo URL:
 `https://raw.githubusercontent.com/open-meteo/open-meteo/main/openapi.yml`).
 After fetching and analyzing it, you can ask API-related questions:
 
