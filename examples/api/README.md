@@ -9,6 +9,129 @@ interacts with APIs dynamically using a single, generic fetch action
 > TODO: add in rendering api contexts tool call for injection into state when
 > needed.
 
+1. start **mongodb** docker
+
+```bash
+docker run --name some-mongo -p 27017:27017 -v mongo-data:/data/db -d mongo
+```
+
+2. laziest _temp hackfix_ patch `packages/mongo/src/mongo.ts` paste this (then
+   rebuild)
+   > it just changed the package id structure but i should just adjust agent to
+   > work i think
+
+```ts
+import { Collection, MongoClient } from "mongodb";
+import type { MemoryStore } from "@daydreamsai/core";
+
+export interface MongoMemoryOptions {
+  uri: string;
+  dbName?: string;
+  collectionName?: string;
+}
+
+export class MongoMemoryStore implements MemoryStore {
+  private client: MongoClient;
+  private collection: Collection | null = null;
+  private readonly dbName: string;
+  private readonly collectionName: string;
+
+  constructor(options: MongoMemoryOptions) {
+    this.client = new MongoClient(options.uri);
+    this.dbName = options.dbName || "dreams_memory";
+    this.collectionName = options.collectionName || "conversations";
+  }
+
+  /**
+   * Initialize the MongoDB connection
+   */
+  async initialize(): Promise<void> {
+    await this.client.connect();
+    const db = this.client.db(this.dbName);
+    this.collection = db.collection(this.collectionName);
+  }
+
+  /**
+   * Retrieves a value from the store
+   * @param key - Key to look up
+   * @returns The stored value or null if not found
+   */
+  async get<T>(key: string): Promise<T | null> {
+    if (!this.collection) throw new Error("MongoDB not initialized");
+
+    const doc = await this.collection.findOne({ key: key });
+    if (!doc) return null;
+
+    return doc.value as T;
+  }
+
+  /**
+   * Stores a value in the store
+   * @param key - Key to store under
+   * @param value - Value to store
+   */
+  async set(key: string, value: any): Promise<void> {
+    if (!this.collection) throw new Error("MongoDB not initialized");
+
+    await this.collection.updateOne(
+      { key: key },
+      { $set: { key: key, value: value } },
+      { upsert: true }
+    );
+  }
+
+  /**
+   * Removes a specific entry from the store
+   * @param key - Key to remove
+   */
+  async delete(key: string): Promise<void> {
+    if (!this.collection) throw new Error("MongoDB not initialized");
+
+    await this.collection.deleteOne({ key: key });
+  }
+
+  /**
+   * Removes all entries from the store
+   */
+  async clear(): Promise<void> {
+    if (!this.collection) throw new Error("MongoDB not initialized");
+
+    await this.collection.deleteMany({});
+  }
+
+  /**
+   * Close the MongoDB connection
+   */
+  async close(): Promise<void> {
+    await this.client.close();
+  }
+}
+
+/**
+ * Creates a new MongoDB-backed memory store
+ * @param options - MongoDB connection options
+ * @returns A MemoryStore implementation using MongoDB for storage
+ */
+export async function createMongoMemoryStore(
+  options: MongoMemoryOptions
+): Promise<MemoryStore> {
+  const store = new MongoMemoryStore(options);
+  await store.initialize();
+  return store;
+}
+```
+
+3. run the agent and tell it to fetch a schema like
+   `https://raw.githubusercontent.com/open-meteo/open-meteo/refs/heads/main/openapi.yml`
+
+It should fetch and install (i think) and then the map gets loaded into main
+prompt, and inside that it can choose to load whatever openapi schema into the
+context in next step.
+
+```bash
+bun run examples/api/render-api-schemas.ts
+```
+
 This agent uses a single fetch to learn what data is available and how to
 interact with it:
 

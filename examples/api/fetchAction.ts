@@ -39,6 +39,14 @@ const fetchErrorOutputSchema = z.object({
 
 const fetchOutputSchema = z.union([fetchSuccessOutputSchema, fetchErrorOutputSchema]);
 
+// Define a single object schema for the 'returns' field
+const fetchActionReturnsSchema = z.object({
+    ok: z.boolean().describe("Indicates if the request was successful."),
+    status: z.number().optional().describe("HTTP status code."),
+    data: z.any().optional().describe("Response data (JSON or text) on success."),
+    error: z.string().optional().describe("Error message on failure.")
+});
+
 // Infer types
 type FetchInput = z.infer<typeof fetchInputSchema>;
 type FetchOutput = z.infer<typeof fetchOutputSchema>;
@@ -47,11 +55,11 @@ export const fetchAction = action({
     name: "fetch",
     description: "Fetches content from a URL. Returns {ok: true, status, data} on HTTP success (data is text or parsed JSON based on responseType), or {ok: false, status?, error} on failure.",
     schema: fetchInputSchema,
-    // output: fetchOutputSchema, // Output schema not needed in config
+    returns: fetchActionReturnsSchema,
     handler: async (
         args: FetchInput,
-        ctx: ActionCallContext<typeof fetchInputSchema, AnyContext, any>,
-        agent: AnyAgent
+        ctx,
+        agent
     ): Promise<FetchOutput> => {
         const { url, method, headers, params, body, responseType } = args;
 
