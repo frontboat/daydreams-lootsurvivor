@@ -4,6 +4,9 @@ This directory demonstrates a Daydreams agent (`example-api-schema.ts`) that
 interacts with APIs dynamically using a single, generic fetch action
 (`fetchAction.ts`).
 
+EXAMPLE-API-SCHEMA.ts is an agent that uses the cli, and you tell it "fetch this URL schema and do XYZ".
+RENDER-API-SCHEMA.ts is an agent that uses mongodb and stores schemas that can be retrieved via a tool call for prompt injection (ie loading and unloading contexts).
+
 ## Overview
 
 > TODO: add in rendering api contexts tool call for injection into state when
