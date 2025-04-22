@@ -39,27 +39,21 @@ export function context<
 ): Context<TMemory, Args, Ctx, Actions, Events> {
   const ctx: Context<TMemory, Args, Ctx, Actions, Events> = {
     ...config,
-    actions: (config.actions ?? []) as Actions,
-    inputs: config.inputs ?? {},
-    outputs: config.outputs ?? {},
-    events: (config.events ?? {}) as Events,
     setActions(actions) {
-      return context<TMemory, Args, Ctx, any, Events>({
-        ...ctx,
-        actions,
-      });
+      Object.assign(ctx, { actions });
+      return ctx as any;
     },
     setInputs(inputs) {
-      return context({
-        ...ctx,
-        inputs,
-      });
+      ctx.inputs = inputs;
+      return ctx;
     },
     setOutputs(outputs) {
-      return context({
-        ...ctx,
-        outputs,
-      });
+      ctx.outputs = outputs;
+      return ctx;
+    },
+    use(composer) {
+      ctx.composers = ctx.composers?.concat(composer) ?? [composer];
+      return ctx;
     },
   };
 
@@ -99,7 +93,7 @@ export function getWorkingMemoryAllLogs(
     ...(memory.events ?? []),
     ...(memory.steps ?? []),
     ...(memory.runs ?? []),
-  ].sort((a, b) => (a.timestamp > b.timestamp ? 1 : -1));
+  ].sort((a, b) => (a.timestamp >= b.timestamp ? 1 : -1));
 }
 
 export function formatWorkingMemory({
@@ -139,7 +133,7 @@ export function createWorkingMemory(): WorkingMemory {
   };
 }
 
-export function pushToWorkingMemory(workingMemory: WorkingMemory, ref: Log) {
+export function pushToWorkingMemory(workingMemory: WorkingMemory, ref: AnyRef) {
   switch (ref.ref) {
     case "action_call":
       workingMemory.calls.push(ref);
@@ -158,6 +152,12 @@ export function pushToWorkingMemory(workingMemory: WorkingMemory, ref: Log) {
       break;
     case "event":
       workingMemory.events.push(ref);
+      break;
+    case "step":
+      workingMemory.steps.push(ref);
+      break;
+    case "run":
+      workingMemory.runs.push(ref);
       break;
     default:
       throw new Error("invalid ref");
@@ -209,7 +209,9 @@ export async function createContextState<TContext extends AnyContext>({
     : {};
 
   const memory =
-    (await agent.memory.store.get(`memory:${id}`)) ??
+    (context.load
+      ? await context.load(id)
+      : await agent.memory.store.get(`memory:${id}`)) ??
     (context.create
       ? await Promise.resolve(
           context.create({ key, args, id, options, settings }, agent)
@@ -292,9 +294,11 @@ export async function loadContextState(
   context: AnyContext,
   contextId: string
 ): Promise<Omit<ContextState, "options" | "memory"> | null> {
-  const state = await agent.memory.store.get<ContextStateSnapshot>(
-    `context:${contextId}`
-  );
+  const state = context.load
+    ? await context.load(contextId)
+    : await agent.memory.store.get<ContextStateSnapshot>(
+        `context:${contextId}`
+      );
 
   if (!state) return null;
 

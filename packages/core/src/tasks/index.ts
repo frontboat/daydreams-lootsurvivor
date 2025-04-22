@@ -1,5 +1,4 @@
 import {
-  smoothStream,
   streamText,
   type CoreMessage,
   type LanguageModelV1,
@@ -17,44 +16,7 @@ import type {
 } from "../types";
 import type { Logger } from "../logger";
 import { wrapStream } from "../streaming";
-
-type ModelConfig = {
-  assist?: boolean;
-  prefix?: string;
-  thinkTag?: string;
-};
-
-// TODO: move this
-export const modelsResponseConfig: Record<string, ModelConfig> = {
-  "o3-mini": {
-    assist: false,
-    prefix: "",
-  },
-  "claude-3-7-sonnet-20250219": {
-    // assist: true,
-    // prefix: "<thinking>",
-    // thinkTag: "<thinking>",
-  },
-  "qwen-qwq-32b": {
-    prefix: "",
-  },
-  "google/gemini-2.0-flash-001": {
-    // prefix: "",
-  },
-  "deepseek-r1-distill-llama-70b": {
-    prefix: "",
-    assist: false,
-  },
-};
-
-export const reasoningModels = [
-  "claude-3-7-sonnet-20250219",
-  "qwen-qwq-32b",
-  "deepseek-r1-distill-llama-70b",
-  "o3-mini",
-  "google/gemini-2.0-flash-001",
-  "google/gemini-2.0-flash-lite-preview-02-05:free",
-];
+import { modelsResponseConfig, reasoningModels } from "../configs";
 
 /**
  * Prepares a stream response by handling the stream result and parsing it.
@@ -195,6 +157,7 @@ export const runAction = task({
           : await Promise.try(action.handler as any, ctx.call.data, ctx, agent);
 
       logger.debug("agent:action_result:" + ctx.call.id, ctx.call.name, result);
+
       return result;
     } catch (error) {
       logger.error("agent:action", "ACTION_FAILED", { error });

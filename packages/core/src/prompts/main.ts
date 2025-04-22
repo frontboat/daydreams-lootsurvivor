@@ -7,12 +7,11 @@ import {
   render,
   xml,
 } from "../formatters";
+import type { Prompt } from "../prompt";
 import type {
   AnyAction,
   AnyContext,
-  AnyRef,
   ContextState,
-  Log,
   Output,
   WorkingMemory,
 } from "../types";
@@ -146,7 +145,9 @@ Remember:
 IMPORTANT: 
 Always include the 'type' attribute in the output tag and ensure it matches one of the available output types listed above.
 Remember to include the other attribute in the output tag and ensure it matches the output attributes schema.
-If you say you will perform an action, you MUST issue the corresponding action call here`,
+If you say you will perform an action, you MUST issue the corresponding action call here
+Always check the correct format for each action: JSON or XML
+`,
 } as const;
 
 export const promptTemplate = `\
@@ -212,31 +213,20 @@ export function formatPromptSections({
 }
 
 // WIP
-export const mainStep = {
+export const mainPrompt = {
   name: "main",
   template: promptTemplate,
   sections: templateSections,
   render: (data: ReturnType<typeof formatPromptSections>) => {
     const sections = Object.fromEntries(
-      Object.entries(mainStep.sections).map(([key, templateSection]) => [
+      Object.entries(mainPrompt.sections).map(([key, templateSection]) => [
         key,
         render(templateSection, data as any),
       ])
     ) as Record<keyof typeof templateSections, string>;
-
-    const prompt = render(mainStep.template, sections);
-
-    return prompt;
+    return render(mainPrompt.template, sections);
   },
-
   formatter: formatPromptSections,
-
-  shouldContinue: (state: { chain: AnyRef[] }) => {
-    const pendingResults = state.chain.filter(
-      (i) => i.ref !== "thought" && i.processed === false
-    );
-    return pendingResults.length > 0;
-  },
 } as const;
 
-export type StepConfig = typeof mainStep;
+export type PromptConfig = typeof mainPrompt;

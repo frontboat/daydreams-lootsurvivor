@@ -1,4 +1,4 @@
-import { LogLevel, type Optional } from "./types"; // Assuming LogLevel is defined elsewhere
+import { LogLevel } from "./types"; // Assuming LogLevel is defined elsewhere
 
 // --- Interfaces ---
 
@@ -10,7 +10,7 @@ export interface LogEntry {
   data?: any;
 }
 
-export interface Formatter {
+export interface LogFormatter {
   format(entry: LogEntry): string;
 }
 
@@ -23,12 +23,12 @@ export interface Transport {
 export interface LoggerConfig {
   level: LogLevel;
   transports: Transport[];
-  formatter: Formatter;
+  formatter: LogFormatter;
 }
 
 // --- Default Implementations ---
 
-export class DefaultFormatter implements Formatter {
+export class DefaultFormatter implements LogFormatter {
   private enableTimestamp: boolean;
 
   constructor(options: { enableTimestamp?: boolean } = {}) {

@@ -15,7 +15,7 @@ type TaskOptions = {
   timeoutMs?: number;
 };
 
-type Task<Params = any, Result = any, TError = any> = {
+export type Task<Params = any, Result = any, TError = any> = {
   key: string;
   handler: (params: Params, ctx: TaskContext) => MaybePromise<Result>;
   concurrency?: number;
@@ -104,25 +104,21 @@ export class TaskRunner {
 
   private async processTask(instance: TaskInstance) {
     while (true) {
+      instance.attempts++;
+
+      if (instance.attempts > 1) {
+        await new Promise<void>((resolve) =>
+          setTimeout(resolve, 250 * instance.attempts)
+        );
+      }
+
       instance.controller.signal.throwIfAborted();
 
       try {
-        instance.attempts++;
-
-        if (instance.attempts > 1) {
-          await new Promise<void>((resolve) =>
-            setTimeout(resolve, 250 * instance.attempts)
-          );
-        }
-
-        const result = await Promise.try(
-          instance.task.handler,
-          instance.params,
-          {
-            taskId: instance.id,
-            abortSignal: instance.controller.signal,
-          }
-        );
+        const result = await instance.task.handler(instance.params, {
+          taskId: instance.id,
+          abortSignal: instance.controller.signal,
+        });
 
         return result;
       } catch (error) {
@@ -140,7 +136,7 @@ export class TaskRunner {
     }
   }
 
-  enqueueTask<TTask extends Task<any, any, any>>(
+  async enqueueTask<TTask extends Task<any, any, any>>(
     task: TTask,
     params: InferTaskParams<TTask>,
     options?: Omit<TaskOptions, "concurrency"> & { abortSignal?: AbortSignal }
@@ -192,10 +188,7 @@ export class TaskRunner {
 
       options.abortSignal.addEventListener("abort", signalListener, {
         once: true,
-      });
-
-      deferPromise.promise.finally(() => {
-        options.abortSignal?.removeEventListener("abort", signalListener);
+        signal: controller.signal,
       });
     }
 

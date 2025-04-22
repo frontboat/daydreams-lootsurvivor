@@ -180,36 +180,38 @@ export type Evaluator<
 export type ActionSchema =
   | ZodRawShape
   | z.AnyZodObject
+  | z.ZodString
   | Schema<any>
   | undefined;
 
 export type InferActionArguments<TSchema = undefined> =
   TSchema extends ZodRawShape
     ? z.infer<ZodObject<TSchema>>
-    : TSchema extends z.AnyZodObject
+    : TSchema extends z.AnyZodObject | z.ZodString
       ? z.infer<TSchema>
       : TSchema extends Schema
         ? TSchema["_type"]
         : undefined;
 
-export type ActionContext<
+export interface ActionContext<
   TContext extends AnyContext = AnyContext,
   AContext extends AnyContext = AnyContext,
   ActionMemory extends Memory<any> = Memory<any>,
-> = AgentContext<TContext> & {
+> extends AgentContext<TContext> {
   actionMemory: InferMemoryData<ActionMemory>;
   agentMemory: InferContextMemory<AContext> | undefined;
   abortSignal?: AbortSignal;
-};
+}
 
-export type ActionCallContext<
+export interface ActionCallContext<
   Schema extends ActionSchema = undefined,
   TContext extends AnyContext = AnyContext,
   AContext extends AnyContext = AnyContext,
   ActionMemory extends Memory<any> = Memory<any>,
-> = ActionContext<TContext, AContext, ActionMemory> & {
+> extends ActionContext<TContext, AContext, ActionMemory>,
+    ContextStateApi<TContext> {
   call: ActionCall<InferActionArguments<Schema>>;
-} & ContextStateApi<TContext>;
+}
 
 type InferActionResult<Result> = Result extends ZodRawShape
   ? z.infer<ZodObject<Result>>
@@ -266,7 +268,10 @@ export interface Action<
 
   schema: Schema;
 
+  attributes?: ActionSchema;
+
   memory?: TMemory;
+
   install?: (agent: TAgent) => Promise<void> | void;
 
   enabled?: (
@@ -323,6 +328,19 @@ export interface Action<
   parser?: (ref: ActionCall) => InferActionArguments<Schema>;
 
   callFormat?: "json" | "xml";
+
+  templateResolver?:
+    | boolean
+    | ((
+        key: string,
+        path: string,
+        ctxState: ActionCallContext<
+          Schema,
+          TContext,
+          InferAgentContext<TAgent>,
+          TMemory
+        >
+      ) => MaybePromise<string>);
 }
 
 export type ActionCtxRef = AnyAction & {
@@ -374,10 +392,10 @@ export type Output<
   attributes?: OutputSchema;
   context?: TContext;
   install?: (agent: TAgent) => MaybePromise<void>;
-  enabled?: (ctx: AgentContext<TContext>) => boolean;
+  enabled?: (ctx: ContextState<TContext>) => boolean;
   handler?: (
     data: InferOutputSchemaParams<Schema>,
-    ctx: AgentContext<TContext> & {
+    ctx: ContextState<TContext> & {
       outputRef: OutputRef<InferOutputSchemaParams<Schema>>;
     },
     agent: TAgent
@@ -697,7 +715,7 @@ interface AgentDef<TContext extends AnyContext = AnyContext> {
   /**
    * The primary language model used by the agent.
    */
-  model: LanguageModelV1;
+  model?: LanguageModelV1;
 
   /**
    * The reasoning model used by the agent, if any.
@@ -751,6 +769,12 @@ interface AgentDef<TContext extends AnyContext = AnyContext> {
    */
   trainingDataPath?: string;
 }
+
+export type LogChunk =
+  | { type: "log"; log: AnyRef; done: boolean }
+  | { type: "content"; id: string; content: string }
+  | { type: "data"; id: string; data: any }
+  | { type: "done"; id: string };
 
 /**
  * Represents an agent with various configurations and methods for handling contexts, inputs, outputs, and more.
@@ -895,6 +919,11 @@ export interface Agent<TContext extends AnyContext = AnyContext>
     contextId: string,
     handler: (log: AnyRef, done: boolean) => void
   ): () => void;
+
+  __subscribeChunk(
+    contextId: string,
+    handler: (log: LogChunk) => void
+  ): () => void;
 }
 
 export type Debugger = (contextId: string, keys: string[], data: any) => void;
@@ -902,7 +931,7 @@ export type Debugger = (contextId: string, keys: string[], data: any) => void;
 export type Config<TContext extends AnyContext = AnyContext> = Partial<
   AgentDef<TContext>
 > & {
-  model: Agent["model"];
+  model?: Agent["model"];
   reasoningModel?: Agent["reasoningModel"];
   logLevel?: LogLevel;
   contexts?: AnyContext[];
@@ -945,31 +974,6 @@ export enum LogLevel {
   INFO = 2,
   DEBUG = 3,
   TRACE = 4,
-}
-
-/** Interface for custom log writers */
-export interface LogWriter {
-  init(logPath: string): void;
-  write(data: string): void;
-}
-
-/** Configuration options for logging */
-export interface LoggerConfig {
-  level: LogLevel;
-  enableTimestamp?: boolean;
-  enableColors?: boolean;
-  logToFile?: boolean;
-  logPath?: string;
-  logWriter?: LogWriter;
-}
-
-/** Structure of a log entry */
-export interface LogEntry {
-  level: LogLevel;
-  timestamp: Date;
-  context: string;
-  message: string;
-  data?: any;
 }
 
 /** Results from a research operation */
@@ -1088,6 +1092,13 @@ interface ContextConfigApi<
       AnyAgent
     >;
   }): Context<TMemory, Schema, Ctx, Actions, Events>;
+
+  use<Refs extends AnyContext[]>(
+    composer: ContextComposer<
+      Context<TMemory, Schema, Ctx, Actions, Events>,
+      Refs
+    >
+  ): Context<TMemory, Schema, Ctx, Actions, Events>;
 }
 
 export type EventDef<Schema extends z.ZodTypeAny | ZodRawShape = z.ZodTypeAny> =
@@ -1115,6 +1126,15 @@ export type ContextConfig<
   "actions" | "events" | "inputs" | "outputs"
 >;
 
+type ContextComposer<
+  TContext extends AnyContext,
+  T extends AnyContext[] = AnyContext[],
+> = (state: ContextState<TContext>) => ContextRefArray<T>;
+
+type BaseContextComposer<TContext extends AnyContext> = (
+  state: ContextState<TContext>
+) => ContextRef[];
+
 export interface Context<
   TMemory = any,
   Schema extends z.ZodTypeAny | ZodRawShape = z.ZodTypeAny,
@@ -1128,7 +1148,7 @@ export interface Context<
   /** Unique type identifier for this context */
   type: string;
   /** Zod schema for validating context arguments */
-  schema: Schema;
+  schema?: Schema;
   /** Function to generate a unique key from context arguments */
   key?: (args: InferSchemaArguments<Schema>) => string;
 
@@ -1161,7 +1181,7 @@ export interface Context<
     | ((state: ContextState<this>) => string | string[]);
 
   /** Optional function to load existing memory */
-  load?: (state: Omit<ContextState<this>, "memory">) => Promise<TMemory>;
+  load?: (id: string) => Promise<TMemory | null>;
   /** Optional function to save memory state */
   save?: (state: ContextState<this>) => Promise<void>;
 
@@ -1190,21 +1210,23 @@ export interface Context<
 
   maxWorkingMemorySize?: number;
 
-  actions:
+  actions?:
     | Actions
     | ((state: ContextState<this>) => Actions | Promise<Actions>);
 
-  events: Events;
+  events?: Events;
 
   /**
    * A record of input configurations for the context.
    */
-  inputs: Record<string, InputConfig<any, any, AnyAgent>>;
+  inputs?: Record<string, InputConfig<any, any, AnyAgent>>;
 
   /**
    * A record of output configurations for the context.
    */
-  outputs: Record<string, Omit<Output<any, any, AnyContext, any>, "type">>;
+  outputs?: Record<string, Omit<Output<any, any, AnyContext, any>, "type">>;
+
+  composers?: BaseContextComposer<this>[];
 }
 
 export type ContextSettings = {
@@ -1238,10 +1260,21 @@ type ContextEventEmitter<TContext extends AnyContext> = <
 ) => void;
 
 //wip
-export type ContextStateApi<TContext extends AnyContext> = {
+
+export type TemplateResolver = (path: string) => MaybePromise<any>;
+
+export interface ContextStateApi<TContext extends AnyContext> {
   emit: ContextEventEmitter<TContext>;
-  push: (log: Log) => void;
-};
+  push: (log: Log) => Promise<any>;
+
+  callAction: (
+    call: ActionCall,
+    options?: Partial<{
+      templateResolvers?: Record<string, TemplateResolver>;
+      queueKey?: string;
+    }>
+  ) => Promise<ActionResult>;
+}
 
 export type ContextState<TContext extends AnyContext = AnyContext> = {
   id: string;
