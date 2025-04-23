@@ -89,7 +89,6 @@ const goalContexts = context({
     return {
       name: character.name,
       speechExamples: character.speechExamples,
-      // traits: JSON.stringify(character.traits),
       aggression: character.traits.aggression,
       agreeability: character.traits.agreeability,
       openness: character.traits.openness,
@@ -100,6 +99,9 @@ const goalContexts = context({
       confidence: character.traits.confidence,
       adaptability: character.traits.adaptability,
       impulsivity: character.traits.impulsivity,
+      memory: {
+        tasks: [] as string[],
+      },
     };
   },
 
@@ -107,7 +109,6 @@ const goalContexts = context({
     return render(template, {
       name: character.name,
       speechExamples: character.speechExamples,
-      // traits: character.traits,
       aggression: character.traits.aggression.toString(),
       agreeability: character.traits.agreeability.toString(),
       openness: character.traits.openness.toString(),
@@ -132,8 +133,12 @@ createDreams({
       description: "Add a task to the goal",
       schema: z.object({ task: z.string() }),
       handler(data, ctx, _agent) {
-        const agentMemory = ctx.agentMemory as GoalMemory;
-        agentMemory.tasks.push(data.task);
+        const contextMemory = ctx.memory as { tasks: string[] };
+        if (!contextMemory.tasks) {
+          contextMemory.tasks = [];
+        }
+        contextMemory.tasks.push(data.task);
+        console.log("Current tasks:", contextMemory.tasks);
         return {};
       },
     }),
@@ -142,10 +147,16 @@ createDreams({
       description: "Complete a task",
       schema: z.object({ task: z.string() }),
       handler(data, ctx, _agent) {
-        const agentMemory = ctx.agentMemory as GoalMemory;
-        agentMemory.tasks = agentMemory.tasks.filter(
+        const contextMemory = ctx.memory as { tasks: string[] };
+        if (!contextMemory.tasks) {
+          contextMemory.tasks = [];
+          console.warn("Tasks array was missing in completeTask handler.");
+          return {};
+        }
+        contextMemory.tasks = contextMemory.tasks.filter(
           (task) => task !== data.task
         );
+        console.log("Current tasks after completion:", contextMemory.tasks);
         return {};
       },
     }),

@@ -56,11 +56,11 @@ done
 format_size() {
   local size=$1
   if [ $size -ge 1073741824 ]; then
-    echo "$(awk "BEGIN {printf \"%.2f\", $size/1073741824}") GB"
+    echo $(echo "scale=2; $size/1073741824" | bc)" GB"
   elif [ $size -ge 1048576 ]; then
-    echo "$(awk "BEGIN {printf \"%.2f\", $size/1048576}") MB"
+    echo $(echo "scale=2; $size/1048576" | bc)" MB"
   elif [ $size -ge 1024 ]; then
-    echo "$(awk "BEGIN {printf \"%.2f\", $size/1024}") KB"
+    echo $(echo "scale=2; $size/1024" | bc)" KB"
   else
     echo "$size bytes"
   fi
