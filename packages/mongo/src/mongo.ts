@@ -99,6 +99,26 @@ export class MongoMemoryStore implements MemoryStore {
   async close(): Promise<void> {
     await this.client.close();
   }
+
+  async keys() {
+    return [];
+  }
+
+  // async keys(base?: string) {
+  //   if (!this.collection) throw new Error("MongoDB not initialized");
+
+  //   const keys = await this.collection
+  //     .find()
+  //     .project<{ key: string }>({ key: true })
+  //     .map((d) => d.key)
+  //     .toArray();
+
+  //   if (base) {
+  //     return keys.filter((key) => key.startsWith(base));
+  //   }
+
+  //   return keys;
+  // }
 }
 
 /**

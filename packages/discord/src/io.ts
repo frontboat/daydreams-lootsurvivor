@@ -9,8 +9,7 @@ import {
   Message,
   type Channel,
 } from "discord.js";
-import { Logger } from "@daydreamsai/core";
-import { LogLevel } from "@daydreamsai/core";
+import { Logger, LogLevel } from "@daydreamsai/core";
 import { z } from "zod";
 
 export interface DiscordCredentials {
@@ -60,8 +59,6 @@ export class DiscordClient {
 
     this.logger = new Logger({
       level: logLevel,
-      enableColors: true,
-      enableTimestamp: true,
     });
 
     // Handle "ready" event

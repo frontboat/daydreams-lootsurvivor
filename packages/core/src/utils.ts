@@ -1,20 +1,26 @@
 import { z } from "zod";
 import type {
   Action,
+  ActionCall,
   ActionSchema,
   AnyAgent,
   AnyContext,
+  EventRef,
   ExpertConfig,
   Extension,
   InputConfig,
+  InputRef,
   Memory,
   Optional,
   OutputConfig,
+  OutputRef,
+  OutputRefResponse,
   OutputSchema,
   WorkingMemory,
 } from "./types";
-export { v7 as randomUUIDv7 } from "uuid";
+import { v7 as randomUUIDv7 } from "uuid";
 
+export { randomUUIDv7 };
 /**
  * Creates an input configuration
  * @template Schema - Zod schema type for input validation
@@ -66,9 +72,9 @@ export function action<
  */
 export function output<
   Schema extends OutputSchema = OutputSchema,
-  // TResponse extends OutputResponse = OutputResponse,
+  Response extends OutputRefResponse = OutputRefResponse,
   Context extends AnyContext = AnyContext,
->(config: OutputConfig<Schema, Context>) {
+>(config: OutputConfig<Schema, Response, Context>) {
   return config;
 }
 
@@ -212,4 +218,48 @@ export async function tryAsync<T>(fn: Function, ...args: any[]): Promise<T> {
   } catch (error) {
     return Promise.reject(error);
   }
+}
+
+export function createInputRef(
+  ref: Pick<InputRef, "type" | "content" | "data" | "processed">
+): InputRef {
+  return {
+    id: randomUUIDv7(),
+    ref: "input",
+    timestamp: Date.now(),
+    ...ref,
+  };
+}
+
+export function createOutputRef(
+  ref: Pick<OutputRef, "type" | "content" | "data" | "processed">
+): OutputRef {
+  return {
+    id: randomUUIDv7(),
+    ref: "output",
+    timestamp: Date.now(),
+    ...ref,
+  };
+}
+
+export function createEventRef(
+  ref: Pick<EventRef, "name" | "data" | "processed">
+): EventRef {
+  return {
+    id: randomUUIDv7(),
+    ref: "event",
+    timestamp: Date.now(),
+    ...ref,
+  };
+}
+
+export function createActionCall(
+  ref: Pick<ActionCall, "name" | "content" | "data" | "processed" | "params">
+): ActionCall {
+  return {
+    id: randomUUIDv7(),
+    ref: "action_call",
+    timestamp: Date.now(),
+    ...ref,
+  };
 }

@@ -38,8 +38,6 @@ export class TwitterClient {
     this.scraper = new Scraper();
     this.logger = new Logger({
       level: logLevel,
-      enableColors: true,
-      enableTimestamp: true,
     });
 
     this.env = envSchema.parse(process.env);
