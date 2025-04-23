@@ -36,6 +36,7 @@ import type {
   TemplateResolver,
   WorkingMemory,
   LogChunk,
+  ActionCallContext,
 } from "./types";
 import pDefer, { type DeferredPromise } from "p-defer";
 import { pushToWorkingMemory } from "./context";
@@ -97,6 +98,8 @@ type State = {
 
   defer: DeferredPromise<AnyRef[]>;
 };
+
+type Engine = ReturnType<typeof createEngine>;
 
 export function createEngine({
   agent,
@@ -204,8 +207,6 @@ export function createEngine({
 
       return res;
     } catch (error) {
-      console.log({ error });
-
       if (log.ref === "output") {
         state.chain.push(log);
       }
@@ -227,17 +228,20 @@ export function createEngine({
     done: boolean = true,
     __pushChunk: boolean = true
   ): Promise<any> {
-    if (done) {
-      await pushLog(log);
-    } else {
-      pushLogToSubscribers(log, false);
-    }
-    if (__pushChunk) {
-      __pushLogChunkToSubscribers({
-        type: "log",
-        done,
-        log,
-      });
+    try {
+      if (done) {
+        return await pushLog(log);
+      } else {
+        pushLogToSubscribers(log, false);
+      }
+    } finally {
+      if (__pushChunk) {
+        __pushLogChunkToSubscribers({
+          type: "log",
+          done,
+          log,
+        });
+      }
     }
   }
 
@@ -256,14 +260,15 @@ export function createEngine({
     },
     async callAction(call, options) {
       const res = await pushLog(call, options);
-      console.log({ res });
       __pushLogChunkToSubscribers({ type: "log", log: call, done: true });
       return res;
     },
+    __getRunResults() {
+      return state.results;
+    },
   };
 
-  // todo: allow contexts to register template resolvers
-  const basicResolvers: Record<string, TemplateResolver> = {
+  const defaultResolvers: Record<string, TemplateResolver> = {
     calls: createResultsTemplateResolver(state.results),
     shortTermMemory: async (path) => {
       const shortTermMemory = state.contexts.find(
@@ -280,10 +285,10 @@ export function createEngine({
   async function templateResolver(
     key: string,
     path: string,
-    resolvers: Record<string, TemplateResolver>
+    ctx: ActionCallContext,
+    resolvers: Record<string, TemplateResolver<ActionCallContext>>
   ) {
-    if (resolvers[key]) return resolvers[key](path);
-
+    if (resolvers[key]) return resolvers[key](path, ctx);
     throw new Error("template engine key not implemented");
   }
 
@@ -300,12 +305,12 @@ export function createEngine({
     },
 
     async action_call(call, options = {}) {
-      console.log({ call });
       if (call.processed) throw new Error("Already processed");
       call.processed = true;
 
       const defer = pDefer<ActionResult>();
 
+      pushPromise(defer.promise);
       state.results.push(defer.promise);
 
       const action = resolveActionCall({
@@ -319,6 +324,12 @@ export function createEngine({
           (subCtxState: any) => subCtxState.id === action.ctxRef.id
         ) ?? ctxState;
 
+      const templateResolvers = {
+        ...defaultResolvers,
+        ...ctxState.context.__templateResolvers,
+        ...options.templateResolvers,
+      };
+
       const callCtx = await prepareActionCall({
         agent,
         call,
@@ -329,25 +340,14 @@ export function createEngine({
         abortSignal: controller.signal,
         agentState: agentCtxState,
         logger: agent.logger,
-        templateResolver: (key, path) =>
-          templateResolver(
-            key,
-            path,
-            options.templateResolvers
-              ? {
-                  ...basicResolvers,
-                  ...options.templateResolvers,
-                }
-              : basicResolvers
-          ),
+        templateResolver: (key, path, callCtx) =>
+          templateResolver(key, path, callCtx, templateResolvers),
       }).catch((err) => {
         defer.reject(err);
         throw err;
       });
 
-      console.log({ callCtx });
-
-      const promise = handleActionCall({
+      handleActionCall({
         call,
         callCtx,
         action,
@@ -371,14 +371,12 @@ export function createEngine({
           return result;
         })
         .then((res) => {
+          defer.resolve(res);
           __push(res, true, true);
-          defer.resolve(promise);
           return res;
         });
 
-      pushPromise(promise);
-
-      return defer.promise;
+      return await defer.promise;
     },
 
     async output(outputRef) {

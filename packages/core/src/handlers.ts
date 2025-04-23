@@ -23,12 +23,14 @@ import type {
   Output,
   OutputCtxRef,
   OutputRef,
+  Resolver,
   TemplateResolver,
   WorkingMemory,
 } from "./types";
 import { randomUUIDv7 } from "./utils";
 import { parse } from "./xml";
 import { jsonPath } from "./jsonpath";
+import { jsonSchema } from "ai";
 
 export class NotFoundError extends Error {
   name = "NotFoundError";
@@ -261,21 +263,26 @@ export async function resolveTemplates(
   }
 }
 
+export async function templateResultsResolver(
+  arr: MaybePromise<ActionResult>[],
+  path: string
+) {
+  const [index, ...resultPath] = getPathSegments(path);
+  const actionResult = arr[Number(index)];
+
+  if (!actionResult) throw new Error("invalid index");
+  const result = await actionResult;
+
+  if (resultPath.length === 0) {
+    return result.data;
+  }
+  return jsonPath(result.data, resultPath.join("."));
+}
+
 export function createResultsTemplateResolver(
   arr: Array<MaybePromise<any>>
 ): TemplateResolver {
-  return async function templateArrayResolver(path) {
-    const [index, ...resultPath] = getPathSegments(path);
-    const actionResult = arr[Number(index)];
-
-    if (!actionResult) throw new Error("invalid index");
-    const result = await actionResult;
-
-    if (resultPath.length === 0) {
-      return result.data;
-    }
-    return jsonPath(result.data, resultPath.join("."));
-  };
+  return (path) => templateResultsResolver(arr, path);
 }
 
 export function createObjectTemplateResolver(obj: object): TemplateResolver {
@@ -391,7 +398,6 @@ export async function prepareActionCall({
   };
 
   const data = call.data ?? parseActionCallContent({ call, action });
-  console.log({ data });
 
   const templates: TemplateInfo[] = [];
 
@@ -408,14 +414,15 @@ export async function prepareActionCall({
         actionTemplateResolver(key, path, callCtx)
       );
   }
-  console.log({ templates });
 
   if (action.schema) {
     try {
       const schema =
         "parse" in action.schema || "validate" in action.schema
           ? action.schema
-          : z.object(action.schema);
+          : "$schema" in action.schema
+            ? jsonSchema(action.schema)
+            : z.object(action.schema);
 
       call.data =
         "parse" in schema
@@ -720,6 +727,13 @@ export async function prepareAction({
     : undefined;
 }
 
+function resolve<Value = any, Ctx = any>(
+  value: Value,
+  ctx: Ctx
+): Promise<Value extends (ctx: Ctx) => infer R ? R : Value> {
+  return typeof value === "function" ? value(ctx) : (value as any);
+}
+
 export async function prepareContext(
   {
     agent,
@@ -754,15 +768,16 @@ export async function prepareContext(
 
   const outputs: OutputCtxRef[] = ctxState.context.outputs
     ? await Promise.all(
-        Object.entries(ctxState.context.outputs).map(([type, output]) =>
-          prepareOutput({
-            output: {
-              type,
-              ...output,
-            },
-            context: ctxState.context,
-            state: ctxState,
-          })
+        Object.entries(await resolve(ctxState.context.outputs, ctxState)).map(
+          ([type, output]) =>
+            prepareOutput({
+              output: {
+                type,
+                ...output,
+              },
+              context: ctxState.context,
+              state: ctxState,
+            })
         )
       ).then((r) => r.filter((a) => !!a))
     : [];
@@ -781,8 +796,8 @@ export async function prepareContext(
 
   const ctxRefs: ContextRef[] = [];
 
-  if (ctxState.context.composers) {
-    for (const composer of ctxState.context.composers) {
+  if (ctxState.context.__composers) {
+    for (const composer of ctxState.context.__composers) {
       ctxRefs.push(...composer(ctxState));
     }
   }

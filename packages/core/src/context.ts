@@ -52,7 +52,7 @@ export function context<
       return ctx;
     },
     use(composer) {
-      ctx.composers = ctx.composers?.concat(composer) ?? [composer];
+      ctx.__composers = ctx.__composers?.concat(composer) ?? [composer];
       return ctx;
     },
   };
@@ -177,8 +177,8 @@ export function getContextId<TContext extends AnyContext>(
   context: TContext,
   args: z.infer<TContext["schema"]>
 ) {
-  const key = context.key ? context.key(args) : context.type;
-  return context.key ? [context.type, key].join(":") : context.type;
+  const key = context.key ? context.key(args) : undefined;
+  return key ? [context.type, key].join(":") : context.type;
 }
 
 export async function createContextState<TContext extends AnyContext>({
@@ -194,8 +194,8 @@ export async function createContextState<TContext extends AnyContext>({
   contexts?: string[];
   settings?: ContextSettings;
 }): Promise<ContextState<TContext>> {
-  const key = context.key ? context.key(args) : context.type;
-  const id = context.key ? [context.type, key].join(":") : context.type;
+  const key = context.key ? context.key(args) : undefined;
+  const id = key ? [context.type, key].join(":") : context.type;
 
   const settings: ContextSettings = {
     model: context.model,
@@ -210,11 +210,13 @@ export async function createContextState<TContext extends AnyContext>({
 
   const memory =
     (context.load
-      ? await context.load(id)
+      ? await context.load(id, { options, settings })
       : await agent.memory.store.get(`memory:${id}`)) ??
     (context.create
-      ? await Promise.resolve(
-          context.create({ key, args, id, options, settings }, agent)
+      ? await Promise.try(
+          context.create,
+          { key, args, id, options, settings },
+          agent
         )
       : {});
 
@@ -264,7 +266,7 @@ type ContextStateSnapshot = {
   id: string;
   type: string;
   args: any;
-  key: string;
+  key?: string;
   settings: Omit<ContextSettings, "model"> & { model?: string };
   contexts: string[];
 };
@@ -294,11 +296,9 @@ export async function loadContextState(
   context: AnyContext,
   contextId: string
 ): Promise<Omit<ContextState, "options" | "memory"> | null> {
-  const state = context.load
-    ? await context.load(contextId)
-    : await agent.memory.store.get<ContextStateSnapshot>(
-        `context:${contextId}`
-      );
+  const state = await agent.memory.store.get<ContextStateSnapshot>(
+    `context:${contextId}`
+  );
 
   if (!state) return null;
 
@@ -328,7 +328,6 @@ function getContextData(
   contextId: string
 ) {
   // todo: verify type?
-
   if (contexts.has(contextId)) {
     const state = contexts.get(contextId)!;
     return {
@@ -353,9 +352,9 @@ export function getContexts(
   contextIds: Set<string>,
   contexts: Map<string, ContextState>
 ) {
-  return Array.from(contextIds.values()).map((id) =>
-    getContextData(contexts, id)
-  );
+  return Array.from(contextIds.values())
+    .filter((t) => !!t)
+    .map((id) => getContextData(contexts, id));
 }
 
 export async function deleteContext(agent: AnyAgent, contextId: string) {

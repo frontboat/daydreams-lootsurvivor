@@ -18,7 +18,7 @@ const groq = createGroq({
 });
 
 const agent = createDreams({
-  logger: LogLevel.DEBUG,
+  logLevel: LogLevel.DEBUG,
   model: groq("deepseek-r1-distill-llama-70b"),
   extensions: [twitter],
 });

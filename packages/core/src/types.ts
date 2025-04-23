@@ -180,14 +180,13 @@ export type Evaluator<
 export type ActionSchema =
   | ZodRawShape
   | z.AnyZodObject
-  | z.ZodString
   | Schema<any>
   | undefined;
 
 export type InferActionArguments<TSchema = undefined> =
   TSchema extends ZodRawShape
     ? z.infer<ZodObject<TSchema>>
-    : TSchema extends z.AnyZodObject | z.ZodString
+    : TSchema extends z.AnyZodObject
       ? z.infer<TSchema>
       : TSchema extends Schema
         ? TSchema["_type"]
@@ -334,7 +333,7 @@ export interface Action<
     | ((
         key: string,
         path: string,
-        ctxState: ActionCallContext<
+        ctx: ActionCallContext<
           Schema,
           TContext,
           InferAgentContext<TAgent>,
@@ -347,7 +346,7 @@ export type ActionCtxRef = AnyAction & {
   ctxRef: {
     type: string;
     id: string;
-    key: string;
+    key?: string;
   };
 };
 
@@ -355,7 +354,7 @@ export type OutputCtxRef = AnyOutput & {
   ctxRef: {
     type: string;
     id: string;
-    key: string;
+    key?: string;
   };
 };
 
@@ -1135,6 +1134,8 @@ type BaseContextComposer<TContext extends AnyContext> = (
   state: ContextState<TContext>
 ) => ContextRef[];
 
+export type Resolver<Result, Ctx> = Result | ((ctx: Ctx) => Result);
+
 export interface Context<
   TMemory = any,
   Schema extends z.ZodTypeAny | ZodRawShape = z.ZodTypeAny,
@@ -1163,7 +1164,7 @@ export interface Context<
   create?: (
     params: {
       id: string;
-      key: string;
+      key?: string;
       args: InferSchemaArguments<Schema>;
       options: Ctx;
       settings: ContextSettings;
@@ -1172,16 +1173,16 @@ export interface Context<
   ) => TMemory | Promise<TMemory>;
 
   /** Optional instructions for this context */
-  instructions?: Instruction | ((state: ContextState<this>) => Instruction);
+  instructions?: Resolver<Instruction, ContextState<this>>;
 
   /** Optional description of this context */
-  description?:
-    | string
-    | string[]
-    | ((state: ContextState<this>) => string | string[]);
+  description?: Resolver<string | string[], ContextState<this>>;
 
   /** Optional function to load existing memory */
-  load?: (id: string) => Promise<TMemory | null>;
+  load?: (
+    id: string,
+    params: { options: Ctx; settings: ContextSettings }
+  ) => Promise<TMemory | null>;
   /** Optional function to save memory state */
   save?: (state: ContextState<this>) => Promise<void>;
 
@@ -1210,23 +1211,32 @@ export interface Context<
 
   maxWorkingMemorySize?: number;
 
-  actions?:
-    | Actions
-    | ((state: ContextState<this>) => Actions | Promise<Actions>);
+  actions?: Resolver<Action[], ContextState<this>>;
 
-  events?: Events;
+  events?: Resolver<Events, ContextState<this>>;
 
   /**
    * A record of input configurations for the context.
    */
-  inputs?: Record<string, InputConfig<any, any, AnyAgent>>;
+  inputs?: Resolver<
+    Record<string, InputConfig<any, any, AnyAgent>>,
+    ContextState<this>
+  >;
 
   /**
    * A record of output configurations for the context.
    */
-  outputs?: Record<string, Omit<Output<any, any, AnyContext, any>, "type">>;
+  outputs?: Resolver<
+    Record<string, Omit<Output<any, any, AnyContext, any>, "type">>,
+    ContextState<this>
+  >;
 
-  composers?: BaseContextComposer<this>[];
+  __composers?: BaseContextComposer<this>[];
+
+  __templateResolvers?: Record<
+    string,
+    TemplateResolver<AgentContext<this> & ContextStateApi<this>>
+  >;
 }
 
 export type ContextSettings = {
@@ -1261,7 +1271,10 @@ type ContextEventEmitter<TContext extends AnyContext> = <
 
 //wip
 
-export type TemplateResolver = (path: string) => MaybePromise<any>;
+export type TemplateResolver<Ctx = any> = (
+  path: string,
+  ctx: Ctx
+) => MaybePromise<any>;
 
 export interface ContextStateApi<TContext extends AnyContext> {
   emit: ContextEventEmitter<TContext>;
@@ -1274,11 +1287,13 @@ export interface ContextStateApi<TContext extends AnyContext> {
       queueKey?: string;
     }>
   ) => Promise<ActionResult>;
+
+  __getRunResults: () => Promise<ActionResult>[];
 }
 
 export type ContextState<TContext extends AnyContext = AnyContext> = {
   id: string;
-  key: string;
+  key?: string;
   context: TContext;
   args: InferSchemaArguments<TContext["schema"]>;
   options: InferContextOptions<TContext>;

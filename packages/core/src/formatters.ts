@@ -189,9 +189,15 @@ export function formatAction(action: AnyAction) {
 
 export function formatContextState(state: ContextState) {
   const { context, key } = state;
+  const params: Record<string, string> = { type: context.type };
+
+  if (key) {
+    params.key = key;
+  }
+
   return xml(
     "context",
-    { type: context.type, key: key },
+    params,
     [
       context.description
         ? {
