@@ -97,7 +97,7 @@ export function formatOutput(output: OutputRef) {
   return xml(
     "output",
     { name: output.type, timestamp: output.timestamp, ...output.params },
-    output.data
+    output.data ?? output.content
   );
 }
 
@@ -137,7 +137,7 @@ export function formatOutputInterface(output: Output<any>) {
     },
     {
       tag: "content_schema",
-      children: formatSchema(output.schema ?? z.string(), "schema"),
+      children: formatSchema(output.schema ?? z.string(), "content"),
     },
     output.examples
       ? {
@@ -162,6 +162,10 @@ export function formatAction(action: AnyAction) {
           children: action.instructions,
         }
       : null,
+    {
+      tag: "format",
+      children: action.callFormat?.toUpperCase() ?? "JSON",
+    },
     action.schema
       ? {
           tag: "schema",
@@ -174,14 +178,26 @@ export function formatAction(action: AnyAction) {
           children: formatSchema(action.returns, "returns"),
         }
       : null,
+    action.examples
+      ? {
+          tag: "examples",
+          children: action.examples,
+        }
+      : null,
   ]);
 }
 
 export function formatContextState(state: ContextState) {
   const { context, key } = state;
+  const params: Record<string, string> = { type: context.type };
+
+  if (key) {
+    params.key = key;
+  }
+
   return xml(
     "context",
-    { type: context.type, key: key },
+    params,
     [
       context.description
         ? {
@@ -240,32 +256,6 @@ export function formatContextLog(i: Log) {
       return i.formatted ?? formatInput(i);
     case "output":
       return i.formatted ?? formatOutput(i);
-    case "thought":
-      return xml("reasoning", {}, i.content);
-    case "action_call":
-      return xml(
-        "action_call",
-        { id: i.id, name: i.name, timestamp: i.timestamp },
-        i.data ?? i.content
-      );
-    case "action_result":
-      return xml(
-        "action_result",
-        { callId: i.callId, name: i.name, timestamp: i.timestamp },
-        i.formatted ?? i.data
-      );
-    case "event":
-      return xml("event", { name: i.name, ...i.params }, i.formatted ?? i.data);
-    default:
-      throw new Error("invalid context");
-  }
-}
-export function formatContextLog2(i: Log) {
-  switch (i.ref) {
-    case "input":
-      return formatInput(i);
-    case "output":
-      return formatOutput(i);
     case "thought":
       return xml("reasoning", {}, i.content);
     case "action_call":

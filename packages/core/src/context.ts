@@ -39,27 +39,21 @@ export function context<
 ): Context<TMemory, Args, Ctx, Actions, Events> {
   const ctx: Context<TMemory, Args, Ctx, Actions, Events> = {
     ...config,
-    actions: (config.actions ?? []) as Actions,
-    inputs: config.inputs ?? {},
-    outputs: config.outputs ?? {},
-    events: (config.events ?? {}) as Events,
     setActions(actions) {
-      return context<TMemory, Args, Ctx, any, Events>({
-        ...ctx,
-        actions,
-      });
+      Object.assign(ctx, { actions });
+      return ctx as any;
     },
     setInputs(inputs) {
-      return context({
-        ...ctx,
-        inputs,
-      });
+      ctx.inputs = inputs;
+      return ctx;
     },
     setOutputs(outputs) {
-      return context({
-        ...ctx,
-        outputs,
-      });
+      ctx.outputs = outputs;
+      return ctx;
+    },
+    use(composer) {
+      ctx.__composers = ctx.__composers?.concat(composer) ?? [composer];
+      return ctx;
     },
   };
 
@@ -99,7 +93,7 @@ export function getWorkingMemoryAllLogs(
     ...(memory.events ?? []),
     ...(memory.steps ?? []),
     ...(memory.runs ?? []),
-  ].sort((a, b) => (a.timestamp > b.timestamp ? 1 : -1));
+  ].sort((a, b) => (a.timestamp >= b.timestamp ? 1 : -1));
 }
 
 export function formatWorkingMemory({
@@ -139,7 +133,7 @@ export function createWorkingMemory(): WorkingMemory {
   };
 }
 
-export function pushToWorkingMemory(workingMemory: WorkingMemory, ref: Log) {
+export function pushToWorkingMemory(workingMemory: WorkingMemory, ref: AnyRef) {
   switch (ref.ref) {
     case "action_call":
       workingMemory.calls.push(ref);
@@ -159,6 +153,12 @@ export function pushToWorkingMemory(workingMemory: WorkingMemory, ref: Log) {
     case "event":
       workingMemory.events.push(ref);
       break;
+    case "step":
+      workingMemory.steps.push(ref);
+      break;
+    case "run":
+      workingMemory.runs.push(ref);
+      break;
     default:
       throw new Error("invalid ref");
   }
@@ -177,8 +177,8 @@ export function getContextId<TContext extends AnyContext>(
   context: TContext,
   args: z.infer<TContext["schema"]>
 ) {
-  const key = context.key ? context.key(args) : context.type;
-  return context.key ? [context.type, key].join(":") : context.type;
+  const key = context.key ? context.key(args) : undefined;
+  return key ? [context.type, key].join(":") : context.type;
 }
 
 export async function createContextState<TContext extends AnyContext>({
@@ -194,8 +194,8 @@ export async function createContextState<TContext extends AnyContext>({
   contexts?: string[];
   settings?: ContextSettings;
 }): Promise<ContextState<TContext>> {
-  const key = context.key ? context.key(args) : context.type;
-  const id = context.key ? [context.type, key].join(":") : context.type;
+  const key = context.key ? context.key(args) : undefined;
+  const id = key ? [context.type, key].join(":") : context.type;
 
   const settings: ContextSettings = {
     model: context.model,
@@ -209,10 +209,14 @@ export async function createContextState<TContext extends AnyContext>({
     : {};
 
   const memory =
-    (await agent.memory.store.get(`memory:${id}`)) ??
+    (context.load
+      ? await context.load(id, { options, settings })
+      : await agent.memory.store.get(`memory:${id}`)) ??
     (context.create
-      ? await Promise.resolve(
-          context.create({ key, args, id, options, settings }, agent)
+      ? await Promise.try(
+          context.create,
+          { key, args, id, options, settings },
+          agent
         )
       : {});
 
@@ -262,7 +266,7 @@ type ContextStateSnapshot = {
   id: string;
   type: string;
   args: any;
-  key: string;
+  key?: string;
   settings: Omit<ContextSettings, "model"> & { model?: string };
   contexts: string[];
 };
@@ -324,7 +328,6 @@ function getContextData(
   contextId: string
 ) {
   // todo: verify type?
-
   if (contexts.has(contextId)) {
     const state = contexts.get(contextId)!;
     return {
@@ -349,9 +352,9 @@ export function getContexts(
   contextIds: Set<string>,
   contexts: Map<string, ContextState>
 ) {
-  return Array.from(contextIds.values()).map((id) =>
-    getContextData(contexts, id)
-  );
+  return Array.from(contextIds.values())
+    .filter((t) => !!t)
+    .map((id) => getContextData(contexts, id));
 }
 
 export async function deleteContext(agent: AnyAgent, contextId: string) {

@@ -10,29 +10,37 @@ import type {
   AnyAction,
   AnyAgent,
   AnyContext,
+  AnyOutput,
   Context,
   ContextRef,
   ContextState,
-  EventRef,
+  ContextStateApi,
   Input,
   InputConfig,
   InputRef,
-  Log,
+  MaybePromise,
   Memory,
   Output,
+  OutputCtxRef,
   OutputRef,
+  Resolver,
+  TemplateResolver,
   WorkingMemory,
 } from "./types";
 import { randomUUIDv7 } from "./utils";
-import { pushToWorkingMemory } from "./context";
+import { parse } from "./xml";
+import { jsonPath } from "./jsonpath";
+import { jsonSchema } from "ai";
 
 export class NotFoundError extends Error {
+  name = "NotFoundError";
   constructor(public ref: ActionCall | OutputRef | InputRef) {
     super();
   }
 }
 
 export class ParsingError extends Error {
+  name = "ParsingError";
   constructor(
     public ref: ActionCall | OutputRef | InputRef,
     public parsingError: unknown
@@ -49,6 +57,24 @@ function parseJSONContent(content: string) {
   return JSON.parse(content);
 }
 
+function parseXMLContent(content: string) {
+  const nodes = parse(content, (node) => {
+    return node;
+  });
+
+  const data = nodes.reduce(
+    (data, node) => {
+      if (node.type === "element") {
+        data[node.name] = node.content;
+      }
+      return data;
+    },
+    {} as Record<string, string>
+  );
+
+  return data;
+}
+
 export interface TemplateInfo {
   path: (string | number)[];
   template_string: string;
@@ -56,7 +82,7 @@ export interface TemplateInfo {
   primary_key: string | null;
 }
 
-function detectTemplates(obj: unknown): TemplateInfo[] {
+export function detectTemplates(obj: unknown): TemplateInfo[] {
   const foundTemplates: TemplateInfo[] = [];
   const templatePattern = /^\{\{(.*)\}\}$/; // Matches strings that *only* contain {{...}}
   const primaryKeyPattern = /^([a-zA-Z_][a-zA-Z0-9_]*)/; // Extracts the first identifier (simple version)
@@ -237,7 +263,67 @@ export async function resolveTemplates(
   }
 }
 
-export async function prepareActionCall({
+export async function templateResultsResolver(
+  arr: MaybePromise<ActionResult>[],
+  path: string
+) {
+  const [index, ...resultPath] = getPathSegments(path);
+  const actionResult = arr[Number(index)];
+
+  if (!actionResult) throw new Error("invalid index");
+  const result = await actionResult;
+
+  if (resultPath.length === 0) {
+    return result.data;
+  }
+  return jsonPath(result.data, resultPath.join("."));
+}
+
+export function createResultsTemplateResolver(
+  arr: Array<MaybePromise<any>>
+): TemplateResolver {
+  return (path) => templateResultsResolver(arr, path);
+}
+
+export function createObjectTemplateResolver(obj: object): TemplateResolver {
+  return async function templateObjectResolver(path) {
+    const res = jsonPath(obj, path);
+    if (!res) throw new Error("invalid path: " + path);
+    return res.length > 1 ? res : res[0];
+  };
+}
+
+export function parseActionCallContent({
+  call,
+  action,
+}: {
+  call: ActionCall;
+  action: AnyAction;
+}) {
+  try {
+    const content = call.content.trim();
+
+    let data: any;
+
+    if (action.parser) {
+      data = action.parser(call);
+    } else if (action.schema && action.schema?._def?.typeName !== "ZodString") {
+      if (action.callFormat === "xml") {
+        data = parseXMLContent(content);
+      } else {
+        data = parseJSONContent(content);
+      }
+    } else {
+      data = content;
+    }
+
+    return data;
+  } catch (error) {
+    throw new ParsingError(call, error);
+  }
+}
+
+export function resolveActionCall({
   call,
   actions,
   logger,
@@ -246,51 +332,52 @@ export async function prepareActionCall({
   actions: ActionCtxRef[];
   logger: Logger;
 }) {
-  const action = actions.find((a) => a.name === call.name);
+  const contextKey = call.params?.contextKey;
+
+  const action = actions.find(
+    (a) =>
+      (contextKey ? contextKey === a.ctxRef.key : true) && a.name === call.name
+  );
 
   if (!action) {
     logger.error("agent:action", "ACTION_MISMATCH", {
       name: call.name,
       data: call.content,
+      contextKey,
     });
 
     throw new NotFoundError(call);
   }
 
-  try {
-    const content = call.content.trim();
-    const json = content.length > 0 ? parseJSONContent(content) : {};
-
-    const templates = detectTemplates(json);
-
-    return { action, json, templates };
-  } catch (error) {
-    throw new ParsingError(call, error);
-  }
+  return action;
 }
 
-export async function handleActionCall({
-  state,
-  workingMemory,
+export async function prepareActionCall({
+  call,
   action,
   logger,
-  call,
-  taskRunner,
+  templateResolver,
+  state,
+  api,
+  workingMemory,
   agent,
   agentState,
   abortSignal,
-  pushLog,
 }: {
-  state: ContextState<AnyContext>;
-  workingMemory: WorkingMemory;
-  call: ActionCall;
-  action: AnyAction;
-  logger: Logger;
-  taskRunner: TaskRunner;
   agent: AnyAgent;
+  state: ContextState<AnyContext>;
+  api: ContextStateApi<AnyContext>;
+  workingMemory: WorkingMemory;
   agentState?: ContextState;
+  call: ActionCall;
+  action: ActionCtxRef;
+  logger: Logger;
+  templateResolver: (
+    primary_key: string,
+    path: string,
+    callCtx: ActionCallContext
+  ) => MaybePromise<any>;
   abortSignal?: AbortSignal;
-  pushLog?: (log: Log) => void;
 }) {
   let actionMemory: Memory<any> | undefined = undefined;
 
@@ -302,45 +389,85 @@ export async function handleActionCall({
 
   const callCtx: ActionCallContext = {
     ...state,
+    ...api,
     workingMemory,
     actionMemory,
     agentMemory: agentState?.memory,
     abortSignal,
     call,
-    push(ref) {
-      if (pushLog) pushLog(ref);
-      else pushToWorkingMemory(workingMemory, ref);
-    },
-    emit(event, args, options) {
-      console.log("emitting", { event, args });
-
-      const eventRef: EventRef = {
-        ref: "event",
-        id: randomUUIDv7(),
-        name: event as string,
-        data: args,
-        processed: options?.processed ?? true,
-        timestamp: Date.now(),
-      };
-
-      if (pushLog) pushLog(eventRef);
-      else workingMemory.events.push(eventRef);
-    },
   };
 
-  call.processed = true;
+  const data = call.data ?? parseActionCallContent({ call, action });
 
-  const result: ActionResult = {
-    ref: "action_result",
-    id: randomUUIDv7(),
-    callId: call.id,
-    data: undefined,
-    name: call.name,
-    timestamp: Date.now(),
-    processed: false,
-  };
+  const templates: TemplateInfo[] = [];
 
-  result.data = await taskRunner.enqueueTask(
+  if (action.templateResolver !== false) {
+    templates.push(...detectTemplates(data));
+
+    const actionTemplateResolver =
+      typeof action.templateResolver === "function"
+        ? action.templateResolver
+        : templateResolver;
+
+    if (templates.length > 0)
+      await resolveTemplates(data, templates, (key, path) =>
+        actionTemplateResolver(key, path, callCtx)
+      );
+  }
+
+  if (action.schema) {
+    try {
+      const schema =
+        "parse" in action.schema || "validate" in action.schema
+          ? action.schema
+          : "$schema" in action.schema
+            ? jsonSchema(action.schema)
+            : z.object(action.schema);
+
+      call.data =
+        "parse" in schema
+          ? (schema as ZodSchema).parse(data)
+          : schema.validate
+            ? schema.validate(data)
+            : data;
+    } catch (error) {
+      throw new ParsingError(call, error);
+    }
+  } else {
+    call.data = data;
+  }
+
+  return callCtx;
+}
+
+export async function handleActionCall({
+  action,
+  logger,
+  call,
+  taskRunner,
+  agent,
+  abortSignal,
+  callCtx,
+  queueKey,
+}: {
+  callCtx: ActionCallContext;
+  call: ActionCall;
+  action: AnyAction;
+  logger: Logger;
+  taskRunner: TaskRunner;
+  agent: AnyAgent;
+  abortSignal?: AbortSignal;
+  queueKey?: string;
+}): Promise<ActionResult> {
+  queueKey =
+    queueKey ??
+    (action.queueKey
+      ? typeof action.queueKey === "function"
+        ? action.queueKey(callCtx)
+        : action.queueKey
+      : undefined);
+
+  const data = await taskRunner.enqueueTask(
     runAction,
     {
       action,
@@ -349,16 +476,26 @@ export async function handleActionCall({
       ctx: callCtx,
     },
     {
-      debug: agent.debugger,
       retry: action.retry,
       abortSignal,
+      queueKey,
     }
   );
 
+  const result: ActionResult = {
+    ref: "action_result",
+    id: randomUUIDv7(),
+    callId: call.id,
+    data,
+    name: call.name,
+    timestamp: Date.now(),
+    processed: false,
+  };
+
   if (action.format) result.formatted = action.format(result);
 
-  if (action.memory) {
-    await agent.memory.store.set(action.memory.key, actionMemory);
+  if (callCtx.actionMemory) {
+    await agent.memory.store.set(action.memory.key, callCtx.actionMemory);
   }
 
   if (action.onSuccess) {
@@ -368,21 +505,15 @@ export async function handleActionCall({
   return result;
 }
 
-export async function handleOutput({
+export function prepareOutputRef({
   outputRef,
   outputs,
   logger,
-  state,
-  workingMemory,
-  agent,
 }: {
-  outputs: Output[];
   outputRef: OutputRef;
+  outputs: OutputCtxRef[];
   logger: Logger;
-  workingMemory: WorkingMemory;
-  state: ContextState;
-  agent: AnyAgent;
-}): Promise<OutputRef | OutputRef[]> {
+}) {
   const output = outputs.find((output) => output.type === outputRef.type);
 
   if (!output) {
@@ -411,6 +542,24 @@ export async function handleOutput({
     }
   }
 
+  return { output };
+}
+
+export async function handleOutput({
+  outputRef,
+  output,
+  logger,
+  state,
+  workingMemory,
+  agent,
+}: {
+  output: OutputCtxRef;
+  outputRef: OutputRef;
+  logger: Logger;
+  workingMemory: WorkingMemory;
+  state: ContextState;
+  agent: AnyAgent;
+}): Promise<OutputRef | OutputRef[]> {
   if (output.handler) {
     const response = await Promise.try(
       output.handler,
@@ -433,7 +582,7 @@ export async function handleOutput({
           ...res,
         };
 
-        ref.formatted = output.format ? output.format(response) : undefined;
+        ref.formatted = output.format ? output.format(ref) : undefined;
         refs.push(ref);
       }
       return refs;
@@ -444,7 +593,7 @@ export async function handleOutput({
         processed: response.processed ?? true,
       };
 
-      ref.formatted = output.format ? output.format(response) : undefined;
+      ref.formatted = output.format ? output.format(ref) : undefined;
 
       return ref;
     }
@@ -468,7 +617,7 @@ export async function prepareContextActions(params: {
   const actions =
     typeof context.actions === "function"
       ? await Promise.try(context.actions, state)
-      : context.actions;
+      : (context.actions ?? []);
 
   return Promise.all(
     actions.map((action) =>
@@ -478,6 +627,53 @@ export async function prepareContextActions(params: {
       })
     )
   ).then((t) => t.filter((t) => !!t));
+}
+
+async function prepareOutput({
+  output,
+  context,
+  state,
+}: {
+  output: AnyOutput;
+  context: AnyContext;
+  state: ContextState<AnyContext>;
+}): Promise<OutputCtxRef | undefined> {
+  if (output.context && output.context.type !== context.type) return undefined;
+
+  const enabled = output.enabled ? output.enabled(state) : true;
+
+  return enabled
+    ? {
+        ...output,
+        ctxRef: {
+          type: state.context.type,
+          id: state.id,
+          key: state.key,
+        },
+      }
+    : undefined;
+}
+
+export async function prepareContextOutputs(params: {
+  context: Context;
+  state: ContextState<AnyContext>;
+  workingMemory: WorkingMemory;
+  agent: AnyAgent;
+  agentCtxState: ContextState<AnyContext> | undefined;
+}): Promise<OutputCtxRef[]> {
+  return params.context.outputs
+    ? Promise.all(
+        Object.entries(params.context.outputs).map(([type, output]) =>
+          prepareOutput({
+            output: {
+              type,
+              ...output,
+            },
+            ...params,
+          })
+        )
+      ).then((t) => t.filter((t) => !!t))
+    : [];
 }
 
 export async function prepareAction({
@@ -522,12 +718,106 @@ export async function prepareAction({
   return enabled
     ? {
         ...action,
-        ctxId: state.id,
+        ctxRef: {
+          type: state.context.type,
+          id: state.id,
+          key: state.key,
+        },
       }
     : undefined;
 }
 
-export async function prepareContext({
+function resolve<Value = any, Ctx = any>(
+  value: Value,
+  ctx: Ctx
+): Promise<Value extends (ctx: Ctx) => infer R ? R : Value> {
+  return typeof value === "function" ? value(ctx) : (value as any);
+}
+
+export async function prepareContext(
+  {
+    agent,
+    ctxState,
+    workingMemory,
+    agentCtxState,
+  }: {
+    agent: AnyAgent;
+    ctxState: ContextState;
+    workingMemory: WorkingMemory;
+    agentCtxState?: ContextState;
+  },
+  state: {
+    inputs: Input[];
+    outputs: OutputCtxRef[];
+    actions: ActionCtxRef[];
+    contexts: ContextState[];
+  }
+) {
+  state.contexts.push(ctxState);
+
+  await ctxState.context.loader?.(ctxState, agent);
+
+  const inputs: Input[] = ctxState.context.inputs
+    ? Object.entries(ctxState.context.inputs).map(([type, input]) => ({
+        type,
+        ...input,
+      }))
+    : [];
+
+  state.inputs.push(...inputs);
+
+  const outputs: OutputCtxRef[] = ctxState.context.outputs
+    ? await Promise.all(
+        Object.entries(await resolve(ctxState.context.outputs, ctxState)).map(
+          ([type, output]) =>
+            prepareOutput({
+              output: {
+                type,
+                ...output,
+              },
+              context: ctxState.context,
+              state: ctxState,
+            })
+        )
+      ).then((r) => r.filter((a) => !!a))
+    : [];
+
+  state.outputs.push(...outputs);
+
+  const actions = await prepareContextActions({
+    agent,
+    agentCtxState,
+    context: ctxState.context,
+    state: ctxState,
+    workingMemory,
+  });
+
+  state.actions.push(...actions);
+
+  const ctxRefs: ContextRef[] = [];
+
+  if (ctxState.context.__composers) {
+    for (const composer of ctxState.context.__composers) {
+      ctxRefs.push(...composer(ctxState));
+    }
+  }
+
+  for (const { context, args } of ctxRefs) {
+    await prepareContext(
+      {
+        agent,
+        ctxState: await agent.getContext({ context, args }),
+        workingMemory,
+        agentCtxState,
+      },
+      state
+    );
+  }
+
+  return state;
+}
+
+export async function prepareContexts({
   agent,
   ctxState,
   agentCtxState,
@@ -547,34 +837,29 @@ export async function prepareContext({
 }) {
   await agentCtxState?.context.loader?.(agentCtxState, agent);
 
-  await ctxState?.context.loader?.(ctxState, agent);
-
   const inputs: Input[] = Object.entries({
     ...agent.inputs,
-    ...ctxState.context.inputs,
     ...(params?.inputs ?? {}),
   }).map(([type, input]) => ({
     type,
     ...input,
   }));
 
-  const outputs: Output[] = Object.entries({
-    ...agent.outputs,
-    ...ctxState.context.outputs,
-    ...(params?.outputs ?? {}),
-  })
-    .filter(([_, output]) =>
-      output.enabled
-        ? output.enabled({
-            ...ctxState,
-            workingMemory,
-          })
-        : true
+  const outputs: OutputCtxRef[] = await Promise.all(
+    Object.entries({
+      ...agent.outputs,
+      ...(params?.outputs ?? {}),
+    }).map(([type, output]) =>
+      prepareOutput({
+        output: {
+          type,
+          ...output,
+        },
+        context: ctxState.context,
+        state: ctxState,
+      })
     )
-    .map(([type, output]) => ({
-      type,
-      ...output,
-    }));
+  ).then((r) => r.filter((a) => !!a));
 
   const actions = await Promise.all(
     [agent.actions, params?.actions]
@@ -592,69 +877,35 @@ export async function prepareContext({
       )
   ).then((r) => r.filter((a) => !!a));
 
-  const ctxActions = await prepareContextActions({
-    agent,
-    agentCtxState,
-    context: ctxState.context,
-    state: ctxState,
-    workingMemory,
-  });
+  const contexts: ContextState[] = agentCtxState ? [agentCtxState] : [];
 
-  actions.push(...ctxActions);
-
-  const subCtxsStates = await Promise.all([
-    ...(ctxState?.contexts ?? []).map((ref) => agent.getContextById(ref)),
-    ...(params?.contexts ?? []).map((ref) => agent.getContext(ref)),
-  ]).then((res) => res.filter((r) => !!r));
-
-  await Promise.all(
-    subCtxsStates.map((state) => state.context.loader?.(state, agent))
-  );
-
-  const subCtxsStatesInputs: Input[] = subCtxsStates
-    .map((state) => Object.entries(state.context.inputs))
-    .flat()
-    .map(([type, input]) => ({
-      type,
-      ...input,
-    }));
-
-  inputs.push(...subCtxsStatesInputs);
-
-  const subCtxsStatesOutputs: Output[] = subCtxsStates
-    .map((state) => Object.entries(state.context.outputs))
-    .flat()
-    .map(([type, output]) => ({
-      type,
-      ...output,
-    }));
-
-  outputs.push(...subCtxsStatesOutputs);
-
-  const subCtxsActions = await Promise.all(
-    subCtxsStates.map((state) =>
-      prepareContextActions({
-        agent,
-        agentCtxState,
-        context: state.context,
-        state: state,
-        workingMemory,
-      })
-    )
-  );
-
-  actions.push(...subCtxsActions.flat());
-
-  const contexts = [agentCtxState, ctxState, ...subCtxsStates].filter(
-    (t) => !!t
-  );
-
-  return {
-    contexts,
+  const state = {
+    inputs,
     outputs,
     actions,
-    inputs,
+    contexts,
   };
+
+  await prepareContext(
+    { agent, ctxState, workingMemory, agentCtxState },
+    state
+  );
+
+  if (params?.contexts) {
+    for (const ctxRef of params?.contexts) {
+      await prepareContext(
+        {
+          agent,
+          ctxState: await agent.getContext(ctxRef),
+          workingMemory,
+          agentCtxState,
+        },
+        state
+      );
+    }
+  }
+
+  return state;
 }
 
 export async function handleInput({
@@ -665,14 +916,14 @@ export async function handleInput({
   workingMemory,
   agent,
 }: {
-  inputs: Record<string, InputConfig>;
+  inputs: Input[];
   inputRef: InputRef;
   logger: Logger;
   workingMemory: WorkingMemory;
   ctxState: ContextState;
   agent: AnyAgent;
 }) {
-  const input = inputs[inputRef.type];
+  const input = inputs.find((input) => input.type === inputRef.type);
 
   if (!input) {
     throw new NotFoundError(inputRef);

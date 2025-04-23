@@ -19,7 +19,7 @@ const groq = createGroq({
 });
 
 createDreams({
-  logger: LogLevel.DEBUG,
+  logLevel: LogLevel.DEBUG,
   model: groq("deepseek-r1-distill-llama-70b"),
   extensions: [telegram, deepResearch],
 }).start();
