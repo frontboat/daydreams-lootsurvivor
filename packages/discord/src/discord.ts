@@ -135,7 +135,10 @@ export const discord = extension({
         throw new Error("Invalid channel id");
       },
       examples: [
-        JSON.stringify({ channelId: 1, content: "Respond like this" }),
+        `<output type="discord:message">${JSON.stringify({
+          channelId: 1,
+          content: "Respond like this",
+        })}</output>`,
       ],
     }),
   },
