@@ -452,6 +452,7 @@ export function createEngine({
       const { actions, contexts, inputs, outputs } = await prepareContexts({
         agent,
         ctxState,
+        agentCtxState,
         workingMemory,
         params: state.params,
       });
