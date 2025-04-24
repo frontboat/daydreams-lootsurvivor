@@ -556,6 +556,7 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
         ctxState,
         workingMemory,
         handlers,
+        agentCtxState,
         subscriptions: ctxSubscriptions.get(ctxId)!,
         __chunkSubscriptions: __ctxChunkSubscriptions.get(ctxId)!,
       });
