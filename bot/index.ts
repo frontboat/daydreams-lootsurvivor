@@ -97,15 +97,13 @@ const chatContext = context({
     };
   },
   async loader(state, agent) {
-    // Fetch the content from the URL
     try {
       const response = await fetch("https://docs.dreams.fun/llm.txt");
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const textContent = await response.text();
-      console.log("Docs:", textContent);
-      // You can store or process the textContent here, for example:
+
       state.memory.llmText = textContent;
     } catch (error) {
       console.error("Failed to fetch llm.txt:", error);
