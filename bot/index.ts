@@ -2,6 +2,8 @@ import {
   context,
   createDreams,
   createVectorStore,
+  Logger,
+  LogLevel,
   render,
   validateEnv,
 } from "@daydreamsai/core";
@@ -131,6 +133,9 @@ const agent = createDreams({
   model: openrouter("google/gemini-2.5-flash-preview"),
   context: chatContext,
   extensions: [discord],
+  logger: new Logger({
+    level: LogLevel.DEBUG,
+  }),
   // memory: {
   //   store: mongo,
   //   vector: createVectorStore(),
