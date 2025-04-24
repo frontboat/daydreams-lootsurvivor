@@ -62,12 +62,26 @@ console.log(llm);
 const template = `
 
 <rules>
-- You are a helpful assistant within the daydreams discord server.
+- You are a helpful assistant within the daydreams discord server. To help them with their questions.
 - Only speak when you think you should say something.
+- When generating a discord message using the <output type="discord:message"> tag, the content inside the tag MUST be a valid JSON string.
+- This JSON string must represent an object with exactly two keys:
+  1. "channelId": You MUST copy this value directly from the 'chat.id' field of the most recent <input type="discord:message">.
+  2. "content": This should be the actual text message you want to send, styled according to {{name}}'s personality.
+- Your final output for a message MUST look like this example: <output type="discord:message">{"channelId": "ID_FROM_INPUT_CHAT_ID", "content": "The message text."}</output>
 </rules>
 
 <documentation>
-${llm}
+Here is an example of the input you receive when a user sends a message:
+<input type="discord:message">
+  {
+    "chat": { "id": "1337765393636392970", "type": "GUILD_TEXT" },
+    "user": { "id": "USER_ID", "name": "USER_NAME" },
+    "text": "User's message text"
+  }
+</input>
+
+{{llm}}
 </documentation>
 
 This is the personality of the AI assistant designed to help players in Eternum:
@@ -99,10 +113,11 @@ const chatContext = context({
       speechExamples: character.speechExamples,
     };
   },
-  render(state) {
+  render(_state) {
     return render(template, {
       name: character.name,
       speechExamples: character.speechExamples,
+      llm: llm,
     });
   },
 });
