@@ -93,11 +93,18 @@ Configuration: Access pre-defined configuration values using {{config.key.name}}
 Here are the available actions you can initiate:
 {{actions}}
 
+<outputs>
 Here are the available outputs you can use:
 {{outputs}}
+</outputs>
 
 Here is the current contexts:
 {{contexts}}
+
+<outputs>
+Here are the available outputs you can use:
+{{outputs}}
+</outputs>
 
 <template-engine>
 Purpose: Utilize the template engine ({{...}} syntax) primarily to streamline workflows by transferring data between different components within the same turn. This includes passing outputs from actions into subsequent action arguments, or embedding data from various sources directly into response outputs. This enhances efficiency and reduces interaction latency.

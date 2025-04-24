@@ -10,6 +10,8 @@ import { createMongoMemoryStore } from "@daydreamsai/mongodb";
 import { openrouter } from "@openrouter/ai-sdk-provider";
 import { z } from "zod";
 
+import llm from "./llm.txt";
+
 validateEnv(
   z.object({
     DISCORD_TOKEN: z.string().min(1, "DISCORD_TOKEN is required"),
@@ -55,6 +57,8 @@ const character = {
   ],
 };
 
+console.log(llm);
+
 const template = `
 
 <rules>
@@ -63,7 +67,7 @@ const template = `
 </rules>
 
 <documentation>
-{{llmText}}
+${llm}
 </documentation>
 
 This is the personality of the AI assistant designed to help players in Eternum:
@@ -93,28 +97,12 @@ const chatContext = context({
     return {
       name: character.name,
       speechExamples: character.speechExamples,
-      llmText: "",
     };
   },
-  async loader(state, agent) {
-    try {
-      const response = await fetch("https://docs.dreams.fun/llm.txt");
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const textContent = await response.text();
-
-      state.memory.llmText = textContent;
-    } catch (error) {
-      console.error("Failed to fetch llm.txt:", error);
-    }
-  },
-
   render(state) {
     return render(template, {
       name: character.name,
       speechExamples: character.speechExamples,
-      llmText: state.memory.llmText,
     });
   },
 });
