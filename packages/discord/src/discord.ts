@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { extension, input, output } from "@daydreamsai/core";
-import { formatMsg } from "@daydreamsai/core";
 import { Events, type Message } from "discord.js";
 import { DiscordClient } from "./io";
 import { context } from "@daydreamsai/core";
@@ -23,11 +22,10 @@ const discordService = service({
   },
 });
 
-const discordChannelContext = context({
-  type: "discord:channel",
+export const discordChannelContext = context({
+  type: "discord.channel",
   key: ({ channelId }) => channelId,
   schema: z.object({ channelId: z.string() }),
-
   async setup(args, setttings, { container }) {
     const channel = await container
       .resolve<DiscordClient>("discord")
@@ -37,31 +35,19 @@ const discordChannelContext = context({
 
     return { channel };
   },
-
-  description({ options: { channel } }) {
-    return `Channel ID: ${channel.id}`;
-  },
-});
-
-export const discord = extension({
-  name: "discord",
-  services: [discordService],
-  contexts: {
-    discordChannel: discordChannelContext,
-  },
-  inputs: {
+})
+  .setInputs({
     "discord:message": input({
-      schema: z.object({
-        chat: z.object({ id: z.string() }),
+      schema: {
         user: z.object({ id: z.string(), name: z.string() }),
         text: z.string(),
-      }),
-      format: ({ data }) =>
-        formatMsg({
-          role: "user",
-          user: data.user.name,
-          content: data.text,
-        }),
+      },
+      handler(data) {
+        return {
+          data: data.text,
+          params: { userId: data.user.id, username: data.user.name },
+        };
+      },
       subscribe(send, { container }) {
         function listener(message: Message) {
           if (
@@ -78,9 +64,6 @@ export const discord = extension({
             discord.contexts!.discordChannel,
             { channelId: message.channelId },
             {
-              chat: {
-                id: message.channelId,
-              },
               user: {
                 id: message.author.id,
                 name: message.author.displayName,
@@ -98,35 +81,19 @@ export const discord = extension({
         };
       },
     }),
-  },
-
-  outputs: {
+  })
+  .setOutputs({
     "discord:message": output({
-      schema: z.object({
-        channelId: z
-          .string()
-          .describe("The Discord channel ID to send the message to"),
-        content: z.string().describe("The content of the message to send"),
-      }),
-      description: `
-      Send a message to a Discord channel
-      
-      # Rules for sending messages:
-      1. Always respond if you have been tagged in the message
-      2. Don't repeat yourself
-      3. Don't take part in conversations unless you have been mentioned or asked to join the conversation
-      4. Don't send multiple messages in a row
-      
-      `,
-      enabled({ context }) {
-        return context.type === discordChannelContext.type;
-      },
+      schema: z.string(),
+      examples: [`<output type="discord:message">Hi!</output>`],
       handler: async (data, ctx, { container }) => {
-        const channel = await container
-          .resolve<DiscordClient>("discord")
-          .client.channels.fetch(data.channelId);
+        const channel = ctx.options.channel;
         if (channel && (channel.isTextBased() || channel.isDMBased())) {
-          await container.resolve<DiscordClient>("discord").sendMessage(data);
+          await container.resolve<DiscordClient>("discord").sendMessage({
+            channelId: ctx.args.channelId,
+            content: data,
+          });
+
           return {
             data,
             timestamp: Date.now(),
@@ -135,5 +102,12 @@ export const discord = extension({
         throw new Error("Invalid channel id");
       },
     }),
+  });
+
+export const discord = extension({
+  name: "discord",
+  services: [discordService],
+  contexts: {
+    discordChannel: discordChannelContext,
   },
 });
