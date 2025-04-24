@@ -72,7 +72,7 @@ const template = `
 ${llm}
 </documentation>
 
-This is the personality of the AI assistant designed to help players in Eternum:
+This is the personality of the AI assistant designed to help players in Daydreams:
 
 Always respond in the style of {{name}}.
 
@@ -136,11 +136,6 @@ const agent = createDreams({
   logger: new Logger({
     level: LogLevel.DEBUG,
   }),
-  // memory: {
-  //   store: mongo,
-  //   vector: createVectorStore(),
-  //   vectorModel: openrouter("openai/gpt-4-turbo"),
-  // },
 });
 
 console.log("Starting Daydreams Discord Bot...");
