@@ -1,13 +1,16 @@
+// This example shows how to use the MongoDB memory store to store and retrieve memories.
+// IMPORTANT: You will need to run the docker-compose.yml file in the root of the project to run the MongoDB instance.
+
 import { createGroq } from "@ai-sdk/groq";
 import { openai } from "@ai-sdk/openai";
 import {
   createContainer,
   createDreams,
   LogLevel,
-  createMemoryStore,
   validateEnv,
 } from "@daydreamsai/core";
 import { createChromaVectorStore } from "@daydreamsai/chromadb";
+import { createMongoMemoryStore } from "@daydreamsai/mongodb";
 import { z } from "zod";
 import { cliExtension } from "@daydreamsai/cli";
 
@@ -22,14 +25,20 @@ const groq = createGroq({
   apiKey: env.GROQ_API_KEY!,
 });
 
+const mongo = await createMongoMemoryStore({
+  collectionName: "agent",
+  uri: "mongodb://localhost:27017",
+});
+const chroma = createChromaVectorStore("agent", "http://localhost:8000");
+
 const agent = createDreams({
   logger: LogLevel.DEBUG,
   container: createContainer(),
   model: groq("deepseek-r1-distill-llama-70b"),
   extensions: [cliExtension],
   memory: {
-    store: createMemoryStore(),
-    vector: createChromaVectorStore("agent", "http://localhost:8000"),
+    store: mongo,
+    vector: chroma,
     vectorModel: openai("gpt-4-turbo"),
   },
 });

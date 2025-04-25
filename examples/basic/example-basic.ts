@@ -1,9 +1,7 @@
 /**
  * Basic example demonstrating a simple chat interface using Dreams
- * with a command line interface and Groq's LLM.
  */
 import { anthropic } from "@ai-sdk/anthropic";
-import { createGroq } from "@ai-sdk/groq";
 import {
   createDreams,
   context,
@@ -15,17 +13,12 @@ import {
 import { cliExtension } from "@daydreamsai/cli";
 import { string, z } from "zod";
 
-const env = validateEnv(
+validateEnv(
   z.object({
     GROQ_API_KEY: z.string().min(1, "GROQ_API_KEY is required"),
     OPENAI_API_KEY: z.string().min(1, "OPENAI_API_KEY is required"),
   })
 );
-
-// Initialize Groq client
-const groq = createGroq({
-  apiKey: env.GROQ_API_KEY!,
-});
 
 const character = {
   id: "vpk3a9b2q7bn5zj3o920nl",
@@ -86,8 +79,6 @@ const goalContexts = context({
   type: "goal",
   schema: z.object({
     id: string(),
-    initialGoal: z.string(),
-    initialTasks: z.array(z.string()),
   }),
 
   key({ id }) {
@@ -162,4 +153,4 @@ createDreams({
   outputs: {
     test: output({}),
   },
-}).start({ id: "test", initialGoal: "", initialTasks: [] });
+}).start({ id: "test" });
