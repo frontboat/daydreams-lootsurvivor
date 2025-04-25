@@ -6,6 +6,7 @@ import { context } from "@daydreamsai/core";
 import { service } from "@daydreamsai/core";
 import { LogLevel } from "@daydreamsai/core";
 
+/* Implementation of the discord extension */
 const discordService = service({
   register(container) {
     container.singleton(
@@ -56,7 +57,10 @@ export const discordChannelContext = context({
               .discord_bot_name
           ) {
             console.log(
-              `Skipping message from ${container.resolve<DiscordClient>("discord").credentials.discord_bot_name}`
+              `Skipping message from ${
+                container.resolve<DiscordClient>("discord").credentials
+                  .discord_bot_name
+              }`
             );
             return;
           }
