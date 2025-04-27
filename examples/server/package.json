@@ -1,0 +1,17 @@
+{
+  "name": "server",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "dependencies": {
+    "@daydreamsai/core": "workspace:*",
+    "@daydreamsai/mcp": "workspace:*",
+    "@e2b/code-interpreter": "^1.0.4",
+    "h3": "^1.15.1",
+    "unstorage": "^1.15.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}

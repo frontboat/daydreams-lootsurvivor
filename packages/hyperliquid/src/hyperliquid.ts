@@ -41,8 +41,6 @@ export class HyperliquidClient {
     });
     this.logger = new Logger({
       level: logLevel,
-      enableColors: true,
-      enableTimestamp: true,
     });
 
     this.client.connect().catch((error) => {

@@ -47,14 +47,16 @@ export const twitter = extension({
         tweetId: z.string(),
         text: z.string(),
       }),
-      format: (data) =>
+      format: ({ data }) =>
         formatXml({
           tag: "tweet",
           params: { tweetId: data.tweetId },
-          content: data.text,
+          children: data.text,
         }),
-      subscribe(send, { container }) {
-        const twitter = container.resolve<TwitterClient>("twitter");
+      subscribe(send, agent) {
+        const { container } = agent;
+
+        const twitter = container.resolve("twitter") as TwitterClient;
 
         // Check mentions every minute
         const interval = setInterval(async () => {
@@ -102,12 +104,6 @@ export const twitter = extension({
           timestamp: Date.now(),
         };
       },
-      format: ({ data }) =>
-        formatXml({
-          tag: "tweet-reply",
-          params: { tweetId: data.tweetId },
-          content: data.content,
-        }),
     }),
 
     "twitter:tweet": output({
@@ -126,12 +122,6 @@ export const twitter = extension({
           timestamp: Date.now(),
         };
       },
-
-      format: ({ data }) =>
-        formatXml({
-          tag: "tweet",
-          content: data.content,
-        }),
     }),
   },
 });

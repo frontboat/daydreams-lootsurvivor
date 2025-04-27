@@ -13,7 +13,9 @@
     "@ai-sdk/anthropic": "^1.1.15",
     "@ai-sdk/openai": "^1.2.1",
     "@ai-sdk/groq": "^1.1.12",
+    "@daydreamsai/cli": "workspace:*",
     "@daydreamsai/core": "workspace:*",
+    "@daydreamsai/chromadb": "workspace:*",
     "@daydreamsai/discord": "workspace:*",
     "zod": "^3.24.2"
   }

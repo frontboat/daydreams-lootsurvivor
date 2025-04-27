@@ -5,7 +5,7 @@ import {
   LogLevel,
   validateEnv,
 } from "@daydreamsai/core";
-import { createChromaVectorStore } from "@daydreamsai/core/extensions";
+import { createChromaVectorStore } from "@daydreamsai/chromadb";
 import { deepResearch } from "../deep-research/research";
 import { z } from "zod";
 import { tavily } from "@tavily/core";

@@ -1,26 +1,3 @@
-import type { XMLElement } from "./types";
-
-/**
- * Formats an XML element into a string representation
- * @param tag - The XML tag name
- * @param params - Optional parameters/attributes for the XML tag
- * @param content - The content of the XML element (string or nested elements)
- * @returns Formatted XML string
- */
-export function formatXml({ tag, params, content }: XMLElement): string {
-  const p = params
-    ? Object.entries(params)
-        .map(([k, v]) => ` ${k}="${v}"`)
-        .join("")
-    : "";
-  try {
-    return `<${tag}${p}>${typeof content === "string" ? content : Array.isArray(content) ? "\n" + content.map((el) => (typeof el === "string" ? el : formatXml(el))).join("\n") + "\n" : ""}</${tag}>`;
-  } catch (error) {
-    console.log("failed to format", { tag, params, content });
-    throw error;
-  }
-}
-
 /**
  * Creates a regular expression to match XML tags with a specific name
  * @param tagName - The name of the XML tag to match
@@ -50,7 +27,6 @@ export function createTagParser<T = string>(
           : t[2]?.trim()) as T extends string ? string : T,
       }));
     } catch (error) {
-      console.log({ content, matches });
       throw error;
     }
   };
@@ -210,11 +186,18 @@ type SelfClosingTag = {
 
 type XMLToken = StartTag | EndTag | TextContent | SelfClosingTag;
 
+const alphaSlashRegex = /[a-zA-Z\/]/;
+
+const wrappers = ["'", "`", "(", ")"];
+
+// todo: maybe only allow new tags in new lines or immediatly after closing one
 export function* xmlStreamParser(
-  parseTags: Set<string>
+  parseTags: Set<string>,
+  shouldParse: (tagName: string, isClosingTag: boolean) => boolean
 ): Generator<XMLToken | void, void, string> {
   let buffer = "";
   let textContent = "";
+  let cachedLastContent = "";
 
   while (true) {
     const chunk = yield;
@@ -224,15 +207,40 @@ export function* xmlStreamParser(
 
     while (buffer.length > 0) {
       const tagStart = buffer.indexOf("<");
-
-      if (tagStart > 0) {
-        const text = buffer.slice(0, tagStart).trim();
-        textContent += text;
-        buffer = buffer.slice(tagStart);
-        break;
+      // detect wrapped tags ex:'<tag> and skip it
+      if (
+        tagStart === 0 &&
+        cachedLastContent &&
+        wrappers.includes(cachedLastContent.at(-1)!)
+      ) {
+        textContent += buffer[0];
+        buffer = buffer.slice(1);
+        continue;
       }
 
-      if (tagStart === -1) {
+      if (tagStart > 0) {
+        if (wrappers.includes(buffer[tagStart - 1])) {
+          textContent += buffer.slice(0, tagStart + 1);
+          buffer = buffer.slice(tagStart + 1);
+        } else {
+          textContent += buffer.slice(0, tagStart);
+          buffer = buffer.slice(tagStart);
+        }
+
+        if (textContent.length > 0) {
+          yield { type: "text", content: textContent };
+          cachedLastContent = textContent;
+          textContent = "";
+        }
+
+        continue;
+      }
+
+      // todo: regex performance
+      if (
+        tagStart === -1 ||
+        (buffer.length > 1 && !alphaSlashRegex.test(buffer[tagStart + 1]))
+      ) {
         textContent += buffer;
         buffer = "";
         break;
@@ -240,8 +248,20 @@ export function* xmlStreamParser(
 
       const tagEnd = buffer.indexOf(">", tagStart);
       if (tagEnd === -1) {
-        // textContent += buffer;
-        // buffer = "";
+        break;
+      }
+
+      // wait for more content to detect wrapper
+      if (buffer.length === tagEnd) break;
+
+      if (wrappers.includes(buffer[tagEnd + 1])) {
+        textContent += buffer.slice(0, tagEnd + 1);
+        buffer = buffer.slice(tagEnd + 1);
+        if (textContent.length > 0) {
+          yield { type: "text", content: textContent };
+          cachedLastContent = textContent;
+          textContent = "";
+        }
         break;
       }
 
@@ -251,10 +271,11 @@ export function* xmlStreamParser(
         ? tagContent.slice(1).trim().split(" ")[0]
         : tagContent.trim().split(" ")[0];
 
-      if (parseTags.has(tagName)) {
+      if (parseTags.has(tagName) && shouldParse(tagName, isClosingTag)) {
         // Emit accumulated text if any
-        if (textContent) {
+        if (textContent.length > 0) {
           yield { type: "text", content: textContent };
+          cachedLastContent = textContent;
           textContent = "";
         }
 
@@ -262,7 +283,12 @@ export function* xmlStreamParser(
           yield { type: "end", name: tagName };
         } else {
           const attributes = parseAttributes(tagContent.slice(tagName.length));
-          yield { type: "start", name: tagName, attributes };
+
+          if (tagContent.endsWith("/")) {
+            yield { type: "self-closing", name: tagName, attributes };
+          } else {
+            yield { type: "start", name: tagName, attributes };
+          }
         }
       } else {
         // Not a tag we care about, treat as text
@@ -272,9 +298,9 @@ export function* xmlStreamParser(
       buffer = buffer.slice(tagEnd + 1);
     }
 
-    // Emit accumulated text if buffer is empty
-    if (textContent) {
+    if (textContent.length > 0) {
       yield { type: "text", content: textContent };
+      cachedLastContent = textContent;
       textContent = "";
     }
   }

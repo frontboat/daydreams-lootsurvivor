@@ -30,12 +30,12 @@ const telegramService = service({
 const telegramChat = context({
   type: "telegram:chat",
   key: ({ chatId }) => chatId.toString(),
-  schema: z.object({ chatId: z.number() }),
-  async setup(args, { container }) {
+  schema: { chatId: z.number() },
+  async setup(args, settings, { container }) {
     const telegraf = container.resolve<Telegraf>("telegraf");
-    const chat = await telegraf.telegram.getChat(args.chatId);
+    const chat: Chat = await telegraf.telegram.getChat(args.chatId);
     return {
-      chat: chat as Chat,
+      chat,
     };
   },
   description({ options: { chat } }) {
@@ -44,28 +44,26 @@ const telegramChat = context({
     }
     return "";
   },
-});
-
-export const telegram = extension({
-  name: "telegram",
-  services: [telegramService],
-  contexts: {
-    chat: telegramChat,
-  },
   inputs: {
     "telegram:message": input({
-      schema: z.object({
+      schema: {
         user: z.object({ id: z.number(), username: z.string() }),
         text: z.string(),
-      }),
-      format: ({ user, text }) =>
-        formatMsg({
-          role: "user",
-          content: text,
-          user: user.username,
-        }),
+      },
+      format({ data: { user, text } }) {
+        return {
+          tag: "input",
+          params: {
+            type: "telegram:message",
+            userId: user.id.toString(),
+            username: user.username,
+          },
+          children: text,
+        };
+      },
       subscribe(send, { container }) {
-        container.resolve<Telegraf>("telegraf").on("message", (ctx) => {
+        const tg = container.resolve<Telegraf>("telegraf");
+        tg.on("message", (ctx) => {
           const chat = ctx.chat;
           const user = ctx.msg.from;
 
@@ -90,24 +88,28 @@ export const telegram = extension({
   },
   outputs: {
     "telegram:message": output({
-      schema: z.object({
+      attributes: {
         userId: z
           .string()
           .describe("the userId to send the message to, you must include this"),
-        content: z.string().describe("the content of the message to send"),
-      }),
-      description: "use this to send a telegram message to user",
-      enabled({ context }) {
-        return context.type === telegramChat.type;
       },
+      schema: z
+        .string()
+        .describe("the content of the message to send using markdown format"),
+      description: "use this to send a telegram message to user",
+      examples: [
+        `<output type="telegram:message" userId="123456789">Hello! How can I assist you today?</output>`,
+      ],
       handler: async (data, ctx, { container }) => {
         const tg = container.resolve<Telegraf>("telegraf").telegram;
-        const chunks = splitTextIntoChunks(data.content, {
+        const chunks = splitTextIntoChunks(data, {
           maxChunkSize: 4096,
         });
 
-        for (const chunck of chunks) {
-          await tg.sendMessage(data.userId, chunck);
+        for (const chunk of chunks) {
+          await tg.sendMessage(ctx.outputRef.params!.userId, chunk, {
+            parse_mode: "Markdown",
+          });
         }
 
         return {
@@ -115,12 +117,14 @@ export const telegram = extension({
           timestamp: Date.now(),
         };
       },
-
-      format: ({ data }) =>
-        formatMsg({
-          role: "assistant",
-          content: data.content,
-        }),
     }),
+  },
+});
+
+export const telegram = extension({
+  name: "telegram",
+  services: [telegramService],
+  contexts: {
+    chat: telegramChat,
   },
 });

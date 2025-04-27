@@ -1,0 +1,110 @@
+---
+title: Streaming & Parsing
+description: How Daydreams processes LLM response streams in real-time.
+---
+
+Large Language Models (LLMs) generate responses token by token. To enable
+responsive and interactive agents, Daydreams processes this output _as it
+arrives_ (streaming) and parses the structured information (like action calls or
+outputs) embedded within the stream. The framework relies on an XML-based
+structure in the LLM's response for reliable parsing.
+
+## Expected LLM Response Format
+
+As detailed in the [Prompting](./prompting#expected-llm-response-structure)
+section, the framework expects the LLM to wrap its response in a `<response>`
+tag and use specific child tags like `<reasoning>`, `<action_call>`, and
+`<output>`.
+
+```xml
+<response>
+  <reasoning>...</reasoning>
+  <action_call name="...">...</action_call>
+  <output type="...">...</output>
+</response>
+```
+
+## The Parsing Pipeline
+
+The processing of the LLM's raw text stream involves several components working
+together:
+
+1.  **LLM Stream:** The raw `AsyncIterable<string>` coming from the LLM provider
+    (e.g., via `streamText` from the AI SDK).
+2.  **`xmlStreamParser` (`xml.ts`):** This generator function is the low-level
+    parser.
+    - **Input:** Consumes chunks of text from the LLM stream.
+    - **Logic:** It looks for potential XML tag boundaries (`<`, `>`). Based on
+      a provided set of `parseTags` (e.g.,
+      `{"reasoning", "action_call", "output"}`) and a `shouldParse` function
+      (which determines if a specific tag occurrence should be treated as
+      structure or just text), it identifies the start and end of relevant XML
+      elements.
+    - **Output:** Yields `XMLToken` objects:
+      - `{ type: "start", name: "...", attributes: {...} }`
+      - `{ type: "end", name: "..." }`
+      - `{ type: "text", content: "..." }`
+3.  **`handleStream` (`streaming.ts`):** This function orchestrates the parsing.
+    - **Input:** Takes the LLM stream, the set of `parseTags`, the `shouldParse`
+      function, and a `handler` callback.
+    - **Logic:** It iterates through the `XMLToken`s yielded by
+      `xmlStreamParser`. It maintains a stack to handle nested elements and
+      reconstructs logical `StackElement` objects. A `StackElement` represents a
+      parsed XML tag, accumulating its `content` as text tokens arrive between
+      the start and end tokens.
+    - **Output:** Calls the provided `handler` callback whenever a
+      `StackElement` is created or its content is updated, and importantly, when
+      it's considered complete (`done: true` - when the corresponding end tag is
+      parsed).
+4.  **`createContextStreamHandler` (`streaming.ts`):** This function, called
+    during `agent.run`, sets up the run-specific state and provides the actual
+    `handler` callback function to `handleStream`.
+    - **The `handler` Callback:** This function bridges the parsed elements to
+      the framework's log objects.
+      - It uses `getOrCreateRef` to associate each `StackElement` (identified by
+        its index in the stream) with a specific `Log` object (`Thought`,
+        `ActionCall`, `OutputRef`).
+      - As text content arrives for a `StackElement`, it updates the `content`
+        of the corresponding `Log` object.
+      - When `handleStream` signals that a `StackElement` is complete
+        (`el.done`), this handler calls `handlePushLog`.
+5.  **`handlePushLog` (`streaming.ts`):** This function acts on the completed
+    `Log` objects derived from the parsed stream.
+    - **Input:** Receives a complete `Log` object (`Thought`, `ActionCall`,
+      `OutputRef`, etc.).
+    - **Logic:** Based on the `log.ref` type, it dispatches the log to the
+      appropriate processing function:
+      - `Thought`: Logs the reasoning.
+      - `ActionCall`: Triggers `handleActionCallStream` -> `handleActionCall`
+        for argument parsing, template resolution, and task execution.
+      - `OutputRef`: Triggers `handleOutputStream` -> `handleOutput` for schema
+        validation and executing the output handler.
+    - **Output:** Updates `WorkingMemory`, notifies subscribers, and potentially
+      triggers further asynchronous operations (like action execution).
+
+## Summary Flow
+
+```
+LLM Text Stream
+       |
+       v
+xmlStreamParser (Yields XMLTokens: <start>, <text>, <end>)
+       |
+       v
+handleStream (Reconstructs StackElements, calls handler)
+       |
+       v
+handler (in createContextStreamHandler) (Maps StackElements to Log objects, calls handlePushLog on completion)
+       |
+       v
+handlePushLog (Dispatches complete Log objects)
+       |-------------------|-------------------|
+       v                   v                   v
+handleActionCall   handleOutput         (Log Thought)
+(triggers task)   (sends response)       ... etc ...
+```
+
+This streaming and parsing pipeline allows Daydreams to react to the LLM's
+output incrementally, enabling more interactive agent behavior and efficient
+handling of structured commands like action calls and outputs, even before the
+entire LLM response is finished.

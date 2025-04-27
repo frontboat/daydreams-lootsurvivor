@@ -65,31 +65,8 @@ We use [ai-sdk](https://sdk.vercel.ai/docs/introduction) to support multiple
 LLMs. You will need to install the ai-sdk for the LLM you want to use.
 
 ```bash
-npm i @daydreamsai/core @ai-sdk/groq discord.js @tavily/core
+npm i @daydreamsai/core
 ```
-
-Dreams agents are all functional. `createDreams` is a function that returns an
-agent object, which can be run with `await agent.run()`. Inject discord,
-telegram, or any other input/output to the agent and define your own actions.
-
-```typescript
-import { createGroq } from "@ai-sdk/groq";
-import { createDreams } from "@daydreamsai/core";
-import { cli } from "@daydreamsai/core/extensions";
-
-// Initialize Groq client
-const groq = createGroq({
-  apiKey: process.env.GROQ_API_KEY!,
-});
-
-// Create Dreams agent instance
-const agent = createDreams({
-  model: groq("deepseek-r1-distill-llama-70b"),
-  extensions: [cli],
-}).start();
-```
-
-Now chat via the CLI with the agent.
 
 Read the [docs](https://docs.dreams.fun) for more information on how to use the
 agent.
@@ -101,7 +78,7 @@ We use [bun](https://bun.sh/) for development.
 ```bash
 bun install
 
-bun build:core --watch
+bun build:packages --watch
 ```
 
 Edit the core package and watch for changes, and play with examples.

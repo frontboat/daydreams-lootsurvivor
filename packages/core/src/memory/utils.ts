@@ -6,6 +6,8 @@ import type {
   ActionResult,
   Action,
   Thought,
+  ActionCall,
+  AnyAction,
 } from "../types";
 import { z } from "zod";
 import { v7 as randomUUIDv7 } from "uuid";
@@ -261,4 +263,43 @@ export async function exportEpisodesAsTrainingData(
   }));
 
   await saveTrainingData(trainingData, filePath);
+}
+
+export async function generateEpisode(
+  thought: Thought,
+  actionCall: ActionCall,
+  result: ActionResult,
+  agent: AnyAgent,
+  contextId: string,
+  actions: AnyAction[]
+) {
+  // Find the corresponding Action for the ActionCall
+  const action = actions.find((a) => a.name === actionCall.name);
+
+  if (!action) {
+    return;
+  }
+
+  const thoughts = [thought];
+  const actionsArray = [action];
+  const results = [result];
+
+  const episode = await createEpisodeFromWorkingMemory(
+    thoughts,
+    actionsArray,
+    results,
+    agent,
+    {
+      exportTrainingData: agent.exportTrainingData === true,
+      trainingDataPath: agent.trainingDataPath || "./training-data.jsonl",
+    }
+  );
+
+  await agent.memory.vector.upsert(`${contextId}`, [
+    {
+      id: episode.id,
+      text: episode.observation,
+      metadata: episode,
+    },
+  ]);
 }

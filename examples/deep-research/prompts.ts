@@ -9,7 +9,7 @@ export function formatResearch(research: Research) {
   return formatXml({
     tag: "research",
     params: { id: research.id },
-    content: JSON.stringify(research),
+    children: JSON.stringify(research),
   });
 }
 
@@ -68,7 +68,7 @@ Example:
       formatXml({
         tag: "result",
         params: { url: r.url },
-        content: r.content,
+        children: r.content,
       })
     ),
     schema: JSON.stringify(zodToJsonSchema(schema, "schema")),

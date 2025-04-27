@@ -31,7 +31,7 @@ const telegramChat = context({
   type: "telegram:chat",
   key: ({ chatId }) => chatId.toString(),
   schema: z.object({ chatId: z.number() }),
-  async setup(args, { container }) {
+  async setup(args, {}, { container }) {
     const telegraf = container.resolve<Telegraf>("telegraf");
     const chat = await telegraf.telegram.getChat(args.chatId);
     return {
@@ -58,14 +58,16 @@ export const telegramExtension = extension({
         user: z.object({ id: z.number(), username: z.string() }),
         text: z.string(),
       }),
-      format: ({ user, text }) =>
+      format: ({ data }) =>
         formatMsg({
           role: "user",
-          content: text,
-          user: user.username,
+          content: data.text,
+          user: data.user.username,
         }),
-      subscribe(send, { container }) {
-        container.resolve<Telegraf>("telegraf").on("message", (ctx) => {
+      subscribe(send, agent) {
+        const { container } = agent;
+        const telegraf = container.resolve("telegraf") as Telegraf;
+        telegraf.on("message", (ctx: any) => {
           const chat = ctx.chat;
           const user = ctx.msg.from;
 
@@ -115,12 +117,6 @@ export const telegramExtension = extension({
           timestamp: Date.now(),
         };
       },
-
-      format: ({ data }) =>
-        formatMsg({
-          role: "assistant",
-          content: data.content,
-        }),
     }),
   },
 });

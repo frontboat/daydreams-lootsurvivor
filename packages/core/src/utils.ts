@@ -1,50 +1,26 @@
 import { z } from "zod";
 import type {
   Action,
-  Agent,
-  AgentContext,
+  ActionCall,
+  ActionSchema,
   AnyAgent,
   AnyContext,
+  EventRef,
   ExpertConfig,
   Extension,
   InputConfig,
+  InputRef,
   Memory,
+  Optional,
   OutputConfig,
-  OutputResponse,
+  OutputRef,
+  OutputRefResponse,
   OutputSchema,
-  TemplateVariables,
   WorkingMemory,
 } from "./types";
+import { v7 as randomUUIDv7 } from "uuid";
 
-/**
- * Renders a template string by replacing variables with provided values
- * @template Template - The template string type containing variables in {{var}} format
- * @param str - The template string to render
- * @param data - Object containing values for template variables
- * @returns The rendered string with variables replaced
- */
-export function render<Template extends string>(
-  str: Template,
-  data: TemplateVariables<Template>
-) {
-  return str
-    .trim()
-    .replace(/\{\{(\w+)\}\}/g, (match, key: string) =>
-      formatValue(data[key as keyof typeof data] ?? "")
-    );
-}
-
-/**
- * Formats a value for template rendering
- * @param value - The value to format
- * @returns Formatted string representation of the value
- */
-export function formatValue(value: any): string {
-  if (Array.isArray(value)) return value.map((t) => formatValue(t)).join("\n");
-  if (typeof value !== "string") return JSON.stringify(value);
-  return value.trim();
-}
-
+export { randomUUIDv7 };
 /**
  * Creates an input configuration
  * @template Schema - Zod schema type for input validation
@@ -53,13 +29,10 @@ export function formatValue(value: any): string {
  * @returns Typed input configuration
  */
 export function input<
-  Schema extends z.AnyZodObject = z.AnyZodObject,
-  Context extends AgentContext<WorkingMemory, AnyContext> = AgentContext<
-    WorkingMemory,
-    AnyContext
-  >,
-  TAgent extends Agent<any, any> = Agent<any, any>,
->(config: InputConfig<Schema, Context, TAgent>) {
+  Schema extends z.AnyZodObject | z.ZodString | z.ZodRawShape = z.ZodString,
+  TContext extends AnyContext = AnyContext,
+  TAgent extends AnyAgent = AnyAgent,
+>(config: InputConfig<Schema, TContext, TAgent>) {
   return config;
 }
 
@@ -72,13 +45,22 @@ export function input<
  * @returns Typed action configuration
  */
 export function action<
-  Schema extends z.AnyZodObject = z.AnyZodObject,
+  TSchema extends ActionSchema = undefined,
   Result = any,
-  Context extends AgentContext<any, AnyContext> = AgentContext<any, AnyContext>,
+  TError = any,
+  TContext extends AnyContext = AnyContext,
   TAgent extends AnyAgent = AnyAgent,
-  TMemory extends Memory<any> = never,
->(action: Action<Schema, Result, Context, TAgent, TMemory>) {
-  return action;
+  TMemory extends Memory<any> = Memory<any>,
+>(
+  action: Optional<
+    Action<TSchema, Result, TError, TContext, TAgent, TMemory>,
+    "schema"
+  >
+): Action<TSchema, Result, TError, TContext, TAgent, TMemory> {
+  return {
+    ...action,
+    schema: action.schema ?? (undefined as TSchema),
+  };
 }
 
 /**
@@ -90,9 +72,9 @@ export function action<
  */
 export function output<
   Schema extends OutputSchema = OutputSchema,
-  Context extends AgentContext<any, any> = AgentContext<any, any>,
-  TResponse extends OutputResponse = OutputResponse,
->(config: OutputConfig<Schema, Context, TResponse>) {
+  Response extends OutputRefResponse = OutputRefResponse,
+  Context extends AnyContext = AnyContext,
+>(config: OutputConfig<Schema, Response, Context>) {
   return config;
 }
 
@@ -161,8 +143,17 @@ export function memory<Data = any>(memory: Memory<Data>) {
 
 export function extension<
   Contexts extends Record<string, AnyContext> = Record<string, AnyContext>,
->(config: Extension<AnyContext, Contexts>) {
-  return config;
+  Inputs extends Record<string, InputConfig<any, any>> = Record<
+    string,
+    InputConfig<any, any>
+  >,
+>(
+  config: Optional<Extension<AnyContext, Contexts, Inputs>, "inputs">
+): Extension<AnyContext, Contexts, Inputs> {
+  return {
+    ...config,
+    inputs: config.inputs ?? ({} as Inputs),
+  };
 }
 
 /**
@@ -187,4 +178,88 @@ export function validateEnv<T extends z.ZodTypeAny>(
     }
     throw error;
   }
+}
+
+type TrimWorkingMemoryOptions = {
+  thoughts: number;
+  inputs: number;
+  outputs: number;
+  actions: number;
+};
+
+const defaultTrimOptions: TrimWorkingMemoryOptions = {
+  thoughts: 6,
+  inputs: 20,
+  outputs: 20,
+  actions: 20,
+};
+
+export function trimWorkingMemory(
+  workingMemory: WorkingMemory,
+  options: TrimWorkingMemoryOptions = defaultTrimOptions
+) {
+  workingMemory.thoughts = workingMemory.thoughts.slice(-options.thoughts);
+  workingMemory.inputs = workingMemory.inputs.slice(-options.inputs);
+  workingMemory.outputs = workingMemory.outputs.slice(-options.outputs);
+  workingMemory.calls = workingMemory.calls.slice(-options.actions);
+  workingMemory.results = workingMemory.results.slice(-options.actions);
+}
+
+/**
+ * Utility function to safely execute a function asynchronously
+ * This is an implementation of the Promise.try pattern which isn't available in standard JS
+ * @param fn The function to execute
+ * @param ...args The arguments to pass to the function
+ * @returns A promise that resolves with the result of the function
+ */
+export async function tryAsync<T>(fn: Function, ...args: any[]): Promise<T> {
+  try {
+    return await fn(...args);
+  } catch (error) {
+    return Promise.reject(error);
+  }
+}
+
+export function createInputRef(
+  ref: Pick<InputRef, "type" | "content" | "data" | "processed">
+): InputRef {
+  return {
+    id: randomUUIDv7(),
+    ref: "input",
+    timestamp: Date.now(),
+    ...ref,
+  };
+}
+
+export function createOutputRef(
+  ref: Pick<OutputRef, "type" | "content" | "data" | "processed">
+): OutputRef {
+  return {
+    id: randomUUIDv7(),
+    ref: "output",
+    timestamp: Date.now(),
+    ...ref,
+  };
+}
+
+export function createEventRef(
+  ref: Pick<EventRef, "name" | "data" | "processed">
+): EventRef {
+  return {
+    id: randomUUIDv7(),
+    ref: "event",
+    timestamp: Date.now(),
+    ...ref,
+  };
+}
+
+export function createActionCall(
+  ref: Pick<ActionCall, "name" | "content" | "data" | "processed" | "params">
+): ActionCall {
+  return {
+    id: randomUUIDv7(),
+    ref: "action_call",
+    timestamp: Date.now(),
+    ...ref,
+  };
 }
