@@ -146,7 +146,7 @@ export function createSupabaseVectorStore(
         const embedding = item.embedding || [];
 
         return {
-          id: item.id || `${contextId}-${index}`,
+          key: item.key || `${contextId}-${index}`,
           content: item.content || item.text || JSON.stringify(item),
           embedding: embedding,
           metadata: {

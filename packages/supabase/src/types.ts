@@ -7,7 +7,7 @@ export type SupabaseVectorStoreConfig = z.infer<
 >;
 
 export interface SupabaseVectorRecord {
-  id: string;
+  key: string;
   content: string;
   embedding: number[];
   metadata?: Record<string, any>;
@@ -15,7 +15,7 @@ export interface SupabaseVectorRecord {
 
 export interface SupabaseVectorFilter {
   metadata?: Record<string, any>;
-  ids?: string[];
+  keys?: string[];
 }
 
 export interface SupabaseVectorStoreOptions {
@@ -28,7 +28,7 @@ export interface SupabaseVectorStoreOptions {
 }
 
 export interface SupabaseSearchResult {
-  id: string;
+  key: string;
   content: string;
   metadata?: Record<string, any>;
   similarity?: number;

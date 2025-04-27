@@ -30,8 +30,9 @@ export class SupabaseVectorStore {
    */
   constructor(options: SupabaseVectorStoreOptions) {
     this.client = options.client;
-    this.tableName = options.tableName;
-    this.queryName = options.queryName || `match_${this.tableName}`;
+    this.tableName = options.tableName.toLowerCase();
+    this.queryName =
+      options.queryName || `match_${this.tableName.toLowerCase()}`;
     this.embeddingColumnName = options.embeddingColumnName || "embedding";
     this.contentColumnName = options.contentColumnName || "content";
     this.metadataColumnName = options.metadataColumnName || "metadata";
@@ -67,55 +68,69 @@ export class SupabaseVectorStore {
    * @returns A promise that resolves when the initialization is complete
    */
   async initialize(dimensions: number = 1536): Promise<void> {
-    // Enable the pgvector extension
-    await this.client.rpc("enable_pgvector_extension");
+    try {
+      // Enable the pgvector extension
+      const result = await this.client.rpc("enable_pgvector_extension");
+      console.log("SupabaseVectorStore initialized", result);
 
-    // Create the table if it doesn't exist
-    const createTableQuery = `
-      CREATE TABLE IF NOT EXISTS ${this.tableName} (
-        id TEXT PRIMARY KEY,
-        ${this.contentColumnName} TEXT,
-        ${this.embeddingColumnName} VECTOR(${dimensions}),
-        ${this.metadataColumnName} JSONB
-      );
-    `;
-    await this.client.rpc("execute_sql", { query: createTableQuery });
+      // Create the table if it doesn't exist
+      const createTableQuery = `
+        CREATE TABLE IF NOT EXISTS ${this.tableName} (
+          key TEXT PRIMARY KEY,
+          ${this.contentColumnName} TEXT,
+          ${this.embeddingColumnName} VECTOR(${dimensions}),
+          ${this.metadataColumnName} JSONB
+        );
+      `;
+      const result2 = await this.client.rpc("execute_sql", {
+        query: createTableQuery,
+      });
+      console.log("SupabaseVectorStore table created", result2);
 
-    // Create the similarity search function
-    const createFunctionQuery = `
-      CREATE OR REPLACE FUNCTION ${this.queryName}(
-        query_embedding VECTOR(${dimensions}),
-        match_threshold FLOAT,
-        match_count INT,
-        filter_metadata JSONB DEFAULT NULL,
-        filter_ids TEXT[] DEFAULT NULL
-      ) 
-      RETURNS TABLE (
-        id TEXT,
-        ${this.contentColumnName} TEXT,
-        ${this.metadataColumnName} JSONB,
-        similarity FLOAT
-      )
-      LANGUAGE plpgsql
-      AS $$
-      BEGIN
-        RETURN QUERY
-        SELECT
-          t.id,
-          t.${this.contentColumnName},
-          t.${this.metadataColumnName},
-          1 - (t.${this.embeddingColumnName} <=> query_embedding) as similarity
-        FROM ${this.tableName} t
-        WHERE
-          (filter_metadata IS NULL OR t.${this.metadataColumnName} @> filter_metadata) AND
-          (filter_ids IS NULL OR t.id = ANY(filter_ids)) AND
-          1 - (t.${this.embeddingColumnName} <=> query_embedding) > match_threshold
-        ORDER BY similarity DESC
-        LIMIT match_count;
-      END;
-      $$;
-    `;
-    await this.client.rpc("execute_sql", { query: createFunctionQuery });
+      // Create the similarity search function
+      const createFunctionQuery = `
+        CREATE OR REPLACE FUNCTION ${this.queryName}(
+          query_embedding VECTOR(${dimensions}),
+          match_threshold FLOAT,
+          match_count INT,
+          filter_metadata JSONB DEFAULT NULL,
+          filter_keys TEXT[] DEFAULT NULL
+        ) 
+        RETURNS TABLE (
+          key TEXT,
+          ${this.contentColumnName} TEXT,
+          ${this.metadataColumnName} JSONB,
+          similarity FLOAT
+        )
+        LANGUAGE plpgsql
+        AS $$
+        BEGIN
+          RETURN QUERY
+          SELECT
+            t.key,
+            t.${this.contentColumnName},
+            t.${this.metadataColumnName},
+            1 - (t.${this.embeddingColumnName} <=> query_embedding) as similarity
+          FROM ${this.tableName} t
+          WHERE
+            (filter_metadata IS NULL OR t.${this.metadataColumnName} @> filter_metadata) AND
+            (filter_keys IS NULL OR t.key = ANY(filter_keys)) AND
+            1 - (t.${this.embeddingColumnName} <=> query_embedding) > match_threshold
+          ORDER BY similarity DESC
+          LIMIT match_count;
+        END;
+        $$;
+      `;
+      const result3 = await this.client.rpc("execute_sql", {
+        query: createFunctionQuery,
+      });
+      console.log("SupabaseVectorStore function created", result3);
+    } catch (error) {
+      console.error("Error initializing SupabaseVectorStore:", error);
+      throw error instanceof Error
+        ? error
+        : new Error("Unknown error during vector store initialization");
+    }
   }
 
   /**
@@ -128,7 +143,7 @@ export class SupabaseVectorStore {
     if (records.length === 0) return;
 
     const rows = records.map((record) => ({
-      id: record.id,
+      key: record.key,
       [this.contentColumnName]: record.content,
       [this.embeddingColumnName]: record.embedding,
       [this.metadataColumnName]: record.metadata || {},
@@ -144,16 +159,16 @@ export class SupabaseVectorStore {
   /**
    * Delete vector records from the store
    *
-   * @param ids - The IDs of the records to delete
+   * @param keys - The keys of the records to delete
    * @returns A promise that resolves when the records are deleted
    */
-  async deleteVectors(ids: string[]): Promise<void> {
-    if (ids.length === 0) return;
+  async deleteVectors(keys: string[]): Promise<void> {
+    if (keys.length === 0) return;
 
     const { error } = await this.client
       .from(this.tableName)
       .delete()
-      .in("id", ids);
+      .in("key", keys);
 
     if (error) {
       throw new Error(`Failed to delete vectors: ${error.message}`);
@@ -184,7 +199,7 @@ export class SupabaseVectorStore {
       match_threshold: matchThreshold,
       match_count: maxResults,
       filter_metadata: filter.metadata || null,
-      filter_ids: filter.ids || null,
+      filter_keys: filter.keys || null,
     });
 
     if (error) {
@@ -192,7 +207,7 @@ export class SupabaseVectorStore {
     }
 
     return data.map((item: Record<string, any>) => ({
-      id: item.id,
+      key: item.key,
       content: item[this.contentColumnName],
       metadata: item[this.metadataColumnName],
       similarity: item.similarity,
@@ -211,16 +226,16 @@ export class SupabaseVectorStore {
     const { data, error } = await this.client
       .from(this.tableName)
       .select(
-        `id, ${this.contentColumnName}, ${this.embeddingColumnName}, ${this.metadataColumnName}`
+        `key, ${this.contentColumnName}, ${this.embeddingColumnName}, ${this.metadataColumnName}`
       )
-      .in("id", ids);
+      .in("key", ids);
 
     if (error) {
       throw new Error(`Failed to get vectors: ${error.message}`);
     }
 
     return data.map((item: Record<string, any>) => ({
-      id: item.id,
+      key: item.key,
       content: item[this.contentColumnName],
       embedding: item[this.embeddingColumnName],
       metadata: item[this.metadataColumnName],

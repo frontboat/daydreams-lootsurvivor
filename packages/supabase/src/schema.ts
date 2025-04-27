@@ -11,7 +11,7 @@ export const SupabaseVectorStoreSchema = z.object({
 });
 
 export const SupabaseVectorRecordSchema = z.object({
-  id: z.string(),
+  key: z.string(),
   content: z.string(),
   embedding: z.array(z.number()),
   metadata: z.record(z.any()).optional(),
@@ -19,11 +19,11 @@ export const SupabaseVectorRecordSchema = z.object({
 
 export const SupabaseVectorFilterSchema = z.object({
   metadata: z.record(z.any()).optional(),
-  ids: z.array(z.string()).optional(),
+  keys: z.array(z.string()).optional(),
 });
 
 export const SupabaseSearchResultSchema = z.object({
-  id: z.string(),
+  key: z.string(),
   content: z.string(),
   metadata: z.record(z.any()).optional(),
   similarity: z.number().optional(),

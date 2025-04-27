@@ -1,5 +1,10 @@
 import type { MemoryStore } from "@daydreamsai/core";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import crypto from "crypto";
+
+export function _hashKey(key: string): string {
+  return crypto.createHash("sha256").update(key).digest("hex");
+}
 
 /**
  * Configuration for the Supabase memory store
@@ -37,10 +42,11 @@ export function createSupabaseMemoryStore(
      * @returns The stored value or null if not found
      */
     async get<T>(key: string): Promise<T | null> {
+      const hashedKey = _hashKey(key);
       const { data, error } = await client
         .from(tableName)
         .select("value")
-        .eq("key", key)
+        .eq("key", hashedKey)
         .single();
 
       if (error || !data) {
@@ -61,12 +67,13 @@ export function createSupabaseMemoryStore(
      * @param value - Value to store
      */
     async set<T>(key: string, value: T): Promise<void> {
+      const hashedKey = _hashKey(key);
       const serializedValue = JSON.stringify(value);
 
       const { error } = await client
         .from(tableName)
         .upsert({
-          key,
+          key: hashedKey,
           value: serializedValue,
           updated_at: new Date().toISOString(),
         })
@@ -78,11 +85,30 @@ export function createSupabaseMemoryStore(
     },
 
     /**
+     * Retrieves all keys from the Supabase memory store.
+     * Note: Returns hashed keys, not the original keys.
+     * @returns An array of all stored (hashed) keys
+     */
+    async keys(): Promise<string[]> {
+      const { data, error } = await client.from(tableName).select("key");
+
+      if (error) {
+        throw new Error(`Failed to retrieve keys: ${error.message}`);
+      }
+
+      return data ? data.map((row: { key: string }) => row.key) : [];
+    },
+
+    /**
      * Removes a specific entry from the Supabase memory store
      * @param key - Key to remove
      */
     async delete(key: string): Promise<void> {
-      const { error } = await client.from(tableName).delete().eq("key", key);
+      const hashedKey = _hashKey(key);
+      const { error } = await client
+        .from(tableName)
+        .delete()
+        .eq("key", hashedKey);
 
       if (error) {
         throw new Error(`Failed to delete key ${key}: ${error.message}`);
@@ -93,7 +119,7 @@ export function createSupabaseMemoryStore(
      * Removes all entries from the Supabase memory store
      */
     async clear(): Promise<void> {
-      const { error } = await client.from(tableName).delete().neq("key", ""); // Delete all rows
+      const { error } = await client.from(tableName).delete().neq("key", "");
 
       if (error) {
         throw new Error(`Failed to clear memory store: ${error.message}`);
@@ -130,8 +156,11 @@ async function initializeTable(
     `;
 
     try {
-      await client.rpc("execute_sql", { query: createTableQuery });
+      const result = await client.rpc("execute_sql", {
+        query: createTableQuery,
+      });
       console.log(`Created memory table: ${tableName}`);
+      console.log("result", result);
     } catch (e) {
       console.error(`Failed to create memory table ${tableName}:`, e);
       throw e;

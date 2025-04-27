@@ -22,24 +22,24 @@ BEGIN
 END;
 $$;
 
--- Example table creation (this is done programmatically in the SupabaseVectorStore)
+-- -- Example table creation (this is done programmatically in the SupabaseVectorStore)
 -- CREATE TABLE IF NOT EXISTS embeddings (
---   id TEXT PRIMARY KEY,
+--   key TEXT PRIMARY KEY,
 --   content TEXT,
 --   embedding VECTOR(1536),
 --   metadata JSONB
 -- );
 
--- Example similarity search function (this is created programmatically in the SupabaseVectorStore)
+-- -- Example similarity search function (this is created programmatically in the SupabaseVectorStore)
 -- CREATE OR REPLACE FUNCTION match_embeddings(
 --   query_embedding VECTOR(1536),
 --   match_threshold FLOAT,
 --   match_count INT,
 --   filter_metadata JSONB DEFAULT NULL,
---   filter_ids TEXT[] DEFAULT NULL
+--   filter_keys TEXT[] DEFAULT NULL
 -- ) 
 -- RETURNS TABLE (
---   id TEXT,
+--   key TEXT,
 --   content TEXT,
 --   metadata JSONB,
 --   similarity FLOAT
@@ -49,14 +49,14 @@ $$;
 -- BEGIN
 --   RETURN QUERY
 --   SELECT
---     t.id,
+--     t.key,
 --     t.content,
 --     t.metadata,
 --     1 - (t.embedding <=> query_embedding) as similarity
 --   FROM embeddings t
 --   WHERE
 --     (filter_metadata IS NULL OR t.metadata @> filter_metadata) AND
---     (filter_ids IS NULL OR t.id = ANY(filter_ids)) AND
+--     (filter_keys IS NULL OR t.key = ANY(filter_keys)) AND
 --     1 - (t.embedding <=> query_embedding) > match_threshold
 --   ORDER BY similarity DESC
 --   LIMIT match_count;
