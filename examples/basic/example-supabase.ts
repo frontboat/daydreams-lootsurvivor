@@ -1,5 +1,9 @@
-// This example shows how to use the MongoDB memory store to store and retrieve memories.
-// IMPORTANT: You will need to run the docker-compose.yml file in the root of the project to run the MongoDB instance.
+// This example shows how to use Supabase with DaydreamsAI.
+
+// Vector Model Provider: gpt-4-turbo                    via @ai-sdk/openai
+// Model Provider:        google/gemini-2.0-flash-001    via @openrouter/ai-sdk-provider
+// Memory Store:          @daydreamsai/supabase
+// CLI Extension:         @daydreamsai/cli
 
 import { openai } from "@ai-sdk/openai";
 import {
@@ -19,6 +23,7 @@ validateEnv(
     OPENAI_API_KEY: z.string().min(1, "OPENAI_API_KEY is required"),
     SUPABASE_URL: z.string().min(1, "SUPABASE_URL is required"),
     SUPABASE_SERVICE_KEY: z.string().min(1, "SUPABASE_SERVICE_KEY is required"),
+    OPENROUTER_API_KEY: z.string().min(1, "OPENROUTER_API_KEY is required"),
   })
 );
 
