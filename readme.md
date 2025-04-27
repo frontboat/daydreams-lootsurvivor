@@ -76,9 +76,9 @@ agent.
 We use [bun](https://bun.sh/) for development.
 
 ```bash
-bun install
+pnpm install
 
-bun build:packages --watch
+pnpm build:packages --watch
 ```
 
 Edit the core package and watch for changes, and play with examples.
