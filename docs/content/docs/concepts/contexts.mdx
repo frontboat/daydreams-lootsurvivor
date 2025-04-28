@@ -32,8 +32,8 @@ const chatContext = context({
   // Required: A unique identifier for this type of context
   type: "chat",
 
-  // Required: Zod schema defining the arguments needed to identify
-  // a specific instance of this context.
+  // Required: Zod schema defining the arguments needed to identify,
+  // look up, or create a specific instance of this context.
   schema: z.object({
     sessionId: z.string(),
     userId: z.string(),
@@ -46,7 +46,8 @@ const chatContext = context({
   // Optional: Asynchronous function called when a context instance is first created.
   // Use this to set up initial data or options specific to this instance.
   setup: async (args, settings, agent) => {
-    const userProfile = await agent.someService.getUserProfile(args.userId);
+    // const userProfile = await agent.someService.getUserProfile(args.userId);
+    const userProfile = { name: `User ${args.userId}`, preferences: {} }; // Simulated
     return { userProfile }; // This becomes 'options' in ContextState
   },
 
@@ -69,10 +70,13 @@ const chatContext = context({
   // Optional: Function to render the context's state for the LLM prompt.
   // The output (string, XML, etc.) is included in the <context> section of the prompt.
   render: (state) => {
-    return state.memory.messageHistory
+    const memory = state.memory as {
+      messageHistory: { sender: string; text: string }[];
+    };
+    return (memory.messageHistory || [])
       .slice(-5) // Show last 5 messages
       .map((msg) => `${msg.sender}: ${msg.text}`)
-      .join("\\n");
+      .join("\n");
   },
 
   // Optional: Define lifecycle hooks for the context run.
@@ -87,18 +91,6 @@ const chatContext = context({
     /* Handle errors */
   },
 
-  // Optional: Define inputs, outputs, and actions specific to this context type.
-  // These are merged with the agent's global definitions.
-  inputs: {
-    /* ... */
-  },
-  outputs: {
-    /* ... */
-  },
-  actions: [
-    /* ... */
-  ],
-
   // Optional: Specify a default LLM for this context type.
   model: undefined, // Defaults to agent's model if undefined
 
@@ -106,15 +98,20 @@ const chatContext = context({
   maxSteps: 10,
   maxWorkingMemorySize: 50,
 });
+// Optionally chain methods to add context-specific components:
+// .setInputs({ /* ... */ })
+// .setOutputs({ /* ... */ })
+// .setActions([ /* ... */ ])
+// .use(myContextComposer); // For advanced composition
 ```
 
 **Key Parameters:**
 
 - `type` (string): A unique identifier for the kind of context (e.g.,
   "discord:channel", "trading").
-- `schema` (Zod Schema): Defines the arguments needed to uniquely identify an
-  _instance_ of this context (e.g., `{ channelId: z.string() }`). The agent uses
-  these arguments to load or create the correct context state.
+- `schema` (Zod Schema): Defines the arguments needed to uniquely identify, look
+  up, or create an _instance_ of this context (e.g.,
+  `{ channelId: z.string() }`).
 - `key` (Function, optional): Generates a unique string identifier for a context
   instance based on its arguments. If omitted, the `type` is used (suitable if
   only one instance of that type exists).
@@ -132,9 +129,12 @@ const chatContext = context({
   `<context>` tag).
 - `onStep` / `onRun` / `shouldContinue` / `onError` (Functions, optional):
   Lifecycle hooks executed during an `agent.run`.
-- `inputs` / `outputs` / `actions` (Objects/Array, optional): Define I/O and
-  actions specifically available within this context type. These are merged with
-  the agent's global definitions.
+- **Context-Specific Components**: Use `.setInputs({...})`,
+  `.setOutputs({...})`, and `.setActions([...])` after defining the context to
+  add inputs, outputs, and actions available specifically when this context is
+  active. These are merged with the agent's global definitions during a run.
+- **Context Composition**: Use `.use(composer)` for advanced scenarios where one
+  context needs to dynamically include other contexts based on its state.
 - `model` (LanguageModelV1, optional): Override the agent's default model for
   runs within this context.
 - `maxSteps` / `maxWorkingMemorySize` (number, optional): Set default limits for
@@ -159,6 +159,63 @@ type ContextState<TContext extends AnyContext = AnyContext> = {
 };
 ```
 
+## Working with Context Memory
+
+The context memory (`ContextState.memory`) is where all persistent state changes
+for a specific context instance are stored. You can access and modify this
+memory within action handlers to maintain state across interactions.
+
+```typescript
+action({
+  name: "addItem",
+  description: "Add a new item to the list",
+  schema: z.object({
+    item: z.string(),
+  }),
+  // Note: `ctx` here is the ActionCallContext
+  handler(args, ctx, agent) {
+    // Access the persistent memory for the *current context instance*
+    // using ctx.memory
+    const contextMemory = ctx.memory;
+
+    // Update the state
+    if (!contextMemory.items) {
+      contextMemory.items = [];
+    }
+    contextMemory.items.push(args.item);
+
+    // The change to ctx.memory will be persisted at the end of the run
+
+    return { success: true };
+  },
+});
+```
+
+_Note: Remember the different memory scopes available in action handlers:
+`ctx.memory` (current context instance), `ctx.agentMemory` (main agent context),
+`ctx.actionMemory` (action-specific). Use the appropriate scope for your state
+updates. See the [Actions documentation](./actions#mutating-context-state) for
+more details._
+
+## Context Lifecycle
+
+1.  **Initialization**: When `agent.getContext` is called for a context instance
+    for the first time:
+    - The `setup` function runs (if defined) to fetch initial options.
+    - The `create` function runs (if defined and no saved state exists) to set
+      up the initial `memory` structure.
+2.  **Identification**: The `key` function generates a unique string
+    (`ContextState.key`) used to store and retrieve the instance's `memory`. The
+    full instance `id` combines the `type` and `key`.
+3.  **Interaction**: During an `agent.run` for this context instance:
+    - Actions read and modify `ContextState.memory`.
+    - The agent manages the temporary `WorkingMemory` for the run.
+4.  **Rendering**: Before each LLM call within the run, the `render` function
+    formats the current `ContextState.memory` for the prompt.
+5.  **Persistence**: After the run (or potentially between steps, depending on
+    implementation), `agent.saveContext` persists the final state of
+    `ContextState.memory` using the context `id`.
+
 ## Working Memory
 
 Each context run (`agent.run`) has an associated `WorkingMemory`. This is
@@ -168,9 +225,21 @@ temporary logs (`InputRef`, `OutputRef`, `ActionCall`, `ActionResult`,
 scratchpad for the current execution cycle and is used to build the prompt for
 the LLM at each step.
 
-See the
-[Agent Lifecycle](./agent-lifecycle#4-inside-the-step-loop-agentrun-in-dreamsts)
-for how Working Memory is used in prompt generation.
+See the [Agent Lifecycle documentation](./agent-lifecycle) for how Working
+Memory is used in prompt generation.
+
+## Best Practices
+
+- Keep your `render` output concise and relevant to the LLM's task.
+- Structure your persistent `memory` state logically for easy access and
+  updates.
+- Use descriptive keys if your context type can have multiple instances.
+- Use `setup` for fetching read-only instance data, `create` for initializing
+  mutable memory structure.
+- Consider how multiple contexts might interact in complex agents (using
+  `agent.run({ contexts: [...] })` or the `.use()` composer).
+- Use Zod's `.describe()` method to add helpful descriptions to your `schema`
+  fields, aiding the LLM (and developers).
 
 ## Agent Interaction
 
@@ -181,11 +250,79 @@ You typically interact with contexts via the `Agent` instance:
   Loads memory from the `MemoryStore`.
 - `agent.getContextById(id)`: Retrieves a `ContextState` by its full ID (e.g.,
   "discord:channel:12345").
-- `agent.saveContext(contextState, optionalWorkingMemory)`: Persists the
-  `ContextState` (including its `memory`) to the configured `MemoryStore`.
-  `WorkingMemory` is usually saved internally during `agent.run`.
+- `agent.saveContext(contextState)`: Persists the `ContextState` (including its
+  `memory`) to the configured `MemoryStore`. This is often handled automatically
+  by the agent lifecycle.
 - `agent.run({ context: myContext, args: { ... } })`: Starts or continues the
   execution loop for a specific context instance.
+
+## Example: Task Manager Context
+
+Here's a more complete example of a task manager context:
+
+```typescript
+import { context } from "@daydreamsai/core";
+import { z, string } from "zod";
+
+// Define memory structure for tasks
+interface Task {
+  id: string;
+  title: string;
+  status: "pending" | "completed";
+  // ... other task properties
+}
+
+interface TaskManagerMemory {
+  tasks: Task[];
+  completedTasks: Task[];
+  currentTask: Task | null;
+  projectName: string;
+}
+
+const taskManagerContext = context<
+  TaskManagerMemory,
+  { projectId: string; userId: string }
+>({
+  type: "task-manager",
+  schema: z.object({
+    projectId: string().describe("Unique identifier for the project"),
+    userId: string().describe("User who owns this task list"),
+  }),
+  key: ({ projectId, userId }) => `${userId}:${projectId}`, // Instance per user per project
+  create: (state) => {
+    // Initializes ContextState.memory
+    return {
+      tasks: [],
+      completedTasks: [],
+      currentTask: null,
+      projectName: state.args.projectId || "Unnamed Project", // Use args here
+    };
+  },
+  render: ({ memory }) => {
+    // Renders ContextState.memory for the LLM
+    const taskList = memory.tasks
+      .map((task) => `- ${task.title} (${task.status})`)
+      .join("\n");
+    const completedList = memory.completedTasks
+      .map((task) => `- ${task.title}`)
+      .join("\n");
+
+    return `
+# Task Manager: ${memory.projectName}
+
+## Current Tasks:
+${taskList || "No active tasks"}
+
+## Current Focus:
+${memory.currentTask ? `Working on: ${memory.currentTask.title}` : "No task in focus"}
+
+## Completed Tasks:
+${completedList || "No completed tasks"}
+    `;
+  },
+  // ... (actions like addTask, completeTask would be defined here or globally)
+});
+```
 
 Contexts provide the essential structure for managing scoped state, behavior,
 and memory within the Daydreams framework.

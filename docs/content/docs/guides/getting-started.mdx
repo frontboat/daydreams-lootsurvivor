@@ -1,0 +1,65 @@
+---
+title: Getting Started
+description: Bootstrap your first Daydreams agent.
+---
+
+## Bootstrapping a New Agent
+
+The easiest way to get started with Daydreams is to use the CLI tool:
+
+### Install the CLI
+
+```bash
+npm install -g @daydreamsai/create-agent
+```
+
+### Create a new agent
+
+```bash
+npx @daydreamsai/create-agent dreaming-agent
+```
+
+This will scaffold a new agent project with all the necessary files and
+dependencies.
+
+### Navigate to your project
+
+```bash
+cd dreaming-agent
+```
+
+### Configure Environment
+
+Copy the `.env.example` file to `.env` and fill in your API keys.
+
+```bash
+cp .env.example .env
+```
+
+### Start your agent
+
+```bash
+npm start
+# or use bun
+# bun run index.ts
+```
+
+## Complete Example
+
+Here's a minimal example of a Daydreams agent using the CLI extension:
+
+```ts
+import { createDreams } from "@daydreamsai/core";
+import { cli } from "@daydreamsai/core/extensions";
+import { groq } from "@daydreamsai/core/models";
+
+const agent = createDreams({
+  model: groq("deepseek-r1-distill-llama-70b"),
+  extensions: [cli],
+}).start();
+```
+
+This will run the agent in the terminal. Talk to it!
+
+For more advanced examples, check out the other guides or explore the
+[Concepts](/docs/concepts) section.

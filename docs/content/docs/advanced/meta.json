@@ -1,3 +1,9 @@
 {
-  "pages": ["index", "custom-extensions"]
+  "pages": [
+    "index",
+    "extensions",
+    "grpo-training-export",
+    "services",
+    "extensions-vs-services"
+  ]
 }

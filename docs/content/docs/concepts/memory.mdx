@@ -101,6 +101,40 @@ typically used for semantic search and retrieving relevant past experiences
   custom embedder.
 - _(Others like Pinecone might be available or could be implemented)_
 
+## Clarification: Context vs. Memory
+
+It's important to distinguish between the concept of a "Context" and "Memory":
+
+- **Context (`context({...})` Definition & `ContextState` Instance):**
+
+  - **Definition:** Think of this as a **blueprint** or template for a specific
+    type of interaction scope (e.g., a chat session, a game state). It defines
+    the _rules_, _behavior_, expected `schema` arguments, the structure of its
+    persistent memory (`create`), how that state is rendered for the LLM
+    (`render`), and its associated `inputs`, `outputs`, and `actions`.
+  - **Instance (`ContextState`):** This is a **runtime instance** of a Context
+    definition, representing a specific, active scope (e.g., the chat session
+    with _user A_). It holds a reference to the definition, the specific `args`
+    used to identify it, and the actual, current **memory payload** for this
+    instance (`ContextState.memory`).
+
+- **Memory (`ContextState.memory`, `WorkingMemory`, etc.):**
+  - **Context Memory (`ContextState.memory`):** This is the actual **persistent
+    data payload** or state associated with a specific `ContextState` instance.
+    Its structure is determined by the `context.create` function. This is what's
+    loaded from/saved to the `MemoryStore` and rendered via `context.render`.
+  - **Other Memory Types:** The framework also uses other memory concepts like
+    `WorkingMemory` (transient log for a single run), `ActionMemory` (persistent
+    state for an action definition), and `AgentMemory` (persistent state for the
+    main agent context). These are distinct from the specific
+    `ContextState.memory` of a running context instance.
+
+**In essence:**
+
+A **Context** defines the **structure and behavior** of an interaction scope.
+**Memory** (specifically `ContextState.memory`) is the **persistent data**
+stored _within_ a particular instance of that Context.
+
 ## Types of Memory Usage
 
 ### Working Memory
@@ -127,15 +161,24 @@ typically used for semantic search and retrieving relevant past experiences
 
 ### Action Memory
 
-- **Purpose:** Persistent state associated specifically with an `Action`,
-  allowing it to maintain state across multiple calls within different runs or
-  contexts.
+- **Purpose:** Persistent state associated specifically with an `Action`
+  definition, allowing it to maintain state across multiple calls within
+  different runs or contexts.
 - **Structure:** Defined by the `memory` option in the `action` definition,
   using the `memory()` helper.
 - **Lifecycle:** Loaded from the `MemoryStore` before the action handler runs,
   potentially updated by the handler, saved back to the `MemoryStore` after the
   handler completes.
 - **Access:** Available as `ctx.actionMemory` within the action's handler.
+
+### Agent Memory
+
+- **Purpose:** Persistent state associated with the agent's main/root context
+  (if one is defined in `createDreams`). Used for global agent state.
+- **Lifecycle:** Loaded/saved from the `MemoryStore` using the main agent
+  context's ID.
+- **Access:** Available as `ctx.agentMemory` within action handlers when a main
+  agent context exists.
 
 ### Episodic Memory
 
@@ -158,5 +201,5 @@ typically used for semantic search and retrieving relevant past experiences
 
 By combining these memory types and storage backends, Daydreams agents can
 maintain short-term focus (Working Memory), long-term context state
-(Context/Action Memory), and learn from past interactions (Episodic Memory via
-VectorStore).
+(Context/Action/Agent Memory), and learn from past interactions (Episodic Memory
+via VectorStore).

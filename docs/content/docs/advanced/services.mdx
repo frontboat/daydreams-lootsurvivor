@@ -1,12 +1,10 @@
 ---
-title: Services & Extensions
-description:
-  Understanding dependency injection, service providers, and modular extensions.
+title: Services
+description: Dependency Injection & Lifecycle Management.
 ---
 
-Daydreams uses a combination of Dependency Injection (DI), Service Providers,
-and an Extension system to manage dependencies, initialize components, and
-organize functionality in a modular way.
+Daydreams utilizes a Dependency Injection (DI) container and a Service Provider
+pattern to manage dependencies and component lifecycles effectively.
 
 ## Dependency Injection (`container.ts`)
 
@@ -38,7 +36,12 @@ the agent's lifecycle.
   (`aliasToken`) to resolve an existing `originalToken`.
 
 ```typescript
-import { createContainer } from "@daydreamsai/core";
+import { createContainer, Logger, LogLevel } from "@daydreamsai/core"; // Assuming Logger/LogLevel are exported
+
+// Assume DatabaseClient exists
+declare class DatabaseClient {
+  constructor(uri: string | undefined);
+}
 
 const container = createContainer();
 
@@ -84,7 +87,12 @@ Use the `service` helper function:
 
 ```typescript
 import { service, type Container } from "@daydreamsai/core";
-import { MyApiClient } from "./my-api-client";
+
+// Assume MyApiClient exists and has a connect method
+declare class MyApiClient {
+  constructor(config: { baseUrl: string | undefined });
+  connect(): Promise<void>;
+}
 
 const myApiService = service({
   // Optional: Register dependencies into the container.
@@ -116,113 +124,5 @@ const myApiService = service({
     through all registered service providers and calls their `boot` methods
     _after_ all `register` methods have completed.
 
-## Extensions (`extension()` helper)
-
-Extensions are the primary mechanism for packaging and distributing reusable
-Daydreams functionality. They bundle together contexts, actions, inputs,
-outputs, and service providers.
-
-**Purpose:**
-
-- Encapsulate features (e.g., Discord integration, ChromaDB support).
-- Simplify agent configuration by adding features with a single entry.
-- Promote code reuse.
-
-**Defining an Extension:**
-
-Use the `extension` helper function:
-
-```typescript
-import {
-  extension,
-  context,
-  action,
-  input,
-  output,
-  service,
-} from "@daydreamsai/core";
-import { z } from "zod";
-import { MyApiClient } from "./my-api-client"; // From previous example
-
-// Assume myApiService is defined as above
-
-const myFeatureContext = context({
-  /* ... context definition ... */
-});
-const myFeatureAction = action({
-  /* ... action definition ... */
-});
-
-export const myExtension = extension({
-  // Required: A unique name for the extension
-  name: "my-feature",
-
-  // Optional: Service providers required by this extension
-  services: [myApiService],
-
-  // Optional: Context definitions provided by this extension
-  contexts: {
-    myFeature: myFeatureContext,
-  },
-
-  // Optional: Action definitions
-  actions: [myFeatureAction],
-
-  // Optional: Input definitions
-  inputs: {
-    "my-feature:event": input({
-      /* ... input definition ... */
-    }),
-  },
-
-  // Optional: Output definitions
-  outputs: {
-    "my-feature:notify": output({
-      /* ... output definition ... */
-    }),
-  },
-
-  // Optional: Events defined by this extension (used for typing ctx.emit)
-  events: {
-    myEvent: z.object({ id: z.string() }),
-  },
-
-  // Optional: Logic to run once when the extension is added during agent.start()
-  async install(agent) {
-    console.log("Installing My Feature Extension!");
-    // Perform any one-time setup
-  },
-});
-```
-
-**Usage and Lifecycle:**
-
-1.  **Configuration:** Pass extensions to `createDreams` in the `extensions`
-    array:
-
-    ```typescript
-    import { createDreams } from "@daydreamsai/core";
-    import { myExtension } from "./my-extension";
-    import { discord } from "@daydreamsai/discord"; // Example built-in
-
-    const agent = createDreams({
-      model: /* ... */,
-      extensions: [
-        myExtension,
-        discord, // Add other extensions
-      ]
-    });
-    ```
-
-2.  **Merging:** When `createDreams` initializes, it merges all components
-    (`contexts`, `actions`, `inputs`, `outputs`, `events`) defined within the
-    extensions into the agent's main registry.
-3.  **Service Registration:** It registers all `services` defined in the
-    extensions with the `ServiceManager`.
-4.  **Installation & Booting:** When `agent.start()` is called:
-    - The `install` method of each extension is executed (if defined).
-    - The `ServiceManager` boots all registered services (calling their `boot`
-      methods).
-
-Extensions provide a powerful way to structure agent capabilities, making it
-easy to combine built-in features (like CLI, Discord, Chroma) with custom logic.
+Services and the DI container form the backbone for managing dependencies and
+initializing components within Daydreams agents and extensions.
