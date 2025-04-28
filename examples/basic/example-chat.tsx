@@ -53,7 +53,6 @@ Current ISO time is: ${date.toISOString()}, timestamp: ${date.getTime()}`;
 });
 
 const agent = await createDreams({
-  logger: LogLevel.INFO,
   debugger: async (contextId, keys, data) => {
     const [type, id] = keys;
     await Bun.write(`./logs/chat/${contextId}/${id}-${type}.md`, data);

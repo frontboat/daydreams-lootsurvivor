@@ -6,6 +6,7 @@ import { openai } from "@ai-sdk/openai";
 import {
   createContainer,
   createDreams,
+  Logger,
   LogLevel,
   validateEnv,
 } from "@daydreamsai/core";
@@ -32,8 +33,8 @@ const mongo = await createMongoMemoryStore({
 const chroma = createChromaVectorStore("agent", "http://localhost:8000");
 
 const agent = createDreams({
-  logger: LogLevel.DEBUG,
   container: createContainer(),
+  logger: new Logger({ level: LogLevel.DEBUG }),
   model: groq("deepseek-r1-distill-llama-70b"),
   extensions: [cliExtension],
   memory: {
