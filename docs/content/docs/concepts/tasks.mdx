@@ -4,9 +4,9 @@ description: Managing asynchronous operations and concurrency.
 ---
 
 Daydreams agents often need to perform asynchronous operations, primarily when
-executing [Actions](./actions) that interact with external APIs, blockchains, or
-other time-consuming processes. The framework includes a `TaskRunner` to manage
-these operations efficiently.
+executing [Actions](/docs/concepts/actions) that interact with external APIs,
+blockchains, or other time-consuming processes. The framework includes a
+`TaskRunner` to manage these operations efficiently.
 
 ## Purpose
 
@@ -50,7 +50,7 @@ actively running at any given moment.
 
 While you typically don't interact directly with the `TaskRunner` or define new
 `task` types, understanding how it works is important for writing effective
-agent components, especially [Actions](./actions):
+agent components, especially [Actions](/docs/concepts/actions):
 
 1.  **Actions are Queued & Run Concurrently:** When the LLM calls an action via
     `<action_call>`, its `handler` is scheduled by the `TaskRunner`, not
@@ -92,8 +92,7 @@ handles the scheduling and concurrency control behind the scenes.
 ## Internal Usage (`runAction`)
 
 The most common use of the `TaskRunner` is internal to the framework. When the
-agent parses an `<action_call>` from the LLM (see
-[Streaming & Parsing](./streaming-parsing)), the `handleActionCall` function
+agent parses an `<action_call>` from the LLM, the `handleActionCall` function
 doesn't execute the action's handler directly. Instead, it uses
 `taskRunner.enqueueTask` to schedule the execution:
 

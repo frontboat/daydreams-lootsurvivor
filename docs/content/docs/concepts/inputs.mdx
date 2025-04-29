@@ -18,7 +18,7 @@ the agent's core processing loop.
 ```typescript
 import { input, context, type AnyAgent } from "@daydreamsai/core";
 import { z } from "zod";
-import { EventEmitter } from "events"; // Example external source
+import { EventEmitter } from "events"; // Example: Using a simple Node.js EventEmitter
 
 // Assume myContext is defined elsewhere
 declare const myContext: any;
@@ -27,213 +27,213 @@ declare const myContext: any;
 const myEventEmitter = new EventEmitter();
 
 const eventInput = input({
-  // Required: A unique identifier for this input type.
+  // Required: A unique identifier for this input source type.
+  // Helps in logging and debugging. e.g., "myApi:webhook", "discord:message"
   type: "custom:event",
 
-  // Optional: Zod schema for the *data* payload pushed by the 'send' function.
-  // This validates the data structure before it's processed by the agent.
+  // Optional (but recommended): Zod schema for the *data payload* that will be
+  // passed into the agent via the `send` function below. This validates
+  // the data structure *before* it triggers the agent's run cycle.
   schema: z.object({
-    eventId: z.string(),
-    payload: z.any(),
-    timestamp: z.number(),
+    eventId: z.string().describe("Unique ID for the incoming event"),
+    payload: z.any().describe("The actual data content of the event"),
+    source: z.string().optional().describe("Origin of the event"),
   }),
 
-  // Required (usually): Connects to the external data source and triggers 'send'.
+  // Required (usually): Connects to the external data source and calls `send`
+  // when new data arrives.
   subscribe: (send, agent: AnyAgent) => {
-    // 'send' is the function to push data into the agent.
-    // 'agent' is the agent instance for accessing services, etc.
+    // `send` is the crucial function provided by the framework. You call this
+    // to push validated data into the agent for processing.
+    // `agent` is the agent instance, useful for accessing shared services or config.
 
-    const listener = (eventData: { id: string; data: any; ts: number }) => {
-      console.log(`Event received: ${eventData.id}`);
+    const listener = (eventData: {
+      id: string;
+      data: any;
+      origin?: string;
+    }) => {
+      console.log(`External event received: ${eventData.id}`);
 
-      // Determine the target context and its arguments.
+      // 1. Determine the target Context and its arguments.
+      // This tells the agent *which* context instance should handle this input.
       // This might be static or dynamically determined based on eventData.
-      const targetContext = myContext; // Replace with your actual context
-      const contextArgs = { someId: eventData.id }; // Arguments for the context schema
+      const targetContext = myContext; // Replace with your actual context definition
+      const contextArgs = { someId: eventData.id }; // Args matching targetContext.schema
 
-      // Prepare the data payload matching the input's schema.
+      // 2. Prepare the data payload according to this input's `schema`.
       const inputData = {
         eventId: eventData.id,
         payload: eventData.data,
-        timestamp: eventData.ts,
+        source: eventData.origin,
       };
 
-      // Call 'send' to push the input to the agent for processing.
-      send(targetContext, contextArgs, inputData);
+      try {
+        // 3. Validate the payload before sending (optional but good practice)
+        eventInput.schema?.parse(inputData); // Use the defined schema
+
+        // 4. Call `send` to push the input data into the agent.
+        // This triggers the agent's processing cycle for the target context instance.
+        send(targetContext, contextArgs, inputData);
+      } catch (validationError) {
+        agent.logger.error(
+          "eventInput:subscribe",
+          "Invalid event data received",
+          { eventData, validationError }
+        );
+        // Decide how to handle invalid data (e.g., log, ignore)
+      }
     };
 
-    // Attach the listener to the external source.
+    // Attach the listener to the external source
     myEventEmitter.on("newEvent", listener);
+    agent.logger.info("eventInput", "Subscribed to newEvent");
 
-    // Return a cleanup function to detach the listener when the agent stops.
+    // IMPORTANT: Return a cleanup function.
+    // This is called when the agent stops, ensuring you detach listeners,
+    // close connections, clear intervals, etc.
     return () => {
       myEventEmitter.off("newEvent", listener);
-      console.log("Detached event listener.");
+      agent.logger.info("eventInput", "Unsubscribed from newEvent");
     };
   },
 
-  // Optional: A handler to preprocess or validate the data *before* the InputRef log
-  // is created and added to WorkingMemory. It receives the raw data passed to 'send'.
-  // It can modify the data or add parameters to the InputRef.
+  // Optional: Pre-process data *after* `send` is called but *before* the log entry
+  // (InputRef) is created. Useful for adding metadata based on context state.
   handler: async (data, ctx, agent) => {
-    // Example: Add a parameter based on context state
-    const processed =
-      ctx.memory.processedEvents?.includes(data.eventId) ?? false;
+    // `data` is the payload passed to `send`.
+    // `ctx` is the ContextState of the target context instance.
+    // Example: Check if this event was already seen in this context instance
+    const seen = ctx.memory.processedEventIds?.includes(data.eventId) ?? false;
     return {
-      data: data, // Can transform data if needed
-      params: { processed: String(processed) }, // Add parameters to the InputRef
+      data: data, // Can optionally transform the data here
+      params: { seen: String(seen) }, // Add parameters to the InputRef log entry
     };
   },
 
-  // Optional: Custom formatting for how this InputRef appears in logs.
+  // Optional: Customize how this input is represented in logs or prompts.
   format: (ref) => {
-    return `Event ${ref.data.eventId} received: ${JSON.stringify(
-      ref.data.payload
-    )}`;
+    // `ref` is the InputRef object (log entry)
+    return `Event Received: ID=${ref.data.eventId}, Source=${ref.data.source ?? "N/A"}`;
   },
 
-  // Optional: Setup logic run when the agent starts.
+  // Optional: One-time setup logic when the agent starts.
   install: async (agent) => {
-    /* Initialize external connections */
+    // E.g., agent.container.resolve('myApiClient').connect();
+    agent.logger.info("eventInput", "Install hook executed");
   },
-
-  // Optional: Conditionally enable/disable this input source.
-  enabled: (state) => true,
-
-  // Optional: Associate this input definition with a specific context.
-  // context: myContext,
 });
 ```
 
-**Key Parameters:**
+**Key Concepts:**
 
-- `type` (string): A unique name identifying this input source (e.g.,
-  "discord:message", "webhook:github").
-- `schema` (Zod Schema, optional): Defines the expected structure of the `data`
-  payload passed to the `send` function within `subscribe`. This ensures data
-  consistency before it enters the agent's run cycle.
-- `subscribe` (Function): This is the core connection point.
-  - It receives a `send` function and the `agent` instance.
-  - Its responsibility is to listen to the external source (e.g., setup webhook
-    listeners, connect to websockets, poll APIs, listen to event emitters).
-  - When new data arrives, it calls `send(context, args, data)`:
-    - `context`: The target `Context` definition object.
-    - `args`: An object matching the target `context`'s `schema`, identifying
-      the specific instance to run.
-    - `data`: The payload matching this `input`'s `schema`.
-  - It should return a cleanup function that disconnects from the source when
-    the agent stops.
-- `handler` (Function, optional): A pre-processing step that runs _after_ `send`
-  is called but _before_ the `InputRef` log is finalized and added to the
-  `WorkingMemory`. It receives the raw data from `send` and the target
-  `ContextState`. It can transform the data or add `params` to the resulting
-  `InputRef`.
-- `format` (Function, optional): Customizes the XML representation of the
-  `InputRef` log.
-- `install` (Function, optional): Logic executed once when the agent starts
-  (e.g., initializing SDKs).
-- `enabled` (Function, optional): Dynamically control if this input source is
-  active.
-- `context` (Context, optional): Associates this input definition with a
-  specific context (less common for inputs, usually defined globally or in
-  extensions).
+- **`type`**: A unique string identifying your input source.
+- **`schema`**: (Recommended) A Zod schema defining the structure of the data
+  payload you intend to pass via `send`. Validation happens automatically if
+  provided.
+- **`subscribe(send, agent)`**: The core function where you connect to your
+  external data source (API, websocket, event emitter, polling mechanism, etc.).
+  - When data arrives, you call the provided `send` function.
+  - You **must** return a cleanup function to disconnect/unsubscribe when the
+    agent stops.
+- **`send(context, args, data)`**: This framework-provided function is your
+  gateway into the agent.
+  - `context`: The **context definition** object that should handle this input.
+  - `args`: An object matching the `context.schema`, identifying the specific
+    **instance** of the context.
+  - `data`: The payload containing the actual input information, ideally
+    matching this `input`'s `schema`.
+- **`handler(data, ctx, agent)`**: (Optional) Pre-processing function executed
+  after `send` but before the input log entry is finalized. Allows data
+  transformation or adding metadata (`params`) based on the target context's
+  state (`ctx`).
+- **`format(ref)`**: (Optional) Customize the string/XML representation of the
+  input log entry (`InputRef`).
 
-## Inputs in Extensions
+## How Inputs Trigger the Agent
 
-In practice, inputs are often defined within extensions to provide integration
-with external services. Extensions bundle related inputs, outputs, and services
-together.
+1.  **External Event:** Your `subscribe` function detects an event or receives
+    data.
+2.  **`send` Called:** Your code calls `send(context, args, data)`.
+3.  **Agent Invoked:** The framework receives the call, creates a basic log
+    entry (`InputRef`) for this input, and starts or queues an `agent.run` cycle
+    for the specified `context` instance identified by `args`.
+4.  **Pre-processing (`handler`):** If you defined an `input.handler`, it runs,
+    potentially modifying the data or adding parameters to the `InputRef`.
+5.  **Run Cycle:** The agent proceeds with its run cycle
+    ([Agent Lifecycle](/docs/concepts/agent-lifecycle)), processing this new
+    `InputRef` along with other state information to generate a response or
+    perform actions.
 
-### Extension Pattern
+## Inputs within Extensions
 
-Here's how inputs are typically defined within an extension:
+Inputs are commonly bundled within [Extensions](/docs/advanced/extensions) to
+package integrations cleanly. The structure is the same, but the `input`
+definitions live inside the `inputs` property of the `extension` definition.
 
 ```typescript
-export const myExtension = extension({
-  name: "myExtension",
-  services: [myService], // Services needed by this extension
-  contexts: {
-    myContext: myContext, // Contexts used by this extension
-  },
+import { extension, input /* ... */ } from "@daydreamsai/core";
+import { z } from "zod";
+import { myService } from "./myService";
+import { myContext } from "./myContext";
+
+export const myApiExtension = extension({
+  name: "myApi",
+  services: [myService], // Optional services used by the input
+  contexts: { myContext }, // Optional contexts targeted by the input
+
   inputs: {
-    "myExtension:message": input({
+    // Input definitions go here, keyed by their type
+    "myApi:webhook": input({
+      type: "myApi:webhook", // Redundant but ensures key matches type
       schema: z.object({
-        user: z.object({ id: string(), name: string() }),
-        text: string(),
+        /* ... webhook payload schema ... */
       }),
-      // Format the input for the LLM
-      format: ({ user, text }) => `${user.name}: ${text}`,
-      // Subscribe to external events
-      subscribe(send, { container }) {
-        // Set up event listeners or polling
-        // When events occur, use send() to push data to the agent
+      subscribe(send, agent) {
+        const apiClient = agent.container.resolve<MyApiClient>("myApiClient"); // Use a service
 
-        // Return a cleanup function
-        return () => {
-          // Cleanup code (remove listeners, etc.)
+        const webhookHandler = (payload: any) => {
+          const validatedData =
+            myApiExtension.inputs["myApi:webhook"].schema.parse(payload);
+          // Determine context/args based on payload
+          const contextArgs = { entityId: validatedData.entityId };
+          send(myContext, contextArgs, validatedData);
         };
+
+        apiClient.registerWebhookListener(webhookHandler);
+        return () => apiClient.removeWebhookListener(webhookHandler);
       },
+      // ... other input properties ...
     }),
-  },
-  outputs: {
-    // Output definitions...
+    // ... potentially other inputs for this extension ...
   },
 });
 ```
 
-### Subscription Model
+## Examples
 
-A key feature of inputs in extensions is the `subscribe` function, which:
-
-1. Sets up listeners for external events or polls data sources.
-2. Processes incoming data.
-3. Uses the `send` function to route data to the appropriate context instance.
-4. Returns a cleanup function to remove listeners or stop polling when the agent
-   stops.
-
-This subscription model allows inputs to continuously monitor external sources
-and feed data to your agent.
-
-### The `send` Function
-
-The `send` function, provided to the `subscribe` method, is crucial for routing
-data to the right context:
-
-```typescript
-send(
-  contextDefinition, // Which context type to use (e.g., telegramChat)
-  contextParams, // Parameters to identify the context instance (e.g., { chatId: 123 })
-  inputData // The data payload matching the input schema
-);
-```
-
-## Real-World Examples
+(Keep the existing CLI, Telegram, and Twitter examples here, perhaps slightly
+simplifying the code snippets to focus on the `subscribe` and `send` pattern.)
 
 ### CLI Input (from `@daydreamsai/cli`)
 
 ```typescript
+// Simplified example
 input({
-  // No specific schema needed for raw text input
-  async subscribe(send, { container }) {
+  type: "cli:input",
+  subscribe(send, { container }) {
     const rl = container.resolve<readline.Interface>("readline");
-    const controller = new AbortController();
-
-    // Loop indefinitely, waiting for user input
-    while (!controller.signal.aborted) {
-      const question = await rl.question("> ");
-      if (question === "exit") break; // Allow user to exit
-
-      // Send the input text to the 'cli' context for the 'admin' user
-      send(
-        cliContext, // Assuming 'cliContext' is defined
-        { user: "admin" }, // Context arguments
-        question // Input data (raw string)
-      );
-    }
-    // Cleanup handled implicitly by readline closing
-
+    const listen = async () => {
+      while (true) {
+        // Basic loop, real implementation handles abort
+        const line = await rl.question("> ");
+        if (line === "exit") break;
+        // Send to a default CLI context instance
+        send(cliContext, { user: "cli_user" }, line);
+      }
+    };
+    listen(); // Start listening
     return () => {
-      controller.abort(); // Stop the loop if agent stops
+      /* Abort logic here */
     };
   },
 });
@@ -242,151 +242,28 @@ input({
 ### Telegram Message Input (from `@daydreamsai/telegram`)
 
 ```typescript
+// Simplified example
 input({
-  schema: z.object({ // Defines the structure of data passed to 'send'
-    user: z.object({ id: z.number(), username: string() }),
-    text: string(),
+  type: "telegram:message",
+  schema: z.object({
+    /* ... */
   }),
-  format: ({ data }) => formatMsg({ // Formats for the LLM prompt
-      role: "user",
-      content: data.text,
-      user: data.user.username,
-    }),
   subscribe(send, { container }) {
     const tg = container.resolve<Telegraf>("telegraf");
-    tg.on("message", (ctx) => { // Listen for 'message' events from Telegraf
-      const chat = ctx.chat;
-      const user = ctx.msg.from;
-
+    tg.on("message", (ctx) => {
       if ("text" in ctx.message) {
-        // Send data to the specific telegramChat context instance
-        send(
-          telegramChat, // Context definition
-          { chatId: chat.id }, // Context arguments
-          { // Input data (matching the schema)
-            user: { id: user.id, username: user.username! },
-            text: ctx.message.text,
-          }
-        );
+        const dataPayload = {
+          /* ... extract user, text ... */
+        };
+        // Send data to the specific telegram chat context
+        send(telegramChat, { chatId: ctx.chat.id }, dataPayload);
       }
     });
-    return () => {}; // Telegraf handles listener removal internally
+    // Telegraf handles cleanup
+    return () => {};
   },
-}),
+});
 ```
 
-### Twitter Mentions Input (Polling Example from `@daydreamsai/twitter`)
-
-```typescript
-input({
-  schema: z.object({
-    userId: string(),
-    tweetId: string(),
-    text: string(),
-  }),
-  format: ({ data }) => formatXml(/* ... */), // Format as XML for LLM
-  subscribe(send, { container }) {
-    const twitter = container.resolve<TwitterClient>("twitter");
-    // Poll Twitter API every 10 seconds
-    const interval = setInterval(async () => {
-      const mentions = await twitter.checkMentions();
-      for (const mention of mentions) {
-        send(
-          twitterContext, // Target context type
-          { tweetId: mention.metadata.tweetId || "" }, // Context args
-          { // Input data matching schema
-            tweetId: mention.metadata.tweetId || "",
-            userId: mention.metadata.userId || "",
-            text: mention.content,
-          }
-        );
-      }
-    }, 10000);
-    // Return cleanup function to stop polling
-    return () => clearInterval(interval);
-  },
-}),
-```
-
-## Execution Flow
-
-1.  **External Event:** An event occurs in the external system connected via
-    `subscribe`.
-2.  **Listener Triggered:** The listener function set up in `subscribe` is
-    called with the raw event data.
-3.  **`send` Called:** The listener determines the target `context` and `args`,
-    formats the `data` payload according to the `input` schema, and calls
-    `send(targetContext, contextArgs, inputData)`.
-4.  **`agent.send`:** The `send` function (provided by the framework) internally
-    calls
-    `agent.send({ context: targetContext, args: contextArgs, input: { type: thisInputType, data: inputData } })`.
-5.  **`InputRef` Creation:** `agent.send` creates the initial `InputRef` log
-    object with `processed: false`.
-6.  **`agent.run` Initiated:** `agent.send` calls `agent.run` for the target
-    context instance, passing the new `InputRef` in the `chain`. (See
-    [Agent Lifecycle](./agent-lifecycle)).
-7.  **`handleInput` Called:** During the first step of the `agent.run` cycle,
-    when the `InputRef` is processed by the engine, the `handleInput` function
-    (`handlers.ts`) is invoked.
-8.  **Pre-processing & Validation:** `handleInput` runs the optional
-    `input.handler` (if defined) for any final data transformation or adding
-    `params` to the `InputRef`. It also validates the final `InputRef.data`
-    against `input.schema`.
-9.  **Memory Query:** `handleInput` may perform a query against the vector store
-    using the input data to retrieve relevant episodic memories, adding them to
-    the `WorkingMemory`.
-10. **Processing Continues:** The `InputRef` is marked as `processed: true`
-    (usually), and the agent proceeds with the rest of the step (prompt
-    generation, LLM call, etc.).
-
-## Best Practices for Extension Inputs
-
-1. **Use Descriptive Names**: Name inputs with a namespace prefix (e.g.,
-   `telegram:message`).
-2. **Validate Thoroughly**: Use Zod schemas to validate all incoming data
-   payloads passed to `send`.
-3. **Format Consistently**: Use consistent formatting (`format` function) for
-   similar types of inputs so the LLM can easily understand them.
-4. **Handle Errors Gracefully**: Add error handling within your `subscribe`
-   function.
-5. **Clean Up Resources**: Always return a cleanup function from `subscribe` to
-   remove listeners or stop polling.
-6. **Context-Specific Routing**: Ensure the `send` function routes data to the
-   appropriate context instance based on event details.
-7. **Efficient Polling**: If polling external services, use appropriate
-   intervals and check mechanisms (like `lastCheckedTweetId` in the Twitter
-   example) to avoid duplicate processing and respect rate limits.
-
-## Advanced Patterns
-
-### Dynamic Context Creation
-
-Inputs can trigger the creation of new context instances if needed:
-
-```typescript
-subscribe(send, { agent }) { // agent is passed to subscribe
-  setupListener((data) => {
-    // Example: Create a new context for each unique conversation
-    const contextArgs = { conversationId: data.conversationId };
-    const contextId = agent.getContextId(conversationContext, contextArgs);
-
-    // Check if context exists, getContext creates if not
-    agent.getContext({ context: conversationContext, args: contextArgs }).then(() => {
-        // Now that context is ensured to exist, send the data
-        send(
-          conversationContext,
-          contextArgs,
-          { // Data payload matching the input schema
-            message: data.message,
-            sender: data.sender,
-            // ... other relevant data
-          }
-        );
-    });
-  });
-}
-```
-
-Inputs are the entry points for external information, initiating the agent's
-perception-reasoning-action cycle. The `subscribe` method bridges external
-systems with the agent's core logic via the `send` function.
+Inputs are the crucial link between your agent and the information it needs to
+react to, enabling dynamic and event-driven behavior.

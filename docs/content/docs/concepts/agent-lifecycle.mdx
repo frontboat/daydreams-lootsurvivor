@@ -71,18 +71,18 @@ agent's core reasoning cycle:
   - The framework **streams** the response.
   - It **parses** the stream, looking for specific XML tags defined in the
     expected response structure (`<reasoning>`, `<action_call>`, `<output>`).
-    (See [Streaming & Parsing](./streaming-parsing)).
   - The LLM's thought process is extracted from `<reasoning>` tags and logged.
   - Instructions to perform actions (`<action_call>`) or send outputs
     (`<output>`) are identified.
 - **Execute Actions & Outputs:**
   - For each identified `<action_call>`, the framework validates the arguments
     against the action's schema and schedules the action's `handler` function to
-    run via the `TaskRunner`. (See [Actions](./actions) and
-    [Task Runner](./task-runner)).
+    run via the `TaskRunner`. (See [Actions](/docs/concepts/actions) and
+    [Tasks](/docs/concepts/tasks)).
   * For each identified `<output>`, the framework validates the
     content/attributes and runs the output's `handler` function to send the
-    information externally (e.g., post a message). (See [Outputs](./outputs)).
+    information externally (e.g., post a message). (See
+    [Outputs](/docs/concepts/outputs)).
 - **Wait for Actions:** The agent waits for any critical asynchronous actions
   scheduled in this step to complete. Their results (`ActionResult`) are logged
   to `WorkingMemory`.
