@@ -1,25 +1,19 @@
 ---
 title: Actions
-description: Defining agent capabilities and task execution.
+description: Define capabilities and interactions for your Daydreams agent.
 ---
 
-Actions represent the capabilities of a Daydreams agent – the specific tasks it
-can perform in response to inputs or its internal reasoning. They are the
-primary way agents interact with external systems, APIs, or execute complex
-logic.
+Actions are the primary way Daydreams agents perform tasks, interact with
+external systems (like APIs or databases), and modify their own state. They are
+essentially functions that the agent's underlying Large Language Model (LLM) can
+choose to call based on its reasoning and the current situation.
 
-Examples of actions could include:
-
-- Sending a tweet.
-- Fetching data from an API.
-- Executing a smart contract transaction.
-- Querying a database.
-- Writing to a file.
+Think of actions as the tools or capabilities you give your agent.
 
 ## Defining an Action
 
-Actions are defined using the `action` helper function exported from
-`@daydreamsai/core`.
+You define actions using the `action` helper function from `@daydreamsai/core`.
+Here's the essential structure:
 
 ```typescript
 import {
@@ -28,177 +22,387 @@ import {
   type AnyAgent,
 } from "@daydreamsai/core";
 import { z } from "zod";
-import { type MyContext } from "./my-context"; // Assuming you have a context defined
 
-// Example: An action to fetch weather data
-const getWeather = action({
-  // Required: A unique name for the action. Used by the LLM in <action_call name="...">
-  name: "getWeather",
+// Define the structure for the action's arguments using Zod
+const searchSchema = z.object({
+  query: z.string().describe("The specific search term or question"),
+  limit: z
+    .number()
+    .optional()
+    .default(10)
+    .describe("Maximum number of results to return"),
+});
 
-  // Optional: Description for the LLM to understand what the action does.
-  description: "Fetches the current weather for a given city.",
+// Define the action itself
+export const searchDatabaseAction = action({
+  // Required: A unique name used by the LLM to call this action.
+  // Use clear, descriptive names (e.g., verbNoun).
+  name: "searchDatabase",
 
-  // Optional: More specific instructions for the LLM on how/when to use the action.
-  instructions: "Use this action when the user asks for the weather.",
+  // Required: A clear description explaining what the action does.
+  // This is crucial for the LLM to understand *when* to use this action.
+  description:
+    "Searches the company knowledge base for records matching the query.",
 
-  // Optional: Zod schema defining the arguments the action expects.
-  // If omitted, the handler receives no `args` parameter.
-  schema: z.object({
-    city: z.string().describe("The city name to get the weather for."),
-    unit: z.enum(["Celsius", "Fahrenheit"]).default("Celsius").optional(),
-  }),
+  // Optional (but highly recommended): A Zod schema defining the expected arguments.
+  // The framework automatically validates arguments provided by the LLM against this schema.
+  // Use `.describe()` on fields to provide hints to the LLM.
+  schema: searchSchema,
 
   // Required: The function that executes the action's logic.
-  handler: async (args, ctx, agent) => {
-    // 'args' contains the validated arguments based on the schema.
-    console.log(`Fetching weather for ${args.city} in ${args.unit}`);
+  // It receives validated arguments, context information, and the agent instance.
+  async handler(args, ctx, agent) {
+    // 'args': The validated arguments object, matching the 'schema'.
+    // Type is automatically inferred: { query: string; limit: number }
+    const { query, limit } = args;
 
-    // 'ctx' is the ActionCallContext, providing access to context state, memory, etc.
-    const apiKey = ctx.memory.apiKey; // Accessing context-specific memory
-    const url = `https://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${args.city}`;
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch weather: ${response.statusText}`);
+    // 'ctx': The ActionCallContext, providing access to memory, signals, etc.
+    // 'agent': The main agent instance, for accessing services, logger, etc.
+
+    agent.logger.info(
+      "searchDatabase",
+      `Searching for: "${query}" (limit: ${limit})`
+    );
+
+    try {
+      // --- Perform the action's logic ---
+      // Example: Use a service resolved from the agent's container
+      // const db = agent.container.resolve<MyDatabaseClient>('database');
+      // const results = await db.search(query, { limit });
+
+      // Simulate an async database call
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      const results = [
+        { id: "doc1", title: `Result for ${query}` },
+        { id: "doc2", title: `Another result for ${query}` },
+      ].slice(0, limit);
+      // --- End of action logic ---
+
+      // Return a structured result. This is logged and becomes available
+      // to the LLM in subsequent reasoning steps.
+      return {
+        success: true,
+        count: results.length,
+        results: results,
+        message: `Found ${results.length} results for "${query}".`,
+      };
+    } catch (error) {
+      agent.logger.error("searchDatabase", "Search failed", { query, error });
+      // Return an error structure if the action fails
+      return {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Unknown database error",
+        message: `Failed to search database for "${query}".`,
+      };
     }
-    const data = await response.json();
+  },
+});
 
-    // The return value becomes the data in the ActionResult
+// Type definition for the ActionCallContext if needed elsewhere
+type SearchDbContext = ActionCallContext<typeof searchSchema>;
+```
+
+## Working with Action Arguments (`args`)
+
+The `handler` function receives the action's arguments in the first parameter
+(`args`). These arguments have already been:
+
+1.  Generated by the LLM based on your action's `schema`.
+2.  Parsed and **validated** by the framework against your `schema`.
+
+You can directly use the properties defined in your schema within the handler,
+with type safety if using TypeScript.
+
+## Managing State (`ctx.memory`)
+
+Actions often need to read or modify the persistent state associated with the
+**current context instance** (e.g., the specific chat session or project the
+agent is working on). You access this state via `ctx.memory`.
+
+```typescript
+import {
+  action,
+  type ActionCallContext,
+  type AnyAgent,
+} from "@daydreamsai/core";
+import { z } from "zod";
+
+// Define the expected structure of the context's memory
+interface TaskListMemory {
+  tasks?: { id: string; title: string; status: "pending" | "completed" }[];
+}
+
+// Assume myContext is defined elsewhere and uses TaskListMemory
+
+export const addTaskAction = action({
+  name: "addTask",
+  description: "Adds a new task to the current project's task list.",
+  schema: z.object({
+    title: z.string().describe("The title of the new task"),
+  }),
+  handler(args, ctx: ActionCallContext<any, any, TaskListMemory>, agent) {
+    // Access the persistent memory for THIS context instance.
+    const contextMemory = ctx.memory;
+
+    // Initialize the tasks array if it doesn't exist
+    if (!Array.isArray(contextMemory.tasks)) {
+      contextMemory.tasks = [];
+    }
+
+    const newTask = {
+      id: agent.utils.randomUUIDv7(), // Generate a unique ID
+      title: args.title,
+      status: "pending" as const,
+    };
+
+    // --- Modify the context's state ---
+    contextMemory.tasks.push(newTask);
+    // --- State modification ends ---
+
+    // The changes to ctx.memory are automatically saved
+    // by the framework at the end of the run cycle.
+
+    agent.logger.info("addTask", `Added task: ${newTask.title}`);
+
     return {
-      temperature:
-        args.unit === "Celsius" ? data.current.temp_c : data.current.temp_f,
-      condition: data.current.condition.text,
-      unit: args.unit,
+      success: true,
+      taskId: newTask.id,
+      message: `Task "${newTask.title}" added successfully.`,
     };
   },
-
-  // Optional: Zod schema defining the expected structure of the return value.
-  // Useful for documentation and potentially for type checking.
-  returns: z.object({
-    temperature: z.number(),
-    condition: z.string(),
-    unit: z.string(),
-  }),
-
-  // Optional: Function to format the ActionResult data for logging or display.
-  format: (result) => {
-    const data = result.data; // Access the return value from the handler
-    return `The weather is ${data.temperature}°${data.unit} and ${data.condition}.`;
-  },
-
-  // Optional: Define persistent memory specific to this action.
-  // memory: myActionMemory, // See Memory concept page
-
-  // Optional: Conditionally enable/disable this action based on context state.
-  enabled: (ctx) => {
-    // Example: Only enable if an API key exists in the context memory
-    // return !!ctx.memory.apiKey; // Assumes ctx is ActionContext here
-    return true;
-  },
-
-  // Optional: Specify retry behavior on failure.
-  retry: 3, // Retry up to 3 times
-
-  // Optional: Custom error handler.
-  onError: async (error, ctx, agent) => {
-    console.error(`Action ${ctx.call.name} failed:`, error);
-    // Maybe emit an event or try a fallback
-    ctx.emit("actionError", { action: ctx.call.name, error: error.message });
-  },
-
-  // Optional: Associate this action with a specific context type.
-  // context: MyContext, // Only available when MyContext is active
 });
 ```
 
-**Key Parameters:**
+**Important Memory Scopes in `ctx`:**
 
-- `name` (string): Unique identifier used in `<action_call name="...">`.
-- `description`/`instructions` (string, optional): Help the LLM understand the
-  action's purpose and usage. Included in the `<available-actions>` section of
-  the prompt.
-- `schema` (Zod Schema, optional): Defines and validates arguments passed by the
-  LLM. Arguments are parsed from the JSON content within the `<action_call>`
-  tag.
-- `handler` (Function): The core logic. Receives validated `args` (if schema is
-  defined) and the `ActionCallContext`. The return value is wrapped in an
-  `ActionResult`.
-- `returns` (Zod Schema, optional): Documents the expected return shape of the
-  handler.
-- `format` (Function, optional): Customizes how the `ActionResult` is logged or
-  displayed.
-- `memory` (Memory, optional): Allows associating persistent state specifically
-  with this action across multiple calls.
-- `enabled` (Function, optional): Dynamically determines if the action should be
-  available to the LLM based on the current context.
-- `retry` (boolean | number | Function, optional): Configures automatic retries
-  if the handler throws an error.
-- `onError` (Function, optional): Custom logic to execute if the handler fails
-  (after retries).
-- `context` (Context, optional): Restricts the action to be available only when
-  a specific context type is active.
+- `ctx.memory`: (Most commonly used) Persistent memory for the **current context
+  instance**. Use this for state related to the specific chat, project, game,
+  etc.
+- `ctx.actionMemory`: (Less common) Persistent memory tied to the **action
+  definition itself**, across all contexts. Configure via the `memory` option in
+  `action()`. Useful for action-specific counters, rate limits, etc.
+- `ctx.agentMemory`: Persistent memory for the **main agent context** (if one
+  was defined globally). Use for global agent settings or state.
 
-### `ActionCallContext`
+Always choose the memory scope that matches where your state needs to live.
 
-The `handler` function receives a context object (`ctx`) with useful properties:
+## Associating Actions with Contexts
+
+While you can define actions globally when calling `createDreams`, it's often
+more organized and efficient to associate actions directly with the `Context`
+they primarily relate to. This makes the action available _only_ when that
+specific context is active and ensures the action handler has direct, typed
+access to that context's memory.
+
+There are two ways to associate actions with a context definition:
+
+**1. Using the `actions` property:**
 
 ```typescript
-type ActionCallContext = {
-  // From the active ContextState
-  id: string;
-  key: string;
-  context: AnyContext;
-  args: Record<string, any>; // Context arguments
-  options: Record<string, any>; // Context setup options
-  memory: Record<string, any>; // Context persistent memory
-  settings: ContextSettings;
+import { context, action, type ActionCallContext } from "@daydreamsai/core";
+import { z } from "zod";
 
-  // Specific to the run
-  workingMemory: WorkingMemory;
-  agentMemory?: Record<string, any>; // Agent's top-level context memory, if any
-  actionMemory?: Record<string, any>; // Action's persistent memory, if defined
+interface MyContextMemory {
+  value: number;
+}
 
-  // Details about this specific call
-  call: ActionCall; // The parsed <action_call> log object
+const myContext = context<MyContextMemory, { id: string }>({
+  type: "myContext",
+  schema: z.object({ id: string() }),
+  create: () => ({ value: 0 }),
+  // ... other context properties
 
-  // Utilities
-  abortSignal?: AbortSignal; // Signal for aborting long-running tasks
-  push: (log: Log) => void; // Push a new Log entry into the current run's working memory
-  emit: (event: string, data: any, options?: { processed?: boolean }) => void; // Emit an EventRef
-};
+  // Define actions directly within the context
+  actions: [
+    action({
+      name: "incrementValue",
+      description: "Increments the context's value.",
+      schema: z.object({ amount: z.number().optional().default(1) }),
+      // `ctx.memory` is automatically typed as MyContextMemory here
+      handler(args, ctx, agent) {
+        ctx.memory.value += args.amount;
+        return { success: true, newValue: ctx.memory.value };
+      },
+    }),
+  ],
+});
 ```
 
-## LLM Interaction
+**2. Using the `.setActions()` method (often better for typing):**
 
-1.  **Availability:** Enabled actions are presented to the LLM within the
-    `<available-actions>` tag in the prompt, including their name, description,
-    instructions, and argument schema.
-2.  **Invocation:** The LLM requests an action by including an
-    `<action_call name="actionName">...</action_call>` tag in its response
-    stream. The content inside the tag should be a JSON object matching the
-    action's `schema`.
+```typescript
+import { context, action, type ActionCallContext } from "@daydreamsai/core";
+import { z } from "zod";
 
-## Execution Flow
+interface MyContextMemory {
+  value: number;
+}
 
-1.  **Parsing:** When the framework parses an `<action_call>` from the LLM
-    stream (`handleActionCallStream` in `streaming.ts`), it identifies the
-    action by `name`.
-2.  **Argument Handling:** `prepareActionCall` (`handlers.ts`) parses the JSON
-    content inside the tag.
-3.  **Template Resolution:** It resolves any template variables (e.g.,
-    `{{calls[0].id}}`, `{{shortTermMemory.someKey}}`) within the parsed
-    arguments against the current run's state.
-4.  **Validation:** If a `schema` is defined for the action, the resolved
-    arguments are validated against it.
-5.  **Execution:** `handleActionCall` (`handlers.ts`) enqueues the actual
-    execution using the `runAction` task (`tasks/index.ts`) via the
-    `TaskRunner`.
-6.  **Handler Invocation:** The `runAction` task executes the action's `handler`
-    function with the validated arguments and the `ActionCallContext`.
-7.  **Result:** The return value of the `handler` is wrapped in an
-    `ActionResult` object.
-8.  **Feedback:** The `ActionResult` is pushed back into the processing loop
-    (`handlePushLog` in `streaming.ts`), making the result available to the
-    agent (and potentially the LLM in the next step's prompt).
+const myContextDefinition = context<MyContextMemory, { id: string }>({
+  type: "myContext",
+  schema: z.object({ id: string() }),
+  create: () => ({ value: 0 }),
+  // ... other context properties
+});
 
-Actions are the fundamental mechanism for agents to interact with the world and
-perform tasks beyond simple text generation.
+const incrementAction = action({
+  name: "incrementValue",
+  description: "Increments the context's value.",
+  schema: z.object({ amount: z.number().optional().default(1) }),
+  // Handler defined separately or inline
+  handler(
+    args,
+    ctx: ActionCallContext<any, typeof myContextDefinition>,
+    agent
+  ) {
+    // Type hint might be needed here sometimes, but .setActions() helps inference
+    ctx.memory.value += args.amount;
+    return { success: true, newValue: ctx.memory.value };
+  },
+});
+
+// Associate actions using the chained method
+const myContextWithActions = myContextDefinition.setActions([
+  incrementAction,
+  // ... other actions specific to myContext
+]);
+```
+
+**Benefits of Context-Specific Actions:**
+
+- **Scoped Availability:** The `incrementValue` action will only appear in the
+  LLM's available actions when an instance of `myContext` is active in the
+  agent's run.
+- **Typed State Access:** Within the handler, `ctx.memory` is correctly typed
+  according to the context's memory interface (`MyContextMemory` in this
+  example).
+- **Organization:** Keeps related logic bundled together.
+
+**Note:** This same pattern applies to defining context-specific `Inputs` and
+`Outputs` using `.setInputs({...})` and `.setOutputs({...})`.
+
+## Interacting with External Systems
+
+Actions are the natural place to interact with external APIs, databases, or
+other services. Remember to use `async`/`await` for any I/O operations.
+
+```typescript
+import { action } from "@daydreamsai/core";
+import { z } from "zod";
+
+export const sendNotificationAction = action({
+  name: "sendNotification",
+  description: "Sends a notification to a user via an external service.",
+  schema: z.object({
+    userId: z.string().describe("The ID of the user to notify"),
+    message: z.string().describe("The notification message"),
+  }),
+  async handler(args, ctx, agent) {
+    try {
+      // Example: Get a service client from the DI container
+      // const notificationService = agent.container.resolve<NotificationService>('notify');
+      // await notificationService.send(args.userId, args.message);
+
+      // Simulate async API call
+      agent.logger.debug(
+        "sendNotification",
+        `Simulating notification to ${args.userId}`
+      );
+      await new Promise((resolve) => setTimeout(resolve, 150));
+
+      return { success: true, message: `Notification sent to ${args.userId}.` };
+    } catch (error) {
+      agent.logger.error("sendNotification", "Failed to send notification", {
+        args,
+        error,
+      });
+      return {
+        success: false,
+        error: "Service unavailable",
+        message: "Could not send notification.",
+      };
+    }
+  },
+});
+```
+
+## Important Considerations for Handlers
+
+When writing action handlers, keep these points in mind:
+
+1.  **Asynchronous Execution:** Handlers often perform I/O. Always use
+    `async`/`await` for promises. The framework runs handlers concurrently up to
+    a configured limit, so they might not execute instantly if the agent is
+    busy.
+2.  **Cancellation (`ctx.abortSignal`):** For actions that might run for a long
+    time (e.g., complex calculations, polling), you **must** check for
+    cancellation requests. The `ctx.abortSignal` signals if the overall agent
+    run has been cancelled.
+
+    ```typescript
+    async handler(args, ctx, agent) {
+      for (let i = 0; i < 100; i++) {
+        // Check for cancellation before long-running work
+        if (ctx.abortSignal?.aborted) {
+           agent.logger.warn("longAction", "Action cancelled by signal");
+           throw new Error("Action cancelled"); // Or return an appropriate state
+        }
+        // Or use throwIfAborted() which throws if cancelled
+        // ctx.abortSignal?.throwIfAborted();
+
+        await performStep(i); // Represents potentially long work
+      }
+      // ...
+    }
+    ```
+
+3.  **Retries (`retry` option):** You can configure actions to automatically
+    retry on failure using the `retry` option in the action definition (e.g.,
+    `retry: 3`). If you use retries, try to make your handler **idempotent** –
+    running it multiple times with the same `args` should produce the same final
+    state without unintended side effects (e.g., don't create duplicate
+    records).
+4.  **Error Handling:** Use `try...catch` blocks within your handler to catch
+    errors from external calls or internal logic. Return a structured error
+    response so the agent (or logs) can understand what went wrong. You can also
+    use the advanced `onError` hook in the action definition for centralized
+    error handling logic.
+
+## How the LLM Chooses Actions
+
+The LLM doesn't directly execute your code. Instead:
+
+1.  The framework presents the `name` and `description` of all available actions
+    to the LLM in its prompt.
+2.  Based on its instructions and the current context, the LLM decides which
+    action to use.
+3.  It formulates the arguments for the action based on the `schema` you
+    provided (including any `.describe()` hints).
+4.  The framework intercepts the LLM's request, validates the arguments against
+    the `schema`, and then securely executes your `handler` function with the
+    validated `args`.
+
+Therefore, clear `name`s and detailed `description`s are vital for the LLM to
+use your actions correctly.
+
+## Best Practices
+
+- **Clear Naming & Descriptions:** Make them unambiguous for the LLM.
+- **Precise Schemas:** Use Zod effectively, adding `.describe()` to clarify
+  arguments for the LLM.
+- **Structured Returns:** Return objects from handlers with clear success/error
+  status and relevant data.
+- **Use `async`/`await`:** Essential for any I/O.
+- **Handle Errors:** Use `try...catch` and return meaningful error information.
+- **Check for Cancellation:** Implement `ctx.abortSignal` checks in long-running
+  handlers.
+- **Consider Idempotency:** Especially if using the `retry` option.
+- **Choose the Right Memory Scope:** Use `ctx.memory` for context instance state
+  unless you specifically need action (`ctx.actionMemory`) or global
+  (`ctx.agentMemory`) state.
+- **Keep Actions Focused:** Aim for single responsibility per action.
+- **Use `agent.logger`:** Log important steps and errors for debugging.
+
+Actions are the core mechanism for adding custom capabilities and stateful
+interactions to your Daydreams agents.

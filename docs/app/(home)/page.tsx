@@ -638,73 +638,257 @@ function AgentShowcase() {
                   )}
                   {activeTab === "contexts" && (
                     <pre className="text-sm font-mono /90 overflow-auto">
-                      <code>{`\
-<span class="text-purple-400">import</span> {"{"} <span class="/90">context</span> {"}"} <span class="text-purple-400">from</span> <span class="text-green-400">"@daydreamsai/core"</span>;
-<span class="text-purple-400">import</span> {"{"} <span class="/90">z</span> {"}"} <span class="text-purple-400">from</span> <span class="text-green-400">"zod"</span>;
-
-<span class="text-gray-500 italic">// Define context for specific tasks or interactions</span>
-<span class="text-purple-400">const</span> <span class="text-blue-300">chatContext</span> = <span class="text-yellow-300">context</span>({
-  <span class="/90">type:</span> <span class="text-green-400">"chatSession"</span>,
-  <span class="/90">schema:</span> <span class="text-blue-300">z</span>.<span class="text-yellow-300">object</span>({
-    <span class="/90">sessionId:</span> <span class="text-blue-300">z</span>.<span class="text-yellow-300">string</span>()
-  }),
-  <span class="/90">create:</span> <span class="text-yellow-300">()</span> => ({
-    <span class="/90">history:</span> []
-  }),
-  <span class="/90">render:</span> <span class="text-yellow-300">(state)</span> => {
-    <span class="text-purple-400">return</span> <span class="text-blue-300">state.memory.history.join('\\n')</span>;
-  },
-  <span class="/90">/* ... instructions, actions, etc. ... */</span>
-});`}</code>
+                      <code>
+                        <span className="text-purple-400">import</span> {"{"}{" "}
+                        <span className="/90">context</span> {"}"}{" "}
+                        <span className="text-purple-400">from</span>{" "}
+                        <span className="text-green-400">
+                          "@daydreamsai/core"
+                        </span>
+                        ;
+                        <br />
+                        <span className="text-purple-400">import</span> {"{"}{" "}
+                        <span className="/90">z</span> {"}"}{" "}
+                        <span className="text-purple-400">from</span>{" "}
+                        <span className="text-green-400">"zod"</span>;
+                        <br />
+                        <br />
+                        <span className="text-gray-500 italic">
+                          {/*// Define context for specific tasks or interactions*/}
+                        </span>
+                        <br />
+                        <span className="text-purple-400">const</span>{" "}
+                        <span className="text-blue-300">chatContext</span> ={" "}
+                        <span className="text-yellow-300">context</span>({"{"}
+                        <br />
+                        {"  "}
+                        <span className="/90">type:</span>{" "}
+                        <span className="text-green-400">"chatSession"</span>,
+                        <br />
+                        {"  "}
+                        <span className="/90">schema:</span>{" "}
+                        <span className="text-blue-300">z</span>.
+                        <span className="text-yellow-300">object</span>({"{"}
+                        <br />
+                        {"    "}
+                        <span className="/90">sessionId:</span>{" "}
+                        <span className="text-blue-300">z</span>.
+                        <span className="text-yellow-300">string</span>()
+                        <br />
+                        {"  "}
+                        {"}),"}
+                        <br />
+                        {"  "}
+                        <span className="/90">create:</span>{" "}
+                        <span className="text-yellow-300">()</span> {"=>"} (
+                        {"{"}
+                        <br />
+                        {"    "}
+                        <span className="/90">history:</span> []
+                        <br />
+                        {"  "}
+                        {"}),"}
+                        <br />
+                        {"  "}
+                        <span className="/90">render:</span>{" "}
+                        <span className="text-yellow-300">(state)</span> {"=>"}{" "}
+                        {"{"}
+                        <br />
+                        {"    "}
+                        <span className="text-purple-400">return</span>{" "}
+                        <span className="text-blue-300">
+                          state.memory.history.join('\\n')
+                        </span>
+                        ;
+                        <br />
+                        {"  "}
+                        {"}"},
+                        <br />
+                        {"  "}
+                        <span className="/90">{`/* ... instructions, actions, etc. ... */`}</span>
+                        <br />
+                        {"}"});
+                      </code>
                     </pre>
                   )}
                   {activeTab === "actions" && (
                     <pre className="text-sm font-mono /90 overflow-auto">
-                      <code>{`\
-<span class="text-purple-400">import</span> {"{"} <span class="/90">action</span> {"}"} <span class="text-purple-400">from</span> <span class="text-green-400">"@daydreamsai/core"</span>;
-<span class="text-purple-400">import</span> {"{"} <span class="/90">z</span> {"}"} <span class="text-purple-400">from</span> <span class="text-green-400">"zod"</span>;
-
-<span class="text-gray-500 italic">// Define an agent capability</span>
-<span class="text-purple-400">const</span> <span class="text-blue-300">lookupUser</span> = <span class="text-yellow-300">action</span>({
-  <span class="/90">name:</span> <span class="text-green-400">"lookupUser"</span>,
-  <span class="/90">description:</span> <span class="text-green-400">"Gets user details by ID"</span>,
-  <span class="/90">schema:</span> <span class="text-blue-300">z</span>.<span class="text-yellow-300">object</span>({
-    <span class="/90">userId:</span> <span class="text-blue-300">z</span>.<span class="text-yellow-300">string</span>()
-  }),
-  <span class="text-purple-400">async</span> <span class="text-yellow-300">handler</span>({ <span class="text-blue-300">userId</span> }, <span class="text-blue-300">ctx</span>, <span class="text-blue-300">agent</span>) {
-    <span class="text-gray-500 italic">// ... fetch user from DB or API ...</span>
-    <span class="text-purple-400">const</span> <span class="text-blue-300">user</span> = { <span class="/90">name:</span> <span class="text-green-400">"Example User"</span>, <span class="/90">id:</span> <span class="text-blue-300">userId</span> };
-    <span class="text-purple-400">return</span> <span class="text-blue-300">user</span>;
-  }
-});`}</code>
+                      <code>
+                        <span className="text-purple-400">import</span> {"{"}{" "}
+                        <span className="/90">action</span> {"}"}{" "}
+                        <span className="text-purple-400">from</span>{" "}
+                        <span className="text-green-400">
+                          "@daydreamsai/core"
+                        </span>
+                        ;
+                        <br />
+                        <span className="text-purple-400">import</span> {"{"}{" "}
+                        <span className="/90">z</span> {"}"}{" "}
+                        <span className="text-purple-400">from</span>{" "}
+                        <span className="text-green-400">"zod"</span>;
+                        <br />
+                        <br />
+                        <span className="text-gray-500 italic">
+                          {/*// Define an agent capability*/}
+                        </span>
+                        <br />
+                        <span className="text-purple-400">const</span>{" "}
+                        <span className="text-blue-300">lookupUser</span> ={" "}
+                        <span className="text-yellow-300">action</span>({"{"}
+                        <br />
+                        {"  "}
+                        <span className="/90">name:</span>{" "}
+                        <span className="text-green-400">"lookupUser"</span>,
+                        <br />
+                        {"  "}
+                        <span className="/90">description:</span>{" "}
+                        <span className="text-green-400">
+                          "Gets user details by ID"
+                        </span>
+                        ,
+                        <br />
+                        {"  "}
+                        <span className="/90">schema:</span>{" "}
+                        <span className="text-blue-300">z</span>.
+                        <span className="text-yellow-300">object</span>({"{"}
+                        <br />
+                        {"    "}
+                        <span className="/90">userId:</span>{" "}
+                        <span className="text-blue-300">z</span>.
+                        <span className="text-yellow-300">string</span>()
+                        <br />
+                        {"  "}
+                        {"}),"}
+                        <br />
+                        {"  "}
+                        <span className="text-purple-400">async</span>{" "}
+                        <span className="text-yellow-300">handler</span>({"{"}{" "}
+                        <span className="text-blue-300">userId</span> {"}"},{" "}
+                        <span className="text-blue-300">ctx</span>,{" "}
+                        <span className="text-blue-300">agent</span>) {"{"}
+                        <br />
+                        {"    "}
+                        <span className="text-gray-500 italic">
+                          {/*// ... fetch user from DB or API ...*/}
+                        </span>
+                        <br />
+                        {"    "}
+                        <span className="text-purple-400">const</span>{" "}
+                        <span className="text-blue-300">user</span> = {"{"}{" "}
+                        <span className="/90">name:</span>{" "}
+                        <span className="text-green-400">"Example User"</span>,{" "}
+                        <span className="/90">id:</span>{" "}
+                        <span className="text-blue-300">userId</span> {"}"};
+                        <br />
+                        {"    "}
+                        <span className="text-purple-400">return</span>{" "}
+                        <span className="text-blue-300">user</span>;
+                        <br />
+                        {"  "}
+                        {"}"}
+                        <br />
+                        {"}"});
+                      </code>
                     </pre>
                   )}
                   {activeTab === "io" && (
                     <pre className="text-sm font-mono /90 overflow-auto">
-                      <code>{`\
-<span class="text-purple-400">import</span> {"{"} <span class="/90">input, output</span> {"}"} <span class="text-purple-400">from</span> <span class="text-green-400">"@daydreamsai/core"</span>;
-<span class="text-purple-400">import</span> {"{"} <span class="/90">z</span> {"}"} <span class="text-purple-400">from</span> <span class="text-green-400">"zod"</span>;
-
-<span class="text-gray-500 italic">// Define an input source</span>
-<span class="text-purple-400">const</span> <span class="text-blue-300">cliInput</span> = <span class="text-yellow-300">input</span>({
-  <span class="/90">type:</span> <span class="text-green-400">"cli:message"</span>,
-  <span class="/90">schema:</span> <span class="text-blue-300">z</span>.<span class="text-yellow-300">object</span>({
-    <span class="/90">user:</span> <span class="text-blue-300">z</span>.<span class="text-yellow-300">string</span>(),
-    <span class="/90">text:</span> <span class="text-blue-300">z</span>.<span class="text-yellow-300">string</span>()
-  }),
-  <span class="/90">subscribe:</span> <span class="text-yellow-300">(send, agent)</span> => {
-    <span class="text-gray-500 italic">// ... setup readline/CLI listener ...</span>
-  },
-});
-
-<span class="text-gray-500 italic">// Define an output handler</span>
-<span class="text-purple-400">const</span> <span class="text-blue-300">cliOutput</span> = <span class="text-yellow-300">output</span>({
-  <span class="/90">type:</span> <span class="text-green-400">"cli:message"</span>,
-  <span class="/90">schema:</span> <span class="text-blue-300">z</span>.<span class="text-yellow-300">string</span>(),
-  <span class="text-purple-400">async</span> <span class="text-yellow-300">handler</span>({ <span class="text-blue-300">data</span>, <span class="text-blue-300">ctx</span>, <span class="text-blue-300">agent</span> }) {
-    <span class="text-gray-500 italic">// ... console.log(data) ...</span>
-  },
-});`}</code>
+                      <code>
+                        <span className="text-purple-400">import</span> {"{"}{" "}
+                        <span className="/90">input, output</span> {"}"}{" "}
+                        <span className="text-purple-400">from</span>{" "}
+                        <span className="text-green-400">
+                          "@daydreamsai/core"
+                        </span>
+                        ;
+                        <br />
+                        <span className="text-purple-400">import</span> {"{"}{" "}
+                        <span className="/90">z</span> {"}"}{" "}
+                        <span className="text-purple-400">from</span>{" "}
+                        <span className="text-green-400">"zod"</span>;
+                        <br />
+                        <br />
+                        <span className="text-gray-500 italic">
+                          {/*// Define an input source*/}
+                        </span>
+                        <br />
+                        <span className="text-purple-400">const</span>{" "}
+                        <span className="text-blue-300">cliInput</span> ={" "}
+                        <span className="text-yellow-300">input</span>({"{"}
+                        <br />
+                        {"  "}
+                        <span className="/90">type:</span>{" "}
+                        <span className="text-green-400">"cli:message"</span>,
+                        <br />
+                        {"  "}
+                        <span className="/90">schema:</span>{" "}
+                        <span className="text-blue-300">z</span>.
+                        <span className="text-yellow-300">object</span>({"{"}
+                        <br />
+                        {"    "}
+                        <span className="/90">user:</span>{" "}
+                        <span className="text-blue-300">z</span>.
+                        <span className="text-yellow-300">string</span>(),
+                        <br />
+                        {"    "}
+                        <span className="/90">text:</span>{" "}
+                        <span className="text-blue-300">z</span>.
+                        <span className="text-yellow-300">string</span>()
+                        <br />
+                        {"  "}
+                        {"}),"}
+                        <br />
+                        {"  "}
+                        <span className="/90">subscribe:</span>{" "}
+                        <span className="text-yellow-300">(send, agent)</span>{" "}
+                        {"=>"} {"{"}
+                        <br />
+                        {"    "}
+                        <span className="text-gray-500 italic">
+                          {/*// ... setup readline/CLI listener ...*/}
+                        </span>
+                        <br />
+                        {"  "}
+                        {"}"},
+                        <br />
+                        {"}"});
+                        <br />
+                        <br />
+                        <span className="text-gray-500 italic">
+                          {/*// Define an output handler*/}
+                        </span>
+                        <br />
+                        <span className="text-purple-400">const</span>{" "}
+                        <span className="text-blue-300">cliOutput</span> ={" "}
+                        <span className="text-yellow-300">output</span>({"{"}
+                        <br />
+                        {"  "}
+                        <span className="/90">type:</span>{" "}
+                        <span className="text-green-400">"cli:message"</span>,
+                        <br />
+                        {"  "}
+                        <span className="/90">schema:</span>{" "}
+                        <span className="text-blue-300">z</span>.
+                        <span className="text-yellow-300">string</span>(),
+                        <br />
+                        {"  "}
+                        <span className="text-purple-400">async</span>{" "}
+                        <span className="text-yellow-300">handler</span>({"{"}{" "}
+                        <span className="text-blue-300">data</span>,{" "}
+                        <span className="text-blue-300">ctx</span>,{" "}
+                        <span className="text-blue-300">agent</span> {"}"}){" "}
+                        {"{"}
+                        <br />
+                        {"    "}
+                        <span className="text-gray-500 italic">
+                          {/*// ... console.log(data) ...*/}
+                        </span>
+                        <br />
+                        {"  "}
+                        {"}"},
+                        <br />
+                        {"}"});
+                      </code>
                     </pre>
                   )}
                   {activeTab === "sandbox" && (

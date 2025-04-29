@@ -18,6 +18,10 @@ LLM.
 This allows you to build agents that can interact with various systems like
 blockchains, social media, APIs, and more, based on goals and context.
 
+**🚀 Ready to dive in? Check out the
+[Getting Started Guide](/docs/guides/getting-started) to build your first
+agent!**
+
 ## Installation
 
 You can install the core Daydreams package and the CLI helper using npm or bun:
@@ -42,20 +46,20 @@ Make sure you have an `OPENAI_API_KEY` environment variable set.
 
 Daydreams is built around a few key ideas:
 
-- **[Agent](./concepts/index):** The central orchestrator that runs the main
-  loop.
-- **[Context](./concepts/contexts):** Manages the state and memory for a
+- **[Agent Lifecycle](/docs/concepts/agent-lifecycle):** The central
+  orchestrator that runs the main loop.
+- **[Contexts](/docs/concepts/contexts):** Manages the state and memory for a
   specific task or interaction (e.g., a chat session).
-- **[Inputs](./concepts/inputs):** How agents receive information (e.g., CLI
+- **[Inputs](/docs/concepts/inputs):** How agents receive information (e.g., CLI
   messages, API events).
-- **[Outputs](./concepts/outputs):** How agents respond or send information out
-  (e.g., CLI responses, tweets).
-- **[Actions](./concepts/actions):** Tasks agents can perform (e.g., calling an
-  API, executing a transaction).
-- **[Memory](./concepts/memory):** How agents store and recall information
+- **[Outputs](/docs/concepts/outputs):** How agents respond or send information
+  out (e.g., CLI responses, tweets).
+- **[Actions](/docs/concepts/actions):** Tasks agents can perform (e.g., calling
+  an API, executing a transaction).
+- **[Memory](/docs/concepts/memory):** How agents store and recall information
   (working memory, episodic memory).
 
-Dive deeper into these in the [Core Concepts](./concepts/index) section.
+Dive deeper into these in the [Core Concepts](/docs/concepts) section.
 
 ## Your First Agent (CLI Echo Bot)
 
@@ -137,5 +141,5 @@ input and output handlers provided by `cliExtension`.
 
 ---
 
-_Next Steps: Explore the [Core Concepts](./concepts/index) or check out the
-[Guides](./guides/index) for more complex examples._
+_Next Steps: Explore the [Core Concepts](/docs/concepts) or check out the other
+[Guides](/docs/guides/getting-started) for more complex examples._

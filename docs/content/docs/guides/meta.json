@@ -1,3 +1,10 @@
 {
-  "pages": ["deep", "giga", "mcp-guide", "twitter", "supabase"]
+  "pages": [
+    "getting-started",
+    "deep",
+    "giga",
+    "mcp-guide",
+    "twitter",
+    "supabase"
+  ]
 }
