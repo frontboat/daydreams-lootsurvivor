@@ -157,13 +157,13 @@ function Hero() {
           Get Started
         </Link>
         <Link
-          href="/docs/concepts"
+          href="/llm.txt"
           className={cn(
             buttonStyles.outline,
             "px-4 py-2.5 text-sm font-semibold transition-colors rounded-md"
           )}
         >
-          Learn More
+          LLM.txt
         </Link>
       </div>
     </div>
@@ -488,7 +488,7 @@ function AgentShowcase() {
                             return "/docs/concepts/inputs"; // Link I/O to Inputs page
                           case "ai-sdk": // Link AI SDK to concepts index for now
                           default:
-                            return "/docs/concepts"; // TODO: Link to a new docs page about ai-sdk and providers
+                            return "/docs/providers/ai-sdk"; // TODO: Link to a new docs page about ai-sdk and providers
                         }
                       })()}
                       className={cn(
@@ -518,51 +518,29 @@ function AgentShowcase() {
                   {activeTab === "ai-sdk" && (
                     <pre className="text-sm font-mono /90 overflow-auto">
                       <code>
-                        <span className="text-purple-400">import</span> {"{"}
-                        <span className="/90">createDreams</span>
-                        {"}"} <span className="text-purple-400">from</span>{" "}
+                        <span className="text-purple-400">import</span> {"{"}{" "}
+                        <span className="/90">createDreams</span> {"}"}{" "}
+                        <span className="text-purple-400">from</span>{" "}
                         <span className="text-green-400">
                           "@daydreamsai/core"
                         </span>
-                        ;<span className="text-purple-400">import</span> {"{"}
-                        <span className="/90">openai</span>
-                        {"}"} <span className="text-purple-400">from</span>{" "}
-                        <span className="text-green-400">"@ai-sdk/openai"</span>
-                        ;<span className="text-purple-400">import</span> {"{"}
-                        <span className="/90">anthropic</span>
-                        {"}"} <span className="text-purple-400">from</span>{" "}
-                        <span className="text-green-400">
-                          "@ai-sdk/anthropic"
-                        </span>
                         ;
                         <br />
+                        <span className="text-purple-400">import</span> {"{"}{" "}
+                        <span className="/90">openai</span> {"}"}{" "}
+                        <span className="text-purple-400">from</span>{" "}
+                        <span className="text-green-400">"@ai-sdk/openai"</span>
+                        ;
                         <br />
-                        <span className="text-gray-500 italic">
-                          // Easily switch LLM providers
-                        </span>
                         <br />
                         <span className="text-purple-400">const</span>{" "}
                         <span className="text-blue-300">agent</span> ={" "}
                         <span className="text-yellow-300">createDreams</span>(
                         {"{"}
                         <br />
-                        <span className="text-gray-500 italic pl-4">
-                          // Use OpenAI, Anthropic, Groq, Google, Mistral,
-                          Ollama, etc.
-                        </span>
-                        <br />
                         <span className="/90 pl-4">model:</span>{" "}
                         <span className="text-yellow-300">openai</span>(
                         <span className="text-green-400">"gpt-4o-mini"</span>),
-                        <br />
-                        <span className="text-gray-500 italic pl-4">
-                          // reasoningModel:
-                          anthropic("claude-3-haiku-20240307"),
-                        </span>
-                        <br />
-                        <span className="/90 pl-4">
-                          /* ... other config ... */
-                        </span>
                         <br />
                         {"}"});
                       </code>
@@ -571,27 +549,28 @@ function AgentShowcase() {
                   {activeTab === "memory" && (
                     <pre className="text-sm font-mono /90 overflow-auto">
                       <code>
-                        <span className="text-purple-400">import</span> {"{"}
-                        <span className="/90">
-                          createDreams, createMemory, createMemoryStore,
-                          createVectorStore
-                        </span>
-                        {"}"} <span className="text-purple-400">from</span>{" "}
+                        <span className="text-purple-400">import</span> {"{"}{" "}
+                        <span className="/90">openrouter</span> {"}"}{" "}
+                        <span className="text-purple-400">from</span>{" "}
                         <span className="text-green-400">
-                          "@daydreamsai/core"
-                        </span>
-                        ;<span className="text-purple-400">import</span> {"{"}
-                        <span className="/90">createChromaVectorStore</span>
-                        {"}"} <span className="text-purple-400">from</span>{" "}
-                        <span className="text-green-400">
-                          "@daydreamsai/chroma"
+                          "@openrouter/ai-sdk-provider"
                         </span>
                         ;
                         <br />
-                        <br />
-                        <span className="text-gray-500 italic">
-                          // Configure memory stores
+                        <span className="text-purple-400">import</span> {"{"}{" "}
+                        <span className="/90">createDreams</span> {"}"}{" "}
+                        <span className="text-purple-400">from</span>{" "}
+                        <span className="text-green-400">
+                          "@daydreamsai/core"
                         </span>
+                        ;
+                        <br />
+                        <span className="text-purple-400">import</span> {"{"}{" "}
+                        <span className="/90">openai</span> {"}"}{" "}
+                        <span className="text-purple-400">from</span>{" "}
+                        <span className="text-green-400">"@ai-sdk/openai"</span>
+                        ;
+                        <br />
                         <br />
                         <span className="text-purple-400">const</span>{" "}
                         <span className="text-blue-300">agent</span> ={" "}
@@ -599,40 +578,32 @@ function AgentShowcase() {
                         {"{"}
                         <br />
                         <span className="/90 pl-4">model:</span>{" "}
-                        <span className="text-yellow-300">/* ... */</span>,
-                        <br />
-                        <span className="/90 pl-4">memory:</span>{" "}
-                        <span className="text-yellow-300">createMemory</span>(
-                        <br />
-                        <span className="text-gray-500 italic pl-8">
-                          // Key-value store (in-memory by default)
+                        <span className="text-yellow-300">openrouter</span>(
+                        <span className="text-green-400">
+                          "google/gemini-2.0-flash-001"
                         </span>
+                        ),
                         <br />
-                        <span className="pl-8">
-                          <span className="text-yellow-300">
-                            createMemoryStore
-                          </span>
-                          (),
-                        </span>
+                        <span className="/90 pl-4">memory:</span> {"{"}
                         <br />
-                        <span className="text-gray-500 italic pl-8">
-                          // Vector store (ChromaDB example)
-                        </span>
+                        <span className="/90 pl-8">store:</span>{" "}
+                        <span className="text-blue-300">mongo</span>,
                         <br />
-                        <span className="pl-8">
-                          <span className="text-yellow-300">
-                            createChromaVectorStore
-                          </span>
-                          (<span className="text-green-400">"episodes"</span>)
-                        </span>
+                        <span className="/90 pl-8">vector:</span>{" "}
+                        <span className="text-blue-300">chroma</span>,
                         <br />
-                        <span className="pl-4">),</span>
+                        <span className="/90 pl-8">vectorModel:</span>{" "}
+                        <span className="text-yellow-300">openai</span>(
+                        <span className="text-green-400">"gpt-4-turbo"</span>),
                         <br />
-                        <span className="/90 pl-4">
-                          /* ... other config ... */
-                        </span>
+                        <span className="pl-4">{"}"},</span>
                         <br />
                         {"}"});
+                        <br />
+                        <br />
+                        <span className="text-purple-400">await</span>{" "}
+                        <span className="text-blue-300">agent</span>.
+                        <span className="text-yellow-300">start</span>();
                       </code>
                     </pre>
                   )}

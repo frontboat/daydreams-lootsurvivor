@@ -1,6 +1,6 @@
 {
   "pages": [
-    "index",
+    "core",
     "agent-lifecycle",
     "contexts",
     "actions",
