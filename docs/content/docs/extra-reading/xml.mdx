@@ -1,0 +1,25 @@
+---
+title: xml.ts
+---
+
+# `xml.ts`
+
+This file contains the fundamental tools the Daydreams framework uses to read and understand the XML structure in the AI model's responses. When the AI model replies with tags like `<reasoning>`, `<action_call>`, or `<output>`, the functions in this file help the framework pull out the important information (like the action name, its arguments, or the output content).
+
+## How it Affects You
+
+You won't typically use functions like `parse` or `xmlStreamParser` directly in your agent code. They are internal plumbing used by other parts of the framework (like `streaming.ts` and `handlers.ts`).
+
+-   The `xmlStreamParser` is particularly important as it allows the agent to process the AI's response _as it arrives_ (streaming), identifying tags like `<action_call>` and `<output>` piece by piece without waiting for the entire response.
+-   The `parseAttributes` function helps extract parameters the AI might provide on a tag (e.g., `channelId` in `<output type="discord:message" channelId="123">`).
+
+## Benefit
+
+Provides the core capability for the framework to interpret the AI model's structured responses reliably. The streaming parser (`xmlStreamParser`) is key to enabling faster, more responsive agent behavior, as the agent can start processing identified actions or outputs even before the AI has finished generating its full reasoning or subsequent steps. You benefit from this by having an agent that can react more quickly.
+
+## Anticipated Questions
+
+-   _"Do I need to understand how the XML parser works?"_
+    Not usually. You just need to know that the framework expects the AI model to respond using specific XML tags (`<action_call>`, `<output>`, `<reasoning>`) and that these internal tools handle reading that structure.
+-   _"Is this related to the `formatters.ts` file?"_
+    Yes, `formatters.ts` creates the XML strings that go _into_ the prompt for the AI model, and `xml.ts` provides the tools to parse the XML strings that come _out_ of the AI model's response.

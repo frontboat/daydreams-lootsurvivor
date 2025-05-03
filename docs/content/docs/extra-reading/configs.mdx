@@ -1,0 +1,22 @@
+---
+title: configs.ts
+---
+
+# `configs.ts`
+
+This file contains internal configuration settings that help the Daydreams framework adapt its communication style (specifically, how it structures prompts and expects responses) for different AI language models. Different models might have slightly different ways they work best with structured prompts.
+
+## How it Affects You
+
+You generally **don't need to interact with or modify** this file. It works behind the scenes. The framework uses the settings here (like `modelsResponseConfig` and `reasoningModels`) automatically based on the `model` you provide when calling `createDreams`. These settings ensure the prompts sent to your chosen AI model are formatted optimally and that the model's responses are interpreted correctly.
+
+## Benefit
+
+This internal configuration allows the Daydreams framework to support a variety of AI models from different providers (like OpenAI, Anthropic, Groq) more reliably. It handles minor differences in how models expect prompts or generate responses, so you don't have to worry about those details when choosing a model.
+
+## Anticipated Questions
+
+-   _"Do I need to add my model to this file?"_
+    No, this file contains specific adjustments for known model quirks. For standard models supported by the Vercel AI SDK, you just need to provide the correct model identifier to `createDreams`.
+-   _"What does `reasoningModels` do?"_
+    This list helps the framework identify models that are particularly suited for the step-by-step reasoning process Daydreams uses. It might influence internal prompt strategies slightly. 

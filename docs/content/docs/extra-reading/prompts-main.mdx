@@ -1,0 +1,27 @@
+---
+title: prompts/main.ts
+---
+
+# `prompts/main.ts` (Internal)
+
+This internal file defines the main instruction set and format (the "prompt") that the Daydreams agent uses to communicate with the AI language model (LLM) at each step of its reasoning cycle. It tells the LLM what its job is, what tools (`actions`, `outputs`) it has available, what the current situation (`contexts`, `workingMemory`) looks like, and exactly how it should structure its response using specific XML tags (`<reasoning>`, `<action_call>`, `<output>`).
+
+## How it Affects You
+
+You don't directly modify or use the code in this file. However, understanding its structure helps explain _how_ the descriptions and schemas you provide in your `action`, `output`, and `context` definitions are used:
+
+-   The `description` and `schema` you write for an `action` are formatted (by `formatters.ts`) and inserted into the `{{actions}}` section (inside `<available-actions>`) of the prompt template defined here. This is how the LLM learns about the tools you've given it.
+-   Similarly, the `description`, `schema`, `attributes`, and `examples` for your `output` definitions end up in the `{{outputs}}` section (inside `<available-outputs>`).
+-   The output of your context's `render` function is placed in the `{{contexts}}` section (inside `<contexts>`).
+-   The instructions within `templateSections` guide the LLM on when and how to use the actions/outputs based on the information you provided in their definitions.
+
+## Benefit
+
+This standardized prompt structure ensures consistent and reliable communication with the LLM. By clearly telling the model its available tools, the current state, and the expected response format (XML), the framework can more effectively guide the LLM's reasoning and reliably parse its intended actions and outputs. This sophisticated prompting is key to how Daydreams enables agents to perform complex tasks.
+
+## Anticipated Questions
+
+-   _"Can I change this main prompt?"_
+    Not directly through standard configuration. The framework relies on this specific structure for its internal processing. However, you influence the _content_ of the prompt significantly by how you define your actions, outputs, and context render functions.
+-   _"Why are there placeholders like `{{actions}}`?"_
+    These are filled in dynamically at each step of the agent's run using the `formatPromptSections` function and helpers from `formatters.ts`, ensuring the LLM always gets the most up-to-date information about available tools and the current state. 
