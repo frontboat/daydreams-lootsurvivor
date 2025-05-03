@@ -5,22 +5,17 @@
     "context",
     "core-index",
     "dreams",
-    "engine",
     "formatters",
     "getting-started",
     "handlers",
     "http",
-    "jsonpath",
     "logger",
     "memory",
     "prompt",
-    "prompts-main",
     "providers-api",
     "serviceProvider",
-    "streaming",
     "tasks",
     "types",
-    "utils",
-    "xml"
+    "utils"
   ]
 }

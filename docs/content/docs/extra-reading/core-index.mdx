@@ -4,19 +4,38 @@ title: index.ts
 
 # `index.ts`
 
-This file serves as the main **public entry point** for the `@daydreamsai/core` library. Think of it as the front door – it doesn't contain much code itself, but it gathers and exports all the core functions, classes, and types (like `createDreams`, `context`, `action`, `Agent`, etc.) from other files within the package, making them available for you to import and use in your own projects.
+This file serves as the main **public entry point** for the `@daydreamsai/core`
+library. Think of it as the front door – it doesn't contain much code itself,
+but it gathers and exports all the core functions, classes, and types (like
+`createDreams`, `context`, `action`, `Agent`, etc.) from other files within the
+package, making them available for you to import and use in your own projects.
 
 ## How to Use
 
-You don't interact with this file directly. When you need a core Daydreams component, you import it directly from the package name: `import { createDreams, action } from '@daydreamsai/core';`. This `index.ts` file makes that convenient import possible.
+You don't interact with this file directly. When you need a core Daydreams
+component, you import it directly from the package name, typically managed using
+Bun in this project:
+`import { createDreams, action } from '@daydreamsai/core';`. This `index.ts`
+file makes that convenient import possible.
 
 ## Benefit
 
-It defines the official public API of the `@daydreamsai/core` package and simplifies your imports. Instead of needing to know which specific internal file defines `createDreams` or `action`, you can access all necessary public components from the single `@daydreamsai/core` entry point. This keeps your import statements clean and shields your code from internal restructuring of the library.
+It defines the official public API of the `@daydreamsai/core` package and
+simplifies your imports. Instead of needing to know which specific internal file
+defines `createDreams` or `action`, you can access all necessary public
+components from the single `@daydreamsai/core` entry point. This keeps your
+import statements clean and shields your code from internal restructuring of the
+library.
 
 ## Anticipated Questions
 
--   _"Does this file contain all the code?"_
-    No, it mostly contains `export * from './[other_file]'` statements. The actual code for components like `createDreams`, `context`, `action`, etc., lives in other files within the `packages/core/src/` directory (like `dreams.ts`, `context.ts`, `utils.ts`). This file just makes them publicly accessible.
--   _"If something isn't exported here, can I still use it?"_
-    Generally, no. If a function or type from within `packages/core/src/` is _not_ exported through this `index.ts` file, it's considered an internal implementation detail and might change without notice. You should only import components explicitly made available through `@daydreamsai/core`. 
+- _"Does this file contain all the code?"_ No, it mostly contains
+  `export * from './[other_file]'` statements. The actual code for components
+  like `createDreams`, `context`, `action`, etc., lives in other files within
+  the `packages/core/src/` directory (like `dreams.ts`, `context.ts`,
+  `utils.ts`). This file just makes them publicly accessible.
+- _"If something isn't exported here, can I still use it?"_ Generally, no. If a
+  function or type from within `packages/core/src/` is _not_ exported through
+  this `index.ts` file, it's considered an internal implementation detail and
+  might change without notice. You should only import components explicitly made
+  available through `@daydreamsai/core`.
