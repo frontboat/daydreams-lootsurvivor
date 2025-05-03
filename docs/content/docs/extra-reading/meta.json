@@ -1,6 +1,7 @@
 {
   "pages": [
     "introduction",
+    "package-managers",
     "dreams",
     "context",
     "prompt",

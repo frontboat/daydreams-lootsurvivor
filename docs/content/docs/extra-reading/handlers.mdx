@@ -22,9 +22,9 @@ actions, inputs, and outputs:
   might be in JSON or XML format) into a usable JavaScript object/value before
   passing it to your `handler`.
 - **Template Resolution:** If you use templates like `{{calls[0].someValue}}` in
-  your action arguments (as described in `concepts/prompting.mdx`), the
-  `resolveTemplates` function here handles resolving those values _before_ your
-  action's `handler` is called.
+  your action arguments (as described in [Prompting](/docs/concepts/prompting)),
+  the `resolveTemplates` function here handles resolving those values _before_
+  your action's `handler` is called.
 - **Handler Execution:** It prepares the necessary context (including the
   correct memory scopes like `ctx.memory` or `ctx.actionMemory`) and then calls
   the specific `handler` function you wrote in your `action`, `input`, or
