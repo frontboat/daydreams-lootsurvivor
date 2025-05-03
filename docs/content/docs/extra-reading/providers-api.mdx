@@ -2,13 +2,14 @@
 title: providers/api.ts
 ---
 
-# `providers/api.ts`
-
-This file provides helper functions for interacting with external APIs within your agent's actions or services. The main exported function is `fetchGraphQL`, designed specifically to simplify making requests to GraphQL APIs.
+This file provides helper functions for interacting with external APIs within
+your agent's actions or services. The main exported function is `fetchGraphQL`,
+designed specifically to simplify making requests to GraphQL APIs.
 
 ## How to Use
 
-If you need to query a GraphQL endpoint from an `action` handler, you can import `fetchGraphQL` from `@daydreamsai/core`.
+If you need to query a GraphQL endpoint from an `action` handler, you can import
+`fetchGraphQL` from `@daydreamsai/core`.
 
 ```typescript
 import { action, fetchGraphQL } from "@daydreamsai/core";
@@ -62,11 +63,21 @@ export const getUserAction = action({
 
 ## Benefit
 
-`fetchGraphQL` handles the boilerplate of setting up a GraphQL POST request (setting headers, stringifying the query and variables). It also provides basic error handling, returning an `Error` object if the GraphQL response indicates errors, which you can check for using `instanceof Error`. This makes interacting with GraphQL APIs from your actions cleaner and less error-prone than using `fetch` directly for this specific case.
+`fetchGraphQL` handles the boilerplate of setting up a GraphQL POST request
+(setting headers, stringifying the query and variables). It also provides basic
+error handling, returning an `Error` object if the GraphQL response indicates
+errors, which you can check for using `instanceof Error`. This makes interacting
+with GraphQL APIs from your actions cleaner and less error-prone than using
+`fetch` directly for this specific case.
 
 ## Anticipated Questions
 
--   _"Is there a helper for REST APIs?"_
-    While `api.ts` contains a `fetchRest` function, it doesn't seem to be exported directly via `@daydreamsai/core`. For general REST calls, you would typically use the `http` helper object (from `http.ts`) which provides automatic retries, or the standard `fetch` API.
--   _"How does this differ from the `http` helper?"_
-    The `http` object provides general-purpose HTTP request helpers (GET, POST, JSON) with automatic retries. `fetchGraphQL` is specifically tailored for the GraphQL protocol, formatting the request body correctly and performing basic GraphQL-specific error checks on the response. 
+- _"Is there a helper for REST APIs?"_ While `api.ts` contains a `fetchRest`
+  function, it doesn't seem to be exported directly via `@daydreamsai/core`. For
+  general REST calls, you would typically use the `http` helper object (from
+  `http.ts`) which provides automatic retries, or the standard `fetch` API.
+- _"How does this differ from the `http` helper?"_ The `http` object provides
+  general-purpose HTTP request helpers (GET, POST, JSON) with automatic retries.
+  `fetchGraphQL` is specifically tailored for the GraphQL protocol, formatting
+  the request body correctly and performing basic GraphQL-specific error checks
+  on the response.
