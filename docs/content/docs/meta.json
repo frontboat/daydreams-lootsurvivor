@@ -1,3 +1,11 @@
 {
-  "pages": ["index", "concepts", "guides", "advanced", "contributing"]
+  "pages": [
+    "index",
+    "concepts",
+    "providers",
+    "guides",
+    "advanced",
+    "extra-reading",
+    "contributing"
+  ]
 }
