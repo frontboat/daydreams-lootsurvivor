@@ -1,0 +1,100 @@
+---
+title: AI SDK Integration
+description: Leveraging the Vercel AI SDK with Daydreams.
+---
+
+Built on top of the [Vercel AI SDK](https://sdk.vercel.ai/docs/introduction),
+Daydreams seamlessly integrates with different AI providers and models. This
+means you can easily use any model provider compatible with the Vercel AI SDK
+ecosystem to power your Daydreams agents.
+
+## Configuring the Model
+
+You specify the LLM provider and model when initializing your agent using the
+`model` property in the `createDreams` configuration object. The value for this
+property comes directly from the provider functions exported by the respective
+Vercel AI SDK provider packages.
+
+## Example Usage
+
+First, install the necessary provider package. For example, to use OpenAI
+models:
+
+```bash
+npm install @ai-sdk/openai
+# or
+bun add @ai-sdk/openai
+```
+
+Then, import the provider function and pass it to `createDreams`:
+
+```typescript
+import { createDreams } from "@daydreamsai/core";
+import { openai } from "@ai-sdk/openai"; // Import the provider
+
+const agent = createDreams({
+  // Configure the agent to use OpenAI's gpt-4o-mini model
+  model: openai("gpt-4o-mini"),
+
+  // ... other agent configurations (extensions, contexts, etc.)
+  extensions: [
+    /* ... */
+  ],
+});
+
+// Start the agent
+await agent.start();
+```
+
+### Other Providers
+
+You can follow the same pattern for other providers:
+
+- **Anthropic:**
+  ```bash
+  npm install @ai-sdk/anthropic
+  ```
+  ```typescript
+  import { anthropic } from "@ai-sdk/anthropic";
+  // ...
+  model: anthropic("claude-3-7-sonnet-latest"),
+  // ...
+  ```
+- **Groq:**
+  ```bash
+  npm install @ai-sdk/groq
+  ```
+  ```typescript
+  import { createGroq } from "@ai-sdk/groq";
+  const groq = createGroq(); // Or pass options like apiKey
+  // ...
+  model: groq("llama3-70b-8192"),
+  // ...
+  ```
+- **OpenRouter:**
+  ```bash
+  npm install @openrouter/ai-sdk-provider
+  ```
+  ```typescript
+  import { openrouter } from "@openrouter/ai-sdk-provider";
+  // ...
+  model: openrouter("google/gemini-2.0-flash-001"),
+  // ...
+  ```
+
+## API Keys
+
+Remember to set the necessary API key environment variables for your chosen
+provider (e.g., `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GROQ_API_KEY`,
+`OPENROUTER_API_KEY`). Daydreams relies on the underlying Vercel AI SDK provider
+to pick up these keys.
+
+## Flexibility
+
+This integration allows you to easily switch between different LLMs and
+providers without changing your core agent logic, simply by modifying the
+`model` configuration and ensuring the correct provider package is installed and
+API keys are set.
+
+For a list of available providers and models, refer to the
+[Vercel AI SDK Documentation](https://sdk.vercel.ai/docs/introduction).

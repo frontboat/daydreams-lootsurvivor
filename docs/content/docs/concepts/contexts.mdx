@@ -120,17 +120,23 @@ ${JSON.stringify(state.memory.userPreferences)}
 **Key Definition Parameters:**
 
 - `type`: Unique string identifying the context _type_.
+
 - `schema`: Zod schema for arguments needed to identify a context _instance_.
   Use `.describe()` on fields for clarity.
+
 - `key`: (Optional) Function `(args) => string` to create a unique instance key
   from arguments.
+
 - `create`: (Optional) Function `(state, agent) => TMemory` defining the initial
   structure of the instance's persistent memory (`ctx.memory`).
+
 - `render`: (Optional) Function `(state) => string | XMLElement | ...`
   formatting the current `state.memory` for the LLM prompt. Keep it concise and
   relevant.
+
 - `instructions` / `description`: (Optional) Provide guidance to the LLM about
   the context.
+
 - Lifecycle Hooks (`onStep`, `onRun`, etc.): (Optional) Add custom logic at
   different points in the execution cycle.
 - Configuration (`model`, `maxSteps`, etc.): (Optional) Override agent defaults
@@ -205,11 +211,14 @@ object:
 - `agent.getContext({ context: chatContext, args: { sessionId: "xyz", userId: "user1" } })`:
   Retrieves the `ContextState` for the specified instance. If it doesn't exist,
   it creates it (running `create` if needed) and loads its memory.
+
 - `agent.run({ context: chatContext, args: { sessionId: "xyz", userId: "user1" }, ... })`:
   Starts (or continues) the agent's processing loop specifically for this
   context instance.
+
 - `agent.getContextById("chat:session-xyz")`: (Less common) Retrieves a context
   instance directly by its full ID if you know it.
+
 - `agent.saveContext(contextState)`: Manually saves the state. Usually handled
   automatically by the agent lifecycle.
 
