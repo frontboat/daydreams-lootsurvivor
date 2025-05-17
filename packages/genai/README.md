@@ -20,6 +20,7 @@ these general AI actions can consume.
 ### Actions
 
 - **`analyzeImage`**:
+
   - **Description**: Analyzes provided text and accompanying image attachments,
     then generates a relevant textual response. This action can be used to
     describe images, answer questions about them, or perform other
@@ -41,6 +42,29 @@ these general AI actions can consume.
     multimodal prompt with the provided text and image data (either pre-fetched
     `data` or by fetching the `url`) and uses the AI SDK's `generateText`
     function to get a response.
+
+- **`analyzeVideo`**:
+  - **Description**: Analyzes provided text and accompanying video attachments,
+    then generates a relevant textual response. This action can be used to
+    describe videos, answer questions about them, summarize content, or perform
+    other video-related tasks.
+  - **Input Schema**:
+    - `text` (string): The text prompt accompanying the video(s).
+    - `attachments` (array of objects, min 1): Video attachments to analyze.
+      Each object should contain:
+      - `url` (string, URL): URL of the video.
+      - `filename` (string, optional): Filename of the video.
+      - `contentType` (string, optional): MIME type of the video (e.g.,
+        `video/mp4`).
+      - `data` (Buffer, optional): Pre-fetched video data as a Buffer. If
+        provided by an input extension, this will be used directly, avoiding
+        another fetch.
+  - **How it works**: Similar to `analyzeImage`, this action uses the agent's
+    main configured Language Model. It constructs a multimodal prompt with the
+    text and video data. The underlying AI SDK (`ai` package) and the language
+    model provider (e.g., `@ai-sdk/google`) are responsible for processing the
+    video content. _Note: The exact capabilities depend on the LLM's support for
+    video understanding._
 
 ## Usage
 

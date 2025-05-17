@@ -80,7 +80,7 @@ async function internalGenerateMultimodalResponse(
 }
 
 // The 'analyzeImage' action definition
-const analyzeImageAction = action({
+export const analyzeImageAction = action({
     name: "analyzeImage",
     description: "Analyzes provided text and accompanying image attachments, then generates a relevant textual response. Use this to describe images, answer questions about them, or perform other vision-related tasks.",
     schema: analyzeImageActionSchema,
@@ -93,7 +93,14 @@ const analyzeImageAction = action({
     },
 });
 
-export const genai = extension({
-    name: "genai",
-    actions: [analyzeImageAction],
-}); 
+// TO DO: 
+// when we finish building out more action integrations, e.g. "videos.ts", let's move
+// the export of the extension to the top level of the package 
+// (re-export * from ./) in a dedicated "index.ts" file.
+// this will make it easier to import the extension into other packages.
+// here good time to look into extensions, servives, and exposing bare components if useful
+
+// export const genai = extension({
+// name: "genai",
+// actions: [analyzeImageAction],
+// }); 
