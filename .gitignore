@@ -201,4 +201,7 @@ logs/app-*.log
 
 screenshots/
 
+# Generated documentation files
+docs/.source/
+
 

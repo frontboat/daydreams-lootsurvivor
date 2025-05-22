@@ -63,6 +63,11 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           pnpx lerna version ${{ github.event.inputs.release_type }} --conventional-commits --yes --no-private --force-publish --ignore-scripts
+
+          # Clean any uncommitted changes from build process
+          git reset --hard HEAD
+          git clean -fd
+
           pnpx lerna publish from-git --yes --dist-tag ${{ github.event.inputs.release_type == 'preminor' && 'next' || 'latest' }}
 
       - name: Get Version Tag
