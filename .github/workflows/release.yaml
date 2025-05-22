@@ -38,7 +38,7 @@ jobs:
         run: pnpm install
 
       - name: Build packages
-        run: pnpm run build
+        run: pnpm run build:packages
 
       - name: Tag and Publish Packages
         id: tag_publish
