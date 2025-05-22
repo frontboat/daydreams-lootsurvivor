@@ -1,5 +1,5 @@
 import { initializeApp, cert, getApps, type App } from "firebase-admin/app";
-import { getFirestore, Firestore, FirebaseFirestore } from "firebase-admin/firestore";
+import { getFirestore, Firestore } from "firebase-admin/firestore";
 import type { MemoryStore } from "@daydreamsai/core";
 
 export interface FirebaseMemoryOptions {
@@ -114,6 +114,31 @@ export class FirebaseMemoryStore implements MemoryStore {
   }
 
   /**
+   * Returns keys from the store, optionally filtered by a prefix
+   * @param base - Optional prefix to filter keys
+   * @returns Array of keys
+   */
+  async keys(base?: string): Promise<string[]> {
+    return this.withRetry(async () => {
+      let query = this.db.collection(this.collectionName);
+      
+      // If a base prefix is provided, use a query to filter keys
+      if (base) {
+        // In Firestore, we can't easily filter by key prefix directly
+        // We'll need to get all keys and filter manually
+        const snapshot = await query.get();
+        return snapshot.docs
+          .map((doc: any) => doc.id)
+          .filter((key: string) => key.startsWith(base));
+      } else {
+        // Get all keys
+        const snapshot = await query.get();
+        return snapshot.docs.map((doc: any) => doc.id);
+      }
+    });
+  }
+
+  /**
    * Retrieves a value from the store
    * @param key - Key to look up
    * @returns The stored value or null if not found
@@ -189,22 +214,6 @@ export class FirebaseMemoryStore implements MemoryStore {
       });
       
       await batch.commit();
-    });
-  }
-
-  /**
-   * Retrieves all keys from the store, optionally filtered by a base prefix
-   * @param base - Optional prefix to filter keys
-   * @returns Array of keys (document IDs)
-   */
-  async keys(base?: string): Promise<string[]> {
-    return this.withRetry(async () => {
-      const snapshot = await this.db.collection(this.collectionName).get();
-      let keys = snapshot.docs.map((doc: FirebaseFirestore.DocumentSnapshot) => doc.id);
-      if (base) {
-        keys = keys.filter((key: string) => key.startsWith(base));
-      }
-      return keys;
     });
   }
 }
