@@ -317,7 +317,7 @@ label for beginner-friendly tasks.
 
 Join our growing community:
 
-- **[Discord](https://discord.gg/daydreams)** - Chat with other developers
+- **[Discord](https://discord.gg/rt8ajxQvXh)** - Chat with other developers
 - **[Twitter](https://twitter.com/daydreamsagents)** - Stay updated with
   announcements
 - **[GitHub Discussions](https://github.com/daydreamsai/daydreams/discussions)** -
