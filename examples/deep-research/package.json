@@ -4,19 +4,19 @@
   "type": "module",
   "private": true,
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "catalog:"
   },
   "peerDependencies": {
-    "typescript": "^5"
+    "typescript": "catalog:"
   },
   "dependencies": {
     "ai": "catalog:",
     "@ai-sdk/groq": "catalog:",
     "@daydreamsai/core": "workspace:*",
     "@daydreamsai/cli": "workspace:*",
-    "zod-to-json-schema": "^3.24.3",
-    "@tavily/core": "^0.3.1",
+    "zod-to-json-schema": "catalog:",
+    "@tavily/core": "catalog:",
     "zod": "catalog:",
-    "uuid": "^11.1.0"
+    "uuid": "catalog:"
   }
 }

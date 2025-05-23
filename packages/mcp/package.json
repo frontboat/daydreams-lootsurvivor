@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "@daydreamsai/core": "workspace:*",
-    "@modelcontextprotocol/sdk": "^1.6.1",
+    "@modelcontextprotocol/sdk": "catalog:",
     "zod": "catalog:"
   }
 }

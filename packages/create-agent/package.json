@@ -39,9 +39,9 @@
     "memfs": "^4.9.0",
     "mock-stdin": "^1.0.0",
     "strip-ansi": "^7.1.0",
-    "tsup": "^8.0.1",
+    "tsup": "catalog:",
     "typescript": "catalog:",
-    "vitest": "^1.4.0",
+    "vitest": "catalog:",
     "vitest-mock-process": "^1.0.0"
   }
 }

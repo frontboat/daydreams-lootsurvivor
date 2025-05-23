@@ -4,10 +4,10 @@
   "type": "module",
   "private": true,
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "catalog:"
   },
   "peerDependencies": {
-    "typescript": "^5"
+    "typescript": "catalog:"
   },
   "dependencies": {
     "ai": "catalog:",
@@ -18,7 +18,7 @@
     "@daydreamsai/core": "workspace:*",
     "@daydreamsai/cli": "workspace:*",
     "@daydreamsai/discord": "workspace:*",
-    "@tavily/core": "^0.3.1",
+    "@tavily/core": "catalog:",
     "zod": "catalog:"
   }
 }
