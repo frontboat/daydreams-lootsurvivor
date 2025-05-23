@@ -10,11 +10,11 @@ the LLM with the necessary context, instructions, available tools (actions and
 outputs), and current state, guiding its reasoning process and constraining its
 output format.
 
-## The Main Prompt Template (`mainStep`)
+## The Main Prompt Template (`mainPrompt`)
 
 The core prompt structure is defined in `packages/core/src/prompts/main.ts`
-within the `mainStep` configuration object. It uses a template string
-(`mainStep.template` or `promptTemplate`) composed of several sections:
+within the `mainPrompt` configuration object. It uses a main template string
+(`promptTemplate`) composed of several sections identified by placeholders:
 
 ```text
 {{intro}}      # General instructions for the agent's task
@@ -24,32 +24,35 @@ within the `mainStep` configuration object. It uses a template string
 {{footer}}     # Final reminders and important notes
 ```
 
-Each section (`{{intro}}`, `{{instructions}}`, etc.) contains static text
-providing overall guidance to the LLM on how it should behave within the
+Each placeholder (`{{intro}}`, `{{instructions}}`, etc.) corresponds to static
+text providing overall guidance to the LLM on how it should behave within the
 framework.
 
 ## Dynamic Prompt Generation
 
-At each step of the [Agent Lifecycle](./agent-lifecycle), the framework
-dynamically generates the content for the `{{content}}` section of the prompt
-template. This ensures the LLM always has the most up-to-date information.
+At each step of the [Agent Lifecycle](/docs/concepts/agent-lifecycle), the
+framework dynamically generates the content for the `{{content}}` section of the
+`promptTemplate`. This ensures the LLM always has the most up-to-date
+information.
 
 1.  **Gathering Data (`formatPromptSections`)**: The `formatPromptSections`
-    function (in `prompts/main.ts`) collects the current state, including:
+    function (in `packages/core/src/prompts/main.ts`) collects the current
+    state, including:
     - Available `actions`.
     - Available `outputs`.
     - Active `contexts` and their rendered state.
     - Recent `WorkingMemory` logs (both processed and unprocessed).
-2.  **Formatting to XML (`formatters.ts`)**: Various helper functions
-    (`formatAction`, `formatContextState`, `formatOutputInterface`,
+2.  **Formatting to XML (`packages/core/src/formatters.ts`)**: Various helper
+    functions (`formatAction`, `formatContextState`, `formatOutputInterface`,
     `formatContextLog`, `formatValue`, `formatXml`) convert these JavaScript
     objects and data structures into standardized XML strings. This XML format
     is designed to be clearly parsable by both the LLM and the framework's
     stream parser.
-3.  **Rendering (`render`)**: The `render` function (from `formatters.ts`)
-    injects these dynamically generated XML strings into the main
-    `promptTemplate`, replacing placeholders like `{{actions}}`, `{{outputs}}`,
-    `{{contexts}}`, `{{workingMemory}}`, and `{{updates}}`.
+3.  **Rendering (`render`)**: The `render` function (from
+    `packages/core/src/formatters.ts`) injects these dynamically generated XML
+    strings into the main `promptTemplate`, replacing placeholders like
+    `{{actions}}`, `{{outputs}}`, `{{contexts}}`, `{{workingMemory}}`, and
+    `{{updates}}`.
 
 ## Key XML Sections in the Prompt
 
@@ -93,7 +96,7 @@ XML blocks:
     ...
   </contexts>
   ```
-- **`<working-memory>`**: Shows processed logs (`InputRef`, `OutputRef`,
+- **`<working-memory>`**: Shows _processed_ logs (`InputRef`, `OutputRef`,
   `ActionCall`, `ActionResult`, `Thought`, `EventRef`) from previous steps
   within the _current_ run.
   ```xml
@@ -104,7 +107,7 @@ XML blocks:
     <output type="cli:message" timestamp="...">Agent response</output>
   </working-memory>
   ```
-- **`<updates>`**: Shows _new_, unprocessed logs (typically new `InputRef`s or
+- **`<updates>`**: Shows _new_, _unprocessed_ logs (typically new `InputRef`s or
   `ActionResult`s from the previous step) that the LLM needs to analyze and
   react to in the _current_ step.
   ```xml
@@ -126,7 +129,7 @@ to structure its output using specific XML tags:
   </reasoning>
 
   [Optional: Action calls]
-  <action_call name="actionName">[JSON arguments matching the action's schema]</action_call>
+  <action_call name="actionName">[Arguments based on action schema and format (JSON/XML)]</action_call>
 
   [Optional: Outputs]
   <output type="outputType" attribute1="value1">[Content matching the output's schema]</output>
@@ -137,8 +140,9 @@ to structure its output using specific XML tags:
 - **`<reasoning>`**: Contains the LLM's step-by-step thinking process. This is
   logged as a `Thought`.
 - **`<action_call>`**: Used to invoke an action. The `name` must match an
-  available action, and the content must be valid JSON matching the action's
-  argument `schema`.
+  available action. The content (arguments) depends on the action's defined
+  `schema` and `callFormat` (defaulting to JSON if schema is complex, but can be
+  XML). The framework parses this content accordingly.
 - **`<output>`**: Used to generate an output. The `type` must match an available
   output. Any required `attributes` must be included, and the content must match
   the output's content `schema`.
@@ -167,8 +171,8 @@ Example:
 
 Here, the `writeFile` call references the `fileId` expected to be returned by
 the `createFile` action called just before it within the same LLM response turn.
-The framework resolves these templates before executing the action handlers (see
-`resolveTemplates` in `handlers.ts`).
+The framework resolves these templates _before_ executing the action handlers
+(using `resolveTemplates` in `packages/core/src/handlers.ts`).
 
 This dynamic and structured prompting approach allows Daydreams to effectively
 leverage LLMs for complex orchestration tasks, providing them with the necessary

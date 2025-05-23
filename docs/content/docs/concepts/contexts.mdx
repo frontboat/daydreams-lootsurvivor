@@ -3,189 +3,249 @@ title: Contexts
 description: Managing state, memory, and behavior for agent interactions.
 ---
 
-In Daydreams, a **Context** represents a specific scope of interaction or task
-for an agent. It encapsulates the state, memory, available actions, and behavior
-relevant to that scope. Think of it like a dedicated workspace for the agent to
-handle a particular conversation, process, or goal.
+In Daydreams, a **Context** defines a specific scope or environment for your
+agent's interactions or tasks. Think of it as a dedicated workspace that holds
+the state, memory, available tools (actions, inputs, outputs), and specific
+instructions relevant to that particular job.
 
-For example, you might have separate contexts for:
+You might use different contexts for:
 
-- Handling a Discord channel (`discord:channel`).
-- Managing a Telegram chat (`telegram:chat`).
-- Executing a specific trading strategy (`tradingContext`).
-- Processing a user's request in a CLI session (`cli`).
+- Handling individual user chat sessions (`chatContext`).
+- Managing a specific game state (`gameContext`).
+- Executing a complex workflow or process (`workflowContext`).
+- Interacting with a specific external system (`externalApiContext`).
 
-Each running instance of a context maintains its own state and memory, isolated
-from others.
+Each running **instance** of a context (e.g., the chat session with _user A_)
+maintains its own unique state and memory, separate from other instances (like
+the chat session with _user B_).
 
 ## Defining a Context
 
-Contexts are defined using the `context` function exported from
-`@daydreamsai/core`.
+You define context types using the `context` function from `@daydreamsai/core`.
 
 ```typescript
-import { context, action, input, output } from "@daydreamsai/core";
+import {
+  context,
+  action,
+  type AnyAgent,
+  type ContextState,
+} from "@daydreamsai/core";
 import { z } from "zod";
 
-// Example: A simple context for a chat session
-const chatContext = context({
-  // Required: A unique identifier for this type of context
+// 1. Define the structure of the persistent memory for this context type
+interface ChatMemory {
+  messageHistory: { sender: "user" | "agent"; text: string }[];
+  userPreferences: Record<string, any>;
+  lastInteractionTime?: number;
+}
+
+// 2. Define the Zod schema for arguments needed to identify a specific instance
+const chatSchema = z.object({
+  sessionId: z.string().describe("Unique identifier for the chat session"),
+  userId: z.string().describe("Identifier for the user in the session"),
+});
+
+// 3. Define the context using the `context` function
+const chatContext = context<
+  ChatMemory, // Type for the persistent memory
+  typeof chatSchema // Type for the identifying arguments
+>({
+  // Required: A unique identifier string for this *type* of context
   type: "chat",
 
-  // Required: Zod schema defining the arguments needed to identify
-  // a specific instance of this context.
-  schema: z.object({
-    sessionId: z.string(),
-    userId: z.string(),
-  }),
+  // Required: The Zod schema defining the arguments needed to identify
+  // or create a specific *instance* of this context.
+  schema: chatSchema,
 
-  // Optional: Function to generate a unique instance key from arguments.
-  // If not provided, defaults to the 'type'. Useful when 'type' alone isn't unique enough.
+  // Optional: Function to generate a unique string key for an instance from its arguments.
+  // Use this if the 'type' alone isn't unique (e.g., multiple chat sessions).
+  // The full instance ID becomes "<type>:<key>" (e.g., "chat:session-xyz").
   key: ({ sessionId }) => sessionId,
 
-  // Optional: Asynchronous function called when a context instance is first created.
-  // Use this to set up initial data or options specific to this instance.
-  setup: async (args, settings, agent) => {
-    const userProfile = await agent.someService.getUserProfile(args.userId);
-    return { userProfile }; // This becomes 'options' in ContextState
-  },
-
-  // Optional: Function to define the structure of the persistent memory
-  // specific to this context type (TMemory). Runs if no saved memory exists.
-  create: (params, agent) => {
+  // Optional: Defines the initial structure and default values for the
+  // context instance's persistent memory (`ctx.memory`).
+  // This runs only if no saved memory exists for this instance.
+  create: (state, agent) => {
+    agent.logger.info(
+      "chatContext",
+      `Creating new memory for session: ${state.key}`
+    );
     return {
       messageHistory: [],
-      userPreferences: params.options.userProfile?.preferences ?? {},
+      userPreferences: {}, // Can use `state.options` if `setup` is used
     };
   },
 
-  // Optional: Provides static or dynamic instructions to the LLM within this context.
+  // Optional: Provides static or dynamic instructions to the LLM *when this context is active*.
   instructions: (state) =>
-    `You are chatting with ${state.options.userProfile?.name}. Be helpful.`,
+    `You are chatting with user ${state.args.userId}. Be helpful.`,
 
-  // Optional: Provides a description of the context, often used in prompts.
+  // Optional: A description of this context type's purpose.
   description: "A chat session with a specific user.",
 
-  // Optional: Function to render the context's state for the LLM prompt.
-  // The output (string, XML, etc.) is included in the <context> section of the prompt.
+  // Optional: Function to format the context's *current memory state* for the LLM prompt.
+  // Helps the LLM understand the current situation within this context instance.
   render: (state) => {
-    return state.memory.messageHistory
+    // state.memory is typed as ChatMemory here
+    const recentHistory = state.memory.messageHistory
       .slice(-5) // Show last 5 messages
       .map((msg) => `${msg.sender}: ${msg.text}`)
-      .join("\\n");
+      .join("\n");
+
+    return `
+## Recent Chat History (Session: ${state.key}):
+${recentHistory || "No messages yet."}
+
+## User Preferences:
+${JSON.stringify(state.memory.userPreferences)}
+    `;
   },
 
-  // Optional: Define lifecycle hooks for the context run.
-  onStep: async (ctx, agent) => {
-    /* Logic to run on each step */
-  },
-  onRun: async (ctx, agent) => {
-    /* Logic to run when the run completes */
-  },
-  shouldContinue: (ctx) => true, // Determine if the run should continue
-  onError: async (error, ctx, agent) => {
-    /* Handle errors */
-  },
-
-  // Optional: Define inputs, outputs, and actions specific to this context type.
-  // These are merged with the agent's global definitions.
-  inputs: {
-    /* ... */
-  },
-  outputs: {
-    /* ... */
-  },
-  actions: [
-    /* ... */
-  ],
-
-  // Optional: Specify a default LLM for this context type.
-  model: undefined, // Defaults to agent's model if undefined
-
-  // Optional: Default limits for runs within this context.
-  maxSteps: 10,
-  maxWorkingMemorySize: 50,
+  // --- Optional Lifecycle Hooks & Config ---
+  // onStep: async (ctx, agent) => { /* Logic per step */ },
+  // onRun: async (ctx, agent) => { /* Logic on run completion */ },
+  // shouldContinue: (ctx) => ctx.memory.messageHistory.length < 50, // Example condition
+  // onError: async (error, ctx, agent) => { /* Handle errors */ },
+  // model: mySpecificLLM, // Override agent's default model
+  // maxSteps: 15, // Limit run steps for this context type
 });
+
+// You can then associate actions, inputs, or outputs specifically for this context
+// (See "Associating Components" section below)
+// chatContext.setActions([...]);
+// chatContext.setInputs({...});
+// chatContext.setOutputs({...});
 ```
 
-**Key Parameters:**
+**Key Definition Parameters:**
 
-- `type` (string): A unique identifier for the kind of context (e.g.,
-  "discord:channel", "trading").
-- `schema` (Zod Schema): Defines the arguments needed to uniquely identify an
-  _instance_ of this context (e.g., `{ channelId: z.string() }`). The agent uses
-  these arguments to load or create the correct context state.
-- `key` (Function, optional): Generates a unique string identifier for a context
-  instance based on its arguments. If omitted, the `type` is used (suitable if
-  only one instance of that type exists).
-- `setup` (Function, optional): Runs once when a context instance is first
-  initialized. Useful for fetching initial data needed by the context, which
-  becomes available in `ContextState.options`.
-- `create` (Function, optional): Defines the initial structure of the context's
-  persistent memory (`TMemory`) if no saved state is found. The return value is
-  stored and managed by the `MemoryStore`.
-- `instructions` / `description` (string | Function, optional): Provides
-  guidance to the LLM about the context's purpose or state. Can be dynamic based
-  on the current `ContextState`.
-- `render` (Function, optional): Determines how the context's current state
-  (`ContextState.memory`) is represented in the LLM prompt (within the
-  `<context>` tag).
-- `onStep` / `onRun` / `shouldContinue` / `onError` (Functions, optional):
-  Lifecycle hooks executed during an `agent.run`.
-- `inputs` / `outputs` / `actions` (Objects/Array, optional): Define I/O and
-  actions specifically available within this context type. These are merged with
-  the agent's global definitions.
-- `model` (LanguageModelV1, optional): Override the agent's default model for
-  runs within this context.
-- `maxSteps` / `maxWorkingMemorySize` (number, optional): Set default limits for
-  runs within this context.
+- `type`: Unique string identifying the context _type_.
 
-## Context State (`ContextState`)
+- `schema`: Zod schema for arguments needed to identify a context _instance_.
+  Use `.describe()` on fields for clarity.
 
-When a context is active during an `agent.run`, its state is represented by the
-`ContextState` object. This object is passed to various handlers and functions
-(like `render`, `onStep`, action handlers).
+- `key`: (Optional) Function `(args) => string` to create a unique instance key
+  from arguments.
+
+- `create`: (Optional) Function `(state, agent) => TMemory` defining the initial
+  structure of the instance's persistent memory (`ctx.memory`).
+
+- `render`: (Optional) Function `(state) => string | XMLElement | ...`
+  formatting the current `state.memory` for the LLM prompt. Keep it concise and
+  relevant.
+
+- `instructions` / `description`: (Optional) Provide guidance to the LLM about
+  the context.
+
+- Lifecycle Hooks (`onStep`, `onRun`, etc.): (Optional) Add custom logic at
+  different points in the execution cycle.
+- Configuration (`model`, `maxSteps`, etc.): (Optional) Override agent defaults
+  for this context type.
+
+## Context Memory (`ctx.memory`)
+
+The most important concept for managing state within a context is its
+**persistent memory**.
+
+- **Definition:** The structure and initial values are defined by the `create`
+  function in your `context` definition.
+- **Access:** Within context lifecycle hooks (like `onStep`) and within the
+  `handler` of any action, input, or output associated with this context, you
+  can access the **current instance's** memory via `ctx.memory`.
+- **Persistence:** Changes made to `ctx.memory` during an agent run are
+  **automatically saved** by the framework to the configured `MemoryStore` at
+  the end of the run cycle.
+- **Loading:** When an agent run starts for a specific context instance, the
+  framework loads its saved memory from the `MemoryStore` into `ctx.memory`.
 
 ```typescript
-type ContextState<TContext extends AnyContext = AnyContext> = {
-  id: string; // Unique identifier for this instance (e.g., "discord:channel:12345")
-  key: string; // Key generated by the `key` function (e.g., "12345")
-  context: TContext; // The original context definition object
-  args: InferSchemaArguments<TContext["schema"]>; // Parsed arguments used to load this instance
-  options: InferContextOptions<TContext>; // Result returned by the `setup` function
-  memory: InferContextMemory<TContext>; // The current persistent memory state for this instance
-  settings: ContextSettings; // Runtime settings (model, limits) for this run
-  contexts: string[]; // IDs of other contexts linked to this run
-};
+// Inside an action handler associated with chatContext:
+handler(args, ctx, agent) {
+  // ctx.memory is typed as ChatMemory
+  const history = ctx.memory.messageHistory;
+  const lastMsg = history[history.length - 1];
+
+  // Modify the memory
+  ctx.memory.lastInteractionTime = Date.now();
+  ctx.memory.messageHistory.push({ sender: "agent", text: "Acknowledged." });
+
+  // This change will be saved automatically.
+  return { success: true };
+}
 ```
 
-## Working Memory
+## Associating Components (Actions/Inputs/Outputs)
 
-Each context run (`agent.run`) has an associated `WorkingMemory`. This is
-distinct from the persistent `ContextState.memory`. Working Memory holds the
-temporary logs (`InputRef`, `OutputRef`, `ActionCall`, `ActionResult`,
-`Thought`, etc.) generated _during_ a single run. It's the agent's short-term
-scratchpad for the current execution cycle and is used to build the prompt for
-the LLM at each step.
+While you can define components globally, it's often better to associate them
+directly with the context they belong to using the chained `.setActions()`,
+`.setInputs()`, and `.setOutputs()` methods. This provides better organization
+and ensures components have typed access to the correct context memory.
 
-See the
-[Agent Lifecycle](./agent-lifecycle#4-inside-the-step-loop-agentrun-in-dreamsts)
-for how Working Memory is used in prompt generation.
+```typescript
+import { chatContext, ChatMemory } from "./chatContext"; // Assuming context is defined elsewhere
+import { sendMessageAction } from "./actions/sendMessage"; // Assuming action is defined
 
-## Agent Interaction
+// Associate the action with the chat context
+const chatContextWithActions = chatContext.setActions([
+  sendMessageAction,
+  // other actions relevant only to chat...
+]);
 
-You typically interact with contexts via the `Agent` instance:
+// Now, within sendMessageAction's handler, ctx.memory will be typed as ChatMemory
+// and the action will only be available when chatContext is active.
 
-- `agent.getContext({ context: myContext, args: { ... } })`: Retrieves an
-  existing `ContextState` instance or creates a new one if it doesn't exist.
-  Loads memory from the `MemoryStore`.
-- `agent.getContextById(id)`: Retrieves a `ContextState` by its full ID (e.g.,
-  "discord:channel:12345").
-- `agent.saveContext(contextState, optionalWorkingMemory)`: Persists the
-  `ContextState` (including its `memory`) to the configured `MemoryStore`.
-  `WorkingMemory` is usually saved internally during `agent.run`.
-- `agent.run({ context: myContext, args: { ... } })`: Starts or continues the
-  execution loop for a specific context instance.
+// Similarly for inputs and outputs:
+// chatContext.setInputs({ ... });
+// chatContext.setOutputs({ ... });
+```
 
-Contexts provide the essential structure for managing scoped state, behavior,
-and memory within the Daydreams framework.
+You can also define them inline using the `actions`, `inputs`, or `outputs`
+properties directly within the `context({...})` definition, though the chained
+methods often offer superior type inference.
+
+## Working with Context Instances
+
+You typically interact with specific context instances through the `agent`
+object:
+
+- `agent.getContext({ context: chatContext, args: { sessionId: "xyz", userId: "user1" } })`:
+  Retrieves the `ContextState` for the specified instance. If it doesn't exist,
+  it creates it (running `create` if needed) and loads its memory.
+
+- `agent.run({ context: chatContext, args: { sessionId: "xyz", userId: "user1" }, ... })`:
+  Starts (or continues) the agent's processing loop specifically for this
+  context instance.
+
+- `agent.getContextById("chat:session-xyz")`: (Less common) Retrieves a context
+  instance directly by its full ID if you know it.
+
+- `agent.saveContext(contextState)`: Manually saves the state. Usually handled
+  automatically by the agent lifecycle.
+
+## Context Memory vs. Working Memory
+
+It's important not to confuse the **persistent Context Memory (`ctx.memory`)**
+with the temporary **Working Memory**.
+
+- **Context Memory (`ctx.memory`):** Specific to a context **instance**. Holds
+  the **persistent state** (like chat history). Defined by `create`.
+  Saved/loaded by the `MemoryStore`. Used by `render`.
+- **Working Memory:** Exists only for the duration of a single `agent.run`.
+  Holds the **temporary log** of inputs, outputs, thoughts, and action
+  calls/results for _that specific run_. Used to build the prompt at each step.
+
+## Best Practices
+
+- **Scope Appropriately:** Design contexts around distinct tasks or interaction
+  boundaries.
+- **Define Memory Clearly:** Use interfaces (like `ChatMemory`) for your context
+  memory structure. Initialize it properly in `create`.
+- **Keep `render` Concise:** Only include state in `render` that is essential
+  for the LLM's immediate reasoning. Avoid overly large state dumps.
+- **Use Zod Schemas:** Clearly define `schema` for context arguments with
+  `.describe()`.
+- **Associate Components:** Link actions, inputs, and outputs to their relevant
+  contexts for better organization and type safety.
+
+Contexts provide the structure for organizing your agent's knowledge, state, and
+capabilities, enabling complex and stateful interactions.

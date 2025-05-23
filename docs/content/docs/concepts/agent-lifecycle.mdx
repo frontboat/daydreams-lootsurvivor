@@ -12,118 +12,97 @@ Let's trace the lifecycle of a typical request:
 
 ## 1. Input Reception
 
-- **Source:** An input source (like Discord, Telegram, CLI) is configured via an
-  `extension`.
-- **Subscription:** The `input` definition within the extension (e.g.,
-  `discord:message`) uses a `subscribe` method to listen for external events.
-- **Trigger:** When the external service (e.g., Discord API) emits an event
-  (like a new message), the `subscribe` callback is triggered.
-- **Invocation:** This callback usually invokes
-  `agent.send(context, args, data)`, providing:
-  - The target `context` (e.g., `discordChannelContext`).
-  - `args` to identify the specific context instance (e.g.,
-    `{ channelId: '...' }`).
-  - The input `data` (e.g., user message content).
+- **Source:** An external system (like Discord, Telegram, CLI, or an API) sends
+  information to the agent. This is usually configured via an `extension`.
+- **Listener:** An `input` definition within the agent or an extension listens
+  for these events (e.g., a new message arrives).
+- **Trigger:** When the external event occurs, the input listener is triggered.
+- **Invocation:** The listener typically calls `agent.send(...)`, providing:
+  - The target `context` definition (which part of the agent should handle
+    this?).
+  - `args` to identify the specific context instance (e.g., which chat
+    session?).
+  - The input `data` itself (e.g., the message content).
 
-## 2. `agent.send`
+## 2. `agent.send` - Starting the Process
 
-- **Log Creation:** Creates an `InputRef` object (a type of `Log`) containing
-  the input details (type, content, timestamp) and marks it as
-  `processed: false`.
-- **Run Initiation:** Calls `agent.run`, passing the context details and the new
-  `InputRef` as part of the initial processing `chain`.
+- **Log Input:** The framework logs the incoming information as an `InputRef` (a
+  record of the input).
+- **Initiate Run:** It then calls the internal `agent.run` method to start or
+  continue the processing cycle for the specified context instance, passing the
+  new `InputRef` along.
 
-## 3. `agent.run`
+## 3. `agent.run` - Managing the Execution Cycle
 
-- **Context Initialization:** Retrieves or creates the `ContextState` for the
-  given context type and arguments. It also retrieves or creates the associated
-  `WorkingMemory` for this specific run.
-- **Concurrency Check:** Checks if this specific context (`ctxId`) is already
-  processing in the `contextsRunning` map.
-  - If yes: Pushes the new `InputRef` onto the existing run's stream handler
-    (`push`) and returns the promise associated with the ongoing run.
-  - If no: Proceeds to set up a new run.
-- **Stream Handler Setup:** Calls `createContextStreamHandler`. This critical
-  function sets up the state management for this run, including:
-  - The `state` object (tracking steps, logs, actions, outputs, errors, calls,
-    etc.).
-  * The `handler` function that will process parsed XML tokens from the LLM's
-    response stream.
-  * The `push` function to add logs (`Log` objects) to the processing pipeline.
-- **Tracking:** Adds the new run state to the `contextsRunning` map.
-- **Start Run:** Calls `state.start()`. This prepares the initial context state
-  (`prepareContext`) by loading available actions, outputs, etc., and creates
-  the first `StepRef` log.
-- **Step Loop:** Enters the main processing loop
-  (`while ((maxSteps = getMaxSteps()) >= state.step)`), which iterates through
-  reasoning steps.
+- **Load/Create Context:** The framework finds the specific `ContextState` for
+  the target instance (e.g., the state for chat session #123). If it's the first
+  time interacting with this instance, it creates the state and its associated
+  persistent memory (`ContextState.memory`). It also retrieves or creates the
+  temporary `WorkingMemory` for this specific run.
+- **Handle Concurrency:** It checks if this context instance is already
+  processing another request. If so, the new input is usually added to the
+  ongoing run. If not, it sets up a new run.
+- **Setup Run Environment:** It prepares the environment for the LLM
+  interaction, gathering all available `actions`, `outputs`, and relevant
+  context information.
+- **Start Step Loop:** It begins the main processing loop, which iterates
+  through one or more reasoning steps until the interaction is complete.
 
-## 4. Inside the Step Loop
+## 4. Inside the Step Loop - Perception, Reasoning, Action
 
-Each iteration represents one turn of the agent's reasoning cycle:
+Each iteration (step) within the `agent.run` loop represents one turn of the
+agent's core reasoning cycle:
 
-- **Prepare State:** Calls `prepareContext` again (or `state.nextStep()` which
-  internally calls `prepare`). This refreshes the available actions, outputs,
-  and context data based on the _current_ `WorkingMemory`, including results
-  from the previous step.
-- **Prompt Generation:**
-  - `formatPromptSections` gathers the prepared actions, outputs, context
-    states, and `WorkingMemory` logs (both processed and unprocessed).
-  - Various `format*` functions convert these objects into standardized XML
-    strings using the `xml` helper and `formatXml`.
-  - `render` injects these XML strings into the main `promptTemplate`.
-- **LLM Call:**
-  - The `runGenerate` task is enqueued via the `taskRunner`.
-  - It sends the fully formatted XML prompt to the configured LLM.
-  - It returns a text stream (`stream`) of the LLM's response and a promise for
-    the complete text (`getTextResponse`).
-- **Stream Processing:**
-  - `handleStream` consumes the LLM's text stream.
-  - It uses `xmlStreamParser` to parse the incoming text into XML tokens
-    (`StartTag`, `EndTag`, `TextContent`) based on recognized tags.
-  - `handleStream` reconstructs logical `StackElement` objects from these
-    tokens.
-  - For each `StackElement`, the `handler` function (created by
-    `createContextStreamHandler`) is invoked.
-- **Handling Parsed Elements:**
-  - This `handler` uses `getOrCreateRef` to create or update partial `Log`
-    entries (like `Thought`, `ActionCall`, `OutputRef`) based on the incoming
-    `StackElement` data.
-  - When an element is fully parsed (`el.done` is true), it calls
-    `handlePushLog`.
-- **Processing Completed Logs:**
-  - This is the core logic reacting to the LLM's parsed output. Based on the
-    `Log` object's `ref` type:
-    - `thought`: Logs the reasoning step, calls the `onThinking` handler if
-      provided.
-    - `input`: Calls `handleInput` for schema validation, custom processing, and
-      potential episodic memory query.
-    - `output`: Calls `handleOutputStream` -> `handleOutput`. Validates against
-      schema, runs the output's `handler`, formats result, adds `OutputRef` to
-      memory.
-    - `action_call`: Calls `handleActionCallStream` -> `prepareActionCall` to
-      parse args and resolve templates. Pushes execution logic
-      (`handleActionCall` -> `runAction` task) onto `state.calls`. The
-      `ActionResult` is added back via `handlePushLog`.
-    - `action_result`: Logs the result. Optionally calls `generateEpisode`.
-  - Notifies subscribers (`onLogStream`).
-  - Saves the updated `WorkingMemory`.
-- **Action Synchronization:** After the LLM response stream is fully processed,
-  `agent.run` waits for all action promises in `state.calls` to settle.
-- **Loop Continuation:** Checks `state.shouldContinue()`. If yes, increments
-  `state.step` and loops.
+- **Prepare State:** The agent gathers the latest information, including:
+  - The current persistent state of the active `Context`(s) (via their `render`
+    functions).
+  - The history of the current interaction from `WorkingMemory` (processed
+    inputs, outputs, action results from previous steps).
+  * Any _new_ unprocessed information (like the initial `InputRef` or results
+    from actions completed in the previous step).
+  * The list of currently available `actions` and `outputs`.
+- **Generate Prompt:** This information is formatted into a structured prompt
+  (using XML) for the LLM. The prompt clearly tells the LLM its instructions,
+  what tools (actions/outputs) it has, the current state, and what new
+  information needs attention. (See [Prompting](/docs/concepts/prompting)).
+- **LLM Call:** The agent sends the complete prompt to the configured LLM.
+- **Process LLM Response Stream:** As the LLM generates its response token by
+  token:
+  - The framework **streams** the response.
+  - It **parses** the stream, looking for specific XML tags defined in the
+    expected response structure (`<reasoning>`, `<action_call>`, `<output>`).
+  - The LLM's thought process is extracted from `<reasoning>` tags and logged.
+  - Instructions to perform actions (`<action_call>`) or send outputs
+    (`<output>`) are identified.
+- **Execute Actions & Outputs:**
+  - For each identified `<action_call>`, the framework validates the arguments
+    against the action's schema and schedules the action's `handler` function to
+    run via the `TaskRunner`. (See [Actions](/docs/concepts/actions) and
+    [Tasks](/docs/concepts/tasks)).
+  * For each identified `<output>`, the framework validates the
+    content/attributes and runs the output's `handler` function to send the
+    information externally (e.g., post a message). (See
+    [Outputs](/docs/concepts/outputs)).
+- **Wait for Actions:** The agent waits for any critical asynchronous actions
+  scheduled in this step to complete. Their results (`ActionResult`) are logged
+  to `WorkingMemory`.
+- **Check Completion:** The agent determines if the interaction is complete or
+  if another reasoning step (another loop iteration) is needed based on defined
+  conditions (`shouldContinue` hooks or remaining unprocessed logs).
 
 ## 5. Run Completion
 
-- **Exit Loop:** Once the loop condition is met, the loop exits.
-- **Cleanup:** Marks any remaining logs as processed.
-- **Hooks:** Calls `onRun` hooks defined in the active contexts.
-- **Save State:** Saves the final state of all involved contexts.
-- **Release:** Removes the run (`ctxId`) from the `contextsRunning` map.
-- **Return:** Resolves the original promise returned by `agent.run` with the
-  complete array of `Log` objects generated during the run (`state.chain`).
+- **Exit Loop:** Once the loop condition determines no further steps are needed,
+  the loop exits.
+- **Final Tasks:** Any final cleanup logic or `onRun` hooks defined in the
+  context are executed.
+- **Save State:** The final persistent state (`ContextState.memory`) of all
+  involved contexts is saved to the `MemoryStore`.
+- **Return Results:** The framework resolves the promise originally returned by
+  `agent.send` or `agent.run`, providing the complete log (`chain`) of the
+  interaction.
 
 This detailed cycle illustrates how Daydreams agents iteratively perceive
 (inputs, results), reason (LLM prompt/response), and act (outputs, actions),
-using streaming and asynchronous processing to handle complex interactions
-efficiently.
+using streaming and asynchronous task management to handle potentially complex
+interactions efficiently.

@@ -1,6 +1,6 @@
 {
   "pages": [
-    "index",
+    "core",
     "agent-lifecycle",
     "contexts",
     "actions",
@@ -8,8 +8,6 @@
     "outputs",
     "memory",
     "prompting",
-    "streaming-parsing",
-    "task-runner",
-    "services-extensions"
+    "tasks"
   ]
 }

@@ -1,4 +1,4 @@
-import { Collection, MongoClient, ObjectId } from "mongodb";
+import { Collection, MongoClient } from "mongodb";
 import type { MemoryStore } from "@daydreamsai/core";
 import crypto from "crypto";
 

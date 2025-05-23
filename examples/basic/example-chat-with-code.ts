@@ -88,7 +88,6 @@ const fetchRepoContent = task(
 );
 
 const agent = createDreams({
-  logger: LogLevel.DEBUG,
   model: openrouter("google/gemini-2.5-flash-preview"),
   extensions: [discord, cliExtension],
   services: [githubService],
@@ -123,7 +122,9 @@ const agent = createDreams({
         } catch (error) {
           console.error("Error fetching repo contents:", error);
           throw new Error(
-            `Failed to fetch repository contents: ${error instanceof Error ? error.message : error}`
+            `Failed to fetch repository contents: ${
+              error instanceof Error ? error.message : error
+            }`
           );
         }
       },
