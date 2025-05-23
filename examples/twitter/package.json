@@ -6,14 +6,11 @@
   "devDependencies": {
     "@types/bun": "latest"
   },
-  "peerDependencies": {
-    "typescript": "^5"
-  },
   "dependencies": {
-    "@ai-sdk/groq": "^1.1.12",
+    "@ai-sdk/groq": "catalog:",
     "@daydreamsai/core": "workspace:*",
     "@daydreamsai/twitter": "workspace:*",
     "@daydreamsai/cli": "workspace:*",
-    "zod": "^3.24.2"
+    "zod": "catalog:"
   }
 }

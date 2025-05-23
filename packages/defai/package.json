@@ -15,15 +15,15 @@
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "tsup": "^8.3.6",
-    "vitest": "^3.0.5"
+    "tsup": "catalog:",
+    "vitest": "catalog:"
   },
   "scripts": {
     "test": "vitest",
     "build": "tsup --dts-resolve"
   },
   "peerDependencies": {
-    "typescript": "^5.8.2"
+    "typescript": "catalog:"
   },
   "dependencies": {
     "@cetusprotocol/aggregator-sdk": "^0.3.32",
@@ -35,6 +35,6 @@
     "discord.js": "^14.18.0",
     "ethers": "^6.13.5",
     "starknet": "^6.24.1",
-    "zod": "^3.24.2"
+    "zod": "catalog:"
   }
 }

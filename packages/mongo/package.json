@@ -15,17 +15,20 @@
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "tsup": "^8.3.6",
-    "vitest": "^3.0.5"
+    "tsup": "catalog:",
+    "vitest": "catalog:"
   },
   "scripts": {
     "test": "vitest",
     "build": "tsup --dts-resolve"
   },
+  "peerDependencies": {
+    "typescript": "catalog:"
+  },
   "dependencies": {
     "@daydreamsai/core": "workspace:*",
     "crypto": "^1.0.1",
     "mongodb": "^6.14.2",
-    "zod": "^3.24.2"
+    "zod": "catalog:"
   }
 }

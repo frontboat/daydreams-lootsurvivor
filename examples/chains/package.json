@@ -10,9 +10,9 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^1.1.15",
-    "@ai-sdk/openai": "^1.2.1",
-    "@ai-sdk/groq": "^1.1.14",
+    "@ai-sdk/anthropic": "catalog:",
+    "@ai-sdk/openai": "catalog:",
+    "@ai-sdk/groq": "catalog:",
     "@daydreamsai/core": "workspace:*",
     "@daydreamsai/cli": "workspace:*",
     "@daydreamsai/defai": "workspace:*",
@@ -20,7 +20,7 @@
     "@tavily/core": "^0.3.1",
     "discord.js": "^14.18.0",
     "hyperliquid": "^1.6.2",
-    "zod": "^3.24.2",
+    "zod": "catalog:",
     "chalk": "^5.4.1"
   }
 }

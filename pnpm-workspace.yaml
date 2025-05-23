@@ -4,3 +4,18 @@ packages:
   - "examples/**/*"
   - "docs"
   - "bot"
+
+catalog:
+  zod: ^3.25.23
+  typescript: ^5.8.3
+  ai: ^4.3.16
+  tsup: ^8.3.6
+  vitest: ^3.0.5
+  "@ai-sdk/anthropic": ^1.2.3
+  "@ai-sdk/groq": ^1.2.2
+  "@ai-sdk/openai": ^1.3.5
+  "@ai-sdk/provider": ^1.1.0
+  "@ai-sdk/ui-utils": ^1.2.3
+  "@ai-sdk/google": ^1.2.17
+  "@openrouter/ai-sdk-provider": ^0.4.5
+  "@modelcontextprotocol/sdk": ^1.12.0

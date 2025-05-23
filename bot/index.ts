@@ -59,8 +59,6 @@ const character = {
   ],
 };
 
-console.log(llm);
-
 const template = `
 
 <rules>
@@ -138,11 +136,6 @@ discord.outputs!["discord:message"].examples = [
     content: "This is another test message",
   })}</output>`,
 ];
-
-// const mongo = await createMongoMemoryStore({
-//   collectionName: "agent",
-//   uri: process.env.MONGODB_URI!,
-// });
 
 const agent = createDreams({
   model: openrouter("google/gemini-2.5-flash-preview"),

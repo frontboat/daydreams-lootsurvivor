@@ -40,7 +40,7 @@
     "mock-stdin": "^1.0.0",
     "strip-ansi": "^7.1.0",
     "tsup": "^8.0.1",
-    "typescript": "^5.3.3",
+    "typescript": "catalog:",
     "vitest": "^1.4.0",
     "vitest-mock-process": "^1.0.0"
   }

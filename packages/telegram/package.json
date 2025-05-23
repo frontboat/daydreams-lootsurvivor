@@ -15,20 +15,20 @@
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "tsup": "^8.3.6",
-    "vitest": "^3.0.5"
+    "tsup": "catalog:",
+    "vitest": "catalog:"
   },
   "scripts": {
     "test": "vitest",
     "build": "tsup --dts-resolve"
   },
   "peerDependencies": {
-    "typescript": "^5.6.3"
+    "typescript": "catalog:"
   },
   "dependencies": {
     "@daydreamsai/core": "workspace:*",
     "@telegraf/types": "^8.3.1",
     "telegraf": "^4.16.3",
-    "zod": "^3.24.2"
+    "zod": "catalog:"
   }
 }
