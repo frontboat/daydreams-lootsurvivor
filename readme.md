@@ -323,13 +323,6 @@ Join our growing community:
 - **[GitHub Discussions](https://github.com/daydreamsai/daydreams/discussions)** -
   Ask questions and share ideas
 
-## 🛡️ Security
-
-Security is our top priority. If you discover a security vulnerability, please
-email security@dreams.fun.
-
-See our [Security Policy](SECURITY.md) for more information.
-
 ## 📊 Stats
 
 <p align="center">
