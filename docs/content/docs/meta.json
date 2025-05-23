@@ -1,10 +1,17 @@
 {
   "pages": [
+    "---Getting Started---",
     "index",
+
+    "---Building Agents---",
     "concepts",
     "providers",
+
+    "---Guides---",
     "guides",
     "advanced",
+
+    "---Resources---",
     "extra-reading",
     "contributing"
   ]
