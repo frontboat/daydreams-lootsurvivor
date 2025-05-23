@@ -1,16 +1,18 @@
 {
-  "name": "@daydreamsai/hyperliquid",
-  "version": "0.3.7-alpha.2",
+  "name": "@daydreamsai/firebase",
+  "version": "0.3.6",
   "type": "module",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
     "./package.json": "./package.json",
     ".": {
       "types": "./dist/index.d.ts",
-      "require": "./dist/index.js",
-      "import": "./dist/index.js"
+      "import": {
+        "development": "./src/index.ts",
+        "default": "./dist/index.js"
+      }
     }
   },
   "devDependencies": {
@@ -22,12 +24,10 @@
     "test": "vitest",
     "build": "tsup --dts-resolve"
   },
-  "peerDependencies": {
-    "typescript": "^5.6.3"
-  },
   "dependencies": {
     "@daydreamsai/core": "workspace:*",
-    "hyperliquid": "^1.6.2",
+    "firebase": "^11.6.1",
+    "firebase-admin": "^13.3.0",
     "zod": "^3.24.2"
   }
-}
+} 
