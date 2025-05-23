@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { extension, input, output, validateEnv, /* action, type LanguageModelV1 */ } from "@daydreamsai/core";
+import {
+  extension,
+  input,
+  output,
+  validateEnv /* action, type LanguageModelV1 */,
+} from "@daydreamsai/core";
 import { Events, type Message } from "discord.js";
 import { DiscordClient } from "./io";
 import { context } from "@daydreamsai/core";
@@ -8,7 +13,7 @@ import { service } from "@daydreamsai/core";
 const envSchema = z.object({
   DISCORD_TOKEN: z.string(),
   DISCORD_BOT_NAME: z.string(),
-  PROCESS_ATTACHMENTS: z.boolean().optional().default(false),
+  PROCESS_ATTACHMENTS: z.string().optional().default("false"),
 });
 
 const discordService = service({
@@ -18,12 +23,10 @@ const discordService = service({
     container.singleton(
       "discord",
       () =>
-        new DiscordClient(
-          {
-            discord_token: env.DISCORD_TOKEN,
-            discord_bot_name: env.DISCORD_BOT_NAME,
-          },
-        )
+        new DiscordClient({
+          discord_token: env.DISCORD_TOKEN,
+          discord_bot_name: env.DISCORD_BOT_NAME,
+        })
     );
   },
 });
@@ -33,8 +36,12 @@ const attachmentSchema = z.object({
   filename: z.string().describe("Filename of the attachment"),
   contentType: z.string().describe("MIME type of the attachment"),
   size: z.number().describe("Size of the attachment in bytes"),
-  fetchedData: z.custom<Buffer>(val => Buffer.isBuffer(val)).optional()
-    .describe("Pre-fetched attachment data as a Buffer, if processed by the extension.")
+  fetchedData: z
+    .custom<Buffer>((val) => Buffer.isBuffer(val))
+    .optional()
+    .describe(
+      "Pre-fetched attachment data as a Buffer, if processed by the extension."
+    ),
 });
 
 export const discordChannelContext = context({
@@ -62,12 +69,15 @@ export const discordChannelContext = context({
         return {
           data: {
             text: data.text,
-            attachments: data.attachments || []
+            attachments: data.attachments || [],
           },
           params: {
             userId: data.user.id,
             username: data.user.name,
-            hasAttachments: data.attachments && data.attachments.length > 0 ? 'true' : 'false'
+            hasAttachments:
+              data.attachments && data.attachments.length > 0
+                ? "true"
+                : "false",
           },
         };
       },
@@ -76,8 +86,13 @@ export const discordChannelContext = context({
         function listener(message: Message) {
           const discordClient = container.resolve<DiscordClient>("discord");
 
-          if (message.author.displayName === discordClient.credentials.discord_bot_name) {
-            console.log(`Skipping message from ${discordClient.credentials.discord_bot_name}`);
+          if (
+            message.author.displayName ===
+            discordClient.credentials.discord_bot_name
+          ) {
+            console.log(
+              `Skipping message from ${discordClient.credentials.discord_bot_name}`
+            );
             return;
           }
 
@@ -91,10 +106,14 @@ export const discordChannelContext = context({
                     const baseAttachmentInfo = {
                       url: att.url,
                       filename: att.name || "unknown",
-                      contentType: att.contentType || "application/octet-stream",
+                      contentType:
+                        att.contentType || "application/octet-stream",
                       size: att.size,
                     };
-                    if (att.contentType && att.contentType.startsWith('image/')) {
+                    if (
+                      att.contentType &&
+                      att.contentType.startsWith("image/")
+                    ) {
                       try {
                         const response = await fetch(att.url);
                         if (response.ok) {
@@ -104,17 +123,22 @@ export const discordChannelContext = context({
                             fetchedData: Buffer.from(buffer),
                           };
                         } else {
-                          console.error(`[Discord Ext] Failed to fetch image ${att.url}: ${response.statusText}`);
+                          console.error(
+                            `[Discord Ext] Failed to fetch image ${att.url}: ${response.statusText}`
+                          );
                         }
                       } catch (fetchError) {
-                        console.error(`[Discord Ext] Error fetching attachment ${att.url}:`, fetchError);
+                        console.error(
+                          `[Discord Ext] Error fetching attachment ${att.url}:`,
+                          fetchError
+                        );
                       }
                     }
                     return baseAttachmentInfo;
                   })
                 );
               } else {
-                processedAttachments = message.attachments.map(att => ({
+                processedAttachments = message.attachments.map((att) => ({
                   url: att.url,
                   filename: att.name || "unknown",
                   contentType: att.contentType || "application/octet-stream",
@@ -132,7 +156,10 @@ export const discordChannelContext = context({
                   name: message.author.displayName,
                 },
                 text: message.content,
-                attachments: processedAttachments.length > 0 ? processedAttachments : undefined
+                attachments:
+                  processedAttachments.length > 0
+                    ? processedAttachments
+                    : undefined,
               }
             );
           })();
@@ -170,11 +197,19 @@ export const discordChannelContext = context({
     "discord:message-with-attachments": output({
       schema: z.object({
         content: z.string().describe("Text content of the message"),
-        attachments: z.array(z.object({
-          url: z.string().describe("URL of the attachment to send"),
-          filename: z.string().optional().describe("Optional filename for the attachment"),
-          description: z.string().optional().describe("Optional description of the attachment")
-        }))
+        attachments: z.array(
+          z.object({
+            url: z.string().describe("URL of the attachment to send"),
+            filename: z
+              .string()
+              .optional()
+              .describe("Optional filename for the attachment"),
+            description: z
+              .string()
+              .optional()
+              .describe("Optional description of the attachment"),
+          })
+        ),
       }),
       examples: [
         `<output type="discord:message-with-attachments">
@@ -188,7 +223,7 @@ export const discordChannelContext = context({
                }
              ]
            }
-         </output>`
+         </output>`,
       ],
       handler: async (data, ctx, { container }) => {
         const channel = ctx.options.channel;
@@ -197,16 +232,16 @@ export const discordChannelContext = context({
 
           const discordClient = container.resolve<DiscordClient>("discord");
 
-          const files = data.attachments.map(att => ({
+          const files = data.attachments.map((att) => ({
             attachment: att.url,
             name: att.filename || undefined,
-            description: att.description || undefined
+            description: att.description || undefined,
           }));
 
           const result = await discordClient.sendMessageWithAttachments({
             channelId: ctx.args.channelId,
             content: data.content,
-            files: files
+            files: files,
           });
 
           return {
@@ -218,8 +253,8 @@ export const discordChannelContext = context({
       },
       enabled: () => {
         const env = validateEnv(envSchema);
-        return env.PROCESS_ATTACHMENTS === true;
-      }
+        return env.PROCESS_ATTACHMENTS === "true";
+      },
     }),
   });
 
