@@ -1,27 +1,27 @@
 {
-  "name": "basic",
+  "name": "bot",
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "scripts": {
+    "dev": "bun run index.ts"
+  },
   "devDependencies": {
     "@types/bun": "catalog:"
   },
-  "peerDependencies": {
-    "typescript": "catalog:"
-  },
   "dependencies": {
-    "@ai-sdk/anthropic": "catalog:",
+    "ai": "catalog:",
     "@ai-sdk/groq": "catalog:",
-    "@ai-sdk/openai": "catalog:",
-    "@ai-sdk/provider": "catalog:",
     "@openrouter/ai-sdk-provider": "catalog:",
-    "@daydreamsai/cli": "workspace:*",
-    "@daydreamsai/core": "workspace:*",
-    "@daydreamsai/discord": "workspace:*",
     "@daydreamsai/chromadb": "workspace:*",
+    "@ai-sdk/anthropic": "catalog:",
+    "@ai-sdk/openai": "catalog:",
+    "@daydreamsai/core": "workspace:*",
+    "@daydreamsai/cli": "workspace:*",
+    "@daydreamsai/discord": "workspace:*",
     "@daydreamsai/mongodb": "workspace:*",
-    "@daydreamsai/supabase": "workspace:*",
-    "@octokit/rest": "catalog:",
+    "@daydreamsai/genai": "workspace:*",
+    "@ai-sdk/google": "catalog:",
     "@tavily/core": "catalog:",
     "zod": "catalog:"
   }

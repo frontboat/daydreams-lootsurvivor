@@ -17,8 +17,8 @@
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "tsup": "^8.3.6",
-    "vitest": "^3.0.5"
+    "tsup": "catalog:",
+    "vitest": "catalog:"
   },
   "scripts": {
     "test": "vitest",
@@ -28,6 +28,6 @@
     "@daydreamsai/core": "workspace:*",
     "firebase": "^11.6.1",
     "firebase-admin": "^13.3.0",
-    "zod": "^3.24.2"
+    "zod": "catalog:"
   }
-} 
+}

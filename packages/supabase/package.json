@@ -17,17 +17,20 @@
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "tsup": "^8.3.6",
-    "vitest": "^3.0.5"
+    "tsup": "catalog:",
+    "vitest": "catalog:"
   },
   "scripts": {
     "test": "vitest",
     "build": "tsup --dts-resolve"
   },
+  "peerDependencies": {
+    "typescript": "catalog:"
+  },
   "dependencies": {
     "@daydreamsai/core": "workspace:*",
     "@supabase/supabase-js": "^2.49.1",
-    "ai": "^4.1.54",
-    "zod": "^3.24.2"
+    "ai": "catalog:",
+    "zod": "catalog:"
   }
 }

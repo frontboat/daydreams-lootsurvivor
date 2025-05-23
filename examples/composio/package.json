@@ -4,22 +4,20 @@
   "type": "module",
   "private": true,
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "catalog:"
   },
   "peerDependencies": {
-    "typescript": "^5"
+    "typescript": "catalog:"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^1.1.15",
-    "@ai-sdk/openai": "^1.2.1",
-    "@ai-sdk/groq": "^1.1.12",
+    "@ai-sdk/anthropic": "catalog:",
+    "@ai-sdk/openai": "catalog:",
+    "@ai-sdk/groq": "catalog:",
     "@daydreamsai/core": "workspace:*",
     "@daydreamsai/cli": "workspace:*",
-    "@octokit/rest": "^21.1.1",
-    "@tavily/core": "^0.3.1",
-    "discord.js": "^14.18.0",
-    "hyperliquid": "^1.6.2",
-    "zod": "^3.24.2",
-    "composio-core": "^0.5.18"
+    "@octokit/rest": "catalog:",
+    "@tavily/core": "catalog:",
+    "zod": "catalog:",
+    "composio-core": "catalog:"
   }
 }
