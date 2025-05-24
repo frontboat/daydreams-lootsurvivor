@@ -137,7 +137,7 @@ const chatContext = context({
 
 const agent = createDreams({
   model: openrouter("google/gemini-2.5-flash-preview"),
-  context: chatContext,
+  // context: chatContext,
   extensions: [discord, genai],
   logger: new Logger({
     level: LogLevel.DEBUG,

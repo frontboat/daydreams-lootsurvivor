@@ -120,7 +120,7 @@ export const analyzeVideoAction = action({
   description:
     "Analyzes provided text and accompanying video attachments, then generates a relevant textual response. Use this to describe videos, answer questions about them, or perform other video-related tasks.",
   schema: analyzeVideoActionSchema,
-  async handler(data: any, _ctx: any, agent: Agent) {
+  async handler(data, _ctx: any, agent: Agent) {
     const { text, attachments } = data;
 
     if (!agent.model) {

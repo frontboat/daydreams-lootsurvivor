@@ -111,8 +111,8 @@ export const analyzeImageAction = action({
   description:
     "Analyzes provided text and accompanying image attachments, then generates a relevant textual response. Use this to describe images, answer questions about them, or perform other vision-related tasks.",
   schema: analyzeImageActionSchema,
-  async handler(data: any, ctx: any, agent: Agent) {
-    const { inputText, attachments } = data;
+  async handler(data, ctx: any, agent: Agent) {
+    const { text, attachments } = data;
 
     if (!agent.model) {
       throw new Error(
@@ -120,11 +120,7 @@ export const analyzeImageAction = action({
       );
     }
     // The attachments in `args.attachments` should directly match what `internalGenerateMultimodalResponse` expects
-    return internalGenerateMultimodalResponse(
-      agent.model,
-      inputText,
-      attachments
-    );
+    return internalGenerateMultimodalResponse(agent.model, text, attachments);
   },
 });
 
