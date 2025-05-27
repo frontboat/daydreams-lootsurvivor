@@ -24,6 +24,8 @@ jobs:
           sudo apt-get install -y libx11-dev libxtst-dev libpng-dev libxinerama-dev libxkbcommon-dev
 
       - name: Install dependencies
+        env:
+          HUSKY: 0
         run: pnpm install
 
       - name: Build core

@@ -49,6 +49,8 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
 
       - name: Install dependencies
+        env:
+          HUSKY: 0
         run: pnpm install --frozen-lockfile
 
       - name: Build packages
