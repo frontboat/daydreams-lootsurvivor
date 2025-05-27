@@ -1,6 +1,6 @@
 {
   "name": "@daydreamsai/discord",
-  "version": "0.3.7",
+  "version": "0.3.7-alpha.5",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
