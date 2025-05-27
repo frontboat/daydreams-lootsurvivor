@@ -1,6 +1,6 @@
 {
   "name": "@daydreamsai/hyperliquid",
-  "version": "0.3.7-alpha.2",
+  "version": "0.3.7-alpha.3",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -27,8 +27,8 @@
   },
   "dependencies": {
     "@daydreamsai/core": "workspace:*",
+    "husky": "9.1.7",
     "hyperliquid": "catalog:",
-    "zod": "catalog:",
-    "husky": "9.1.7"
+    "zod": "catalog:"
   }
 }
