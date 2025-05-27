@@ -31,7 +31,7 @@ export { randomUUIDv7 };
 export function input<
   Schema extends z.AnyZodObject | z.ZodString | z.ZodRawShape = z.ZodString,
   TContext extends AnyContext = AnyContext,
-  TAgent extends AnyAgent = AnyAgent,
+  TAgent extends AnyAgent = AnyAgent
 >(config: InputConfig<Schema, TContext, TAgent>) {
   return config;
 }
@@ -50,7 +50,7 @@ export function action<
   TError = any,
   TContext extends AnyContext = AnyContext,
   TAgent extends AnyAgent = AnyAgent,
-  TMemory extends Memory<any> = Memory<any>,
+  TMemory extends Memory<any> = Memory<any>
 >(
   action: Optional<
     Action<TSchema, Result, TError, TContext, TAgent, TMemory>,
@@ -73,7 +73,7 @@ export function action<
 export function output<
   Schema extends OutputSchema = OutputSchema,
   Response extends OutputRefResponse = OutputRefResponse,
-  Context extends AnyContext = AnyContext,
+  Context extends AnyContext = AnyContext
 >(config: OutputConfig<Schema, Response, Context>) {
   return config;
 }
@@ -146,7 +146,7 @@ export function extension<
   Inputs extends Record<string, InputConfig<any, any>> = Record<
     string,
     InputConfig<any, any>
-  >,
+  >
 >(
   config: Optional<Extension<AnyContext, Contexts, Inputs>, "inputs">
 ): Extension<AnyContext, Contexts, Inputs> {
@@ -170,11 +170,8 @@ export function validateEnv<T extends z.ZodTypeAny>(
     return schema.parse(env);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      console.error("Environment validation failed:");
-      error.errors.forEach((err) => {
-        console.error(`- ${err.message}`);
-      });
-      process.exit(1);
+      const errors = error.errors.map((err) => `- ${err.message}`);
+      throw new Error(`Environment validation failed:\n${errors.join("\n")}`);
     }
     throw error;
   }

@@ -120,7 +120,7 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
     try {
       config.debugger(...args);
     } catch {
-      console.log("debugger failed");
+      logger.error("agent:debugger", "Debugger failed to execute");
     }
   };
 
@@ -711,7 +711,11 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
 
           state.step++;
         } catch (error) {
-          console.error(error);
+          logger.error("agent:run", "Step execution failed", {
+            error,
+            step: state.step,
+            contextId: ctxState.id,
+          });
 
           await Promise.allSettled(
             [
