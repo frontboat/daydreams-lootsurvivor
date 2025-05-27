@@ -1,6 +1,6 @@
 {
   "name": "@daydreamsai/firebase",
-  "version": "0.3.7-alpha.4",
+  "version": "0.3.7",
   "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -22,7 +22,8 @@
   },
   "scripts": {
     "test": "vitest",
-    "build": "tsup --dts-resolve"
+    "build": "tsup --dts-resolve",
+    "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
     "@daydreamsai/core": "workspace:*",
