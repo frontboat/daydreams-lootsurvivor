@@ -53,25 +53,26 @@ export function formatXml(el: XMLElement): string {
     typeof children === "string"
       ? children
       : Array.isArray(children) && children.length > 0
-        ? "\n" +
-          children
-            .map((el) =>
-              typeof el === "string"
-                ? el
-                : "tag" in el
-                  ? formatXml(el)
-                  : formatValue(el)
-            )
-            .join("\n") +
-          "\n"
-        : formatValue(children);
+      ? "\n" +
+        children
+          .map((el) =>
+            typeof el === "string"
+              ? el
+              : "tag" in el
+              ? formatXml(el)
+              : formatValue(el)
+          )
+          .join("\n") +
+        "\n"
+      : formatValue(children);
 
   try {
     if (children === "") return `<${el.tag}${params} />`;
     return `<${el.tag}${params}>${children}</${el.tag}>`;
   } catch (error) {
-    console.log("failed to format", el);
-    throw error;
+    throw new Error(
+      `Failed to format XML element with tag '${el.tag}': ${error}`
+    );
   }
 }
 

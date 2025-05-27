@@ -33,7 +33,7 @@ export function context<
   Events extends Record<string, z.ZodTypeAny | z.ZodRawShape> = Record<
     string,
     z.ZodTypeAny | z.ZodRawShape
-  >,
+  >
 >(
   config: ContextConfig<TMemory, Args, Ctx, Actions, Events>
 ): Context<TMemory, Args, Ctx, Actions, Events> {
@@ -134,29 +134,41 @@ export function createWorkingMemory(): WorkingMemory {
 }
 
 export function pushToWorkingMemory(workingMemory: WorkingMemory, ref: AnyRef) {
+  if (!workingMemory || !ref) {
+    throw new Error("workingMemory and ref must not be null or undefined");
+  }
+
   switch (ref.ref) {
     case "action_call":
+      if (!workingMemory.calls) workingMemory.calls = [];
       workingMemory.calls.push(ref);
       break;
     case "action_result":
+      if (!workingMemory.results) workingMemory.results = [];
       workingMemory.results.push(ref);
       break;
     case "input":
+      if (!workingMemory.inputs) workingMemory.inputs = [];
       workingMemory.inputs.push(ref);
       break;
     case "output":
+      if (!workingMemory.outputs) workingMemory.outputs = [];
       workingMemory.outputs.push(ref);
       break;
     case "thought":
+      if (!workingMemory.thoughts) workingMemory.thoughts = [];
       workingMemory.thoughts.push(ref);
       break;
     case "event":
+      if (!workingMemory.events) workingMemory.events = [];
       workingMemory.events.push(ref);
       break;
     case "step":
+      if (!workingMemory.steps) workingMemory.steps = [];
       workingMemory.steps.push(ref);
       break;
     case "run":
+      if (!workingMemory.runs) workingMemory.runs = [];
       workingMemory.runs.push(ref);
       break;
     default:

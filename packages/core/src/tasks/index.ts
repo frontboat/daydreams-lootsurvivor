@@ -41,7 +41,7 @@ function prepareStreamResponse({
   const prefix =
     modelsResponseConfig[model.modelId]?.prefix ??
     (isReasoningModel
-      ? (modelsResponseConfig[model.modelId]?.thinkTag ?? "<think>")
+      ? modelsResponseConfig[model.modelId]?.thinkTag ?? "<think>"
       : "<response>");
   const suffix = "</response>";
   return {
@@ -87,7 +87,7 @@ export const runGenerate = task({
       messages.push({
         role: "assistant",
         content: isReasoningModel
-          ? (modelsResponseConfig[model.modelId]?.thinkTag ?? "<think>")
+          ? modelsResponseConfig[model.modelId]?.thinkTag ?? "<think>"
           : "<response>",
       });
 
@@ -102,37 +102,32 @@ export const runGenerate = task({
     }
 
     try {
-
       if (!streaming) {
         const response = await generateText({
           model,
           messages,
-          temperature: 0.2
+          temperature: 0.2,
         });
-  
+
         let getTextResponse = async () => response.text;
         let stream = textToStream(response.text);
-  
+
         return { getTextResponse, stream };
-      }
-      else {
-  
+      } else {
         const stream = streamText({
           model,
           messages,
           stopSequences: ["\n</response>"],
           temperature: 0.5,
           abortSignal,
-            // experimental_transform: smoothStream({
-            //   chunking: "word",
-            // }),
+          // experimental_transform: smoothStream({
+          //   chunking: "word",
+          // }),
           onError: (event) => {
-              console.log({ event });
             onError(event.error);
           },
-        }) 
-        
-  
+        });
+
         return prepareStreamResponse({
           model,
           stream,
@@ -146,7 +141,10 @@ export const runGenerate = task({
   },
 });
 
-async function* textToStream(text: string, chunkSize = 10): AsyncGenerator<string> {
+async function* textToStream(
+  text: string,
+  chunkSize = 10
+): AsyncGenerator<string> {
   for (let i = 0; i < text.length; i += chunkSize) {
     const chunk = text.slice(i, i + chunkSize);
     yield chunk;

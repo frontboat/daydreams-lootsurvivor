@@ -62,15 +62,12 @@ function parseXMLContent(content: string) {
     return node;
   });
 
-  const data = nodes.reduce(
-    (data, node) => {
-      if (node.type === "element") {
-        data[node.name] = node.content;
-      }
-      return data;
-    },
-    {} as Record<string, string>
-  );
+  const data = nodes.reduce((data, node) => {
+    if (node.type === "element") {
+      data[node.name] = node.content;
+    }
+    return data;
+  }, {} as Record<string, string>);
 
   return data;
 }
@@ -183,7 +180,8 @@ export function getValueByPath(source: any, pathString: string): any {
 function setValueByPath(
   target: any,
   path: (string | number)[],
-  value: any
+  value: any,
+  logger: Logger
 ): void {
   let current: any = target;
   const lastIndex = path.length - 1;
@@ -200,8 +198,11 @@ function setValueByPath(
 
     // Safety check: if current is not an object/array, we can't proceed
     if (typeof current !== "object" || current === null) {
-      console.error(
-        `Cannot set path beyond non-object at segment ${i} ('${key}') for path ${path.join(".")}`
+      logger.error(
+        "handlers:setValueByPath",
+        `Cannot set path beyond non-object at segment ${i} ('${key}') for path ${path.join(
+          "."
+        )}`
       );
       return;
     }
@@ -212,8 +213,11 @@ function setValueByPath(
   if (typeof current === "object" && current !== null) {
     current[finalKey] = value;
   } else {
-    console.error(
-      `Cannot set final value, parent at path ${path.slice(0, -1).join(".")} is not an object.`
+    logger.error(
+      "handlers:setValueByPath",
+      `Cannot set final value, parent at path ${path
+        .slice(0, -1)
+        .join(".")} is not an object.`
     );
   }
 }
@@ -225,14 +229,18 @@ function setValueByPath(
 export async function resolveTemplates(
   argsObject: any, // The object containing templates (will be mutated)
   detectedTemplates: TemplateInfo[],
-  resolver: (primary_key: string, path: string) => Promise<any>
+  resolver: (primary_key: string, path: string) => Promise<any>,
+  logger: Logger
 ): Promise<void> {
   for (const templateInfo of detectedTemplates) {
     let resolvedValue: any = undefined;
 
     if (!templateInfo.primary_key) {
-      console.warn(
-        `Template at path ${templateInfo.path.join(".")} has no primary key: ${templateInfo.template_string}`
+      logger.warn(
+        "handlers:resolveTemplates",
+        `Template at path ${templateInfo.path.join(".")} has no primary key: ${
+          templateInfo.template_string
+        }`
       );
       continue;
     }
@@ -244,22 +252,30 @@ export async function resolveTemplates(
     try {
       resolvedValue = await resolver(templateInfo.primary_key, valuePath);
     } catch (error) {
-      console.error(
-        `Error resolving template at path ${templateInfo.path.join(".")}: ${error}`
+      logger.error(
+        "handlers:resolveTemplates",
+        `Error resolving template at path ${templateInfo.path.join(
+          "."
+        )}: ${error}`
       );
+      continue;
     }
 
     if (resolvedValue === undefined) {
-      console.warn(
-        `Could not resolve template "${templateInfo.template_string}" at path ${templateInfo.path.join(".")}. Path or source might be invalid.`
+      logger.warn(
+        "handlers:resolveTemplates",
+        `Could not resolve template "${
+          templateInfo.template_string
+        }" at path ${templateInfo.path.join(
+          "."
+        )}. Path or source might be invalid.`
       );
-      throw new Error(
-        `Could not resolve template "${templateInfo.template_string}" at path ${templateInfo.path.join(".")}. Path or source might be invalid.`
-      );
+      // Skip this template but continue with others
+      continue;
     }
 
     // Use the native setValueByPath function
-    setValueByPath(argsObject, templateInfo.path, resolvedValue);
+    setValueByPath(argsObject, templateInfo.path, resolvedValue, logger);
   }
 }
 
@@ -410,8 +426,11 @@ export async function prepareActionCall({
         : templateResolver;
 
     if (templates.length > 0)
-      await resolveTemplates(data, templates, (key, path) =>
-        actionTemplateResolver(key, path, callCtx)
+      await resolveTemplates(
+        data,
+        templates,
+        (key, path) => actionTemplateResolver(key, path, callCtx),
+        logger
       );
   }
 
@@ -421,15 +440,15 @@ export async function prepareActionCall({
         "parse" in action.schema || "validate" in action.schema
           ? action.schema
           : "$schema" in action.schema
-            ? jsonSchema(action.schema)
-            : z.object(action.schema);
+          ? jsonSchema(action.schema)
+          : z.object(action.schema);
 
       call.data =
         "parse" in schema
           ? (schema as ZodSchema).parse(data)
           : schema.validate
-            ? schema.validate(data)
-            : data;
+          ? schema.validate(data)
+          : data;
     } catch (error) {
       throw new ParsingError(call, error);
     }
@@ -617,7 +636,7 @@ export async function prepareContextActions(params: {
   const actions =
     typeof context.actions === "function"
       ? await Promise.try(context.actions, state)
-      : (context.actions ?? []);
+      : context.actions ?? [];
 
   return Promise.all(
     actions.map((action) =>
