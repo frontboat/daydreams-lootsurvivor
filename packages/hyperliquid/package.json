@@ -28,6 +28,7 @@
   "dependencies": {
     "@daydreamsai/core": "workspace:*",
     "hyperliquid": "catalog:",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "husky": "9.1.7"
   }
 }

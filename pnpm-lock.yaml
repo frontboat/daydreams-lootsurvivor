@@ -1151,6 +1151,9 @@ importers:
       '@daydreamsai/core':
         specifier: workspace:*
         version: link:../core
+      husky:
+        specifier: 9.1.7
+        version: 9.1.7
       hyperliquid:
         specifier: 'catalog:'
         version: 1.7.5(bufferutil@4.0.9)(utf-8-validate@5.0.10)
