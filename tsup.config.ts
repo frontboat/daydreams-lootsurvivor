@@ -7,7 +7,7 @@ export const tsupConfig: Options = {
   dts: true,
   sourcemap: true,
   clean: true,
-  minify: true,
+  // minify: true,
   terserOptions: {
     // Ensure the options are compatible with the specified terser version
     format: {
