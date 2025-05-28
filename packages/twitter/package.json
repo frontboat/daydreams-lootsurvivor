@@ -1,6 +1,6 @@
 {
   "name": "@daydreamsai/twitter",
-  "version": "0.3.7-alpha.6",
+  "version": "0.3.7-alpha.7",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
