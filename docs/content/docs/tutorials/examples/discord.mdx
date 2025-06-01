@@ -1,0 +1,101 @@
+---
+title: Discord Bot Agent
+description:
+  Agent that responds to Discord messages with research capabilities and memory
+  storage.
+---
+
+## 1. Environment setup and imports
+
+```typescript title="example-discord.ts"
+import {
+  createContainer,
+  createDreams,
+  createMemoryStore,
+  LogLevel,
+  validateEnv,
+} from "@daydreamsai/core";
+import { createChromaVectorStore } from "@daydreamsai/chromadb";
+import { deepResearch } from "../deep-research/research";
+import { z } from "zod";
+import { tavily } from "@tavily/core";
+import { anthropic } from "@ai-sdk/anthropic";
+import { openai } from "@ai-sdk/openai";
+import { discord } from "@daydreamsai/discord";
+
+const env = validateEnv(
+  z.object({
+    GROQ_API_KEY: z.string().min(1, "GROQ_API_KEY is required"),
+    DISCORD_TOKEN: z.string().min(1, "DISCORD_TOKEN is required"),
+    DISCORD_BOT_NAME: z.string().min(1, "DISCORD_BOT_NAME is required"),
+    TAVILY_API_KEY: z.string().min(1, "TAVILY_API_KEY is required"),
+    OPENAI_API_KEY: z.string().min(1, "OPENAI_API_KEY is required"),
+  })
+);
+```
+
+The Discord bot requires a `DISCORD_TOKEN` from the Discord Developer Portal.
+Create a new application, add a bot, and copy the token. The `DISCORD_BOT_NAME`
+should match your bot's username.
+
+## 2. Configure dependency injection container
+
+```ts
+const container = createContainer();
+
+container.singleton("tavily", () =>
+  tavily({
+    apiKey: process.env.TAVILY_API_KEY!,
+  })
+);
+```
+
+The container registers the Tavily search service as a singleton, making it
+available to the research extension for web searches.
+
+## 3. Create the agent with memory and extensions
+
+```ts
+const agent = createDreams({
+  logger: LogLevel.DEBUG,
+  model: anthropic("claude-3-7-sonnet-latest"),
+  extensions: [discord, deepResearch],
+  container,
+  memory: {
+    store: createMemoryStore(),
+    vector: createChromaVectorStore("agent", "http://localhost:8000"),
+    vectorModel: openai("gpt-4-turbo"),
+  },
+});
+```
+
+The agent combines:
+
+- **Discord extension**: Handles Discord message inputs and outputs
+- **Deep research extension**: Provides research capabilities with web search
+- **Memory storage**: Stores conversation history and context
+- **Vector storage**: ChromaDB for semantic memory retrieval
+
+## 4. Start the Discord bot
+
+```ts
+console.log("Starting Daydreams Discord Bot...");
+await agent.start();
+console.log("Daydreams Discord Bot started");
+```
+
+## How it works
+
+The Discord extension creates channel contexts for each Discord conversation.
+When users mention the bot or send direct messages:
+
+1. The extension receives the message and creates a `discord:message` input
+2. The agent processes the message using the configured language model
+3. If research is needed, the deep research extension searches the web using
+   Tavily
+4. Responses are sent back through `discord:message` outputs
+5. The memory system stores conversation history and vector embeddings for
+   context retrieval
+
+The bot can handle multiple Discord channels simultaneously, maintaining
+separate contexts and memory for each conversation.
