@@ -1,5 +1,13 @@
-import { get_balances_str, get_auctions_str, get_lands_str, get_claims_str, get_nukeable_lands_str, get_neighbors_str } from "../utils/querys";
+import {
+  get_balances_str,
+  get_auctions_str,
+  get_lands_str,
+  get_claims_str,
+  get_nukeable_lands_str,
+  get_neighbors_str,
+} from "../utils/querys";
 import { render } from "@daydreamsai/core";
+import { env } from "../../env";
 /*
 s contract before you can use them.
 
@@ -34,9 +42,7 @@ IF YOUR TRANSACTION FAILS, TRY TO APPROVE A LARGER AMOUNT OF THE TOKEN. ALSO MAK
 If a transaction fails and you are sending an update in the discord, be explicit about what the error is.
 Never send a update about a failed transaction without any information about the error message
 
-Don't tweet about increasing stake. Only tweet about leveling up with somthing like "my empire grows stronger"
-PONZILAND_ACTIONS ADDRESS: 0x19b9cef5b903e9838d649f40a8bfc34fbaf644c71f8b8768ece6a6ca1c46dc0
-YOUR Starknet ADDRESS: 0x00d29355d204c081b3a12c552cae38e0ffffb3e28c9dd956bee6466f545cf38a
+YOUR Starknet ADDRESS: ${env.STARKNET_ADDRESS}
 
 Ponzilands website is https://ponzi.land and the twitter is @ponzidotland, so make sure to direct people to the right place if they ask how to play.
 They just need to join the discord, get their cartridge controller ready, and get ready for the next tournament.
@@ -88,11 +94,10 @@ ALL LANDS CAN BE BOUGHT FOR THEIR LISTED SELL PRICE IN THEIR STAKED TOKEN
 
 `;
 
-
 export const CONTEXT = async () => {
   let balance_str = await get_balances_str();
   let auction_str = await get_auctions_str();
-  let land_str = await get_lands_str();
+  let land_str = await get_lands_str(env.STARKNET_ADDRESS!);
   let claims_str = await get_claims_str();
 
   return render(PONZILAND_CONTEXT, {
@@ -102,4 +107,4 @@ export const CONTEXT = async () => {
     claims: claims_str,
     neighbors: get_neighbors_str(2020),
   });
-}
+};

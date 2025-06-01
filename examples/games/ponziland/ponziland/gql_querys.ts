@@ -1,5 +1,7 @@
+import { env } from "../env";
+
 export const balance_query = `query GetTokenBalances {
-    tokenBalances(accountAddress:"0xd29355d204c081b3a12c552cae38e0ffffb3e28c9dd956bee6466f545cf38a"){
+    tokenBalances(accountAddress:"${env.STARKNET_ADDRESS}"){
       edges{
         node{
           tokenMetadata{
@@ -12,8 +14,8 @@ export const balance_query = `query GetTokenBalances {
         }
       }
     }
-  }`
-  
+  }`;
+
 export const auction_query = `query GetActiveAuctions {
     ponziLandAuctionModels(where:{is_finished: false}){
         edges{
@@ -27,10 +29,10 @@ export const auction_query = `query GetActiveAuctions {
         }
         }
     }
-  }`
-  
-export const land_query = `query GetOwnedLands {
-ponziLandLandModels(where:{owner:"0x00d29355d204c081b3a12c552cae38e0ffffb3e28c9dd956bee6466f545cf38a"}){
+  }`;
+
+export const land_query = (address: string) => `query GetOwnedLands {
+ponziLandLandModels(where:{owner:"${address}"}){
   edges{
     node{
       location
@@ -40,9 +42,9 @@ ponziLandLandModels(where:{owner:"0x00d29355d204c081b3a12c552cae38e0ffffb3e28c9d
   }
   }
 
-  }`
+  }`;
 
-  export const nuke_query = `query GetNukeableLands {
+export const nuke_query = `query GetNukeableLands {
     ponziLandLandModels(where:{stake_amount: "0"}){
       edges{
         node{
@@ -50,4 +52,4 @@ ponziLandLandModels(where:{owner:"0x00d29355d204c081b3a12c552cae38e0ffffb3e28c9d
         }
       }
     }
-  }`
+  }`;
