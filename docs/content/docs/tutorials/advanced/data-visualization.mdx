@@ -1,0 +1,222 @@
+---
+title: Data Visualization Agent
+description:
+  Agent that converts data into charts and visualizations automatically.
+---
+
+## 1. Environment setup and dependencies
+
+```typescript title="index.ts"
+import { createDreams, action, validateEnv } from "@daydreamsai/core";
+import { cliExtension } from "@daydreamsai/cli";
+import { anthropic } from "@ai-sdk/anthropic";
+import {
+  createDataToImageAgent,
+  analyzeAndVisualize,
+} from "@daydreamsai/data-viz";
+import { z } from "zod";
+import { writeFile } from "fs/promises";
+
+validateEnv(
+  z.object({
+    ANTHROPIC_API_KEY: z.string().min(1, "ANTHROPIC_API_KEY is required"),
+  })
+);
+```
+
+Install the data visualization package: `npm install @daydreamsai/data-viz`
+
+## 2. Data visualization actions
+
+```ts
+const createChartAction = action({
+  name: "createChart",
+  description: "Generate a chart from data automatically",
+  schema: z.object({
+    data: z.any().describe("The data to visualize"),
+    title: z.string().optional().describe("Chart title"),
+    type: z
+      .enum(["bar", "line", "pie", "scatter", "auto"])
+      .optional()
+      .default("auto")
+      .describe("What type of chart to use"),
+    filename: z
+      .string()
+      .optional()
+      .default("chart.png")
+      .describe("Output filename"),
+  }),
+  handler: async ({ data, title, type, filename }) => {
+    try {
+      const vizAgent = createDataToImageAgent();
+
+      let result;
+      if (type === "auto") {
+        // Let the system choose the best chart type
+        result = await analyzeAndVisualize(data, {
+          title,
+          width: 800,
+          height: 600,
+        });
+      } else {
+        // Use specified chart type
+        result = await vizAgent.dataToImage(data, {
+          type,
+          title,
+          width: 800,
+          height: 600,
+          format: "png",
+        });
+      }
+
+      // Save the chart
+      await writeFile(filename, result.buffer);
+
+      return {
+        success: true,
+        filename,
+        chartType: result.type,
+        dimensions: `${result.width}x${result.height}`,
+        title: title || "Data Visualization",
+        dataPoints: Array.isArray(data)
+          ? data.length
+          : Object.keys(data).length,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Chart creation failed",
+        filename,
+      };
+    }
+  },
+});
+```
+
+## 3. Data analysis action
+
+```ts
+const analyzeDataAction = action({
+  name: "analyzeData",
+  description: "Analyze data structure and suggest visualization types",
+  schema: z.object({
+    data: z.any().describe("The data to analyze"),
+  }),
+  handler: async ({ data }) => {
+    try {
+      const { DataAnalyzer } = await import("@daydreamsai/data-viz");
+
+      const analysis = DataAnalyzer.analyze(data);
+
+      return {
+        success: true,
+        dataType: analysis.type,
+        structure: analysis.structure,
+        suggestedChart: analysis.suggestedVisualization,
+        confidence: analysis.confidence,
+        summary: {
+          totalItems: Array.isArray(data)
+            ? data.length
+            : Object.keys(data).length,
+          hasTimeData: analysis.type === "temporal",
+          hasNumericData: analysis.type === "numerical",
+          hasCategoricalData: analysis.type === "categorical",
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Analysis failed",
+      };
+    }
+  },
+});
+```
+
+## 4. Social media chart action
+
+```ts
+const createSocialChartAction = action({
+  name: "createSocialChart",
+  description: "Create chart optimized for social media platforms",
+  schema: z.object({
+    data: z.any().describe("The data to visualize"),
+    platform: z
+      .enum(["twitter", "instagram", "linkedin"])
+      .default("twitter")
+      .describe("Social media platform"),
+    title: z.string().describe("Chart title"),
+  }),
+  handler: async ({ data, platform, title }) => {
+    try {
+      const vizAgent = createDataToImageAgent();
+
+      const result = await vizAgent.createSocialViz(data, platform, title);
+
+      const filename = `social-${platform}-chart.png`;
+      await writeFile(filename, result.buffer);
+
+      return {
+        success: true,
+        filename,
+        platform,
+        dimensions: `${result.width}x${result.height}`,
+        title,
+        chartType: result.type,
+        optimizedFor: platform,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Social chart creation failed",
+        platform,
+      };
+    }
+  },
+});
+```
+
+## 5. Create the visualization agent
+
+```ts
+createDreams({
+  model: anthropic("claude-3-7-sonnet-latest"),
+  extensions: [cliExtension],
+  actions: [createChartAction, analyzeDataAction, createSocialChartAction],
+}).start();
+```
+
+## How it works
+
+The data visualization agent automatically converts data into charts:
+
+1. **Auto-detection**: Analyzes data structure to choose optimal chart types
+2. **Multiple formats**: Supports bar charts, line graphs, pie charts, scatter
+   plots
+3. **Social optimization**: Creates platform-specific dimensions and layouts
+4. **Error handling**: Manages visualization failures and data format issues
+
+**Example interactions:**
+
+```
+User: "Create a chart from this sales data: Q1: 45000, Q2: 67000, Q3: 52000, Q4: 78000"
+Agent: *calls analyzeData and createChart actions*
+Agent: "Created a bar chart showing quarterly sales. The chart shows strong Q4 performance with 78K in sales."
+
+User: "Make a Twitter-optimized version"
+Agent: *calls createSocialChart action*
+Agent: "Created Twitter-optimized chart (1200x675) saved as social-twitter-chart.png"
+```
+
+**Supported data formats:**
+
+- **Key-value objects**: `{ "A": 10, "B": 20, "C": 15 }`
+- **Arrays of objects**: `[{ category: "Mobile", value: 45 }, ...]`
+- **Time series**: `[{ timestamp: "2024-01-01", value: 100 }, ...]`
+- **Coordinate data**: `[{ x: 1, y: 2 }, { x: 2, y: 4 }, ...]`
+
+The agent automatically detects the best visualization type and creates
+publication-ready charts.
