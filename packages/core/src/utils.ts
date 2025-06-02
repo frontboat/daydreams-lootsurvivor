@@ -1,56 +1,26 @@
 import { z } from "zod";
 import type {
   Action,
+  ActionCall,
   ActionSchema,
-  AgentContext,
   AnyAgent,
   AnyContext,
+  EventRef,
   ExpertConfig,
   Extension,
   InputConfig,
+  InputRef,
   Memory,
   Optional,
   OutputConfig,
-  OutputResponse,
+  OutputRef,
+  OutputRefResponse,
   OutputSchema,
-  TemplateVariables,
   WorkingMemory,
 } from "./types";
-export { v7 as randomUUIDv7 } from "uuid";
+import { v7 as randomUUIDv7 } from "uuid";
 
-/**
- * Renders a template string by replacing variables with provided values
- * @template Template - The template string type containing variables in {{var}} format
- * @param str - The template string to render
- * @param data - Object containing values for template variables
- * @returns The rendered string with variables replaced
- */
-export function render<Template extends string>(
-  str: Template,
-  data: TemplateVariables<Template>
-) {
-  return str
-    .trim()
-    .replace(/\{\{(\w+)\}\}/g, (match, key: string) =>
-      formatValue(data[key as keyof typeof data] ?? "")
-    );
-}
-
-/**
- * Formats a value for template rendering
- * @param value - The value to format
- * @returns Formatted string representation of the value
- */
-export function formatValue(value: any): string {
-  if (Array.isArray(value)) return value.map((t) => formatValue(t)).join("\n");
-  if (typeof value !== "string")
-    return JSON.stringify(value, (_, value) => {
-      if (typeof value === "bigint") return value.toString();
-      return value;
-    });
-  return value.trim();
-}
-
+export { randomUUIDv7 };
 /**
  * Creates an input configuration
  * @template Schema - Zod schema type for input validation
@@ -59,9 +29,10 @@ export function formatValue(value: any): string {
  * @returns Typed input configuration
  */
 export function input<
-  Schema extends z.AnyZodObject = z.AnyZodObject,
-  TAgent extends AnyAgent = AnyAgent,
->(config: InputConfig<Schema, TAgent>) {
+  Schema extends z.AnyZodObject | z.ZodString | z.ZodRawShape = z.ZodString,
+  TContext extends AnyContext = AnyContext,
+  TAgent extends AnyAgent = AnyAgent
+>(config: InputConfig<Schema, TContext, TAgent>) {
   return config;
 }
 
@@ -79,7 +50,7 @@ export function action<
   TError = any,
   TContext extends AnyContext = AnyContext,
   TAgent extends AnyAgent = AnyAgent,
-  TMemory extends Memory<any> = Memory<any>,
+  TMemory extends Memory<any> = Memory<any>
 >(
   action: Optional<
     Action<TSchema, Result, TError, TContext, TAgent, TMemory>,
@@ -101,9 +72,9 @@ export function action<
  */
 export function output<
   Schema extends OutputSchema = OutputSchema,
-  Context extends AgentContext<any> = AgentContext<any>,
-  TResponse extends OutputResponse = OutputResponse,
->(config: OutputConfig<Schema, Context, TResponse>) {
+  Response extends OutputRefResponse = OutputRefResponse,
+  Context extends AnyContext = AnyContext
+>(config: OutputConfig<Schema, Response, Context>) {
   return config;
 }
 
@@ -175,7 +146,7 @@ export function extension<
   Inputs extends Record<string, InputConfig<any, any>> = Record<
     string,
     InputConfig<any, any>
-  >,
+  >
 >(
   config: Optional<Extension<AnyContext, Contexts, Inputs>, "inputs">
 ): Extension<AnyContext, Contexts, Inputs> {
@@ -199,11 +170,8 @@ export function validateEnv<T extends z.ZodTypeAny>(
     return schema.parse(env);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      console.error("Environment validation failed:");
-      error.errors.forEach((err) => {
-        console.error(`- ${err.message}`);
-      });
-      process.exit(1);
+      const errors = error.errors.map((err) => `- ${err.message}`);
+      throw new Error(`Environment validation failed:\n${errors.join("\n")}`);
     }
     throw error;
   }
@@ -232,4 +200,63 @@ export function trimWorkingMemory(
   workingMemory.outputs = workingMemory.outputs.slice(-options.outputs);
   workingMemory.calls = workingMemory.calls.slice(-options.actions);
   workingMemory.results = workingMemory.results.slice(-options.actions);
+}
+
+/**
+ * Utility function to safely execute a function asynchronously
+ * This is an implementation of the Promise.try pattern which isn't available in standard JS
+ * @param fn The function to execute
+ * @param ...args The arguments to pass to the function
+ * @returns A promise that resolves with the result of the function
+ */
+export async function tryAsync<T>(fn: Function, ...args: any[]): Promise<T> {
+  try {
+    return await fn(...args);
+  } catch (error) {
+    return Promise.reject(error);
+  }
+}
+
+export function createInputRef(
+  ref: Pick<InputRef, "type" | "content" | "data" | "processed">
+): InputRef {
+  return {
+    id: randomUUIDv7(),
+    ref: "input",
+    timestamp: Date.now(),
+    ...ref,
+  };
+}
+
+export function createOutputRef(
+  ref: Pick<OutputRef, "type" | "content" | "data" | "processed">
+): OutputRef {
+  return {
+    id: randomUUIDv7(),
+    ref: "output",
+    timestamp: Date.now(),
+    ...ref,
+  };
+}
+
+export function createEventRef(
+  ref: Pick<EventRef, "name" | "data" | "processed">
+): EventRef {
+  return {
+    id: randomUUIDv7(),
+    ref: "event",
+    timestamp: Date.now(),
+    ...ref,
+  };
+}
+
+export function createActionCall(
+  ref: Pick<ActionCall, "name" | "content" | "data" | "processed" | "params">
+): ActionCall {
+  return {
+    id: randomUUIDv7(),
+    ref: "action_call",
+    timestamp: Date.now(),
+    ...ref,
+  };
 }

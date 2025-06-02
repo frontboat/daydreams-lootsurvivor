@@ -1,7 +1,246 @@
-import { execa } from "execa";
-import fs from "fs-extra";
-import path from "path";
 import chalk from "chalk";
+
+/**
+ * Fetches the latest version of a package from npm registry
+ * @param packageName The name of the npm package
+ * @returns Promise resolving to the latest version or null if failed
+ */
+async function fetchLatestVersion(packageName: string): Promise<string | null> {
+  try {
+    const response = await fetch(
+      `https://registry.npmjs.org/${packageName}/latest`
+    );
+    if (!response.ok) {
+      return null;
+    }
+    const data = await response.json();
+    return data.version ? `^${data.version}` : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+/**
+ * Gets the latest versions for all dependencies with fallbacks
+ * @param selectedExtensions Array of selected extensions to determine which packages to include
+ * @param selectedModel The selected model provider to determine which AI SDK to include
+ * @param verbose Whether to show detailed logging
+ * @returns Object with package names and their latest versions
+ */
+export async function getLatestDependencies(
+  selectedExtensions: string[],
+  selectedModel: string,
+  verbose: boolean = false
+): Promise<Record<string, string>> {
+  const log = (message: string) => {
+    if (verbose) {
+      console.log(chalk.gray(`🔍 ${message}`));
+    }
+  };
+
+  // Base dependencies that are always included
+  const baseDependencies = {
+    "@daydreamsai/core": "^0.2.13",
+    ai: "^4.1.25",
+    typescript: "^5.3.3",
+    zod: "^3.24.1",
+  };
+
+  // Model-specific dependencies - only include the selected one
+  const modelDependencies: Record<string, string> = {};
+
+  switch (selectedModel) {
+    case "groq":
+      modelDependencies["@ai-sdk/groq"] = "^1.1.7";
+      break;
+    case "openai":
+      modelDependencies["@ai-sdk/openai"] = "^1.1.14";
+      break;
+    case "anthropic":
+      modelDependencies["@ai-sdk/anthropic"] = "^1.1.6";
+      break;
+    case "google":
+      modelDependencies["@ai-sdk/google"] = "^1.1.16";
+      break;
+  }
+
+  // Always include OpenRouter as it's a fallback/alternative provider
+  modelDependencies["@openrouter/ai-sdk-provider"] = "^0.2.1";
+
+  // Extension-specific dependencies
+  const extensionDependencies: Record<string, string> = {};
+
+  if (selectedExtensions.includes("cli")) {
+    extensionDependencies["@daydreamsai/cli"] = "^0.2.13";
+  }
+  if (selectedExtensions.includes("twitter")) {
+    extensionDependencies["@daydreamsai/twitter"] = "^0.2.13";
+  }
+  if (selectedExtensions.includes("discord")) {
+    extensionDependencies["@daydreamsai/discord"] = "^0.2.13";
+    extensionDependencies["discord.js"] = "^14.17.3";
+  }
+  if (selectedExtensions.includes("telegram")) {
+    extensionDependencies["@daydreamsai/telegram"] = "^0.2.13";
+    extensionDependencies["telegraf"] = "^4.16.3";
+  }
+
+  const allDependencies = {
+    ...baseDependencies,
+    ...modelDependencies,
+    ...extensionDependencies,
+  };
+  const packageNames = Object.keys(allDependencies);
+
+  log(
+    `Fetching latest versions for ${packageNames.length} packages (${selectedModel} model + ${selectedExtensions.length} extensions)...`
+  );
+
+  // Fetch latest versions in parallel
+  const versionPromises = packageNames.map(async (packageName) => {
+    const latestVersion = await fetchLatestVersion(packageName);
+    const fallbackVersion =
+      allDependencies[packageName as keyof typeof allDependencies];
+    return {
+      packageName,
+      version: latestVersion || fallbackVersion, // Fallback to hardcoded
+      fromRegistry: latestVersion !== null,
+    };
+  });
+
+  try {
+    const results = await Promise.all(versionPromises);
+    const finalDependencies: Record<string, string> = {};
+
+    let fetchedCount = 0;
+    let fallbackCount = 0;
+
+    results.forEach(({ packageName, version, fromRegistry }) => {
+      finalDependencies[packageName] = version;
+      if (fromRegistry) {
+        fetchedCount++;
+      } else {
+        fallbackCount++;
+        log(`Using fallback version for ${packageName}: ${version}`);
+      }
+    });
+
+    if (fetchedCount > 0) {
+      log(`✅ Fetched latest versions for ${fetchedCount} packages`);
+    }
+    if (fallbackCount > 0) {
+      log(`⚠️  Used fallback versions for ${fallbackCount} packages`);
+    }
+
+    return finalDependencies;
+  } catch (error) {
+    log(`❌ Error fetching versions, using all fallback versions`);
+    return allDependencies;
+  }
+}
+
+/**
+ * Validates a project name for directory creation
+ * @param name The project name to validate
+ * @returns Object with isValid boolean and error message if invalid
+ */
+export function validateProjectName(name: string): {
+  isValid: boolean;
+  error?: string;
+} {
+  // Check for empty name
+  if (!name || name.trim() === "") {
+    return { isValid: false, error: "Project name cannot be empty" };
+  }
+
+  // Check for invalid characters (platform agnostic)
+  const invalidChars = /[<>:"/\\|?*\x00-\x1f]/;
+  if (invalidChars.test(name)) {
+    return {
+      isValid: false,
+      error: "Project name contains invalid characters",
+    };
+  }
+
+  // Check for reserved names (Windows)
+  const reservedNames = [
+    "CON",
+    "PRN",
+    "AUX",
+    "NUL",
+    "COM1",
+    "COM2",
+    "COM3",
+    "COM4",
+    "COM5",
+    "COM6",
+    "COM7",
+    "COM8",
+    "COM9",
+    "LPT1",
+    "LPT2",
+    "LPT3",
+    "LPT4",
+    "LPT5",
+    "LPT6",
+    "LPT7",
+    "LPT8",
+    "LPT9",
+  ];
+  if (reservedNames.includes(name.toUpperCase())) {
+    return { isValid: false, error: "Project name is a reserved system name" };
+  }
+
+  // Check length (most filesystems support 255, but let's be conservative)
+  if (name.length > 100) {
+    return {
+      isValid: false,
+      error: "Project name is too long (max 100 characters)",
+    };
+  }
+
+  // Check for names starting/ending with dots or spaces
+  if (
+    name.startsWith(".") ||
+    name.endsWith(".") ||
+    name.startsWith(" ") ||
+    name.endsWith(" ")
+  ) {
+    return {
+      isValid: false,
+      error: "Project name cannot start or end with dots or spaces",
+    };
+  }
+
+  return { isValid: true };
+}
+
+/**
+ * Validates a model provider name
+ * @param model The model name to validate
+ * @returns Object with isValid boolean and error message if invalid
+ */
+export function validateModel(model: string): {
+  isValid: boolean;
+  error?: string;
+} {
+  const validModels = ["openai", "groq", "anthropic", "google"];
+
+  if (!model || model.trim() === "") {
+    return { isValid: false, error: "Model provider cannot be empty" };
+  }
+
+  if (!validModels.includes(model.toLowerCase())) {
+    return {
+      isValid: false,
+      error: `Invalid model provider '${model}'. Valid options: ${validModels.join(
+        ", "
+      )}`,
+    };
+  }
+
+  return { isValid: true };
+}
 
 /**
  * Generates the content for an agent template by replacing placeholders
@@ -29,7 +268,7 @@ export function generateTemplateContent(
   // Replace extension imports if specified
   if (extensionImports.length > 0) {
     processedContent = processedContent.replace(
-      `import { cli } from "@daydreamsai/core/extensions";`,
+      `import { cliExtension } from "@daydreamsai/cli";`,
       extensionImports.join("\n")
     );
   }
@@ -68,22 +307,24 @@ export function createEnvVariables(
 ): string {
   const envVariables = ["# Daydreams Environment Variables\n"];
 
-  // Model configurations
-  envVariables.push("# Model Configurations");
-  if (selectedModel === "groq") {
-    envVariables.push("GROQ_API_KEY=your_groq_api_key");
-  } else if (selectedModel === "openai") {
-    envVariables.push("OPENAI_API_KEY=your_openai_api_key");
-  } else if (selectedModel === "anthropic") {
-    envVariables.push("ANTHROPIC_API_KEY=your_anthropic_api_key");
-  } else if (selectedModel === "google") {
-    envVariables.push("GOOGLE_API_KEY=your_google_api_key");
+  // Model-specific configuration - only for selected model
+  envVariables.push("# Model Configuration");
+  switch (selectedModel) {
+    case "groq":
+      envVariables.push("GROQ_API_KEY=your_groq_api_key");
+      break;
+    case "openai":
+      envVariables.push("OPENAI_API_KEY=your_openai_api_key");
+      break;
+    case "anthropic":
+      envVariables.push("ANTHROPIC_API_KEY=your_anthropic_api_key");
+      break;
+    case "google":
+      envVariables.push("GOOGLE_API_KEY=your_google_api_key");
+      break;
   }
 
-  // Add OpenRouter API key regardless of selected model
-  envVariables.push("OPENROUTER_API_KEY=your_openrouter_api_key\n");
-
-  // Twitter Configuration
+  // Extension-specific configurations - only for selected extensions
   if (selectedExtensions.includes("twitter")) {
     envVariables.push("# Twitter Configuration");
     // Add both authentication methods
@@ -99,7 +340,6 @@ export function createEnvVariables(
     envVariables.push("TWITTER_ACCESS_TOKEN_SECRET=your_access_token_secret\n");
   }
 
-  // Discord Configuration
   if (selectedExtensions.includes("discord")) {
     envVariables.push("# Discord Configuration");
     envVariables.push(
@@ -112,7 +352,6 @@ export function createEnvVariables(
     envVariables.push("DISCORD_BOT_NAME=your_bot_name\n");
   }
 
-  // Telegram Configuration
   if (selectedExtensions.includes("telegram")) {
     envVariables.push("# Telegram Configuration");
     envVariables.push(
@@ -142,43 +381,9 @@ export function createEnvVariables(
     envVariables.push("TELEGRAM_USER_SESSION=your_session_string\n");
   }
 
-  // Add common configurations regardless of extensions
+  // General configuration (always included)
   envVariables.push("# General Configuration");
-  envVariables.push("DRY_RUN=1");
-  envVariables.push(
-    "GRAPHQL_URL=https://api.cartridge.gg/x/sepolia-rc-18/torii\n"
-  );
-
-  // Add blockchain configurations
-  envVariables.push("# Blockchain Configurations");
-
-  envVariables.push("# Starknet Configuration");
-  envVariables.push("STARKNET_RPC_URL=your_starknet_rpc_url");
-  envVariables.push("STARKNET_ADDRESS=your_starknet_address");
-  envVariables.push("STARKNET_PRIVATE_KEY=your_starknet_private_key\n");
-
-  envVariables.push("# Hyperliquid Trading Configuration");
-  envVariables.push(
-    "# HYPERLIQUID_MAIN_ADDRESS: Your main Hyperliquid address (format: 0x...)"
-  );
-  envVariables.push(
-    "# HYPERLIQUID_WALLET_ADDRESS: Your wallet address for trading (format: 0x...)"
-  );
-  envVariables.push(
-    "# HYPERLIQUID_PRIVATE_KEY: Your private key (Keep this secure!)"
-  );
-  envVariables.push("HYPERLIQUID_MAIN_ADDRESS=your_main_address");
-  envVariables.push("HYPERLIQUID_WALLET_ADDRESS=your_wallet_address");
-  envVariables.push("HYPERLIQUID_PRIVATE_KEY=your_private_key\n");
-
-  envVariables.push("# Sui Configuration");
-  envVariables.push(
-    "# Sui Mnemonic Seed Phrase (`sui keytool generate ed25519`), Also support `suiprivatekeyxxxx` (sui keytool export --key-identity 0x63)"
-  );
-  envVariables.push("SUI_PRIVATE_KEY=your_sui_private_key");
-  envVariables.push(
-    "SUI_NETWORK=mainnet   # must be one of mainnet, testnet, devnet, localnet\n"
-  );
+  envVariables.push("DRY_RUN=1\n");
 
   return envVariables.join("\n");
 }

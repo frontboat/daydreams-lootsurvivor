@@ -1,5 +1,6 @@
-import { Collection, MongoClient, ObjectId } from "mongodb";
+import { Collection, MongoClient } from "mongodb";
 import type { MemoryStore } from "@daydreamsai/core";
+import crypto from "crypto";
 
 export interface MongoMemoryOptions {
   uri: string;
@@ -7,9 +8,14 @@ export interface MongoMemoryOptions {
   collectionName?: string;
 }
 
+interface MemoryDocument {
+  _id: string;
+  value: any;
+}
+
 export class MongoMemoryStore implements MemoryStore {
   private client: MongoClient;
-  private collection: Collection | null = null;
+  private collection: Collection<MemoryDocument> | null = null;
   private readonly dbName: string;
   private readonly collectionName: string;
 
@@ -19,13 +25,17 @@ export class MongoMemoryStore implements MemoryStore {
     this.collectionName = options.collectionName || "conversations";
   }
 
+  private _hashKey(key: string): string {
+    return crypto.createHash("sha256").update(key).digest("hex");
+  }
+
   /**
    * Initialize the MongoDB connection
    */
   async initialize(): Promise<void> {
     await this.client.connect();
     const db = this.client.db(this.dbName);
-    this.collection = db.collection(this.collectionName);
+    this.collection = db.collection<MemoryDocument>(this.collectionName);
   }
 
   /**
@@ -36,7 +46,10 @@ export class MongoMemoryStore implements MemoryStore {
   async get<T>(key: string): Promise<T | null> {
     if (!this.collection) throw new Error("MongoDB not initialized");
 
-    const doc = await this.collection.findOne({ _id: new ObjectId(key) });
+    console.log("getting", key);
+    const hashedKey = this._hashKey(key);
+
+    const doc = await this.collection.findOne({ _id: hashedKey });
     if (!doc) return null;
 
     return doc.value as T;
@@ -50,8 +63,11 @@ export class MongoMemoryStore implements MemoryStore {
   async set(key: string, value: any): Promise<void> {
     if (!this.collection) throw new Error("MongoDB not initialized");
 
+    console.log("setting", key, value);
+    const hashedKey = this._hashKey(key);
+
     await this.collection.updateOne(
-      { _id: new ObjectId(key) },
+      { _id: hashedKey },
       { $set: { value } },
       { upsert: true }
     );
@@ -64,7 +80,8 @@ export class MongoMemoryStore implements MemoryStore {
   async delete(key: string): Promise<void> {
     if (!this.collection) throw new Error("MongoDB not initialized");
 
-    await this.collection.deleteOne({ _id: new ObjectId(key) });
+    const hashedKey = this._hashKey(key);
+    await this.collection.deleteOne({ _id: hashedKey });
   }
 
   /**
@@ -82,6 +99,26 @@ export class MongoMemoryStore implements MemoryStore {
   async close(): Promise<void> {
     await this.client.close();
   }
+
+  async keys() {
+    return [];
+  }
+
+  // async keys(base?: string) {
+  //   if (!this.collection) throw new Error("MongoDB not initialized");
+
+  //   const keys = await this.collection
+  //     .find()
+  //     .project<{ key: string }>({ key: true })
+  //     .map((d) => d.key)
+  //     .toArray();
+
+  //   if (base) {
+  //     return keys.filter((key) => key.startsWith(base));
+  //   }
+
+  //   return keys;
+  // }
 }
 
 /**

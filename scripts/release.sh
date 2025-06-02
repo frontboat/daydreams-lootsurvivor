@@ -76,21 +76,49 @@ else
   exit 1
 fi
 
-# Determine publish command based on dry run flag
-PUBLISH_CMD="npx lerna publish $VERSION_TYPE --no-private --force-publish"
+# Version packages with lerna
+echo -e "${BLUE}Versioning packages with lerna...${NC}"
+VERSION_CMD="npx lerna version $VERSION_TYPE --no-private --no-push"
 if [ "$DRY_RUN" = true ]; then
-  PUBLISH_CMD="$PUBLISH_CMD --no-push --no-git-tag-version"
-  echo -e "${YELLOW}DRY RUN: No changes will be pushed to git or npm${NC}"
+  VERSION_CMD="$VERSION_CMD --no-git-tag-version"
+  echo -e "${YELLOW}DRY RUN: No git tags will be created${NC}"
 fi
 
-# Run lerna publish
-echo -e "${BLUE}Publishing packages with lerna...${NC}"
-echo -e "${YELLOW}Running: $PUBLISH_CMD${NC}"
+echo -e "${YELLOW}Running: $VERSION_CMD${NC}"
+eval "$VERSION_CMD --yes"
 
-if [ "$DRY_RUN" = true ]; then
-  eval "$PUBLISH_CMD --yes"
-else
-  eval "$PUBLISH_CMD"
+# Publish packages using pnpm to properly resolve catalog references
+echo -e "${BLUE}Publishing packages with pnpm...${NC}"
+
+# Get all package directories
+PACKAGES=$(find packages -maxdepth 1 -mindepth 1 -type d | sort)
+
+# Publish each package
+for package in $PACKAGES; do
+  package_name=$(basename "$package")
+  
+  # Check if package.json exists and is not private
+  if [ -f "$package/package.json" ]; then
+    IS_PRIVATE=$(cat "$package/package.json" | grep -o '"private":\s*true' || true)
+    
+    if [ -z "$IS_PRIVATE" ]; then
+      echo -e "${GREEN}Publishing $package_name...${NC}"
+      
+      if [ "$DRY_RUN" = true ]; then
+        (cd "$package" && pnpm publish --dry-run --no-git-checks)
+      else
+        (cd "$package" && pnpm publish --no-git-checks)
+      fi
+    else
+      echo -e "${YELLOW}Skipping private package: $package_name${NC}"
+    fi
+  fi
+done
+
+# Push tags if not dry run
+if [ "$DRY_RUN" = false ]; then
+  echo -e "${BLUE}Pushing git tags...${NC}"
+  git push --follow-tags
 fi
 
 echo -e "${GREEN}Release process completed!${NC}" 

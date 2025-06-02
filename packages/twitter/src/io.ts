@@ -29,6 +29,7 @@ export class TwitterClient {
   private isInitialized: boolean = false;
   private lastCheckedTweetId: bigint | null = null;
   private logger: Logger;
+  private cookies: any[] = [];
 
   private env: z.infer<typeof envSchema>;
   constructor(
@@ -38,8 +39,6 @@ export class TwitterClient {
     this.scraper = new Scraper();
     this.logger = new Logger({
       level: logLevel,
-      enableColors: true,
-      enableTimestamp: true,
     });
 
     this.env = envSchema.parse(process.env);
@@ -55,6 +54,13 @@ export class TwitterClient {
         );
         this.isInitialized = true;
         this.logger.info("TwitterClient", "Initialized successfully");
+
+        const cookies = await this.scraper.getCookies();
+
+        console.log("cookies", cookies);
+
+        await this.scraper.setCookies(cookies);
+        this.cookies = cookies;
       } catch (error) {
         this.logger.error("TwitterClient", "Failed to initialize", {
           error,
@@ -191,19 +197,3 @@ export class TwitterClient {
     };
   }
 }
-
-// Example usage:
-/*
-const twitter = new TwitterClient({
-  username: "mybot",
-  password: "pass",
-  email: "bot@example.com"
-});
-
-// Register inputs
-core.registerInput(twitter.createMentionsInput());
-core.registerInput(twitter.createTimelineInput("elonmusk"));
-
-// Register output
-core.registerOutput(twitter.createTweetOutput());
-*/

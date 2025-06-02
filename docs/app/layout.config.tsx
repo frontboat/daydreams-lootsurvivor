@@ -19,17 +19,6 @@ import {
  */
 
 export const linkItems: LinkItemType[] = [
-  // {
-  //   text: "Showcase",
-  //   url: "/showcase",
-  //   icon: <LayoutTemplate />,
-  //   active: "url",
-  // },
-  // {
-  //   text: "Sponsors",
-  //   url: "/sponsors",
-  //   icon: <Heart />,
-  // },
   {
     type: "icon",
     url: "https://twitter.com/daydreamsagents",

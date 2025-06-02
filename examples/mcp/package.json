@@ -4,14 +4,17 @@
   "type": "module",
   "private": true,
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "catalog:"
   },
   "peerDependencies": {
-    "typescript": "^5"
+    "typescript": "catalog:"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^1.1.15",
+    "@ai-sdk/anthropic": "catalog:",
     "@daydreamsai/core": "workspace:*",
-    "zod": "^3.24.2"
+    "@daydreamsai/mcp": "workspace:*",
+    "@modelcontextprotocol/sdk": "catalog:",
+    "@daydreamsai/cli": "workspace:*",
+    "zod": "catalog:"
   }
 }

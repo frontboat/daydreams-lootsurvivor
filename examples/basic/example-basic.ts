@@ -1,30 +1,24 @@
 /**
  * Basic example demonstrating a simple chat interface using Dreams
- * with a command line interface and Groq's LLM.
  */
 import { anthropic } from "@ai-sdk/anthropic";
-import { createGroq } from "@ai-sdk/groq";
 import {
   createDreams,
   context,
   render,
   action,
   validateEnv,
+  output,
 } from "@daydreamsai/core";
-import { cli } from "@daydreamsai/core/extensions";
+import { cliExtension } from "@daydreamsai/cli";
 import { string, z } from "zod";
 
-const env = validateEnv(
+validateEnv(
   z.object({
     GROQ_API_KEY: z.string().min(1, "GROQ_API_KEY is required"),
     OPENAI_API_KEY: z.string().min(1, "OPENAI_API_KEY is required"),
   })
 );
-
-// Initialize Groq client
-const groq = createGroq({
-  apiKey: env.GROQ_API_KEY!,
-});
 
 const character = {
   id: "vpk3a9b2q7bn5zj3o920nl",
@@ -73,14 +67,7 @@ Traits that drive behavior and decision-making:
 - Adaptability: {{adaptability}} (High = flexible in new situations, embraces change, quick to adjust | Low = rigid, resistant to change, needs structure and routine)
 - Impulsivity: {{impulsivity}} (High = acts on instinct, spontaneous decisions, thrill-seeking | Low = deliberate, carefully considers consequences, methodical)
 
-These traits combine to create a unique personality profile that influences how {{name}} approaches problems, interacts with others, and makes decisions. The relative strength of each trait shapes their behavioral patterns and emotional responses.
-
-Here is the current goal:
-
-Goal: {{goal}} 
-Tasks: {{tasks}}
-Current Task: {{currentTask}}
-`;
+These traits combine to create a unique personality profile that influences how {{name}} approaches problems, interacts with others, and makes decisions. The relative strength of each trait shapes their behavioral patterns and emotional responses.`;
 
 type GoalMemory = {
   goal: string;
@@ -92,19 +79,14 @@ const goalContexts = context({
   type: "goal",
   schema: z.object({
     id: string(),
-    initialGoal: z.string(),
-    initialTasks: z.array(z.string()),
   }),
 
   key({ id }) {
     return id;
   },
 
-  create(state) {
+  create() {
     return {
-      goal: state.args.initialGoal,
-      tasks: state.args.initialTasks ?? [],
-      currentTask: state.args.initialTasks?.[0],
       name: character.name,
       speechExamples: character.speechExamples,
       // traits: JSON.stringify(character.traits),
@@ -121,11 +103,8 @@ const goalContexts = context({
     };
   },
 
-  render({ memory }) {
+  render() {
     return render(template, {
-      goal: memory.goal,
-      tasks: memory.tasks.join("\n"),
-      currentTask: memory.currentTask ?? "NONE",
       name: character.name,
       speechExamples: character.speechExamples,
       // traits: character.traits,
@@ -145,16 +124,16 @@ const goalContexts = context({
 
 createDreams({
   model: anthropic("claude-3-7-sonnet-latest"),
-  extensions: [cli],
+  extensions: [cliExtension],
   context: goalContexts,
   actions: [
     action({
       name: "addTask",
       description: "Add a task to the goal",
       schema: z.object({ task: z.string() }),
-      handler(call, ctx, _agent) {
-        const agentMemory = ctx.memory as GoalMemory;
-        agentMemory.tasks.push(call.task);
+      handler(data, ctx, _agent) {
+        const agentMemory = ctx.agentMemory as GoalMemory;
+        agentMemory.tasks.push(data.task);
         return {};
       },
     }),
@@ -162,13 +141,16 @@ createDreams({
       name: "completeTask",
       description: "Complete a task",
       schema: z.object({ task: z.string() }),
-      handler(call, ctx, _agent) {
-        const agentMemory = ctx.memory as GoalMemory;
+      handler(data, ctx, _agent) {
+        const agentMemory = ctx.agentMemory as GoalMemory;
         agentMemory.tasks = agentMemory.tasks.filter(
-          (task) => task !== call.task
+          (task) => task !== data.task
         );
         return {};
       },
     }),
   ],
-}).start({ id: "test", initialGoal: "", initialTasks: [] });
+  outputs: {
+    test: output({}),
+  },
+}).start({ id: "test" });

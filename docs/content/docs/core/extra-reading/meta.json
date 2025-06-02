@@ -1,0 +1,20 @@
+{
+  "pages": [
+    "introduction",
+    "package-managers",
+    "dreams",
+    "context",
+    "prompt",
+    "memory",
+    "handlers",
+    "tasks",
+    "container",
+    "serviceProvider",
+    "formatters",
+    "logger",
+    "http",
+    "providers-api",
+    "types",
+    "utils"
+  ]
+}

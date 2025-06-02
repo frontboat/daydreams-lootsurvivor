@@ -1,0 +1,339 @@
+---
+title: Getting Started
+description: Build your first AI agent in 5 minutes.
+---
+
+## What You'll Build
+
+You'll create a working AI agent that can:
+
+- **Respond** to your messages in the terminal
+- **Remember** previous conversations
+- **Call actions** to perform tasks
+- **Extend** with new capabilities
+
+## Quick Start
+
+### 1. Create Your Agent
+
+```bash title="create-new-agent.sh"
+# Install the CLI tool
+npm install -g @daydreamsai/create-agent
+
+# Create a new agent project
+npx @daydreamsai/create-agent my-agent
+
+# Navigate to your project
+cd my-agent
+```
+
+### 2. Add Your API Key
+
+```bash title="configure-environment.sh"
+# Copy the example environment file
+cp .env.example .env
+
+# Edit .env and add your API key
+# GROQ_API_KEY=your_api_key_here
+```
+
+### 3. Start Your Agent
+
+```bash title="start-agent.sh"
+npm start
+```
+
+**Result**: Your agent runs in the terminal and you can chat with it
+immediately.
+
+## What Just Happened?
+
+Your agent was created with this minimal code:
+
+```typescript title="generated-agent.ts"
+import { createDreams } from "@daydreamsai/core";
+import { cli } from "@daydreamsai/cli";
+import { groq } from "@ai-sdk/groq";
+
+const agent = createDreams({
+  model: groq("deepseek-r1-distill-llama-70b"),
+  contexts: [cli],
+}).start();
+```
+
+This creates an agent that:
+
+- **Uses Groq's Deepseek model** for fast responses
+- **Runs in CLI context** so you can chat in terminal
+- **Starts immediately** and waits for your input
+
+## Try These Examples
+
+Once your agent is running, try these interactions:
+
+### Basic Conversation
+
+```
+You: Hello! What can you do?
+
+Agent: Hi! I'm an AI agent built with Daydreams. I can:
+- Have conversations and remember what we discuss
+- Help you with questions and tasks
+- Be extended with new capabilities as needed
+
+What would you like to explore?
+```
+
+### Ask for Help
+
+```
+You: How do I add new actions to you?
+
+Agent: You can add actions by creating them with the `action()` function and adding them to extensions. For example:
+
+const myAction = action({
+  name: "calculate",
+  handler: ({ a, b }) => a + b
+});
+
+Would you like me to explain more about the Daydreams architecture?
+```
+
+## Next Steps
+
+### Add Your First Action
+
+Extend your agent with a custom action:
+
+```typescript title="add-calculator-action.ts"
+import { createDreams, action } from "@daydreamsai/core";
+import { cli } from "@daydreamsai/cli";
+import { groq } from "@ai-sdk/groq";
+import { z } from "zod";
+
+// Create a calculator action
+const calculatorAction = action({
+  name: "calculate",
+  description: "Perform basic math calculations",
+  schema: {
+    operation: z.enum(["add", "subtract", "multiply", "divide"]),
+    a: z.number(),
+    b: z.number(),
+  },
+  handler: ({ operation, a, b }) => {
+    switch (operation) {
+      case "add":
+        return a + b;
+      case "subtract":
+        return a - b;
+      case "multiply":
+        return a * b;
+      case "divide":
+        return b !== 0 ? a / b : "Cannot divide by zero";
+    }
+  },
+});
+
+const agent = createDreams({
+  model: groq("deepseek-r1-distill-llama-70b"),
+  contexts: [cli],
+  actions: [calculatorAction], // Add your action here
+}).start();
+```
+
+**Try it**: Ask your agent "Can you calculate 15 \* 7?" and it will use your
+custom action.
+
+### Add Memory
+
+Give your agent persistent memory:
+
+```typescript title="add-memory.ts"
+import { createDreams } from "@daydreamsai/core";
+import { cli } from "@daydreamsai/cli";
+import { memory } from "@daydreamsai/core";
+import { groq } from "@ai-sdk/groq";
+
+const agent = createDreams({
+  model: groq("deepseek-r1-distill-llama-70b"),
+  contexts: [cli],
+  memory: memory(), // Add memory capability
+}).start();
+```
+
+**Result**: Your agent remembers conversations between sessions.
+
+### Connect to External Services
+
+Add web search capability:
+
+```typescript title="add-web-search.ts"
+import { createDreams, action } from "@daydreamsai/core";
+import { cli } from "@daydreamsai/cli";
+import { groq } from "@ai-sdk/groq";
+
+const searchAction = action({
+  name: "web_search",
+  description: "Search the web for current information",
+  schema: {
+    query: z.string(),
+  },
+  handler: async ({ query }) => {
+    const response = await fetch(
+      `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json`
+    );
+    const data = await response.json();
+    return data.Abstract || "No results found";
+  },
+});
+
+const agent = createDreams({
+  model: groq("deepseek-r1-distill-llama-70b"),
+  contexts: [cli],
+  actions: [searchAction],
+}).start();
+```
+
+**Try it**: Ask "What's the weather like today?" and your agent can search for
+current information.
+
+## Common Patterns
+
+### Environment Setup
+
+```typescript title="robust-environment-setup.ts"
+import { createDreams } from "@daydreamsai/core";
+import { cli } from "@daydreamsai/cli";
+import { groq } from "@ai-sdk/groq";
+
+// Check for required environment variables
+if (!process.env.GROQ_API_KEY) {
+  console.error("❌ GROQ_API_KEY environment variable is required");
+  process.exit(1);
+}
+
+const agent = createDreams({
+  model: groq("deepseek-r1-distill-llama-70b"),
+  contexts: [cli],
+}).start();
+
+console.log("✅ Agent started successfully!");
+```
+
+### Multiple Contexts
+
+```typescript title="multiple-contexts.ts"
+import { createDreams } from "@daydreamsai/core";
+import { cli } from "@daydreamsai/cli";
+import { discord } from "@daydreamsai/discord";
+import { groq } from "@ai-sdk/groq";
+
+const agent = createDreams({
+  model: groq("deepseek-r1-distill-llama-70b"),
+  contexts: [
+    cli, // Chat in terminal
+    discord, // Respond to Discord messages
+  ],
+}).start();
+```
+
+**Result**: Your agent works in both terminal and Discord simultaneously.
+
+### Error Handling
+
+```typescript title="error-handling.ts"
+import { createDreams, action } from "@daydreamsai/core";
+import { cli } from "@daydreamsai/cli";
+import { groq } from "@ai-sdk/groq";
+
+const safeAction = action({
+  name: "divide",
+  handler: ({ a, b }) => {
+    try {
+      if (b === 0) {
+        return { error: "Cannot divide by zero" };
+      }
+      return { result: a / b };
+    } catch (error) {
+      return { error: "Calculation failed" };
+    }
+  },
+});
+
+const agent = createDreams({
+  model: groq("deepseek-r1-distill-llama-70b"),
+  contexts: [cli],
+  actions: [safeAction],
+}).start();
+```
+
+## Troubleshooting
+
+### Agent Won't Start
+
+```bash title="debug-startup.sh"
+# Check your environment file
+cat .env
+
+# Verify API key is set
+echo $GROQ_API_KEY
+
+# Run with debug logging
+DEBUG=* npm start
+```
+
+### API Key Issues
+
+```typescript title="check-api-key.ts"
+// Add this to your agent file to verify API key
+console.log("API Key present:", !!process.env.GROQ_API_KEY);
+console.log("API Key length:", process.env.GROQ_API_KEY?.length);
+```
+
+### Memory Issues
+
+```bash title="clear-memory.sh"
+# If your agent behaves unexpectedly, clear its memory
+rm -rf .agent-memory/
+npm start
+```
+
+## Learning Path
+
+Choose your next step based on your goals:
+
+### Build Specific Agents
+
+- **[Discord Bot](/docs/tutorials/examples/discord-weather-bot)** - Weather bot
+  for Discord servers
+- **[Task Manager](/docs/tutorials/examples/task-management)** - Personal
+  productivity assistant
+- **[Trading Bot](/docs/tutorials/examples/trading-assistant)** - Automated
+  trading analysis
+
+### Understand Architecture
+
+- **[Building Blocks](/docs/core/concepts/building-blocks)** - Core components
+  explained
+- **[Agent Lifecycle](/docs/core/concepts/agent-lifecycle)** - How agents think
+  and act
+- **[Memory Systems](/docs/core/concepts/memory)** - Persistent and working
+  memory
+
+### Advanced Features
+
+- **[Custom Extensions](/docs/core/advanced/extensions)** - Build reusable
+  components
+- **[MCP Integration](/docs/core/concepts/mcp)** - Connect to external services
+- **[Deployment](/docs/tutorials/deployment)** - Deploy to production
+
+## Key Takeaways
+
+- **5-minute setup** - From zero to working agent quickly
+- **Progressive enhancement** - Start simple, add complexity as needed
+- **Multiple contexts** - Same agent works in terminal, Discord, web, etc.
+- **Extensible architecture** - Add actions, memory, and external services
+- **Production ready** - Built-in error handling and logging
+
+You now have a working AI agent. Explore the examples to see what's possible, or
+dive into the concepts to understand how it works.

@@ -11,24 +11,80 @@ vi.mock("execa");
 describe("Utility Functions", () => {
   describe("generateTemplateContent", () => {
     const templateContent = `/**
- * Template for testing
+ * {{MODEL_NAME}} template for a Daydreams agent
+ * This template includes context for goals and tasks, and actions for managing them
  */
-import { createDreams } from "@daydreamsai/core";
 import { {{MODEL_IMPORT_FUNCTION}} } from "{{MODEL_IMPORT_PATH}}";
-import { cli } from "@daydreamsai/core/extensions";
+import {
+    createDreams,
+    context,
+    render,
+    action,
+    validateEnv,
+} from "@daydreamsai/core";
+import { cliExtension } from "@daydreamsai/cli";
+import { string, z } from "zod";
 
+// Initialize {{MODEL_NAME}} client
+const env = validateEnv(
+    z.object({
+        {{ENV_VAR_KEY}}: z.string().min(1, "{{ENV_VAR_KEY}} is required"),
+    })
+);
+
+// Initialize {{MODEL_NAME}} client
 const {{MODEL_VARIABLE}} = {{MODEL_IMPORT_FUNCTION}}({
-  apiKey: process.env.{{ENV_VAR_KEY}},
+    apiKey: env.{{ENV_VAR_KEY}}!,
 });
 
-const agent = createDreams({
-  model: {{MODEL_VARIABLE}}.chat.completions.create({
-    model: "{{MODEL_VERSION}}"
-  }),
-  extensions: [cli]
+const template = \`
+Goal: {{goal}} 
+\`;
+
+type GoalMemory = {
+    goal: string;
+};
+
+const goalContexts = context({
+    type: "goal",
+    schema: z.object({
+        id: string(),
+    }),
+
+    key({ id }: { id: string }) {
+        return id;
+    },
+
+    create(state) {
+        return {
+            id: state.args.id,
+        };
+    },
+
+    render({ memory }: { memory: GoalMemory }) {
+        return render(template, {
+            goal: memory.goal,
+        });
+    },
 });
 
-agent.run();`;
+createDreams({
+    model: {{MODEL_VARIABLE}}("{{MODEL_VERSION}}"),
+    extensions: [cliExtension],
+    context: goalContexts,
+    actions: [
+        action({
+            name: "addTask",
+            description: "Add a task to the goal",
+            schema: z.object({ task: z.string() }),
+            handler(call, ctx, agent) {
+              const agentMemory = ctx.agentMemory as GoalMemory;
+              agentMemory.goal = call.data.task;
+              return {};
+            },
+          }),
+    ],
+}).start({ id: "test" });`;
 
     it("should replace model-specific placeholders correctly", () => {
       const modelConfig = {
@@ -44,8 +100,8 @@ agent.run();`;
 
       expect(result).toContain('import { createOpenAI } from "@ai-sdk/openai"');
       expect(result).toContain("const openai = createOpenAI({");
-      expect(result).toContain("apiKey: process.env.OPENAI_API_KEY");
-      expect(result).toContain('model: "gpt-4o"');
+      expect(result).toContain("apiKey: env.OPENAI_API_KEY");
+      expect(result).toContain('openai("gpt-4o")');
       expect(result).toContain("* Daydreams agent with");
       expect(result).toContain("* Using OpenAI as the model provider");
     });
@@ -61,12 +117,12 @@ agent.run();`;
       };
 
       const extensionImports = [
-        'import { cli } from "@daydreamsai/core/extensions";',
-        'import { twitter } from "@daydreamsai/core/extensions";',
-        'import { discord } from "@daydreamsai/core/extensions";',
+        'import { cliExtension } from "@daydreamsai/cli";',
+        'import { twitter } from "@daydreamsai/twitter";',
+        'import { discord } from "@daydreamsai/discord";',
       ];
 
-      const extensionsList = ["cli", "twitter", "discord"];
+      const extensionsList = ["cliExtension", "twitter", "discord"];
 
       const result = generateTemplateContent(
         templateContent,
@@ -76,17 +132,17 @@ agent.run();`;
       );
 
       expect(result).toContain(
-        'import { cli } from "@daydreamsai/core/extensions";'
+        'import { cliExtension } from "@daydreamsai/cli";'
       );
       expect(result).toContain(
-        'import { twitter } from "@daydreamsai/core/extensions";'
+        'import { twitter } from "@daydreamsai/twitter";'
       );
       expect(result).toContain(
-        'import { discord } from "@daydreamsai/core/extensions";'
+        'import { discord } from "@daydreamsai/discord";'
       );
-      expect(result).toContain("extensions: [cli, twitter, discord]");
+      expect(result).toContain("extensions: [cliExtension]");
       expect(result).toContain(
-        "* Daydreams agent with cli, twitter, discord extension(s)"
+        "* Daydreams agent with cliExtension, twitter, discord extension(s)"
       );
     });
   });

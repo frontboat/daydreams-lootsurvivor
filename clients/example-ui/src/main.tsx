@@ -8,7 +8,7 @@ import { createAgent } from "./agent";
 import { QueryClient } from "@tanstack/react-query";
 
 // Create a new router instance
-const router = createRouter({
+export const router = createRouter({
   routeTree,
   context: {
     agent: createAgent(),

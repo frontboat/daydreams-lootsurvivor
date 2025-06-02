@@ -1,75 +1,105 @@
 import {
+  LogLevel,
   type MemoryStore,
+  context,
   createContainer,
   createDreams,
   createMemory,
   createMemoryStore,
   createVectorStore,
+  service,
 } from "@daydreamsai/core";
 import { chat } from "./chat";
-import { createOpenAI } from "@ai-sdk/openai";
-import { createAnthropic } from "@ai-sdk/anthropic";
-import { deepResearch } from "../../../../examples/v1/deep-research/research";
-import { tavily } from "@tavily/core";
+import { groq, openai } from "./models";
+import { z } from "zod";
+import { createStorage, Storage } from "unstorage";
+// import localStorageDriver from "unstorage/drivers/localstorage";
+import indexedDbDriver from "unstorage/drivers/indexedb";
+import httpDriver from "unstorage/drivers/http";
 
-export const anthropic = createAnthropic({
-  apiKey: import.meta.env.VITE_ANTHROPIC_API_KEY,
-  headers: {
-    "anthropic-dangerous-direct-browser-access": "true",
-  },
-});
-
-export const openai = createOpenAI({
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-});
-
-const browserStorage = (): MemoryStore => {
-  const memoryStore = createMemoryStore();
+function createMemoryStoreFromStorage<TStorage extends Storage>(
+  storage: TStorage
+): MemoryStore {
   return {
-    async get<T>(key: string) {
-      let data = await memoryStore.get<T>(key);
-      if (data === null) {
-        const local = localStorage.getItem(key);
-        if (local) {
-          data = JSON.parse(local);
-          await memoryStore.set(key, data);
-        }
-      }
-
-      return data;
-    },
-    async set(key, value) {
-      localStorage.setItem(key, JSON.stringify(value));
-      return memoryStore.set(key, value);
-    },
-    async clear() {
-      // localStorage.
-      return memoryStore.clear();
-    },
+    ...storage,
     async delete(key) {
-      return memoryStore.delete(key);
+      return storage.remove(key);
     },
   };
-};
+}
+
+const agentContext = context({
+  type: "agent",
+  schema: z.object({}),
+  key: () => "agent",
+});
+
+const indexDbStorage = createStorage({
+  driver: indexedDbDriver({ dbName: "daydreams", base: "agent" }),
+});
+
+console.log(typeof window);
+
+const remoteDbStorage = createStorage({
+  driver: httpDriver({
+    base:
+      typeof window !== "undefined" ? "/api/storage" : "http://localhost:3000",
+  }),
+});
+
+// const localStorage = createStorage({
+//   driver: localStorageDriver({}),
+// });
+
+// localStorage.getKeys().then(async (keys) => {
+//   const chats = keys
+//     .filter((key) => key.startsWith("context:chat"))
+//     .map((t) => t.slice("context:".length));
+//   // const contexts = await localStorage.get<string[]>("contexts");
+
+//   // // await localStorage.set(
+//   // //   "contexts",
+//   // //   Array.from(new Set([...(contexts ? contexts : []), ...chats]).values())
+//   // // );
+//   // console.log({ contexts, chats });
+// });
+
+// const booter = service({
+//   async boot(container) {
+//     const keys = await localStorage.getKeys();
+
+//     // for (const key of keys) {
+//     //   if (key === "contexts") continue;
+//     //   await indexDbStorage.setItem(key, await localStorage.getItem(key));
+//     // }
+
+//     const chats = keys
+//       .filter((key) => key.startsWith("context:chat"))
+//       .map((t) => t.slice("context:".length));
+
+//     const contexts = await indexDbStorage.get<string[]>("contexts");
+
+//     await indexDbStorage.set(
+//       "contexts",
+//       Array.from(new Set([...(contexts ? contexts : []), ...chats]).values())
+//     );
+//   },
+// });
 
 export function createAgent() {
-  const memoryStorage = browserStorage();
   const container = createContainer();
 
-  container.singleton("tavily", () =>
-    tavily({
-      apiKey: import.meta.env.VITE_TAVILY_API_KEY,
-    })
-  );
-
   return createDreams({
-    model: anthropic("claude-3-7-sonnet-latest"),
+    logger: LogLevel.DEBUG,
+    model: groq("deepseek-r1-distill-llama-70b"),
     container,
     memory: createMemory(
-      memoryStorage,
+      createMemoryStoreFromStorage(remoteDbStorage),
       createVectorStore(),
       openai("gpt-4-turbo")
     ),
-    extensions: [chat, deepResearch],
+    context: agentContext,
+    extensions: [chat],
+    services: [],
   });
 }

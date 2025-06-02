@@ -1,21 +1,22 @@
 {
-  "name": "games",
+  "name": "gigaverse",
   "module": "index.ts",
   "type": "module",
   "private": true,
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "catalog:"
   },
   "peerDependencies": {
-    "typescript": "^5"
+    "typescript": "catalog:"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^1.1.15",
-    "@ai-sdk/openai": "^1.2.1",
-    "@ai-sdk/groq": "^1.1.12",
+    "@ai-sdk/anthropic": "catalog:",
+    "@ai-sdk/openai": "catalog:",
+    "@ai-sdk/groq": "catalog:",
+    "@daydreamsai/cli": "workspace:*",
     "@daydreamsai/core": "workspace:*",
     "@daydreamsai/chromadb": "workspace:*",
     "@daydreamsai/discord": "workspace:*",
-    "zod": "^3.24.2"
+    "zod": "catalog:"
   }
 }

@@ -28,33 +28,22 @@ export function createMemory(
 }
 
 /**
- * Retrieves or creates a new conversation memory for the given ID
- * @param memory - The memory store to use
- * @param conversationId - Unique identifier for the conversation
- * @returns A WorkingMemory object for the conversation
- */
-export async function getOrCreateConversationMemory(
-  memory: MemoryStore,
-  conversationId: string
-): Promise<WorkingMemory> {
-  const data = await memory.get<WorkingMemory>(conversationId);
-  if (data) return data;
-  return {
-    inputs: [],
-    outputs: [],
-    thoughts: [],
-    calls: [],
-    results: [],
-  };
-}
-
-/**
  * Creates a new in-memory store for conversation data
  * @returns A MemoryStore implementation using a Map for storage
  */
-const data = new Map<string, any>();
 export function createMemoryStore(): MemoryStore {
+  const data = new Map<string, any>();
   return {
+    async keys(base) {
+      const keys = Array.from(data.keys());
+
+      if (base) {
+        return keys.filter((key) => key.startsWith(base));
+      }
+
+      return keys;
+    },
+
     /**
      * Retrieves a value from the store
      * @param key - Key to look up

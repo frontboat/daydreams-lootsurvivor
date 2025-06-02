@@ -1,52 +1,55 @@
 {
   "name": "@daydreamsai/core",
-  "version": "0.2.18-alpha.1",
+  "version": "0.3.7",
   "type": "module",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     "./package.json": "./package.json",
     ".": {
       "types": "./dist/index.d.ts",
-      "import": {
-        "default": "./dist/index.js"
-      }
-    },
-    "./extensions": {
-      "types": "./dist/extensions/index.d.ts",
-      "import": {
-        "default": "./dist/extensions/index.js"
+      "require": "./dist/index.js",
+      "import": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      "./package.json": "./package.json",
+      ".": {
+        "types": "./dist/index.d.ts",
+        "require": "./dist/index.js",
+        "import": "./dist/index.js"
       }
     }
   },
   "devDependencies": {
+    "@ai-sdk/anthropic": "catalog:",
+    "@ai-sdk/groq": "catalog:",
+    "@ai-sdk/openai": "catalog:",
     "@types/bun": "latest",
-    "tsup": "^8.3.6",
-    "vitest": "^3.0.5"
+    "tsup": "catalog:",
+    "vitest": "catalog:"
   },
   "peerDependencies": {
-    "typescript": "^5.8.2"
+    "typescript": "catalog:"
   },
   "scripts": {
     "test": "vitest",
-    "build": "tsup --dts-resolve"
+    "build": "tsup --dts-resolve",
+    "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^1.1.14",
-    "@ai-sdk/ui-utils": "1.2.1",
-    "@langchain/core": "^0.3.39",
-    "@langchain/textsplitters": "^0.1.0",
-    "@modelcontextprotocol/sdk": "^1.6.1",
-    "@tavily/core": "^0.3.1",
-    "ai": "^4.1.46",
-    "chromadb-default-embed": "^2.13.2",
-    "dotenv": "^16.4.7",
-    "js-tiktoken": "^1.0.18",
-    "openai": "^4.83.0",
+    "@ai-sdk/provider": "catalog:",
+    "@ai-sdk/ui-utils": "catalog:",
+    "ai": "catalog:",
+    "dotenv": "catalog:",
     "p-defer": "^4.0.1",
-    "uuid": "^11.1.0",
-    "zod": "^3.24.2",
-    "zod-to-json-schema": "^3.24.1"
+    "uuid": "catalog:",
+    "zod": "catalog:",
+    "zod-to-json-schema": "catalog:"
   }
 }
