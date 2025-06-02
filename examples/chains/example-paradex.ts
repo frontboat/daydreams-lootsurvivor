@@ -1,14 +1,11 @@
 import { shortString, ec, typedData as starkTypedData, type TypedData } from "starknet";
 import { groq } from "@ai-sdk/groq";
-import { cli } from "../../packages/core/src/extensions";
+import { cli } from "@daydreamsai/core/extensions";
 import { z } from "zod";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
-import { createContainer } from "../../packages/core/src/container";
-import { action } from "../../packages/core/src/utils";
-import { createDreams } from "../../packages/core/src/dreams";
-import { LogLevel } from "../../packages/core/src/types";
+import { createContainer, action, createDreams, LogLevel } from "@daydreamsai/core";
 import BigNumber from "bignumber.js";
 
 const container = createContainer();
