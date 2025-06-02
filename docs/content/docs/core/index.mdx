@@ -1,31 +1,91 @@
 ---
 title: About Daydreams
-description: Build your first Daydreams agent.
+description:
+  TypeScript framework for building autonomous AI agents with unified LLM
+  provider support.
 ---
 
-Daydreams is a typescript framework for building autonomous AI agents. It is a
-framework of abstractions that allow you to build the AI applications of the
-future.
+> ⚠️ **Warning**: This is alpha software under active development. Expect
+> frequent breaking changes and bugs. The API is not yet stable.
 
-You can use Daydreams to build agents that can:
+## What is an AI Agent?
 
-- Fetch data from APIs
-- Generate text
-- Generate images
-- Generate audio
-- Generate videos
-- Play games
-- Solve long running problems
-- And more
+Think of an AI agent as a smart assistant that can:
 
-## Major Features
+- **Listen** for events (Discord messages, API calls, timers)
+- **Think** about what to do (using AI models like GPT)
+- **Take action** (call APIs, send responses, update databases)
+- **Remember** what happened for future interactions
 
-- **Model routing**: Daydreams uses the Vercel AI SDK for model routing,
-  providing a unified interface to interact with any LLM provider.
+## Real Examples
 
-- **Contexts**: Build agents with multiple capabilities across every domain.
+Here are some agents you could build with Daydreams:
 
-- **MCP Client**: Dreams can be used as a client for the MCP protocol.
+### Discord Weather Bot
 
-- **Nodejs + Browser support**: Daydreams is built for the web and can be used
-  in Nodejs and the browser.
+```typescript title="weather-bot.ts"
+// When someone says "what's the weather?"
+// → Agent calls weather API
+// → Agent responds: "It's 72°F and sunny in San Francisco"
+```
+
+### Trading Assistant
+
+```typescript title="trading-bot.ts"
+// When market conditions change
+// → Agent analyzes data
+// → Agent executes trades or sends alerts
+```
+
+### Customer Support Bot
+
+```typescript title="support-bot.ts"
+// When customer sends message
+// → Agent checks knowledge base
+// → Agent provides help or escalates to human
+```
+
+## How Daydreams Works
+
+Daydreams provides the building blocks to create these agents:
+
+- **Contexts** - Manage different conversation sessions or tasks
+- **Inputs** - Listen for Discord messages, API calls, timers, etc.
+- **Outputs** - Send responses via Discord, email, webhooks, etc.
+- **Actions** - Call APIs, process data, perform calculations
+- **Memory** - Remember conversations and learn from interactions
+
+## Why Choose Daydreams?
+
+- **TypeScript-first** - Full type safety and IntelliSense support
+- **Model-agnostic** - Works with OpenAI, Anthropic, Groq, and any AI SDK
+  provider
+- **Production-ready** - Built-in memory management, error handling, and
+  concurrency
+- **Extensible** - Pre-built extensions for Discord, Twitter, Telegram, and more
+
+## Get Started
+
+Choose your path based on your experience:
+
+### New to AI Agents?
+
+1. **[Building Blocks](/docs/core/concepts/building-blocks)** - Understand the
+   core components with simple examples
+2. **[Your First Agent](/docs/core/first-agent)** - Build a working CLI echo bot
+3. **[Agent Lifecycle](/docs/core/concepts/agent-lifecycle)** - Learn how agents
+   think and act
+
+### Ready to Build?
+
+1. **[Installation](/docs/core/installation)** - Set up your development
+   environment
+2. **[Examples](/docs/tutorials/examples)** - See complete working agents
+3. **[API Reference](/docs/api)** - Detailed documentation for all features
+
+### Want to Understand the Architecture?
+
+1. **[Core Concepts](/docs/core/concepts/core)** - Deep dive into the framework
+   design
+2. **[Advanced Features](/docs/core/advanced/introduction)** - Extensions,
+   services, and customization

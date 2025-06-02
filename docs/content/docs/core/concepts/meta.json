@@ -2,10 +2,11 @@
   "pages": [
     "core",
     "agent-lifecycle",
+    "building-blocks",
     "contexts",
-    "actions",
     "inputs",
     "outputs",
+    "actions",
     "memory",
     "prompting",
     "tasks"

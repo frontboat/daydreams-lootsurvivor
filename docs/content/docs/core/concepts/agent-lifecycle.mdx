@@ -3,6 +3,43 @@ title: Agent Lifecycle
 description: How Daydreams agents process information and execute tasks.
 ---
 
+## Simple Overview
+
+Think of an agent as following a simple loop:
+
+1. **Something happens** (input arrives)
+2. **Agent thinks** (uses LLM to decide what to do)
+3. **Agent acts** (performs actions or sends responses)
+4. **Agent remembers** (saves what happened)
+5. **Repeat**
+
+This loop continues as long as the agent is running, handling new inputs and
+responding intelligently based on its context and memory.
+
+## The Basic Flow
+
+Here's what happens when your agent receives a Discord message:
+
+```
+Discord Message Arrives
+         ↓
+Agent loads chat context & memory
+         ↓
+Agent thinks: "What should I do?"
+         ↓
+Agent decides: "I'll check the weather and respond"
+         ↓
+Agent calls weather API (action)
+         ↓
+Agent sends Discord reply (output)
+         ↓
+Agent saves conversation to memory
+```
+
+---
+
+## Detailed Technical Explanation
+
 The core of the Daydreams framework is the agent's execution lifecycle. This
 loop manages how an agent receives input, reasons with an LLM, performs actions,
 and handles results. Understanding this flow is crucial for building and
@@ -64,7 +101,7 @@ agent's core reasoning cycle:
 - **Generate Prompt:** This information is formatted into a structured prompt
   (using XML) for the LLM. The prompt clearly tells the LLM its instructions,
   what tools (actions/outputs) it has, the current state, and what new
-  information needs attention. (See [Prompting](/docs/concepts/prompting)).
+  information needs attention. (See [Prompting](/docs/core/concepts/prompting)).
 - **LLM Call:** The agent sends the complete prompt to the configured LLM.
 - **Process LLM Response Stream:** As the LLM generates its response token by
   token:
@@ -77,12 +114,12 @@ agent's core reasoning cycle:
 - **Execute Actions & Outputs:**
   - For each identified `<action_call>`, the framework validates the arguments
     against the action's schema and schedules the action's `handler` function to
-    run via the `TaskRunner`. (See [Actions](/docs/concepts/actions) and
-    [Tasks](/docs/concepts/tasks)).
+    run via the `TaskRunner`. (See [Actions](/docs/core/concepts/actions) and
+    [Tasks](/docs/core/concepts/tasks)).
   * For each identified `<output>`, the framework validates the
     content/attributes and runs the output's `handler` function to send the
     information externally (e.g., post a message). (See
-    [Outputs](/docs/concepts/outputs)).
+    [Outputs](/docs/core/concepts/outputs)).
 - **Wait for Actions:** The agent waits for any critical asynchronous actions
   scheduled in this step to complete. Their results (`ActionResult`) are logged
   to `WorkingMemory`.

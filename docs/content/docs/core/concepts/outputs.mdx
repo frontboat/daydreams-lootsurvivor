@@ -3,225 +3,445 @@ title: Outputs
 description: How Daydreams agents send information and responses.
 ---
 
-Outputs are how Daydreams agents communicate results or send information to
-external systems or users. If Inputs are how agents "listen," Outputs are how
-they "speak" or "act" based on the LLM's reasoning.
+## What is an Output?
 
-Examples of outputs include:
+An output is how your agent **sends** information to the outside world. If
+actions are what your agent can "do", outputs are how your agent "speaks" or
+"responds".
 
-- Sending a message to a Discord channel or Telegram chat.
-- Posting a tweet.
-- Returning a response in a CLI session.
-- Calling an external API based on the agent's decision (though Actions are
-  often better for this if a response is needed).
+## Real Examples
 
-## Defining an Output
+Here are outputs that make agents useful:
 
-Outputs are defined using the `output` helper function exported from
-`@daydreamsai/core`. Each definition specifies how the agent should structure
-information for a particular output channel and how to execute the sending
-logic.
+### Discord Message
 
-```typescript
-import {
-  output,
-  context,
-  type AnyAgent,
-  type ContextState, // Base context state type
-  type OutputRef, // Type for the log entry
-} from "@daydreamsai/core";
-import { z } from "zod";
-
-// Assume myDiscordClient.sendMessage exists
-declare const myDiscordClient: {
-  sendMessage: (channelId: string, content: string) => Promise<any>;
-};
-declare const myContext: any; // Placeholder for your context type
-
-const discordMessageOutput = output({
-  // Required: A unique identifier for this output type. Used by the LLM.
+```typescript title="discord-output.ts"
+// Agent can send Discord messages
+const discordMessage = output({
   type: "discord:message",
-
-  // Optional: Description for the LLM.
-  description: "Sends a message to a specific Discord channel.",
-
-  // Optional: Instructions for the LLM on usage.
-  instructions: "Use this to reply to the user in the Discord channel.",
-
-  // Optional: Zod schema for the main content of the output.
-  // The LLM provides this content *inside* the <output> tag.
-  // Defaults to z.string() if omitted.
-  schema: z.string().describe("The message content to send."),
-
-  // Optional: Zod schema for additional attributes the LLM must provide
-  // *on* the <output> tag itself.
+  description: "Sends a message to Discord",
+  schema: z.string(),
   attributes: z.object({
-    channelId: z.string().describe("The ID of the Discord channel to send to."),
-    replyToUserId: z
-      .string()
-      .optional()
-      .describe("User ID to mention in the reply."),
+    channelId: z.string(),
   }),
-
-  // Required (usually): The function that performs the actual sending logic.
-  handler: async (data, ctx, agent) => {
-    // 'data' contains the validated content (from schema).
-    // 'ctx' includes the ContextState and the OutputRef for this specific call.
-    // Access attributes parsed from the <output> tag via ctx.outputRef.params.
-    const { channelId, replyToUserId } = ctx.outputRef.params ?? {};
-    const content = data; // Access validated content from schema
-
-    let messageContent = content;
-    if (replyToUserId) {
-      messageContent = `<@${replyToUserId}> ${content}`;
-    }
-
-    console.log(`Sending to Discord channel ${channelId}: ${messageContent}`);
-    // Example: await myDiscordClient.sendMessage(channelId, messageContent);
-    await new Promise((res) => setTimeout(res, 50)); // Simulate async
-
-    // Optional: Return data to update the OutputRef log.
-    // Can also return an array of OutputRefResponse for multiple logs.
-    return {
-      data: { content: messageContent, channelId }, // Updated data for the log
-      params: ctx.outputRef.params, // Typically keep original params
-      processed: true, // Mark this output as fully handled
-    };
+  handler: async (message, ctx) => {
+    await discord.send(ctx.outputRef.params.channelId, message);
+    return { sent: true };
   },
-
-  // Optional: Custom formatting for the OutputRef log.
-  format: (res) => {
-    // Note: 'res' is the OutputRef after the handler possibly updated it
-    const outputData = Array.isArray(res.data) ? res.data[0] : res.data; // Adjust if handler returns array
-    return `Sent Discord message to ${res.params?.channelId}: "${outputData?.content ?? res.content}"`;
-  },
-
-  // Optional: Examples for the LLM.
-  examples: [
-    `<output type="discord:message" channelId="12345">Hello there!</output>`,
-    `<output type="discord:message" channelId="67890" replyToUserId="user123">Got it!</output>`,
-  ],
-
-  // Optional: Setup logic run when the agent starts.
-  install: async (agent) => {
-    /* ... */
-  },
-
-  // Optional: Conditionally enable this output based on context.
-  enabled: (ctx: ContextState) => {
-    // Example: Only enable if the current context is a discord channel
-    // return ctx.context.type === 'discord:channel';
-    return true;
-  },
-
-  // Optional: Associate with a specific context type.
-  // context: myContext,
 });
 ```
 
-**Key Parameters:**
+### Console Print
 
-- `type` (string): Unique identifier used in `<output type="...">`.
-- `description`/`instructions` (string, optional): Help the LLM understand what
-  the output does and when to use it.
-- `schema` (Zod Schema, optional): Defines the structure and validates the
-  _content_ placed _inside_ the `<output>` tag by the LLM. Defaults to
-  `z.string()`.
-- `attributes` (Zod Schema, optional): Defines and validates _attributes_ placed
-  _on_ the `<output>` tag itself (e.g.,
-  `<output type="discord:message" channelId="...">`). These provide necessary
-  parameters for the `handler`.
-- `handler` (Function): Executes the logic to send the information externally.
-  It receives:
-  - `data`: The validated content from the `schema`.
-  - `ctx`: The context state (`ContextState`) augmented with the specific
-    `outputRef` for this call (`OutputRef`). Attributes parsed from the tag are
-    found in `ctx.outputRef.params`.
-  - `agent`: The agent instance.
-  - It can optionally return an `OutputRefResponse` (or array thereof) to update
-    the log entry or mark it as processed.
-- `format` (Function, optional): Customizes the log representation of the
-  `OutputRef`.
-- `examples` (string[], optional): Provides concrete examples to the LLM on how
-  to structure the `<output>` tag.
-- `install` / `enabled` / `context` (Functions/Context, optional): Similar to
-  Actions and Inputs for setup, conditional availability, and context scoping.
+```typescript title="console-output.ts"
+// Agent can print to console
+const consolePrint = output({
+  type: "console:print",
+  description: "Prints a message to the console",
+  schema: z.string(),
+  handler: async (message) => {
+    console.log(`Agent: ${message}`);
+    return { printed: true };
+  },
+});
+```
 
-## LLM Interaction
+### Email Notification
 
-1.  **Availability:** Enabled outputs are presented to the LLM within the
-    `<available-outputs>` tag in the prompt, including their type, description,
-    instructions, content schema (`content_schema`), attribute schema
-    (`attributes_schema`), and examples.
-2.  **Invocation:** The LLM generates an output by including an `<output>` tag
-    in its response stream, matching one of the available types. It must provide
-    any required attributes defined in the `attributes` schema and the content
-    inside the tag matching the `schema`.
-    ```xml
-    <output type="discord:message" channelId="123456789">
-      This is the message content generated by the LLM.
-    </output>
-    ```
+```typescript title="email-output.ts"
+// Agent can send emails
+const emailOutput = output({
+  type: "email:send",
+  description: "Sends an email notification",
+  schema: z.string(),
+  attributes: z.object({
+    to: z.string(),
+    subject: z.string(),
+  }),
+  handler: async (body, ctx) => {
+    const { to, subject } = ctx.outputRef.params;
+    await emailService.send({ to, subject, body });
+    return { emailSent: true };
+  },
+});
+```
 
-## Execution Flow
+## The Problem: Agents Need to Communicate
 
-1.  **Parsing:** When the framework parses an `<output>` tag from the LLM stream
-    (`handleStream` in `streaming.ts`), it extracts the `type`, `attributes`,
-    and `content`.
-2.  **Log Creation:** An initial `OutputRef` log is created (`getOrCreateRef` in
-    `streaming.ts`).
-3.  **Processing:** Once the tag is fully parsed (`el.done`), the engine calls
-    `handleOutput` (`handlers.ts`).
-4.  **Validation:** `handleOutput` finds the corresponding output definition by
-    `type`. It validates the extracted `content` against the `output.schema` and
-    the extracted `attributes` against the `output.attributes` schema.
-5.  **Handler Execution:** If validation passes, `handleOutput` executes the
-    `output.handler` function, passing the validated content (`data`) and the
-    context state augmented with the `outputRef` (`ctx`). Attributes are
-    accessed via `ctx.outputRef.params`.
-6.  **External Action:** The `handler` performs the necessary external operation
-    (e.g., sending the Discord message).
-7.  **Logging:** The `handler` can optionally return data to update the
-    `OutputRef` log. The `OutputRef` is added to the `WorkingMemory`.
+Without outputs, your agent can think but can't communicate:
 
-## Outputs vs. Actions
+```text title="silent-agent.txt"
+User: "Send me the weather report"
+Agent: *calls weather API internally*
+Agent: *knows it's 72°F and sunny*
+Agent: *...but can't tell you!*
+// ❌ Agent gets the data but you never see it
+// ❌ No way to respond or communicate
+// ❌ Useless to humans
+```
 
-While outputs and actions share similar structures, they serve different
-purposes:
+## The Solution: Outputs Enable Communication
 
-| Feature         | Actions                                     | Outputs                                         |
-| --------------- | ------------------------------------------- | ----------------------------------------------- |
-| Primary purpose | Two-way interaction (call -> result -> LLM) | One-way communication (LLM -> external)         |
-| Return value    | Result is crucial for next LLM step         | Result usually not directly needed by LLM       |
-| State mutation  | Commonly used to update context state       | Can update state but less common                |
-| Usage pattern   | LLM requests data or triggers process       | LLM communicates final response or notification |
-| Error handling  | Errors often returned to LLM for reaction   | Errors handled internally (logged/retried)      |
+With outputs, your agent can respond properly:
 
-### When to Use Outputs vs. Actions
+```text title="communicating-agent.txt"
+User: "Send me the weather report"
+Agent: *calls weather API*
+Agent: *gets weather data*
+Agent: *uses discord:message output*
+Discord: "It's 72°F and sunny in San Francisco!"
+// ✅ Agent gets data AND tells you about it
+// ✅ Complete conversation loop
+// ✅ Actually useful
+```
 
-- **Use outputs when**: The primary goal is to communicate outward (send a
-  message, display UI, log data), and you **don't** need the result of that
-  communication for the LLM's immediate next reasoning step.
-- **Use actions when**: You need the **result** of the operation (e.g., data
-  fetched from an API, status of a transaction) for the LLM to continue its
-  reasoning process or make subsequent decisions.
+## How Outputs Work in Your Agent
 
-## Best Practices for Outputs
+### 1. You Define How the Agent Can Respond
 
-1. **Keep outputs focused**: Each output definition should have a single, clear
-   responsibility (e.g., `discord:message`, `log:event`).
-2. **Handle errors gracefully**: The `handler` should contain `try...catch`
-   blocks for external calls and report failures appropriately (e.g., log an
-   error, perhaps emit an `error` event) without crashing the agent.
-3. **Consider asynchronous processing**: For outputs involving potentially slow
-   external systems, ensure the `handler` is `async` and handles the operation
-   without blocking the main agent loop excessively.
-4. **Track important outputs in context**: If the fact that an output occurred
-   is important for future agent decisions (e.g., remembering a message was
-   sent), update the relevant context memory within the `handler`.
-5. **Use descriptive names and schemas**: Clearly define the `type`, `schema`,
-   and `attributes` so the LLM understands exactly how to use the output.
-   Provide good `examples`.
+```typescript title="define-outputs.ts"
+const agent = createDreams({
+  model: openai("gpt-4o"),
+  outputs: [
+    discordMessage, // Agent can send Discord messages
+    consolePrint, // Agent can print to console
+    emailOutput, // Agent can send emails
+  ],
+});
+```
 
-Outputs allow the agent to respond and communicate, completing the interaction
-loop initiated by Inputs and guided by Actions.
+### 2. The LLM Decides When to Respond
+
+When the agent thinks, it sees:
+
+```text title="llm-sees-outputs.txt"
+Available outputs:
+- discord:message: Sends a message to Discord
+- console:print: Prints a message to the console
+- email:send: Sends an email notification
+
+User asked: "Check weather and let me know via Discord"
+```
+
+### 3. The LLM Uses Outputs to Respond
+
+The LLM responds with structured output calls:
+
+```xml title="llm-uses-outputs.xml"
+<response>
+  <reasoning>User wants weather info via Discord. I'll get weather then send message.</reasoning>
+
+  <action_call name="get-weather">{"city": "San Francisco"}</action_call>
+
+  <output type="discord:message" channelId="123456789">
+    Weather in San Francisco: {{calls[0].temperature}}, {{calls[0].condition}}
+  </output>
+</response>
+```
+
+### 4. Daydreams Sends the Output
+
+Daydreams automatically:
+
+- Validates the output format
+- Runs your handler function
+- Actually sends the Discord message
+- Logs the result
+
+## Creating Your First Output
+
+Here's a simple output that saves messages to a file:
+
+```typescript title="file-output.ts"
+import { output } from "@daydreamsai/core";
+import { z } from "zod";
+import fs from "fs/promises";
+
+export const saveToFile = output({
+  // Type the LLM uses to call this output
+  type: "file:save",
+
+  // Description helps LLM know when to use it
+  description: "Saves a message to a text file",
+
+  // Schema defines what content is expected
+  schema: z.string().describe("The message to save"),
+
+  // Attributes define extra parameters on the output tag
+  attributes: z.object({
+    filename: z.string().describe("Name of the file to save to"),
+  }),
+
+  // Handler is your actual code that runs
+  handler: async (message, ctx) => {
+    const { filename } = ctx.outputRef.params;
+
+    await fs.writeFile(filename, message + "\n", { flag: "a" });
+
+    return {
+      saved: true,
+      filename,
+      message: `Saved message to ${filename}`,
+    };
+  },
+});
+```
+
+Use it in your agent:
+
+```typescript title="agent-with-file-output.ts"
+const agent = createDreams({
+  model: openai("gpt-4o"),
+  outputs: [saveToFile],
+});
+
+// Now when the LLM wants to save something:
+// <output type="file:save" filename="log.txt">This is my message</output>
+// The message gets saved to log.txt
+```
+
+## Working with Context Memory
+
+Outputs can read and update your agent's memory:
+
+```typescript title="notification-output.ts"
+// Define what your context remembers
+interface ChatMemory {
+  messagesSent: number;
+  lastNotification?: string;
+}
+
+const notificationOutput = output({
+  type: "notification:send",
+  description: "Sends a notification to the user",
+  schema: z.string(),
+  attributes: z.object({
+    priority: z.enum(["low", "medium", "high"]),
+  }),
+  handler: async (message, ctx) => {
+    // Access context memory (automatically typed!)
+    const memory = ctx.memory as ChatMemory;
+
+    // Update statistics
+    if (!memory.messagesSent) {
+      memory.messagesSent = 0;
+    }
+    memory.messagesSent++;
+    memory.lastNotification = message;
+
+    // Send the actual notification
+    const { priority } = ctx.outputRef.params;
+    await notificationService.send({
+      message,
+      priority,
+      userId: ctx.args.userId,
+    });
+
+    // Changes to memory are automatically saved
+    return {
+      sent: true,
+      totalSent: memory.messagesSent,
+      message: `Notification sent (total: ${memory.messagesSent})`,
+    };
+  },
+});
+```
+
+## Outputs vs Actions: When to Use Which?
+
+Understanding the difference is crucial:
+
+### Use **Outputs** When:
+
+- **Communicating results** to users or external systems
+- **You don't need a response** back for the LLM to continue
+- **Final step** in a conversation or workflow
+
+```typescript title="output-example.ts"
+// ✅ Good use of output - telling user the result
+<output type="discord:message" channelId="123">
+  Weather: 72°F, sunny. Have a great day!
+</output>
+```
+
+### Use **Actions** When:
+
+- **Getting data** the LLM needs for next steps
+- **You need the result** for further reasoning
+- **Middle step** in a complex workflow
+
+```typescript title="action-example.ts"
+// ✅ Good use of action - getting data for next step
+<action_call name="get-weather">{"city": "San Francisco"}</action_call>
+// LLM will use this result to decide what to tell the user
+```
+
+### Common Pattern: Actions → Outputs
+
+```xml title="action-then-output.xml"
+<response>
+  <reasoning>I'll get weather data, then tell the user about it</reasoning>
+
+  <!-- Action: Get data -->
+  <action_call name="get-weather">{"city": "Boston"}</action_call>
+
+  <!-- Output: Communicate result -->
+  <output type="discord:message" channelId="123">
+    Boston weather: {{calls[0].temperature}}, {{calls[0].condition}}
+  </output>
+</response>
+```
+
+## Advanced: Multiple Outputs
+
+Your agent can send multiple outputs in one response:
+
+```xml title="multiple-outputs.xml"
+<response>
+  <reasoning>I'll notify both Discord and email about this important update</reasoning>
+
+  <output type="discord:message" channelId="123">
+    🚨 Server maintenance starting in 10 minutes!
+  </output>
+
+  <output type="email:send" to="admin@company.com" subject="Maintenance Alert">
+    Server maintenance is beginning in 10 minutes. All users have been notified via Discord.
+  </output>
+</response>
+```
+
+## External Service Integration
+
+Outputs are perfect for integrating with external services:
+
+```typescript title="slack-output.ts"
+const slackMessage = output({
+  type: "slack:message",
+  description: "Sends a message to Slack",
+  schema: z.string(),
+  attributes: z.object({
+    channel: z.string().describe("Slack channel name"),
+    threadId: z.string().optional().describe("Thread ID for replies"),
+  }),
+  handler: async (message, ctx) => {
+    try {
+      const { channel, threadId } = ctx.outputRef.params;
+
+      const result = await slackClient.chat.postMessage({
+        channel,
+        text: message,
+        thread_ts: threadId,
+      });
+
+      return {
+        success: true,
+        messageId: result.ts,
+        channel: result.channel,
+        message: `Message sent to #${channel}`,
+      };
+    } catch (error) {
+      console.error("Failed to send Slack message:", error);
+
+      return {
+        success: false,
+        error: error.message,
+        message: "Failed to send Slack message",
+      };
+    }
+  },
+});
+```
+
+## Best Practices
+
+### 1. Use Clear Types and Descriptions
+
+```typescript title="good-naming.ts"
+// ✅ Good - clear what it does
+const userNotification = output({
+  type: "user:notification",
+  description:
+    "Sends a notification directly to the user via their preferred channel",
+  // ...
+});
+
+// ❌ Bad - unclear purpose
+const sendStuff = output({
+  type: "send",
+  description: "Sends something",
+  // ...
+});
+```
+
+### 2. Validate Input with Schemas
+
+```typescript title="good-schemas.ts"
+// ✅ Good - specific validation
+schema: z.object({
+  title: z.string().min(1).max(100),
+  content: z.string().min(1).max(2000),
+  urgency: z.enum(["low", "medium", "high"]),
+});
+
+// ❌ Bad - too loose
+schema: z.any();
+```
+
+### 3. Handle Errors Gracefully
+
+```typescript title="error-handling.ts"
+handler: async (message, ctx) => {
+  try {
+    await sendMessage(message);
+    return { sent: true };
+  } catch (error) {
+    // Log for debugging
+    console.error("Failed to send message:", error);
+
+    // Return structured error info
+    return {
+      sent: false,
+      error: error.message,
+      message: "Failed to send message - will retry later",
+    };
+  }
+};
+```
+
+### 4. Use Async/Await for External Services
+
+```typescript title="async-best-practice.ts"
+// ✅ Good - properly handles async
+handler: async (message, ctx) => {
+  const result = await emailService.send(message);
+  return { emailId: result.id };
+};
+
+// ❌ Bad - doesn't wait for async operations
+handler: (message, ctx) => {
+  emailService.send(message); // This returns a Promise that's ignored!
+  return { status: "sent" }; // Completes before email actually sends
+};
+```
+
+### 5. Provide Good Examples
+
+```typescript title="good-examples.ts"
+examples: [
+  '<output type="discord:message" channelId="123456789">Hello everyone!</output>',
+  '<output type="discord:message" channelId="987654321" replyToUserId="user123">Thanks for the question!</output>',
+];
+```
+
+## Key Takeaways
+
+- **Outputs enable communication** - Without them, agents can think but not
+  respond
+- **LLM chooses when to use them** - Based on types and descriptions you provide
+- **Different from actions** - Outputs communicate results, actions get data
+- **Content and attributes validated** - Zod schemas ensure correct format
+- **Memory can be updated** - Track what was sent for future reference
+- **Error handling is crucial** - External services can fail, handle gracefully
+
+Outputs complete the conversation loop - they're how your intelligent agent
+becomes a helpful communicator that users can actually interact with.

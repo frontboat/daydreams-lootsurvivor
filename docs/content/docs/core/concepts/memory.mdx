@@ -3,203 +3,444 @@ title: Memory
 description: How Daydreams agents store, recall, and learn from information.
 ---
 
-Memory is fundamental to how Daydreams agents operate, allowing them to maintain
-state, recall past interactions, store learned information, and improve their
-performance over time. The framework provides a flexible system with different
-types of memory serving distinct purposes.
+## What is Memory?
 
-## Core Memory Components (`BaseMemory`)
+Memory is how your agent **remembers** things between conversations. Just like
+you remember what you talked about yesterday, agents need memory to be helpful
+over time.
 
-When creating an agent using `createDreams`, you configure its primary memory
-system via the `memory` option. This accepts an object conforming to the
-`BaseMemory` type, which holds implementations for different storage needs:
+## Real Examples
 
-```typescript
-import { createDreams } from "@daydreamsai/core";
-import { createMemory, createMemoryStore, createVectorStore } from "@daydreamsai/core";
-import { createChromaVectorStore } from "@daydreamsai/chroma"; // Example
-import { createMongoMemoryStore } from "@daydreamsai/mongo"; // Example
+Here are different types of memory your agent uses:
 
+### Short-Term Memory (This Conversation)
+
+```typescript title="short-term-memory.ts"
+// What happened in the current conversation
+const workingMemory = {
+  messages: [
+    { user: "What's the weather?" },
+    { agent: "Let me check..." },
+    { action: "getWeather", result: "72°F, sunny" },
+    { agent: "It's 72°F and sunny!" },
+  ],
+  // This gets cleared when conversation ends
+};
+```
+
+### Long-Term Memory (Persistent Data)
+
+```typescript title="long-term-memory.ts"
+// What the agent remembers about you
+const contextMemory = {
+  userId: "alice",
+  preferences: {
+    favoriteColor: "blue",
+    timezone: "America/New_York",
+    wantsDetailedWeather: true,
+  },
+  chatHistory: [
+    "Discussed weather preferences on 2024-01-15",
+    "Helped with todo list on 2024-01-16",
+  ],
+  // This persists forever
+};
+```
+
+### Experience Memory (Learning from Past)
+
+```typescript title="experience-memory.ts"
+// What the agent learned from previous interactions
+const episodicMemory = [
+  {
+    situation: "User asked about weather in winter",
+    action: "Provided temperature + suggested warm clothes",
+    result: "User was happy and thanked me",
+    lesson: "Winter weather queries benefit from clothing suggestions",
+  },
+  // Agent can recall and apply these lessons to new situations
+];
+```
+
+## The Problem: Agents Without Memory Are Useless
+
+Without memory, every conversation starts from scratch:
+
+```text title="forgetful-agent.txt"
+Day 1:
+User: "My name is Alice and I like detailed weather reports"
+Agent: "Nice to meet you Alice! I'll remember you like detailed weather."
+
+Day 2:
+User: "What's the weather?"
+Agent: "Hi! I'm not sure who you are. What kind of weather info do you want?"
+// ❌ Forgot everything about Alice
+// ❌ Has to ask the same questions again
+// ❌ Terrible user experience
+```
+
+## The Solution: Memory Makes Agents Smart
+
+With memory, agents get better over time:
+
+```text title="smart-agent.txt"
+Day 1:
+User: "My name is Alice and I like detailed weather reports"
+Agent: "Nice to meet you Alice! I'll remember you like detailed weather."
+→ Saves: { user: "Alice", preferences: { detailedWeather: true } }
+
+Day 2:
+User: "What's the weather?"
+Agent: → Loads: { user: "Alice", preferences: { detailedWeather: true } }
+Agent: "Hi Alice! It's 72°F and sunny with 15mph winds from the west,
+       humidity at 45%, and clear skies expected all day."
+// ✅ Remembered Alice and her preferences
+// ✅ Provided detailed weather automatically
+// ✅ Great user experience
+```
+
+## How Memory Works in Your Agent
+
+### 1. Agent Automatically Saves Important Information
+
+```typescript title="automatic-memory.ts"
+// Your agent's context automatically saves important info
+const chatContext = context({
+  type: "chat",
+  schema: z.object({ userId: z.string() }),
+
+  create: () => ({
+    preferences: {},
+    chatHistory: [],
+    firstMet: new Date().toISOString(),
+  }),
+
+  // This memory persists between conversations
+});
+
+// When user says: "I prefer metric units"
+// Agent automatically saves: preferences.units = "metric"
+// Next conversation: Agent uses metric units automatically
+```
+
+### 2. Different Types of Memory for Different Needs
+
+```typescript title="memory-types.ts"
 const agent = createDreams({
-  model: /* ... */,
+  model: openai("gpt-4o"),
+
+  // Configure where memory gets saved
   memory: createMemory(
-    // 1. MemoryStore: For key-value based storage
+    // Long-term storage (user preferences, chat history)
     await createMongoMemoryStore({ uri: "mongodb://localhost:27017" }),
 
-    // 2. VectorStore: For embedding storage and similarity search
-    createChromaVectorStore("my-agent-episodes")
+    // Experience storage (what worked well in the past)
+    createChromaVectorStore("agent-experiences")
   ),
-  // Optional: Enable automatic episodic memory generation
-  // generateMemories: true,
-  // exportTrainingData: true, // Optionally save episodes for fine-tuning
-  // trainingDataPath: './agent-training.jsonl'
+
+  // Enable automatic learning from conversations
+  generateMemories: true,
 });
 ```
 
-The `createMemory` function bundles together two main storage interfaces:
+### 3. Agent Recalls Relevant Memories
 
-1.  **`MemoryStore`**: A key-value store interface for structured data
-    persistence.
-2.  **`VectorStore`**: An interface for storing vector embeddings and performing
-    similarity searches, primarily used for episodic memory.
+```text title="memory-recall.txt"
+New user question: "How do I cook pasta?"
 
-The `BaseMemory` object passed to `createDreams` makes these stores available
-throughout the agent's systems.
+Agent thinks:
+1. Check if I know this user (loads context memory)
+2. Recall similar past conversations (searches experience memory)
+3. Found: "Previous users liked step-by-step cooking instructions"
+4. Respond with detailed cooking steps
 
-## `MemoryStore` (Key-Value Storage)
+Result: Agent gives better answer based on past experience!
+```
 
-The `MemoryStore` handles the persistence of structured data associated with
-contexts and actions. It defines a simple key-value interface:
+## Setting Up Memory in Your Agent
 
-- `get<T>(key: string): Promise<T | null>`: Retrieve data by key.
-- `set<T>(key: string, value: T): Promise<void>`: Store or update data by key.
-- `delete(key: string): Promise<void>`: Remove data by key.
-- `clear(): Promise<void>`: Remove all data (use with caution).
+Here's how to add memory to your agent:
 
-**Uses:**
+### Basic Memory (In-Memory)
 
-- Storing `ContextState` snapshots (key: `"context:<contextId>"`).
-- Storing persistent `Context` memory (key: `"memory:<contextId>"`).
-- Storing `WorkingMemory` snapshots between runs (key:
-  `"working-memory:<contextId>"`).
-- Storing persistent `Action` memory (key: defined in `action.memory.key`).
+```typescript title="basic-memory.ts"
+import {
+  createDreams,
+  createMemory,
+  createMemoryStore,
+} from "@daydreamsai/core";
 
-**Implementations:**
+const agent = createDreams({
+  model: openai("gpt-4o"),
 
-- `createMemoryStore()`: Default in-memory store using a `Map` (data lost on
-  restart). Found in `@daydreamsai/core`.
-- `createMongoMemoryStore()`: MongoDB-backed implementation. Found in
-  `@daydreamsai/mongo`.
-- _(Others like SQLite, Redis might be available or could be implemented)_
+  // Basic memory - data lost when agent restarts
+  memory: createMemory(
+    createMemoryStore(), // Stores in RAM
+    createVectorStore() // No persistent experience storage
+  ),
+});
+```
 
-## `VectorStore` (Embedding Storage & Search)
+### Persistent Memory (Database)
 
-The `VectorStore` is designed for handling high-dimensional vector embeddings,
-typically used for semantic search and retrieving relevant past experiences
-(Episodic Memory).
+```typescript title="persistent-memory.ts"
+import { createMongoMemoryStore } from "@daydreamsai/mongo";
+import { createChromaVectorStore } from "@daydreamsai/chroma";
 
-- `upsert(contextId: string, data: any): Promise<void>`: Add or update vector
-  embeddings, often associated with a specific context.
-- `query(contextId: string, query: string): Promise<any[]>`: Search for vectors
-  similar to the query text within a specific context.
-- `createIndex(indexName: string): Promise<void>`: Create an index (if required
-  by the backend).
-- `deleteIndex(indexName: string): Promise<void>`: Delete an index.
+const agent = createDreams({
+  model: openai("gpt-4o"),
 
-**Uses:**
+  // Persistent memory - data survives restarts
+  memory: createMemory(
+    // Save to MongoDB
+    await createMongoMemoryStore({
+      uri: "mongodb://localhost:27017",
+      dbName: "my-agent-memory",
+    }),
 
-- Storing `Episode` embeddings for recall.
-- Potentially storing document embeddings for RAG (Retrieval-Augmented
-  Generation) patterns (though not explicitly shown in the core loop).
+    // Save experiences to ChromaDB for learning
+    createChromaVectorStore("my-agent-experiences")
+  ),
 
-**Implementations:**
+  // Enable automatic learning
+  generateMemories: true,
+});
+```
 
-- `createVectorStore()`: Default no-op implementation (does nothing). Found in
-  `@daydreamsai/core`.
-- `createChromaVectorStore()`: Implementation using ChromaDB. Found in
-  `@daydreamsai/chroma`. Requires `OPENAI_API_KEY` for default embedding or a
-  custom embedder.
-- _(Others like Pinecone might be available or could be implemented)_
+## Working with Context Memory
 
-## Clarification: Context vs. Memory
+Context memory is what your agent remembers about specific conversations:
 
-It's important to distinguish between the concept of a "Context" and "Memory":
+```typescript title="context-memory-usage.ts"
+const userProfileContext = context({
+  type: "user-profile",
+  schema: z.object({ userId: z.string() }),
 
-- **Context (`context({...})` Definition & `ContextState` Instance):**
+  // Define what to remember about each user
+  create: () => ({
+    name: null,
+    preferences: {
+      language: "en",
+      timezone: null,
+      communicationStyle: "friendly",
+    },
+    chatSummary: [],
+    lastSeen: null,
+  }),
 
-  - **Definition:** Think of this as a **blueprint** or template for a specific
-    type of interaction scope (e.g., a chat session, a game state). It defines
-    the _rules_, _behavior_, expected `schema` arguments, the structure of its
-    persistent memory (`create`), how that state is rendered for the LLM
-    (`render`), and its associated `inputs`, `outputs`, and `actions`.
-  - **Instance (`ContextState`):** This is a **runtime instance** of a Context
-    definition, representing a specific, active scope (e.g., the chat session
-    with _user A_). It holds a reference to the definition, the specific `args`
-    used to identify it, and the actual, current **memory payload** for this
-    instance (`ContextState.memory`).
+  // How this memory appears to the LLM
+  render: (state) => `
+User Profile: ${state.args.userId}
+Name: ${state.memory.name || "Unknown"}
+Preferences: ${JSON.stringify(state.memory.preferences)}
+Last interaction: ${state.memory.lastSeen || "First time"}
 
-- **Memory (`ContextState.memory`, `WorkingMemory`, etc.):**
-  - **Context Memory (`ContextState.memory`):** This is the actual **persistent
-    data payload** or state associated with a specific `ContextState` instance.
-    Its structure is determined by the `context.create` function. This is what's
-    loaded from/saved to the `MemoryStore` and rendered via `context.render`.
-  - **Other Memory Types:** The framework also uses other memory concepts like
-    `WorkingMemory` (transient log for a single run), `ActionMemory` (persistent
-    state for an action definition), and `AgentMemory` (persistent state for the
-    main agent context). These are distinct from the specific
-    `ContextState.memory` of a running context instance.
+Recent chat summary:
+${state.memory.chatSummary.slice(-3).join("\n")}
+  `,
+});
+```
 
-**In essence:**
+### Actions Can Update Memory
 
-A **Context** defines the **structure and behavior** of an interaction scope.
-**Memory** (specifically `ContextState.memory`) is the **persistent data**
-stored _within_ a particular instance of that Context.
+```typescript title="memory-updating-action.ts"
+const updatePreferenceAction = action({
+  name: "update-user-preference",
+  description: "Updates a user's preference",
+  schema: z.object({
+    key: z.string(),
+    value: z.string(),
+  }),
 
-## Types of Memory Usage
+  handler: async ({ key, value }, ctx) => {
+    // Update the user's memory
+    ctx.memory.preferences[key] = value;
+    ctx.memory.lastSeen = new Date().toISOString();
 
-### Working Memory
+    // Memory automatically saves after this action
+    return {
+      success: true,
+      message: `Updated ${key} to ${value}`,
+    };
+  },
+});
+```
 
-- **Purpose:** Short-term, temporary storage for a single `agent.run` cycle.
-- **Content:** Holds the sequence of `Log` objects (`InputRef`, `OutputRef`,
-  `Thought`, `ActionCall`, `ActionResult`, `EventRef`, `StepRef`, `RunRef`)
-  generated during the run.
-- **Lifecycle:** Created at the start of `agent.run`, populated during stream
-  processing, used to build prompts at each step, and potentially snapshotted to
-  the `MemoryStore` between runs.
-- **Access:** Available as `ctx.workingMemory` within handlers.
+## Experience Memory: Learning from the Past
 
-### Context Memory
+Your agent can learn from previous conversations:
 
-- **Purpose:** Persistent state associated with a specific `Context` instance
-  (e.g., chat history for a specific user session).
-- **Structure:** Defined by the `create` function in the `context` definition.
-- **Lifecycle:** Loaded from the `MemoryStore` when `agent.getContext` is
-  called, updated by context logic or actions, saved back to the `MemoryStore`
-  via `agent.saveContext`.
-- **Access:** Available as `ctx.memory` within context-related functions
-  (`render`, `onStep`, etc.) and action handlers.
+```typescript title="experience-learning.ts"
+// Enable automatic experience generation
+const agent = createDreams({
+  model: openai("gpt-4o"),
+  memory: createMemory(
+    await createMongoMemoryStore({ uri: "mongodb://localhost:27017" }),
+    createChromaVectorStore("experiences")
+  ),
 
-### Action Memory
+  // Agent automatically creates "episodes" from conversations
+  generateMemories: true,
 
-- **Purpose:** Persistent state associated specifically with an `Action`
-  definition, allowing it to maintain state across multiple calls within
-  different runs or contexts.
-- **Structure:** Defined by the `memory` option in the `action` definition,
-  using the `memory()` helper.
-- **Lifecycle:** Loaded from the `MemoryStore` before the action handler runs,
-  potentially updated by the handler, saved back to the `MemoryStore` after the
-  handler completes.
-- **Access:** Available as `ctx.actionMemory` within the action's handler.
+  // Optional: Export training data for fine-tuning
+  exportTrainingData: true,
+  trainingDataPath: "./agent-training.jsonl",
+});
 
-### Agent Memory
+// Now when user asks: "How do I bake a cake?"
+// Agent recalls: "I helped someone bake a cake before. They liked step-by-step instructions with temperatures."
+// Agent provides: Detailed baking instructions with exact temperatures and times
+```
 
-- **Purpose:** Persistent state associated with the agent's main/root context
-  (if one is defined in `createDreams`). Used for global agent state.
-- **Lifecycle:** Loaded/saved from the `MemoryStore` using the main agent
-  context's ID.
-- **Access:** Available as `ctx.agentMemory` within action handlers when a main
-  agent context exists.
+## Memory in Action: Complete Example
 
-### Episodic Memory
+Here's how all the memory types work together:
 
-- **Purpose:** Enables the agent to learn from past experiences by recalling
-  relevant "episodes" (sequences of observation/thought -> action -> result).
-- **Structure:** Defined by the `Episode` interface (observation, thoughts,
-  result, timestamp, etc.).
-- **Generation:** Handled by `generateEpisode` (`memory/utils.ts`), which uses
-  an LLM to summarize the `Thought`, `ActionCall`, and `ActionResult`. Triggered
-  automatically if `agent.memory.generateMemories` is true.
-- **Storage:** The generated `Episode` (or its embedding) is stored in the
-  `VectorStore` via `agent.memory.vector.upsert()`.
-- **Retrieval:** When a new `InputRef` is processed (`handleInput`), the
-  `agent.memory.vector.query()` method is called to find relevant past episodes
-  based on the input content. Retrieved episodes are added to
-  `WorkingMemory.episodicMemory`.
-- **Training Data:** Episodes can be exported as prompt/completion pairs for
-  fine-tuning models using `agent.exportAllTrainingData()` or by setting
-  `exportTrainingData: true` on the agent config.
+```typescript title="complete-memory-example.ts"
+// 1. User starts conversation
+User: "Hi, I'm Sarah. I'm learning to cook."
 
-By combining these memory types and storage backends, Daydreams agents can
-maintain short-term focus (Working Memory), long-term context state
-(Context/Action/Agent Memory), and learn from past interactions (Episodic Memory
-via VectorStore).
+// 2. Agent creates/loads context memory
+Context Memory: {
+  name: null,  // Will be updated
+  interests: [], // Will be updated
+  skillLevel: null // Will be updated
+}
+
+// 3. Agent processes and updates memory
+Action: updateUserProfile({
+  name: "Sarah",
+  interests: ["cooking"],
+  skillLevel: "beginner"
+})
+
+// 4. Later conversation
+User: "How do I make pasta?"
+
+// 5. Agent loads Sarah's memory
+Context Memory: {
+  name: "Sarah",
+  interests: ["cooking"],
+  skillLevel: "beginner"  // Agent knows she's a beginner!
+}
+
+// 6. Agent recalls similar past experiences
+Experience Memory: "When helping beginners with pasta, detailed steps work best"
+
+// 7. Agent responds appropriately
+Agent: "Hi Sarah! Since you're learning to cook, I'll give you detailed step-by-step pasta instructions..."
+
+// ✅ Personalized response based on memory!
+```
+
+## Best Practices
+
+### 1. Choose the Right Memory Storage
+
+```typescript title="memory-storage-choice.ts"
+// ✅ Good for development - simple setup
+memory: createMemory(
+  createMemoryStore(), // In-memory, lost on restart
+  createVectorStore() // No learning capabilities
+);
+
+// ✅ Good for production - data persists
+memory: createMemory(
+  await createMongoMemoryStore({ uri: process.env.MONGODB_URI }),
+  createChromaVectorStore("prod-experiences")
+);
+```
+
+### 2. Design Clear Memory Structures
+
+```typescript title="clear-memory-structure.ts"
+// ✅ Good - clear, organized structure
+interface UserMemory {
+  profile: {
+    name: string;
+    email: string;
+    joinDate: string;
+  };
+  preferences: {
+    language: string;
+    timezone: string;
+    notifications: boolean;
+  };
+  activityHistory: Array<{
+    action: string;
+    timestamp: string;
+    result: string;
+  }>;
+}
+
+// ❌ Bad - everything mixed together
+interface MessyMemory {
+  stuff: any;
+  data: any;
+  things: any;
+}
+```
+
+### 3. Don't Store Too Much
+
+```typescript title="memory-size-management.ts"
+// ✅ Good - keep recent, relevant data
+render: (state) => {
+  const recentChats = state.memory.chatHistory.slice(-5); // Last 5 only
+  const importantPrefs = {
+    language: state.memory.preferences.language,
+    timezone: state.memory.preferences.timezone,
+  };
+
+  return `Recent activity: ${recentChats.join("\n")}`;
+};
+
+// ❌ Bad - dump everything
+render: (state) => JSON.stringify(state.memory); // Overwhelming!
+```
+
+### 4. Handle Memory Gracefully
+
+```typescript title="graceful-memory-handling.ts"
+handler: async ({ userId }, ctx) => {
+  try {
+    // Try to load user memory
+    const userPrefs = ctx.memory.preferences || {};
+
+    // Provide defaults if memory is empty
+    const language = userPrefs.language || "en";
+    const timezone = userPrefs.timezone || "UTC";
+
+    return { language, timezone };
+  } catch (error) {
+    // Handle memory errors gracefully
+    console.error("Memory error:", error);
+    return { language: "en", timezone: "UTC" }; // Safe defaults
+  }
+};
+```
+
+## Memory Types Summary
+
+| Memory Type           | Purpose               | Lifetime            | Example                                |
+| --------------------- | --------------------- | ------------------- | -------------------------------------- |
+| **Working Memory**    | Current conversation  | Single conversation | "User just asked about weather"        |
+| **Context Memory**    | User/session data     | Persists forever    | "Alice prefers detailed weather"       |
+| **Action Memory**     | Action-specific state | Persists forever    | "Weather API called 47 times today"    |
+| **Experience Memory** | Learning from past    | Persists forever    | "Users like step-by-step cooking help" |
+
+## Key Takeaways
+
+- **Memory makes agents smart** - Without it, every conversation starts from
+  scratch
+- **Multiple memory types** - Short-term (conversation), long-term (user data),
+  experience (learning)
+- **Automatic persistence** - Agent saves important information without extra
+  code
+- **Experience learning** - Agent gets better over time by remembering what
+  works
+- **Choose storage wisely** - In-memory for development, database for production
+- **Keep it organized** - Clear memory structures make agents more reliable
+
+Memory transforms your agent from a stateless chatbot into an intelligent
+assistant that learns, remembers, and gets better with every interaction.

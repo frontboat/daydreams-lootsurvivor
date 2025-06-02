@@ -8,6 +8,17 @@ The Daydreams framework is designed around a set of core concepts that work
 together to enable autonomous agent behavior. Understanding these concepts is
 key to effectively building and customizing agents.
 
+## Getting Started
+
+If you're new to agent frameworks, start here:
+
+1. **[Building Blocks](/docs/core/concepts/building-blocks)** - Learn the four
+   main components (inputs, outputs, actions, contexts) with simple examples
+2. **[Agent Lifecycle](/docs/core/concepts/agent-lifecycle)** - Understand how
+   agents process information in a continuous loop
+
+Once you understand the basics, dive deeper into each component:
+
 ## Core Architecture
 
 A Daydreams agent consists of several key components:
@@ -21,7 +32,7 @@ contexts manage state and rendering for your agent. Each context:
 - Maintains its own memory state
 - Provides a rendering function that formats its state for the LLM
 
-```ts
+```ts title="context.ts"
 const myContext = context({
   // Unique identifier for this context type
   type: "my-context",
@@ -59,7 +70,7 @@ const myContext = context({
 Actions are functions that your agent can call to interact with its environment
 or modify its state. They're similar to event handlers in React:
 
-```ts
+```ts title="action.ts"
 action({
   name: "addItem",
   description: "Add a new item to the list",
@@ -102,26 +113,31 @@ structure complex behaviors.
 
 ---
 
+## Detailed Component Documentation
+
 This section provides a detailed explanation of each fundamental component:
 
-- **[Agent Lifecycle](/docs/concepts/agent-lifecycle):** How an agent processes
-  information, makes decisions, and executes tasks in a continuous loop.
-- **[Contexts](/docs/concepts/contexts):** The mechanism for managing state,
-  memory, and behavior for specific tasks or interactions.
-- **[Actions](/docs/concepts/actions):** Definable tasks or capabilities that an
-  agent can perform.
-- **[Inputs](/docs/concepts/inputs):** How agents receive data and trigger
+- **[Building Blocks](/docs/core/concepts/building-blocks):** Simple
+  introduction to the four main components with examples
+- **[Agent Lifecycle](/docs/core/concepts/agent-lifecycle):** How an agent
+  processes information, makes decisions, and executes tasks in a continuous
+  loop.
+- **[Contexts](/docs/core/concepts/contexts):** The mechanism for managing
+  state, memory, and behavior for specific tasks or interactions.
+- **[Actions](/docs/core/concepts/actions):** Definable tasks or capabilities
+  that an agent can perform.
+- **[Inputs](/docs/core/concepts/inputs):** How agents receive data and trigger
   processing cycles.
-- **[Outputs](/docs/concepts/outputs):** How agents communicate results or send
-  information to external systems.
-- **[Memory](/docs/concepts/memory):** The different ways agents store,
+- **[Outputs](/docs/core/concepts/outputs):** How agents communicate results or
+  send information to external systems.
+- **[Memory](/docs/core/concepts/memory):** The different ways agents store,
   retrieve, and utilize information (Working, Episodic, Vector).
-- **[Prompting](/docs/concepts/prompting):** How instructions and context are
-  formatted for the LLM to guide its reasoning.
-- **[Tasks](/docs/concepts/tasks):** The system for managing asynchronous
+- **[Prompting](/docs/core/concepts/prompting):** How instructions and context
+  are formatted for the LLM to guide its reasoning.
+- **[Tasks](/docs/core/concepts/tasks):** The system for managing asynchronous
   operations and background tasks.
-- **[Services & Extensions](/docs/advanced):** How to integrate external
+- **[Services & Extensions](/docs/core/advanced):** How to integrate external
   services and extend the framework's capabilities.
 
-Explore these pages to gain a deeper understanding of how Daydreams works under
-the hood.
+For beginners, start with [Building Blocks](/docs/core/concepts/building-blocks)
+to understand the mental model, then explore these detailed pages as needed.

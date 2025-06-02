@@ -5,9 +5,6 @@ description: Build your first Daydreams agent.
 
 import { Tab, Tabs } from "fumadocs-ui/components/tabs";
 
-> ⚠️ **Warning**: This is alpha software under active development. Expect
-> frequent breaking changes and bugs. The API is not yet stable.
-
 ## Overview
 
 Daydreams is a framework for building autonomous AI agents. At its core, an
@@ -53,21 +50,21 @@ Daydreams is built around several key components that work together:
 
 ### Essential Components
 
-- **[Agent Lifecycle](/docs/concepts/agent-lifecycle)** - The central
+- **[Agent Lifecycle](/docs/core/concepts/agent-lifecycle)** - The central
   orchestrator that runs the main loop
-- **[Contexts](/docs/concepts/contexts)** - Manages state and memory for
+- **[Contexts](/docs/core/concepts/contexts)** - Manages state and memory for
   specific tasks or interactions (e.g., a chat session)
-- **[Inputs](/docs/concepts/inputs)** - How agents receive information (e.g.,
-  CLI messages, API events)
-- **[Outputs](/docs/concepts/outputs)** - How agents respond or send information
-  (e.g., CLI responses, tweets)
-- **[Actions](/docs/concepts/actions)** - Tasks agents can perform (e.g.,
+- **[Inputs](/docs/core/concepts/inputs)** - How agents receive information
+  (e.g., CLI messages, API events)
+- **[Outputs](/docs/core/concepts/outputs)** - How agents respond or send
+  information (e.g., CLI responses, tweets)
+- **[Actions](/docs/core/concepts/actions)** - Tasks agents can perform (e.g.,
   calling APIs, executing transactions)
-- **[Memory](/docs/concepts/memory)** - How agents store and recall information
-  (working memory, episodic memory)
+- **[Memory](/docs/core/concepts/memory)** - How agents store and recall
+  information (working memory, episodic memory)
 
 For detailed information about these concepts, visit the
-[Core Concepts](/docs/concepts/core) section.
+[Core Concepts](/docs/core/concepts/core) section.
 
 ## Your First Agent (CLI Echo Bot)
 
@@ -77,7 +74,7 @@ agent.
 
 ### Step 1: Set up your project
 
-```bash title="create a new project"
+```bash title="create-project.sh"
 mkdir my-first-agent && cd my-first-agent
 ```
 
@@ -89,7 +86,7 @@ mkdir my-first-agent && cd my-first-agent
     npm install @daydreamsai/core @daydreamsai/cli @ai-sdk/openai zod
   </Tab>
   <Tab value="bun">
-    bun add @daydreamsai/core @daydreamsai/cli @ai-sdk/openai zod
+    bun add @daydreamsai/core @daydreamsai/cli @ai-sdk/openai
   </Tab>
   <Tab value="yarn">
     yarn add @daydreamsai/core @daydreamsai/cli @ai-sdk/openai zod
@@ -152,7 +149,7 @@ main();
 
 Ensure your `OPENAI_API_KEY` environment variable is set, then run:
 
-```bash title="run the agent"
+```bash title="run-agent.sh"
 node agent.ts
 ```
 
@@ -164,11 +161,9 @@ agent echoes it back using the LLM and CLI handlers provided by the
 
 ## Next Steps
 
-Ready to explore more? Check out these resources:
+Continue learning about Daydreams with these resources:
 
-- **[Core Concepts](/docs/concepts/core)** - Deep dive into Daydreams
+- **[Core Concepts](/docs/core/concepts/core)** - Deep dive into Daydreams
   architecture
-- **[Getting Started Guide](/docs/guides/getting-started)** - More complex
-  examples and use cases
-- **[API Reference](/docs/api)** - Complete documentation of available methods
-  and options
+- **[Advanced Features](/docs/core/advanced/introduction)** - More complex
+  examples and advanced usage patterns

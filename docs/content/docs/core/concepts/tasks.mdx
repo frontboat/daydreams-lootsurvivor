@@ -3,185 +3,216 @@ title: Tasks
 description: Managing asynchronous operations and concurrency.
 ---
 
-Daydreams agents often need to perform asynchronous operations, primarily when
-executing [Actions](/docs/concepts/actions) that interact with external APIs,
-blockchains, or other time-consuming processes. The framework includes a
-`TaskRunner` to manage these operations efficiently.
+## What is a Task?
 
-## Purpose
+A task is any operation that takes time to complete, like:
 
-The `TaskRunner` serves two main purposes:
+- Calling a weather API (might take 500ms)
+- Saving data to a database (might take 200ms)
+- Processing an image (might take 2 seconds)
+- Sending an email (might take 1 second)
 
-1.  **Concurrency Control:** It limits the number of asynchronous tasks (like
-    action handlers) that run simultaneously. This prevents the agent from
-    overwhelming external services with too many requests at once (rate
-    limiting) or consuming excessive local resources.
-2.  **Prioritization (Future):** While the core framework primarily uses default
-    priority, the underlying queue supports prioritizing tasks, allowing more
-    critical operations to potentially execute sooner.
+## The Problem
 
-## Initialization and Configuration
+Imagine your agent needs to do 10 things at once:
 
-A `TaskRunner` instance is automatically created within `createDreams` unless a
-custom one is provided in the `Config`. Its concurrency limit can be configured:
+```typescript title="problem-example.ts"
+// User asks: "What's the weather in 5 cities?"
+// Agent needs to call weather API 5 times
+// Without task management:
+await getWeather("New York"); // 500ms
+await getWeather("London"); // 500ms
+await getWeather("Tokyo"); // 500ms
+await getWeather("Paris"); // 500ms
+await getWeather("Sydney"); // 500ms
+// Total: 2.5 seconds (slow!)
+```
 
-```typescript
+Even worse - what if your agent tries to make 100 API calls at once? The
+external service might block you or your server might crash.
+
+## The Solution: Task Management
+
+Daydreams automatically manages these operations for you:
+
+```typescript title="solution-example.ts"
+// With task management:
+// Runs 3 operations at the same time (concurrent)
+// Queues the rest until the first ones finish
+// Total: ~1 second (much faster!)
+
+const results = await Promise.all([
+  getWeather("New York"), // Starts immediately
+  getWeather("London"), // Starts immediately
+  getWeather("Tokyo"), // Starts immediately
+  getWeather("Paris"), // Waits in queue
+  getWeather("Sydney"), // Waits in queue
+]);
+```
+
+## How It Works in Your Agent
+
+When you write action handlers, this happens automatically:
+
+```typescript title="weather-action.ts"
+const weatherAction = action({
+  name: "get-weather",
+  description: "Get weather for a city",
+  schema: z.object({
+    city: z.string(),
+  }),
+  handler: async ({ city }) => {
+    // This handler runs as a "task"
+    // Daydreams automatically:
+    // 1. Limits how many run at once (default: 3)
+    // 2. Queues extras until slots open up
+    // 3. Handles errors and retries
+
+    const response = await fetch(`https://api.weather.com/${city}`);
+    return await response.json();
+  },
+});
+```
+
+When your LLM calls this action multiple times:
+
+```xml
+<action_call name="get-weather">{"city": "New York"}</action_call>
+<action_call name="get-weather">{"city": "London"}</action_call>
+<action_call name="get-weather">{"city": "Tokyo"}</action_call>
+<action_call name="get-weather">{"city": "Paris"}</action_call>
+```
+
+Daydreams automatically:
+
+- Runs the first 3 immediately
+- Queues "Paris" until one finishes
+- Prevents your agent from overwhelming the weather API
+
+## Configuring Task Limits
+
+You can control how many tasks run simultaneously:
+
+```typescript title="agent-config.ts"
 import { createDreams, TaskRunner } from "@daydreamsai/core";
 
-// Default TaskRunner with concurrency based on environment or default (e.g., 3)
-const agent1 = createDreams({
-  /* ... */
+// Default: 3 tasks at once
+const agent = createDreams({
+  model: openai("gpt-4o"),
+  extensions: [weatherExtension],
 });
 
-// Explicitly configure concurrency
-const agent2 = createDreams({
-  // ... other config
-  taskRunner: new TaskRunner(5), // Allow up to 5 tasks concurrently
+// Custom: 5 tasks at once (for faster APIs)
+const fasterAgent = createDreams({
+  model: openai("gpt-4o"),
+  extensions: [weatherExtension],
+  taskRunner: new TaskRunner(5),
 });
 
-// Access the runner later
-const runner = agent2.taskRunner;
+// Custom: 1 task at once (for rate-limited APIs)
+const slowAgent = createDreams({
+  model: openai("gpt-4o"),
+  extensions: [weatherExtension],
+  taskRunner: new TaskRunner(1),
+});
 ```
 
-The concurrency limit determines how many tasks from the internal queue can be
-actively running at any given moment.
+## Best Practices for Action Handlers
 
-## Key Implications for Users
+### 1. Use async/await Properly
 
-While you typically don't interact directly with the `TaskRunner` or define new
-`task` types, understanding how it works is important for writing effective
-agent components, especially [Actions](/docs/concepts/actions):
+```typescript title="good-handler.ts"
+// ✅ Good - properly handles async operations
+handler: async ({ userId }) => {
+  const user = await database.getUser(userId);
+  const preferences = await database.getPreferences(userId);
+  return { user, preferences };
+};
 
-1.  **Actions are Queued & Run Concurrently:** When the LLM calls an action via
-    `<action_call>`, its `handler` is scheduled by the `TaskRunner`, not
-    executed immediately. The runner processes tasks concurrently up to its
-    configured limit (default is 3). If more actions are called than the limit
-    allows, they wait in a queue.
-    - _Effect:_ Prevents overwhelming external services; actions might not start
-      instantly if the runner is busy.
-2.  **`async`/`await` is Essential:** Because action handlers are executed
-    asynchronously via the Task Runner, any I/O operations (API calls, database
-    queries, file system access) within your handler **must** use
-    `async`/`await` correctly. The framework waits for the promise returned by
-    the handler (managed by the Task Runner) to resolve before considering the
-    action complete.
-3.  **Action `retry` Option & Idempotency:** You can configure automatic retries
-    for an action using the `retry` property in its definition. If enabled, the
-    `TaskRunner` will re-execute the handler if it fails (throws an error).
-    - _Best Practice:_ If using retries, design your action handlers to be
-      **idempotent** – meaning executing the handler multiple times with the
-      same arguments yields the same final state without unwanted side effects
-      (e.g., avoid creating duplicate database entries).
-4.  **Action Cancellation (`ctx.abortSignal`):** Action handlers receive an
-    `AbortSignal` within their `ctx` (`ActionCallContext`).
-    - _Requirement:_ For long-running handlers (e.g., complex loops, waiting for
-      external processes), you **should** check `ctx.abortSignal.aborted`
-      periodically or use `ctx.abortSignal.throwIfAborted()` and cease execution
-      if the signal is aborted. This allows agent runs to be cancelled cleanly.
-5.  **`queueKey` Option (Advanced):** Actions can specify a `queueKey`. This
-    directs the `TaskRunner` to use a specific queue for that action. While the
-    default is `'main'`, this advanced feature could be used with custom
-    `TaskRunner` configurations to manage different concurrency limits for
-    different types of actions (e.g., a separate queue with lower concurrency
-    for a rate-limited API).
+// ❌ Bad - doesn't wait for async operations
+handler: ({ userId }) => {
+  database.getUser(userId); // This returns a Promise!
+  return { status: "done" }; // Completes before database call finishes
+};
+```
 
-In summary, focus on writing robust, `async`-aware, and potentially idempotent
-action handlers, leveraging `ctx.abortSignal` for cancellation. The Task Runner
-handles the scheduling and concurrency control behind the scenes.
+### 2. Handle Cancellation for Long Operations
 
-## Internal Usage (`runAction`)
+```typescript title="cancellation-example.ts"
+handler: async ({ largeDataset }, ctx) => {
+  for (let i = 0; i < largeDataset.length; i++) {
+    // Check if the agent wants to cancel this task
+    if (ctx.abortSignal.aborted) {
+      throw new Error("Operation cancelled");
+    }
 
-The most common use of the `TaskRunner` is internal to the framework. When the
-agent parses an `<action_call>` from the LLM, the `handleActionCall` function
-doesn't execute the action's handler directly. Instead, it uses
-`taskRunner.enqueueTask` to schedule the execution:
+    await processItem(largeDataset[i]);
+  }
+};
+```
 
-```typescript
-// Simplified logic within handleActionCall (handlers.ts)
+### 3. Make Handlers Idempotent (for Retries)
 
-// ... prepare context and arguments ...
+```typescript title="idempotent-example.ts"
+// ✅ Good - safe to run multiple times
+handler: async ({ email, message }) => {
+  // Check if email already sent
+  const existing = await emailLog.findByKey(`${email}-${hash(message)}`);
+  if (existing) {
+    return { status: "already_sent", messageId: existing.messageId };
+  }
 
-result.data = await taskRunner.enqueueTask(
-  runAction, // The task definition for running actions
-  {
-    // Parameters for runAction
-    action,
-    agent,
-    logger,
-    ctx: callCtx,
+  // Send email and log it
+  const result = await emailService.send(email, message);
+  await emailLog.create({
+    email,
+    messageHash: hash(message),
+    messageId: result.id,
+  });
+  return { status: "sent", messageId: result.id };
+};
+
+// ❌ Bad - creates duplicate emails if retried
+handler: async ({ email, message }) => {
+  const result = await emailService.send(email, message);
+  return { status: "sent", messageId: result.id };
+};
+```
+
+## Advanced: Custom Task Types
+
+Most users won't need this, but you can define custom task types:
+
+```typescript title="custom-task.ts"
+import { task } from "@daydreamsai/core";
+
+const processVideoTask = task(
+  "agent:video:process",
+  async (params: { videoUrl: string }, ctx) => {
+    ctx.debug("processVideo", "Starting video processing", params);
+
+    // Long-running video processing
+    const result = await videoProcessor.process(params.videoUrl);
+
+    return { processedUrl: result.url, duration: result.duration };
   },
   {
-    // Options for the task enqueueing
-    debug: agent.debugger,
-    retry: action.retry,
-    abortSignal,
-    priority: 0, // Default priority
+    retry: 2, // Retry twice on failure
   }
 );
 
-// ... process result ...
+// Use it in your agent
+agent.taskRunner.enqueueTask(processVideoTask, { videoUrl: "https://..." });
 ```
 
-This ensures that action executions respect the concurrency limits set for the
-agent.
+## Key Takeaways
 
-## Defining Tasks (`task` helper)
+- **Tasks happen automatically** - Your action handlers become tasks
+- **Concurrency is controlled** - Default limit is 3 simultaneous tasks
+- **Queuing prevents overload** - Extra tasks wait their turn
+- **Write async handlers properly** - Use `async/await` and handle cancellation
+- **Configure based on your APIs** - Increase limit for fast APIs, decrease for
+  rate-limited ones
 
-The framework uses a `task` helper function (from `@daydreamsai/core/task`) to
-define named, reusable asynchronous operations that can be managed by the
-`TaskRunner`. Key framework tasks like `runAction` (executing action handlers)
-and `runGenerate` (calling the LLM) are defined using this helper.
-
-```typescript
-import { task, type TaskContext } from "@daydreamsai/core";
-
-// Example task definition (similar to runAction)
-const myCustomTask = task(
-  // 1. Unique key/name for the task (used for logging/debugging)
-  "agent:run:myCustomTask",
-
-  // 2. The async function implementing the task logic
-  async (params: { someData: string }, ctx: TaskContext) => {
-    // 'params' are the arguments passed when enqueuing
-    // 'ctx' provides task-specific context
-
-    ctx.debug("myCustomTask", ["Executing"], params); // Use debug provided via options
-    console.log(`Task ${ctx.callId} running with data:`, params.someData);
-
-    // ... perform asynchronous work ...
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    return { success: true, taskId: ctx.callId };
-  },
-
-  // 3. Optional default TaskOptions
-  {
-    retry: 1, // Default retry count
-  }
-);
-
-// How it might be enqueued:
-// agent.taskRunner.enqueueTask(myCustomTask, { someData: "hello" }, { priority: 1 });
-```
-
-The `TaskContext` passed to the task function includes:
-
-- `callId`: A unique ID generated for this specific task execution.
-- `debug`: A `Debugger` function instance (configured via `TaskOptions` or
-  defaulting from agent config).
-
-While you typically won't need to define new tasks often (most work happens in
-action handlers), understanding this pattern helps clarify how core operations
-like `runAction` are structured and managed.
-
-## Direct Usage
-
-While primarily used internally for actions, you _could_ access the `TaskRunner`
-via `agent.taskRunner` within your custom code (e.g., inside an action handler
-or context hook) if you need to manage additional complex, long-running, or
-resource-intensive asynchronous operations with concurrency control. However,
-simple `async/await` within action handlers is usually sufficient.
-
-The `TaskRunner` provides robust management for the asynchronous operations
-essential to the agent's functioning, ensuring stability and controlled resource
-usage.
+The task system ensures your agent performs well without overwhelming external
+services or consuming excessive resources.

@@ -4,176 +4,293 @@ description:
   How Daydreams structures prompts to guide LLM reasoning and actions.
 ---
 
-The interaction between the Daydreams framework and the Large Language Model
-(LLM) is mediated through carefully structured prompts. These prompts provide
-the LLM with the necessary context, instructions, available tools (actions and
-outputs), and current state, guiding its reasoning process and constraining its
-output format.
+## What is a Prompt?
 
-## The Main Prompt Template (`mainPrompt`)
+A prompt is the text you send to an AI model to tell it what to do. Think of it
+like giving instructions to a smart assistant.
 
-The core prompt structure is defined in `packages/core/src/prompts/main.ts`
-within the `mainPrompt` configuration object. It uses a main template string
-(`promptTemplate`) composed of several sections identified by placeholders:
+## Simple Prompts vs Agent Prompts
 
-```text
-{{intro}}      # General instructions for the agent's task
-{{instructions}} # Step-by-step guide on how to process updates
-{{content}}    # Dynamically generated section with available tools and state
-{{response}}   # Structure definition for the LLM's expected output
-{{footer}}     # Final reminders and important notes
+### Simple Prompt (ChatGPT style)
+
+```text title="simple-prompt.txt"
+User: What's the weather in New York?
+Assistant: I don't have access to real-time weather data...
 ```
 
-Each placeholder (`{{intro}}`, `{{instructions}}`, etc.) corresponds to static
-text providing overall guidance to the LLM on how it should behave within the
-framework.
+### Agent Prompt (what Daydreams creates)
 
-## Dynamic Prompt Generation
+```text title="agent-prompt.txt"
+You are an AI agent that can:
+- Call weather APIs
+- Send Discord messages
+- Remember conversation history
 
-At each step of the [Agent Lifecycle](/docs/concepts/agent-lifecycle), the
-framework dynamically generates the content for the `{{content}}` section of the
-`promptTemplate`. This ensures the LLM always has the most up-to-date
-information.
+Current situation:
+- User asked: "What's the weather in New York?"
+- Available actions: getWeather, sendMessage
+- Chat context: user123 in #general channel
 
-1.  **Gathering Data (`formatPromptSections`)**: The `formatPromptSections`
-    function (in `packages/core/src/prompts/main.ts`) collects the current
-    state, including:
-    - Available `actions`.
-    - Available `outputs`.
-    - Active `contexts` and their rendered state.
-    - Recent `WorkingMemory` logs (both processed and unprocessed).
-2.  **Formatting to XML (`packages/core/src/formatters.ts`)**: Various helper
-    functions (`formatAction`, `formatContextState`, `formatOutputInterface`,
-    `formatContextLog`, `formatValue`, `formatXml`) convert these JavaScript
-    objects and data structures into standardized XML strings. This XML format
-    is designed to be clearly parsable by both the LLM and the framework's
-    stream parser.
-3.  **Rendering (`render`)**: The `render` function (from
-    `packages/core/src/formatters.ts`) injects these dynamically generated XML
-    strings into the main `promptTemplate`, replacing placeholders like
-    `{{actions}}`, `{{outputs}}`, `{{contexts}}`, `{{workingMemory}}`, and
-    `{{updates}}`.
+Please respond with:
+<action_call name="getWeather">{"city": "New York"}</action_call>
+<output type="discord:message">It's 72°F and sunny in New York!</output>
+```
 
-## Key XML Sections in the Prompt
+## The Problem: LLMs Need Structure
 
-The dynamically generated `{{content}}` section typically includes these crucial
-XML blocks:
+Without structure, LLMs can't:
 
-- **`<available-actions>`**: Lists all actions currently enabled for the agent.
-  Each action includes its `name`, `description`, `instructions`, and argument
-  `schema` (as JSON schema).
-  ```xml
-  <available-actions>
-    <action name="getWeather">
-      <description>Fetches the current weather...</description>
-      <schema>{ "type": "object", "properties": { ... } }</schema>
-    </action>
-    ...
-  </available-actions>
-  ```
-- **`<available-outputs>`**: Lists all outputs the agent can generate. Each
-  output includes its `type`, `description`, `instructions`, content `schema`
-  (`content_schema`), attribute `schema` (`attributes_schema`), and `examples`.
-  ```xml
-  <available-outputs>
-    <output type="discord:message">
-      <description>Sends a message...</description>
-      <attributes_schema>{ "type": "object", ... }</attributes_schema>
-      <content_schema>{ "type": "string", ... }</content_schema>
-      <examples>...</examples>
-    </output>
-    ...
-  </available-outputs>
-  ```
-- **`<contexts>`**: Displays the state of currently active contexts, as rendered
-  by their respective `render` functions.
-  ```xml
-  <contexts>
-    <context type="chat" key="session123">
-      user1: Hi there!
-      agent: Hello! How can I help?
-    </context>
-    ...
-  </contexts>
-  ```
-- **`<working-memory>`**: Shows _processed_ logs (`InputRef`, `OutputRef`,
-  `ActionCall`, `ActionResult`, `Thought`, `EventRef`) from previous steps
-  within the _current_ run.
-  ```xml
-  <working-memory>
-    <input type="cli:message" timestamp="...">User message</input>
-    <action_call name="lookupUser" id="..." timestamp="...">...</action_call>
-    <action_result callId="..." name="lookupUser" timestamp="...">...</action_result>
-    <output type="cli:message" timestamp="...">Agent response</output>
-  </working-memory>
-  ```
-- **`<updates>`**: Shows _new_, _unprocessed_ logs (typically new `InputRef`s or
-  `ActionResult`s from the previous step) that the LLM needs to analyze and
-  react to in the _current_ step.
-  ```xml
-  <updates>
-    <input type="discord:message" timestamp="...">A new message requiring a response</input>
-    <action_result callId="..." name="complexCalculation" timestamp="...">Result is 42</action_result>
-  </updates>
-  ```
+- Know what tools they have available
+- Remember previous conversations
+- Follow consistent output formats
+- Handle complex multi-step tasks
 
-## Expected LLM Response Structure
+**Example of what goes wrong:**
 
-The framework instructs the LLM (via the `{{response}}` section of the template)
-to structure its output using specific XML tags:
+```text title="unstructured-problem.txt"
+User: "Check weather and send to Discord"
+LLM: "I'll check the weather for you!"
+// ❌ Doesn't actually call any APIs
+// ❌ Doesn't know how to send to Discord
+// ❌ Just generates text
+```
 
-```xml
+## The Solution: Structured Prompts
+
+Daydreams automatically creates structured prompts that include:
+
+1. **Available Tools** - What the agent can do
+2. **Current State** - What's happening right now
+3. **Response Format** - How to respond properly
+4. **Context Memory** - What happened before
+
+```text title="structured-solution.txt"
+Available Actions:
+- getWeather(city: string) - Gets current weather
+- sendDiscord(message: string) - Sends Discord message
+
+Current Context:
+- User: user123
+- Channel: #general
+- Previous messages: [...]
+
+New Input:
+- "Check weather in Boston and send to Discord"
+
+Respond with XML:
+<action_call name="getWeather">{"city": "Boston"}</action_call>
+<output type="discord:message">Weather in Boston: 65°F, cloudy</output>
+```
+
+## How Daydreams Builds Prompts
+
+Every time your agent thinks, Daydreams automatically builds a prompt like this:
+
+### 1. Instructions
+
+```text title="instructions-section.txt"
+You are an AI agent. Your job is to:
+- Analyze new information
+- Decide what actions to take
+- Respond appropriately
+```
+
+### 2. Available Tools
+
+```xml title="tools-section.xml"
+<available-actions>
+  <action name="getWeather">
+    <description>Gets current weather for a city</description>
+    <schema>{"type": "object", "properties": {"city": {"type": "string"}}}</schema>
+  </action>
+</available-actions>
+
+<available-outputs>
+  <output type="discord:message">
+    <description>Sends a message to Discord</description>
+    <schema>{"type": "string"}</schema>
+  </output>
+</available-outputs>
+```
+
+### 3. Current Context State
+
+```xml title="context-section.xml"
+<contexts>
+  <context type="chat" key="user123">
+    Previous messages:
+    user123: Hi there!
+    agent: Hello! How can I help?
+    user123: What's the weather like?
+  </context>
+</contexts>
+```
+
+### 4. What Just Happened
+
+```xml title="updates-section.xml"
+<updates>
+  <input type="discord:message" timestamp="2024-01-15T10:30:00Z">
+    What's the weather in Boston?
+  </input>
+</updates>
+```
+
+### 5. Expected Response Format
+
+```xml title="response-format.xml"
+Respond with:
+<response>
+  <reasoning>Your thought process here</reasoning>
+  <action_call name="actionName">{"argument": "value"}</action_call>
+  <output type="outputType">Your response here</output>
+</response>
+```
+
+## What the LLM Sees (Complete Example)
+
+Here's what a complete prompt looks like:
+
+```text title="complete-prompt.txt"
+You are an AI agent. Analyze the updates and decide what to do.
+
+<available-actions>
+  <action name="getWeather">
+    <description>Gets current weather for a city</description>
+    <schema>{"type": "object", "properties": {"city": {"type": "string"}}}</schema>
+  </action>
+</available-actions>
+
+<available-outputs>
+  <output type="discord:message">
+    <description>Sends a message to Discord</description>
+    <schema>{"type": "string"}</schema>
+  </output>
+</available-outputs>
+
+<contexts>
+  <context type="chat" key="user123">
+    user123: Hi there!
+    agent: Hello! How can I help?
+  </context>
+</contexts>
+
+<working-memory>
+  <!-- Previous actions from this conversation -->
+</working-memory>
+
+<updates>
+  <input type="discord:message" timestamp="2024-01-15T10:30:00Z">
+    What's the weather in Boston?
+  </input>
+</updates>
+
+Respond with:
+<response>
+  <reasoning>Your thought process</reasoning>
+  <action_call name="actionName">{"arg": "value"}</action_call>
+  <output type="outputType">Your message</output>
+</response>
+```
+
+## LLM Response Example
+
+The LLM responds with structured XML:
+
+```xml title="llm-response.xml"
 <response>
   <reasoning>
-    [LLM's thought process explaining its analysis and plan]
+    The user is asking about weather in Boston. I should:
+    1. Call the getWeather action to get current conditions
+    2. Send the result to Discord
   </reasoning>
 
-  [Optional: Action calls]
-  <action_call name="actionName">[Arguments based on action schema and format (JSON/XML)]</action_call>
-
-  [Optional: Outputs]
-  <output type="outputType" attribute1="value1">[Content matching the output's schema]</output>
+  <action_call name="getWeather">{"city": "Boston"}</action_call>
+  <output type="discord:message">Checking the weather in Boston for you!</output>
 </response>
 ```
 
-- **`<response>`**: The root tag for the entire response.
-- **`<reasoning>`**: Contains the LLM's step-by-step thinking process. This is
-  logged as a `Thought`.
-- **`<action_call>`**: Used to invoke an action. The `name` must match an
-  available action. The content (arguments) depends on the action's defined
-  `schema` and `callFormat` (defaulting to JSON if schema is complex, but can be
-  XML). The framework parses this content accordingly.
-- **`<output>`**: Used to generate an output. The `type` must match an available
-  output. Any required `attributes` must be included, and the content must match
-  the output's content `schema`.
+Daydreams automatically:
 
-The framework parses this XML structure from the LLM's response stream to
-trigger the corresponding handlers for actions and outputs.
+- Parses the `<action_call>` and runs the weather API
+- Parses the `<output>` and sends the Discord message
+- Saves the `<reasoning>` for debugging
 
-## Template Engine (`{{...}}`)
+## Advanced Features
 
-The prompt template includes a mention of a simple template engine using
-`{{...}}` syntax (e.g., `{{calls[0].someValue}}`, `{{shortTermMemory.key}}`). As
-noted in the prompt comments, its primary intended use is for **intra-turn data
-referencing**. This means allowing an action call within the _same_ LLM response
-to reference the anticipated result of a _previous_ action call in that _same_
-response.
+### Template References
 
-Example:
+LLMs can reference previous action results within the same response:
 
-```xml
+```xml title="template-example.xml"
 <response>
-  <reasoning>First, I need to create a file, then write to it.</reasoning>
-  <action_call name="createFile">{ "directory": "/tmp" }</action_call>
-  <action_call name="writeFile">{ "fileId": "{{calls[0].fileId}}", "content": "Hello!" }</action_call>
+  <reasoning>I'll get weather, then send a detailed message</reasoning>
+
+  <action_call name="getWeather">{"city": "Boston"}</action_call>
+
+  <output type="discord:message">
+    Weather in Boston: {{calls[0].temperature}}°F, {{calls[0].condition}}
+  </output>
 </response>
 ```
 
-Here, the `writeFile` call references the `fileId` expected to be returned by
-the `createFile` action called just before it within the same LLM response turn.
-The framework resolves these templates _before_ executing the action handlers
-(using `resolveTemplates` in `packages/core/src/handlers.ts`).
+The `{{calls[0].temperature}}` gets replaced with the actual weather data.
 
-This dynamic and structured prompting approach allows Daydreams to effectively
-leverage LLMs for complex orchestration tasks, providing them with the necessary
-information and tools while ensuring their output can be reliably processed.
+### Multi-Context Prompts
+
+When multiple contexts are active:
+
+```xml title="multi-context.xml"
+<contexts>
+  <context type="chat" key="user123">
+    Chat history with user123...
+  </context>
+
+  <context type="game" key="session456">
+    Current game state: level 5, health 80...
+  </context>
+</contexts>
+```
+
+## Key Benefits
+
+- **Consistency** - All agents use the same reliable prompt structure
+- **Clarity** - LLMs always know what tools they have and how to use them
+- **Memory** - Context and conversation history included automatically
+- **Debugging** - You can see exactly what the LLM was told
+- **Extensibility** - Easy to add new actions and outputs
+
+## Customizing Prompts
+
+You can customize prompts in your contexts:
+
+```typescript title="custom-instructions.ts"
+const chatContext = context({
+  type: "chat",
+  schema: z.object({ userId: z.string() }),
+
+  // Custom instructions for this context
+  instructions: (state) =>
+    `You are helping user ${state.args.userId}. Be friendly and helpful.`,
+
+  // Custom context rendering
+  render: (state) => `
+    Chat with ${state.args.userId}
+    Recent messages: ${state.memory.messages.slice(-3).join("\n")}
+    User mood: ${state.memory.userMood || "neutral"}
+  `,
+});
+```
+
+## Key Takeaways
+
+- **Prompts are automatically generated** - You don't write them manually
+- **Structure enables capabilities** - Tools, memory, and context included
+  automatically
+- **LLMs respond with XML** - Parsed automatically into actions and outputs
+- **Templates enable complex flows** - Reference previous results within
+  responses
+- **Customizable per context** - Add specific instructions and state rendering
+
+The prompting system is what makes your agent intelligent - it provides the LLM
+with everything needed to understand the situation and respond appropriately.

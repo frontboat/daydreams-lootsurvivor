@@ -3,267 +3,491 @@ title: Inputs
 description: How Daydreams agents receive information and trigger processing.
 ---
 
-Inputs are the mechanism by which Daydreams agents receive information from the
-outside world. They act as the triggers that initiate or contribute to an
-agent's processing cycle (`agent.run`). An input could represent a user message,
-a blockchain event, an API webhook, a sensor reading, or any other data source
-relevant to the agent's task.
+## What is an Input?
 
-## Defining an Input
+An input is how your agent **listens** to the outside world. If outputs are how
+your agent "speaks", inputs are how your agent "hears" things happening.
 
-Input sources are defined using the `input` helper function exported from
-`@daydreamsai/core`. Each input definition connects an external data source to
-the agent's core processing loop.
+## Real Examples
 
-```typescript
-import { input, context, type AnyAgent } from "@daydreamsai/core";
-import { z } from "zod";
-import { EventEmitter } from "events"; // Example: Using a simple Node.js EventEmitter
+Here are inputs that make agents responsive:
 
-// Assume myContext is defined elsewhere
-declare const myContext: any;
+### Discord Messages
 
-// Example: An input source listening to a simple EventEmitter
-const myEventEmitter = new EventEmitter();
-
-const eventInput = input({
-  // Required: A unique identifier for this input source type.
-  // Helps in logging and debugging. e.g., "myApi:webhook", "discord:message"
-  type: "custom:event",
-
-  // Optional (but recommended): Zod schema for the *data payload* that will be
-  // passed into the agent via the `send` function below. This validates
-  // the data structure *before* it triggers the agent's run cycle.
+```typescript title="discord-input.ts"
+// Agent listens for Discord messages
+const discordMessage = input({
+  type: "discord:message",
   schema: z.object({
-    eventId: z.string().describe("Unique ID for the incoming event"),
-    payload: z.any().describe("The actual data content of the event"),
-    source: z.string().optional().describe("Origin of the event"),
+    content: z.string(),
+    userId: z.string(),
+    channelId: z.string(),
   }),
+  subscribe: (send, agent) => {
+    discord.on("messageCreate", (message) => {
+      send(
+        chatContext,
+        { channelId: message.channel.id },
+        {
+          content: message.content,
+          userId: message.author.id,
+          channelId: message.channel.id,
+        }
+      );
+    });
 
-  // Required (usually): Connects to the external data source and calls `send`
-  // when new data arrives.
-  subscribe: (send, agent: AnyAgent) => {
-    // `send` is the crucial function provided by the framework. You call this
-    // to push validated data into the agent for processing.
-    // `agent` is the agent instance, useful for accessing shared services or config.
-
-    const listener = (eventData: {
-      id: string;
-      data: any;
-      origin?: string;
-    }) => {
-      console.log(`External event received: ${eventData.id}`);
-
-      // 1. Determine the target Context and its arguments.
-      // This tells the agent *which* context instance should handle this input.
-      // This might be static or dynamically determined based on eventData.
-      const targetContext = myContext; // Replace with your actual context definition
-      const contextArgs = { someId: eventData.id }; // Args matching targetContext.schema
-
-      // 2. Prepare the data payload according to this input's `schema`.
-      const inputData = {
-        eventId: eventData.id,
-        payload: eventData.data,
-        source: eventData.origin,
-      };
-
-      try {
-        // 3. Validate the payload before sending (optional but good practice)
-        eventInput.schema?.parse(inputData); // Use the defined schema
-
-        // 4. Call `send` to push the input data into the agent.
-        // This triggers the agent's processing cycle for the target context instance.
-        send(targetContext, contextArgs, inputData);
-      } catch (validationError) {
-        agent.logger.error(
-          "eventInput:subscribe",
-          "Invalid event data received",
-          { eventData, validationError }
-        );
-        // Decide how to handle invalid data (e.g., log, ignore)
-      }
-    };
-
-    // Attach the listener to the external source
-    myEventEmitter.on("newEvent", listener);
-    agent.logger.info("eventInput", "Subscribed to newEvent");
-
-    // IMPORTANT: Return a cleanup function.
-    // This is called when the agent stops, ensuring you detach listeners,
-    // close connections, clear intervals, etc.
-    return () => {
-      myEventEmitter.off("newEvent", listener);
-      agent.logger.info("eventInput", "Unsubscribed from newEvent");
-    };
-  },
-
-  // Optional: Pre-process data *after* `send` is called but *before* the log entry
-  // (InputRef) is created. Useful for adding metadata based on context state.
-  handler: async (data, ctx, agent) => {
-    // `data` is the payload passed to `send`.
-    // `ctx` is the ContextState of the target context instance.
-    // Example: Check if this event was already seen in this context instance
-    const seen = ctx.memory.processedEventIds?.includes(data.eventId) ?? false;
-    return {
-      data: data, // Can optionally transform the data here
-      params: { seen: String(seen) }, // Add parameters to the InputRef log entry
-    };
-  },
-
-  // Optional: Customize how this input is represented in logs or prompts.
-  format: (ref) => {
-    // `ref` is the InputRef object (log entry)
-    return `Event Received: ID=${ref.data.eventId}, Source=${ref.data.source ?? "N/A"}`;
-  },
-
-  // Optional: One-time setup logic when the agent starts.
-  install: async (agent) => {
-    // E.g., agent.container.resolve('myApiClient').connect();
-    agent.logger.info("eventInput", "Install hook executed");
+    return () => discord.removeAllListeners("messageCreate");
   },
 });
 ```
 
-**Key Concepts:**
+### CLI Commands
 
-- **`type`**: A unique string identifying your input source.
-- **`schema`**: (Recommended) A Zod schema defining the structure of the data
-  payload you intend to pass via `send`. Validation happens automatically if
-  provided.
-- **`subscribe(send, agent)`**: The core function where you connect to your
-  external data source (API, websocket, event emitter, polling mechanism, etc.).
-  - When data arrives, you call the provided `send` function.
-  - You **must** return a cleanup function to disconnect/unsubscribe when the
-    agent stops.
-- **`send(context, args, data)`**: This framework-provided function is your
-  gateway into the agent.
-  - `context`: The **context definition** object that should handle this input.
-  - `args`: An object matching the `context.schema`, identifying the specific
-    **instance** of the context.
-  - `data`: The payload containing the actual input information, ideally
-    matching this `input`'s `schema`.
-- **`handler(data, ctx, agent)`**: (Optional) Pre-processing function executed
-  after `send` but before the input log entry is finalized. Allows data
-  transformation or adding metadata (`params`) based on the target context's
-  state (`ctx`).
-- **`format(ref)`**: (Optional) Customize the string/XML representation of the
-  input log entry (`InputRef`).
-
-## How Inputs Trigger the Agent
-
-1.  **External Event:** Your `subscribe` function detects an event or receives
-    data.
-2.  **`send` Called:** Your code calls `send(context, args, data)`.
-3.  **Agent Invoked:** The framework receives the call, creates a basic log
-    entry (`InputRef`) for this input, and starts or queues an `agent.run` cycle
-    for the specified `context` instance identified by `args`.
-4.  **Pre-processing (`handler`):** If you defined an `input.handler`, it runs,
-    potentially modifying the data or adding parameters to the `InputRef`.
-5.  **Run Cycle:** The agent proceeds with its run cycle
-    ([Agent Lifecycle](/docs/concepts/agent-lifecycle)), processing this new
-    `InputRef` along with other state information to generate a response or
-    perform actions.
-
-## Inputs within Extensions
-
-Inputs are commonly bundled within [Extensions](/docs/advanced/extensions) to
-package integrations cleanly. The structure is the same, but the `input`
-definitions live inside the `inputs` property of the `extension` definition.
-
-```typescript
-import { extension, input /* ... */ } from "@daydreamsai/core";
-import { z } from "zod";
-import { myService } from "./myService";
-import { myContext } from "./myContext";
-
-export const myApiExtension = extension({
-  name: "myApi",
-  services: [myService], // Optional services used by the input
-  contexts: { myContext }, // Optional contexts targeted by the input
-
-  inputs: {
-    // Input definitions go here, keyed by their type
-    "myApi:webhook": input({
-      type: "myApi:webhook", // Redundant but ensures key matches type
-      schema: z.object({
-        /* ... webhook payload schema ... */
-      }),
-      subscribe(send, agent) {
-        const apiClient = agent.container.resolve<MyApiClient>("myApiClient"); // Use a service
-
-        const webhookHandler = (payload: any) => {
-          const validatedData =
-            myApiExtension.inputs["myApi:webhook"].schema.parse(payload);
-          // Determine context/args based on payload
-          const contextArgs = { entityId: validatedData.entityId };
-          send(myContext, contextArgs, validatedData);
-        };
-
-        apiClient.registerWebhookListener(webhookHandler);
-        return () => apiClient.removeWebhookListener(webhookHandler);
-      },
-      // ... other input properties ...
-    }),
-    // ... potentially other inputs for this extension ...
-  },
-});
-```
-
-## Examples
-
-(Keep the existing CLI, Telegram, and Twitter examples here, perhaps slightly
-simplifying the code snippets to focus on the `subscribe` and `send` pattern.)
-
-### CLI Input (from `@daydreamsai/cli`)
-
-```typescript
-// Simplified example
-input({
+```typescript title="cli-input.ts"
+// Agent listens for terminal input
+const cliInput = input({
   type: "cli:input",
-  subscribe(send, { container }) {
-    const rl = container.resolve<readline.Interface>("readline");
-    const listen = async () => {
-      while (true) {
-        // Basic loop, real implementation handles abort
-        const line = await rl.question("> ");
-        if (line === "exit") break;
-        // Send to a default CLI context instance
-        send(cliContext, { user: "cli_user" }, line);
-      }
-    };
-    listen(); // Start listening
-    return () => {
-      /* Abort logic here */
-    };
+  schema: z.string(),
+  subscribe: (send, agent) => {
+    const readline = require("readline").createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+
+    readline.on("line", (input) => {
+      send(cliContext, { sessionId: "cli" }, input);
+    });
+
+    return () => readline.close();
   },
 });
 ```
 
-### Telegram Message Input (from `@daydreamsai/telegram`)
+### API Webhooks
 
-```typescript
-// Simplified example
-input({
-  type: "telegram:message",
+```typescript title="webhook-input.ts"
+// Agent listens for API webhooks
+const webhookInput = input({
+  type: "api:webhook",
   schema: z.object({
-    /* ... */
+    event: z.string(),
+    data: z.any(),
   }),
-  subscribe(send, { container }) {
-    const tg = container.resolve<Telegraf>("telegraf");
-    tg.on("message", (ctx) => {
-      if ("text" in ctx.message) {
-        const dataPayload = {
-          /* ... extract user, text ... */
-        };
-        // Send data to the specific telegram chat context
-        send(telegramChat, { chatId: ctx.chat.id }, dataPayload);
+  subscribe: (send, agent) => {
+    const server = express();
+
+    server.post("/webhook", (req, res) => {
+      send(
+        webhookContext,
+        { eventId: req.body.id },
+        {
+          event: req.body.event,
+          data: req.body.data,
+        }
+      );
+      res.status(200).send("OK");
+    });
+
+    const serverInstance = server.listen(3000);
+    return () => serverInstance.close();
+  },
+});
+```
+
+## The Problem: Agents Need to Know When Things Happen
+
+Without inputs, your agent can't react to anything:
+
+```text title="deaf-agent.txt"
+User sends Discord message: "Hey agent, what's the weather?"
+Agent: *doesn't hear anything*
+Agent: *sits idle, does nothing*
+User: "Hello??"
+Agent: *still nothing*
+// ❌ Agent can't hear Discord messages
+// ❌ No way to trigger the agent
+// ❌ Completely unresponsive
+```
+
+## The Solution: Inputs Enable Listening
+
+With inputs, your agent can hear and respond:
+
+```text title="listening-agent.txt"
+User sends Discord message: "Hey agent, what's the weather?"
+Discord Input: *detects new message*
+Agent: *wakes up and processes the message*
+Agent: *calls weather API*
+Agent: *responds via Discord output*
+Discord: "It's 72°F and sunny in San Francisco!"
+// ✅ Agent hears the message
+// ✅ Automatically triggered to respond
+// ✅ Completes the conversation
+```
+
+## How Inputs Work in Your Agent
+
+### 1. You Define What the Agent Listens For
+
+```typescript title="define-inputs.ts"
+const agent = createDreams({
+  model: openai("gpt-4o"),
+  inputs: [
+    discordMessage, // Agent listens to Discord
+    cliInput, // Agent listens to terminal
+    webhookInput, // Agent listens to webhooks
+  ],
+});
+```
+
+### 2. Inputs Watch for Events
+
+When you start your agent, inputs begin listening:
+
+```typescript title="listening-pattern.ts"
+// Discord input starts watching for messages
+discord.on("messageCreate", (message) => {
+  // When message arrives, input sends it to agent
+  send(chatContext, { channelId: message.channel.id }, messageData);
+});
+
+// CLI input starts watching for terminal input
+readline.on("line", (input) => {
+  // When user types, input sends it to agent
+  send(cliContext, { sessionId: "cli" }, input);
+});
+```
+
+### 3. Inputs Trigger the Agent
+
+When an input detects something, it "sends" the data to your agent:
+
+```text title="input-flow.txt"
+1. Discord message arrives: "What's the weather?"
+2. Discord input detects it
+3. Input calls: send(chatContext, {channelId: "123"}, {content: "What's the weather?"})
+4. Agent wakes up and starts thinking
+5. Agent sees the message and decides what to do
+6. Agent calls weather action and responds
+```
+
+## Creating Your First Input
+
+Here's a simple input that listens for file changes:
+
+```typescript title="file-watcher-input.ts"
+import { input } from "@daydreamsai/core";
+import { z } from "zod";
+import fs from "fs";
+
+export const fileWatcher = input({
+  // Type the agent uses to identify this input
+  type: "file:watcher",
+
+  // Schema defines what data the input provides
+  schema: z.object({
+    filename: z.string(),
+    content: z.string(),
+    event: z.enum(["created", "modified", "deleted"]),
+  }),
+
+  // Subscribe function starts listening
+  subscribe: (send, agent) => {
+    const watchDir = "./watched-files";
+
+    // Watch for file changes
+    const watcher = fs.watch(watchDir, (eventType, filename) => {
+      if (filename) {
+        const filepath = `${watchDir}/${filename}`;
+
+        try {
+          const content = fs.readFileSync(filepath, "utf8");
+
+          // Send the file change to the agent
+          send(
+            fileContext,
+            { filename },
+            {
+              filename,
+              content,
+              event: eventType === "rename" ? "created" : "modified",
+            }
+          );
+        } catch (error) {
+          // File might be deleted
+          send(
+            fileContext,
+            { filename },
+            {
+              filename,
+              content: "",
+              event: "deleted",
+            }
+          );
+        }
       }
     });
-    // Telegraf handles cleanup
-    return () => {};
+
+    // Return cleanup function
+    return () => {
+      watcher.close();
+    };
   },
 });
 ```
 
-Inputs are the crucial link between your agent and the information it needs to
-react to, enabling dynamic and event-driven behavior.
+Use it in your agent:
+
+```typescript title="agent-with-file-watcher.ts"
+const agent = createDreams({
+  model: openai("gpt-4o"),
+  inputs: [fileWatcher],
+});
+
+// Now when files change in ./watched-files/:
+// 1. File watcher detects the change
+// 2. Input sends file data to agent
+// 3. Agent can process and respond to file changes
+```
+
+## Working with Context Targeting
+
+Inputs need to know which context should handle the incoming data:
+
+```typescript title="context-targeting.ts"
+const chatInput = input({
+  type: "chat:message",
+  schema: z.object({
+    message: z.string(),
+    userId: z.string(),
+  }),
+  subscribe: (send, agent) => {
+    chatService.on("message", (data) => {
+      // Target the specific chat context for this user
+      send(
+        chatContext,
+        { userId: data.userId },
+        {
+          message: data.message,
+          userId: data.userId,
+        }
+      );
+    });
+
+    return () => chatService.removeAllListeners("message");
+  },
+});
+```
+
+This creates separate context instances for each user:
+
+- User "alice" gets context instance `chat:alice`
+- User "bob" gets context instance `chat:bob`
+- Each maintains separate conversation memory
+
+## Real-Time vs Polling Inputs
+
+### Real-Time (Event-Driven)
+
+```typescript title="realtime-input.ts"
+// ✅ Good - responds immediately
+subscribe: (send, agent) => {
+  websocket.on("message", (data) => {
+    send(context, args, data);
+  });
+
+  return () => websocket.close();
+};
+```
+
+### Polling (Check Periodically)
+
+```typescript title="polling-input.ts"
+// Sometimes necessary for APIs without webhooks
+subscribe: (send, agent) => {
+  const checkForUpdates = async () => {
+    const newData = await api.getUpdates();
+    if (newData.length > 0) {
+      newData.forEach((item) => {
+        send(context, { id: item.id }, item);
+      });
+    }
+  };
+
+  const interval = setInterval(checkForUpdates, 5000); // Every 5 seconds
+
+  return () => clearInterval(interval);
+};
+```
+
+## Multiple Inputs Working Together
+
+Your agent can listen to multiple sources simultaneously:
+
+```typescript title="multiple-inputs.ts"
+const agent = createDreams({
+  model: openai("gpt-4o"),
+  inputs: [
+    discordMessage, // Discord messages
+    slackMessage, // Slack messages
+    emailReceived, // New emails
+    webhookReceived, // API webhooks
+    fileChanged, // File system changes
+    timerTick, // Scheduled events
+  ],
+});
+
+// Agent now responds to any of these inputs automatically
+```
+
+## Error Handling and Validation
+
+Always handle errors gracefully in your inputs:
+
+```typescript title="error-handling-input.ts"
+const robustInput = input({
+  type: "api:events",
+  schema: z.object({
+    eventId: z.string(),
+    data: z.any(),
+  }),
+  subscribe: (send, agent) => {
+    api.on("event", (rawData) => {
+      try {
+        // Validate the data first
+        const validData = {
+          eventId: rawData.id,
+          data: rawData.payload,
+        };
+
+        // Schema validation happens automatically
+        send(eventContext, { eventId: rawData.id }, validData);
+      } catch (error) {
+        agent.logger.error("api:events", "Invalid event data", {
+          rawData,
+          error: error.message,
+        });
+        // Don't crash - just log and continue
+      }
+    });
+
+    return () => api.removeAllListeners("event");
+  },
+});
+```
+
+## Best Practices
+
+### 1. Use Clear Types and Schemas
+
+```typescript title="good-input-definition.ts"
+// ✅ Good - clear purpose and validation
+const userMessage = input({
+  type: "user:message",
+  schema: z.object({
+    content: z.string().min(1).max(2000),
+    userId: z.string().uuid(),
+    timestamp: z.number(),
+  }),
+  // ...
+});
+
+// ❌ Bad - unclear and unvalidated
+const dataInput = input({
+  type: "data",
+  schema: z.any(),
+  // ...
+});
+```
+
+### 2. Always Return Cleanup Functions
+
+```typescript title="cleanup-function.ts"
+// ✅ Good - proper cleanup
+subscribe: (send, agent) => {
+  const listener = (data) => send(context, args, data);
+
+  eventSource.addEventListener("event", listener);
+
+  return () => {
+    eventSource.removeEventListener("event", listener);
+    eventSource.close();
+  };
+};
+
+// ❌ Bad - no cleanup (memory leaks!)
+subscribe: (send, agent) => {
+  eventSource.addEventListener("event", (data) => {
+    send(context, args, data);
+  });
+
+  return () => {}; // Nothing cleaned up!
+};
+```
+
+### 3. Handle Connection Failures
+
+```typescript title="reconnection-input.ts"
+subscribe: (send, agent) => {
+  let reconnectAttempts = 0;
+  const maxReconnects = 5;
+
+  const connect = () => {
+    try {
+      const connection = createConnection();
+
+      connection.on("data", (data) => {
+        reconnectAttempts = 0; // Reset on successful data
+        send(context, args, data);
+      });
+
+      connection.on("error", () => {
+        if (reconnectAttempts < maxReconnects) {
+          reconnectAttempts++;
+          setTimeout(connect, 1000 * reconnectAttempts);
+        }
+      });
+
+      return connection;
+    } catch (error) {
+      agent.logger.error("connection failed", error);
+    }
+  };
+
+  const connection = connect();
+
+  return () => connection?.close();
+};
+```
+
+### 4. Target the Right Context
+
+```typescript title="context-routing.ts"
+subscribe: (send, agent) => {
+  service.on("event", (event) => {
+    // Route to appropriate context based on event type
+    if (event.type === "user_message") {
+      send(chatContext, { userId: event.userId }, event.data);
+    } else if (event.type === "system_alert") {
+      send(alertContext, { alertId: event.id }, event.data);
+    } else if (event.type === "game_move") {
+      send(gameContext, { gameId: event.gameId }, event.data);
+    }
+  });
+
+  return () => service.removeAllListeners("event");
+};
+```
+
+## Key Takeaways
+
+- **Inputs enable responsiveness** - Without them, agents can't hear anything
+- **Subscribe pattern** - Watch external sources, call `send()` when data
+  arrives
+- **Context targeting** - Route inputs to appropriate context instances
+- **Always cleanup** - Return functions to disconnect when agent stops
+- **Validate data** - Use schemas to ensure incoming data is correct
+- **Handle errors gracefully** - Don't let bad input data crash your agent
+
+Inputs are what turn your agent from a one-time script into a responsive,
+always-listening assistant that can react to the world in real-time.

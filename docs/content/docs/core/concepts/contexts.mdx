@@ -3,249 +3,501 @@ title: Contexts
 description: Managing state, memory, and behavior for agent interactions.
 ---
 
-In Daydreams, a **Context** defines a specific scope or environment for your
-agent's interactions or tasks. Think of it as a dedicated workspace that holds
-the state, memory, available tools (actions, inputs, outputs), and specific
-instructions relevant to that particular job.
+## What is a Context?
 
-You might use different contexts for:
+A context is like a **separate workspace** for your agent. Think of it like
+having different tabs open in your browser - each tab has its own state and
+remembers different things.
 
-- Handling individual user chat sessions (`chatContext`).
-- Managing a specific game state (`gameContext`).
-- Executing a complex workflow or process (`workflowContext`).
-- Interacting with a specific external system (`externalApiContext`).
+## Real Examples
 
-Each running **instance** of a context (e.g., the chat session with _user A_)
-maintains its own unique state and memory, separate from other instances (like
-the chat session with _user B_).
+Here are contexts that make agents stateful:
 
-## Defining a Context
+### Chat Context
 
-You define context types using the `context` function from `@daydreamsai/core`.
+```typescript title="chat-context.ts"
+// Each user gets their own chat workspace
+const chatContext = context({
+  type: "chat",
+  schema: z.object({
+    userId: z.string(),
+  }),
+  create: () => ({
+    messages: [],
+    userPreferences: {},
+    lastSeen: null,
+  }),
+  render: (state) => `
+    Chat with ${state.args.userId}
+    Recent messages: ${state.memory.messages.slice(-3).join("\n")}
+  `,
+});
+```
 
-```typescript
-import {
-  context,
-  action,
-  type AnyAgent,
-  type ContextState,
-} from "@daydreamsai/core";
-import { z } from "zod";
+### Game Context
 
-// 1. Define the structure of the persistent memory for this context type
-interface ChatMemory {
-  messageHistory: { sender: "user" | "agent"; text: string }[];
-  userPreferences: Record<string, any>;
-  lastInteractionTime?: number;
-}
+```typescript title="game-context.ts"
+// Each game session has its own state
+const gameContext = context({
+  type: "game",
+  schema: z.object({
+    gameId: z.string(),
+  }),
+  create: () => ({
+    playerHealth: 100,
+    level: 1,
+    inventory: [],
+    currentRoom: "start",
+  }),
+  render: (state) => `
+    Game: ${state.args.gameId}
+    Health: ${state.memory.playerHealth}
+    Level: ${state.memory.level}
+    Room: ${state.memory.currentRoom}
+  `,
+});
+```
 
-// 2. Define the Zod schema for arguments needed to identify a specific instance
-const chatSchema = z.object({
-  sessionId: z.string().describe("Unique identifier for the chat session"),
-  userId: z.string().describe("Identifier for the user in the session"),
+### Project Context
+
+```typescript title="project-context.ts"
+// Each project tracks its own progress
+const projectContext = context({
+  type: "project",
+  schema: z.object({
+    projectId: z.string(),
+  }),
+  create: () => ({
+    tasks: [],
+    status: "planning",
+    teamMembers: [],
+    deadlines: [],
+  }),
+  render: (state) => `
+    Project: ${state.args.projectId}
+    Status: ${state.memory.status}
+    Tasks: ${state.memory.tasks.length} total
+  `,
+});
+```
+
+## The Problem: Agents Need to Remember Different Things
+
+Without contexts, your agent mixes everything together:
+
+```text title="confused-agent.txt"
+User Alice: "My favorite color is blue"
+User Bob: "What's Alice's favorite color?"
+Agent: "Alice's favorite color is blue"
+// ❌ Bob shouldn't see Alice's private info!
+
+User in Game A: "Go north"
+User in Game B: "What room am I in?"
+Agent: "You went north" (from Game A!)
+// ❌ Wrong game state mixed up!
+
+Project Alpha discussion mixed with Project Beta tasks
+// ❌ Complete chaos!
+```
+
+## The Solution: Contexts Separate Everything
+
+With contexts, each conversation/session/game stays separate:
+
+```text title="organized-agent.txt"
+Alice's Chat Context:
+- Alice: "My favorite color is blue"
+- Agent remembers: Alice likes blue
+
+Bob's Chat Context:
+- Bob: "What's Alice's favorite color?"
+- Agent: "I don't have information about Alice"
+// ✅ Privacy maintained!
+
+Game A Context:
+- Player went north → remembers current room
+
+Game B Context:
+- Separate game state → different room
+// ✅ No mixing of game states!
+```
+
+## How Contexts Work in Your Agent
+
+### 1. You Define Different Context Types
+
+```typescript title="define-contexts.ts"
+const agent = createDreams({
+  model: openai("gpt-4o"),
+  contexts: [
+    chatContext, // For user conversations
+    gameContext, // For game sessions
+    projectContext, // For project management
+  ],
+});
+```
+
+### 2. Inputs Route to Specific Context Instances
+
+```typescript title="context-routing.ts"
+// Discord input routes to chat contexts
+discordInput.subscribe((send, agent) => {
+  discord.on("message", (msg) => {
+    // Each user gets their own chat context instance
+    send(
+      chatContext,
+      { userId: msg.author.id },
+      {
+        content: msg.content,
+      }
+    );
+  });
 });
 
-// 3. Define the context using the `context` function
-const chatContext = context<
-  ChatMemory, // Type for the persistent memory
-  typeof chatSchema // Type for the identifying arguments
->({
-  // Required: A unique identifier string for this *type* of context
-  type: "chat",
-
-  // Required: The Zod schema defining the arguments needed to identify
-  // or create a specific *instance* of this context.
-  schema: chatSchema,
-
-  // Optional: Function to generate a unique string key for an instance from its arguments.
-  // Use this if the 'type' alone isn't unique (e.g., multiple chat sessions).
-  // The full instance ID becomes "<type>:<key>" (e.g., "chat:session-xyz").
-  key: ({ sessionId }) => sessionId,
-
-  // Optional: Defines the initial structure and default values for the
-  // context instance's persistent memory (`ctx.memory`).
-  // This runs only if no saved memory exists for this instance.
-  create: (state, agent) => {
-    agent.logger.info(
-      "chatContext",
-      `Creating new memory for session: ${state.key}`
+// Game input routes to game contexts
+gameInput.subscribe((send, agent) => {
+  gameServer.on("move", (event) => {
+    // Each game gets its own context instance
+    send(
+      gameContext,
+      { gameId: event.gameId },
+      {
+        action: event.action,
+      }
     );
-    return {
-      messageHistory: [],
-      userPreferences: {}, // Can use `state.options` if `setup` is used
-    };
-  },
+  });
+});
+```
 
-  // Optional: Provides static or dynamic instructions to the LLM *when this context is active*.
-  instructions: (state) =>
-    `You are chatting with user ${state.args.userId}. Be helpful.`,
+### 3. Agent Maintains Separate Memory
 
-  // Optional: A description of this context type's purpose.
-  description: "A chat session with a specific user.",
+```text title="context-instances.txt"
+Chat Context Instances:
+- chat:alice → { messages: [...], preferences: {...} }
+- chat:bob   → { messages: [...], preferences: {...} }
+- chat:carol → { messages: [...], preferences: {...} }
 
-  // Optional: Function to format the context's *current memory state* for the LLM prompt.
-  // Helps the LLM understand the current situation within this context instance.
+Game Context Instances:
+- game:session1 → { health: 80, level: 3, room: "forest" }
+- game:session2 → { health: 100, level: 1, room: "start" }
+- game:session3 → { health: 45, level: 7, room: "dungeon" }
+
+All completely separate!
+```
+
+## Creating Your First Context
+
+Here's a simple todo list context:
+
+```typescript title="todo-context.ts"
+import { context } from "@daydreamsai/core";
+import { z } from "zod";
+
+// Define what this context remembers
+interface TodoMemory {
+  tasks: { id: string; title: string; done: boolean }[];
+  createdAt: string;
+}
+
+export const todoContext = context<TodoMemory>({
+  // Type identifies this kind of context
+  type: "todo",
+
+  // Schema defines how to identify specific instances
+  schema: z.object({
+    listId: z.string().describe("Unique ID for this todo list"),
+  }),
+
+  // Create initial memory when first accessed
+  create: () => ({
+    tasks: [],
+    createdAt: new Date().toISOString(),
+  }),
+
+  // How this context appears to the LLM
   render: (state) => {
-    // state.memory is typed as ChatMemory here
-    const recentHistory = state.memory.messageHistory
-      .slice(-5) // Show last 5 messages
-      .map((msg) => `${msg.sender}: ${msg.text}`)
-      .join("\n");
+    const { tasks } = state.memory;
+    const pending = tasks.filter((t) => !t.done).length;
+    const completed = tasks.filter((t) => t.done).length;
 
     return `
-## Recent Chat History (Session: ${state.key}):
-${recentHistory || "No messages yet."}
+Todo List: ${state.args.listId}
+Tasks: ${pending} pending, ${completed} completed
 
-## User Preferences:
-${JSON.stringify(state.memory.userPreferences)}
+Recent tasks:
+${tasks
+  .slice(-5)
+  .map((t) => `${t.done ? "✅" : "⏳"} ${t.title}`)
+  .join("\n")}
     `;
   },
 
-  // --- Optional Lifecycle Hooks & Config ---
-  // onStep: async (ctx, agent) => { /* Logic per step */ },
-  // onRun: async (ctx, agent) => { /* Logic on run completion */ },
-  // shouldContinue: (ctx) => ctx.memory.messageHistory.length < 50, // Example condition
-  // onError: async (error, ctx, agent) => { /* Handle errors */ },
-  // model: mySpecificLLM, // Override agent's default model
-  // maxSteps: 15, // Limit run steps for this context type
+  // Instructions for the LLM when this context is active
+  instructions:
+    "Help the user manage their todo list. You can add, complete, and list tasks.",
+});
+```
+
+Use it in your agent:
+
+```typescript title="agent-with-todo.ts"
+const agent = createDreams({
+  model: openai("gpt-4o"),
+  contexts: [todoContext],
 });
 
-// You can then associate actions, inputs, or outputs specifically for this context
-// (See "Associating Components" section below)
-// chatContext.setActions([...]);
-// chatContext.setInputs({...});
-// chatContext.setOutputs({...});
+// Now users can have separate todo lists:
+// todo:work → Work tasks
+// todo:personal → Personal tasks
+// todo:shopping → Shopping list
+// Each maintains separate state!
 ```
 
-**Key Definition Parameters:**
+## Context Memory: What Gets Remembered
 
-- `type`: Unique string identifying the context _type_.
+Context memory persists between conversations:
 
-- `schema`: Zod schema for arguments needed to identify a context _instance_.
-  Use `.describe()` on fields for clarity.
+```typescript title="memory-example.ts"
+// First conversation
+User: "Add 'buy milk' to my shopping list"
+Agent: → todoContext(listId: "shopping")
+       → memory.tasks.push({id: "1", title: "buy milk", done: false})
+       → "Added 'buy milk' to your shopping list"
 
-- `key`: (Optional) Function `(args) => string` to create a unique instance key
-  from arguments.
+// Later conversation (hours/days later)
+User: "What's on my shopping list?"
+Agent: → todoContext(listId: "shopping")
+       → Loads saved memory: {tasks: [{title: "buy milk", done: false}]}
+       → "You have 'buy milk' on your shopping list"
 
-- `create`: (Optional) Function `(state, agent) => TMemory` defining the initial
-  structure of the instance's persistent memory (`ctx.memory`).
-
-- `render`: (Optional) Function `(state) => string | XMLElement | ...`
-  formatting the current `state.memory` for the LLM prompt. Keep it concise and
-  relevant.
-
-- `instructions` / `description`: (Optional) Provide guidance to the LLM about
-  the context.
-
-- Lifecycle Hooks (`onStep`, `onRun`, etc.): (Optional) Add custom logic at
-  different points in the execution cycle.
-- Configuration (`model`, `maxSteps`, etc.): (Optional) Override agent defaults
-  for this context type.
-
-## Context Memory (`ctx.memory`)
-
-The most important concept for managing state within a context is its
-**persistent memory**.
-
-- **Definition:** The structure and initial values are defined by the `create`
-  function in your `context` definition.
-- **Access:** Within context lifecycle hooks (like `onStep`) and within the
-  `handler` of any action, input, or output associated with this context, you
-  can access the **current instance's** memory via `ctx.memory`.
-- **Persistence:** Changes made to `ctx.memory` during an agent run are
-  **automatically saved** by the framework to the configured `MemoryStore` at
-  the end of the run cycle.
-- **Loading:** When an agent run starts for a specific context instance, the
-  framework loads its saved memory from the `MemoryStore` into `ctx.memory`.
-
-```typescript
-// Inside an action handler associated with chatContext:
-handler(args, ctx, agent) {
-  // ctx.memory is typed as ChatMemory
-  const history = ctx.memory.messageHistory;
-  const lastMsg = history[history.length - 1];
-
-  // Modify the memory
-  ctx.memory.lastInteractionTime = Date.now();
-  ctx.memory.messageHistory.push({ sender: "agent", text: "Acknowledged." });
-
-  // This change will be saved automatically.
-  return { success: true };
-}
+// ✅ Context remembered the task across conversations!
 ```
 
-## Associating Components (Actions/Inputs/Outputs)
+## Multiple Contexts in One Agent
 
-While you can define components globally, it's often better to associate them
-directly with the context they belong to using the chained `.setActions()`,
-`.setInputs()`, and `.setOutputs()` methods. This provides better organization
-and ensures components have typed access to the correct context memory.
+Your agent can switch between different contexts:
 
-```typescript
-import { chatContext, ChatMemory } from "./chatContext"; // Assuming context is defined elsewhere
-import { sendMessageAction } from "./actions/sendMessage"; // Assuming action is defined
+```xml title="context-switching.xml"
+<!-- User starts in chat context -->
+<input type="discord:message" userId="alice">
+  "Add 'finish project' to my work todo list"
+</input>
 
-// Associate the action with the chat context
-const chatContextWithActions = chatContext.setActions([
-  sendMessageAction,
-  // other actions relevant only to chat...
+<!-- Agent recognizes this needs todo context -->
+<response>
+  <reasoning>User wants to add a task to their work todo list. I should use the todo context.</reasoning>
+
+  <!-- Switch to todo context -->
+  <action_call name="add-task" context="todo" args='{"listId": "work"}'>
+    {"title": "finish project"}
+  </action_call>
+
+  <!-- Respond back in chat context -->
+  <output type="discord:message" channelId="123">
+    Added "finish project" to your work todo list!
+  </output>
+</response>
+```
+
+## Advanced: Context-Specific Actions
+
+You can attach actions that only work in certain contexts:
+
+```typescript title="context-specific-actions.ts"
+const todoContextWithActions = todoContext.setActions([
+  action({
+    name: "add-task",
+    description: "Adds a new task to the todo list",
+    schema: z.object({
+      title: z.string(),
+    }),
+    handler: async ({ title }, ctx) => {
+      // ctx.memory is automatically typed as TodoMemory!
+      const newTask = {
+        id: crypto.randomUUID(),
+        title,
+        done: false,
+      };
+
+      ctx.memory.tasks.push(newTask);
+
+      return {
+        success: true,
+        taskId: newTask.id,
+        message: `Added "${title}" to the list`,
+      };
+    },
+  }),
+
+  action({
+    name: "complete-task",
+    description: "Marks a task as completed",
+    schema: z.object({
+      taskId: z.string(),
+    }),
+    handler: async ({ taskId }, ctx) => {
+      const task = ctx.memory.tasks.find((t) => t.id === taskId);
+      if (!task) {
+        return { success: false, message: "Task not found" };
+      }
+
+      task.done = true;
+
+      return {
+        success: true,
+        message: `Completed "${task.title}"`,
+      };
+    },
+  }),
 ]);
-
-// Now, within sendMessageAction's handler, ctx.memory will be typed as ChatMemory
-// and the action will only be available when chatContext is active.
-
-// Similarly for inputs and outputs:
-// chatContext.setInputs({ ... });
-// chatContext.setOutputs({ ... });
 ```
 
-You can also define them inline using the `actions`, `inputs`, or `outputs`
-properties directly within the `context({...})` definition, though the chained
-methods often offer superior type inference.
+Now these actions only appear when the todo context is active!
 
-## Working with Context Instances
+## Context Lifecycle
 
-You typically interact with specific context instances through the `agent`
-object:
+Contexts have hooks for different stages:
 
-- `agent.getContext({ context: chatContext, args: { sessionId: "xyz", userId: "user1" } })`:
-  Retrieves the `ContextState` for the specified instance. If it doesn't exist,
-  it creates it (running `create` if needed) and loads its memory.
+```typescript title="context-lifecycle.ts"
+const advancedContext = context({
+  type: "advanced",
+  schema: z.object({ sessionId: z.string() }),
 
-- `agent.run({ context: chatContext, args: { sessionId: "xyz", userId: "user1" }, ... })`:
-  Starts (or continues) the agent's processing loop specifically for this
-  context instance.
+  // Called when context instance is first created
+  create: (state, agent) => {
+    agent.logger.info(`Creating new session: ${state.key}`);
+    return {
+      startTime: Date.now(),
+      interactions: 0,
+    };
+  },
 
-- `agent.getContextById("chat:session-xyz")`: (Less common) Retrieves a context
-  instance directly by its full ID if you know it.
+  // Called before each LLM interaction
+  onStep: async (ctx, agent) => {
+    ctx.memory.interactions++;
+  },
 
-- `agent.saveContext(contextState)`: Manually saves the state. Usually handled
-  automatically by the agent lifecycle.
+  // Called when a conversation/run completes
+  onRun: async (ctx, agent) => {
+    const duration = Date.now() - ctx.memory.startTime;
+    agent.logger.info(`Session ${ctx.key} lasted ${duration}ms`);
+  },
 
-## Context Memory vs. Working Memory
-
-It's important not to confuse the **persistent Context Memory (`ctx.memory`)**
-with the temporary **Working Memory**.
-
-- **Context Memory (`ctx.memory`):** Specific to a context **instance**. Holds
-  the **persistent state** (like chat history). Defined by `create`.
-  Saved/loaded by the `MemoryStore`. Used by `render`.
-- **Working Memory:** Exists only for the duration of a single `agent.run`.
-  Holds the **temporary log** of inputs, outputs, thoughts, and action
-  calls/results for _that specific run_. Used to build the prompt at each step.
+  // Called if there's an error
+  onError: async (error, ctx, agent) => {
+    agent.logger.error(`Error in session ${ctx.key}:`, error);
+  },
+});
+```
 
 ## Best Practices
 
-- **Scope Appropriately:** Design contexts around distinct tasks or interaction
-  boundaries.
-- **Define Memory Clearly:** Use interfaces (like `ChatMemory`) for your context
-  memory structure. Initialize it properly in `create`.
-- **Keep `render` Concise:** Only include state in `render` that is essential
-  for the LLM's immediate reasoning. Avoid overly large state dumps.
-- **Use Zod Schemas:** Clearly define `schema` for context arguments with
-  `.describe()`.
-- **Associate Components:** Link actions, inputs, and outputs to their relevant
-  contexts for better organization and type safety.
+### 1. Design Clear Boundaries
 
-Contexts provide the structure for organizing your agent's knowledge, state, and
-capabilities, enabling complex and stateful interactions.
+```typescript title="good-context-design.ts"
+// ✅ Good - clear, specific purpose
+const userProfileContext = context({
+  type: "user-profile",
+  schema: z.object({ userId: z.string() }),
+  // Manages user preferences, settings, history
+});
+
+const orderContext = context({
+  type: "order",
+  schema: z.object({ orderId: z.string() }),
+  // Manages specific order state, items, shipping
+});
+
+// ❌ Bad - too broad, unclear purpose
+const stuffContext = context({
+  type: "stuff",
+  schema: z.object({ id: z.string() }),
+  // What does this manage? Everything? Nothing clear.
+});
+```
+
+### 2. Keep Memory Structures Simple
+
+```typescript title="good-memory-structure.ts"
+// ✅ Good - clear, simple structure
+interface ChatMemory {
+  messages: Array<{
+    sender: "user" | "agent";
+    content: string;
+    timestamp: number;
+  }>;
+  userPreferences: {
+    language?: string;
+    timezone?: string;
+  };
+}
+
+// ❌ Bad - overly complex, nested
+interface OverComplexMemory {
+  data: {
+    nested: {
+      deeply: {
+        structured: {
+          confusing: {
+            memory: any;
+          };
+        };
+      };
+    };
+  };
+}
+```
+
+### 3. Write Helpful Render Functions
+
+```typescript title="good-render-function.ts"
+// ✅ Good - concise, relevant information
+render: (state) => `
+  Shopping Cart: ${state.args.cartId}
+  Items: ${state.memory.items.length}
+  Total: $${state.memory.total.toFixed(2)}
+  
+  Recent items:
+  ${state.memory.items
+    .slice(-3)
+    .map((item) => `- ${item.name} ($${item.price})`)
+    .join("\n")}
+`;
+
+// ❌ Bad - too much information, overwhelming
+render: (state) => JSON.stringify(state.memory, null, 2); // Dumps everything!
+```
+
+### 4. Use Descriptive Schema
+
+```typescript title="good-schema.ts"
+// ✅ Good - clear descriptions
+schema: z.object({
+  userId: z.string().uuid().describe("Unique identifier for the user"),
+  sessionType: z
+    .enum(["support", "sales", "general"])
+    .describe("Type of support session"),
+});
+
+// ❌ Bad - no descriptions, unclear
+schema: z.object({
+  id: z.string(),
+  type: z.string(),
+});
+```
+
+## Key Takeaways
+
+- **Contexts separate state** - Each conversation/session/game gets its own
+  memory
+- **Instance-based** - Same context type, different instances for different
+  users/sessions
+- **Memory persists** - State is saved between conversations automatically
+- **LLM sees context** - Render function shows current state to the AI
+- **Context-specific actions** - Attach actions that only work in certain
+  contexts
+- **Clear boundaries** - Design contexts around specific tasks or domains
+
+Contexts are what make your agent stateful and able to maintain separate
+conversations and tasks without mixing things up. They're the foundation for
+building agents that can remember and manage complex, ongoing interactions.
