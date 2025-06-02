@@ -14,6 +14,7 @@
     "@daydreamsai/core": "workspace:*",
     "@daydreamsai/mcp": "workspace:*",
     "@modelcontextprotocol/sdk": "catalog:",
+    "@daydreamsai/cli": "workspace:*",
     "zod": "catalog:"
   }
 }

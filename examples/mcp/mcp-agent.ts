@@ -1,4 +1,4 @@
-import { createDreams } from "@daydreamsai/core";
+import { createDreams, Logger } from "@daydreamsai/core";
 import { createMcpExtension } from "@daydreamsai/mcp";
 import { LogLevel } from "@daydreamsai/core";
 import path from "path";
@@ -16,7 +16,9 @@ import { cli } from "@daydreamsai/cli";
 // Create an agent with the MCP extension
 createDreams({
   model: groq("deepseek-r1-distill-llama-70b"),
-  logger: LogLevel.INFO,
+  logger: new Logger({
+    level: LogLevel.INFO,
+  }),
   contexts: [cli],
   // Add the MCP extension with the example server configuration
   extensions: [

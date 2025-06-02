@@ -1,0 +1,23 @@
+{
+  "title": "Tutorials  ",
+  "description": "Guides and examples",
+  "icon": "Cuboid",
+  "root": true,
+  "pages": [
+    "index",
+    "---Basic---",
+    "examples",
+
+    "---Games and Blockchain---",
+    "gaming",
+
+    "---Social---",
+    "social",
+
+    "---MCP---",
+    "mcp",
+
+    "---Advanced---",
+    "advanced"
+  ]
+}
