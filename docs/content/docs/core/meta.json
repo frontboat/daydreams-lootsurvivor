@@ -4,8 +4,11 @@
   "icon": "Cuboid",
   "root": true,
   "pages": [
-    "---Getting Started---",
     "index",
+
+    "---Getting Started---",
+    "installation",
+    "first-agent",
 
     "---Building Agents---",
     "concepts",
