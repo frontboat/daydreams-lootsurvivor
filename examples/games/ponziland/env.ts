@@ -1,4 +1,6 @@
 import { z } from "zod";
+import ponziland_manifest from "./contracts/ponziland_manifest_mainnet.json";
+import view_manifest from "./contracts/ponziland_manifest_mainnet.json";
 
 const envSchema = z.object({
   CHROMA_URL: z.string().default("http://localhost:8000"),
