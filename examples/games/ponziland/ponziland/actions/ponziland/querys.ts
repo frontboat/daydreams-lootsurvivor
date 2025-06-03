@@ -1,10 +1,9 @@
 import {
   action,
   type ActionSchema,
-} from "../../../../../fork/daydreams/packages/core/src";
-import { StarknetChain } from "../../../../../fork/daydreams/packages/defai/src";
-import { ActionCall } from "../../../../../fork/daydreams/packages/core/src";
-import { Agent } from "../../../../../fork/daydreams/packages/core/src";
+} from "@daydreamsai/core";
+import { StarknetChain } from "@daydreamsai/defai";
+import type { Agent } from "@daydreamsai/core";
 import { z } from "zod";
 import { Abi, Contract } from "starknet";
 import { CONTEXT } from "../../contexts/ponziland-context";
@@ -21,7 +20,6 @@ import { env } from "../../../env";
 import { lookupUserByProvider } from "extensions/ponziland/utils/ponziland_api";
 import view_manifest from "../../../contracts/view_manifest_mainnet.json";
 
-let view_manifest = view_manifest;
 export const get_auctions = (chain: StarknetChain) =>
   action({
     name: "get-auctions",
@@ -159,14 +157,16 @@ export const get_player_lands = (chain: StarknetChain) =>
     },
   });
 
-export const socialink_lookup = action({
-  name: "socialink-lookup",
-  description:
-    "Lookup a user's socialink profile using their discord username. This returns their starknet address if they are registered",
-  schema: z.object({ username: z.string() }),
-  async handler(data: { username: string }, ctx: any, agent: Agent) {
-    let res = await lookupUserByProvider("discord", data.username);
 
-    return res;
-  },
-});
+
+export const get_prices_str = async () => {
+    let tokens = await getAllTokensFromAPI();
+  
+    let prices = tokens.map((token) => {
+      return `
+      ${token.symbol}: ${token.ratio} estark
+      `;
+    }).join("\n");
+  
+    return prices;
+  }

@@ -1,12 +1,9 @@
-import { action } from "../../../../../fork/daydreams/packages/core/src";
-import { StarknetChain } from "../../../../../fork/daydreams/packages/defai/src";
-import { ActionCall } from "../../../../../fork/daydreams/packages/core/src";
-import { Agent } from "../../../../../fork/daydreams/packages/core/src";
+import { action } from "@daydreamsai/core";
+import { StarknetChain } from "@daydreamsai/defai";
 import { z } from "zod";
-import { Abi, CallData, Contract, cairo } from "starknet";
-import { Call } from "starknet";
-import { getLiquidityPoolFromAPI } from "../../utils/ponziland_api";
-import { decodeTokenTransferEvents, indexToPosition } from "../../utils/utils";
+import { type Abi, CallData, cairo } from "starknet";
+import type { Call } from "starknet";
+import { indexToPosition } from "../../utils/utils";
 import { get_owned_lands } from "../../utils/querys";
 import ponziland_manifest from "../../../contracts/ponziland_manifest_mainnet.json";
 
