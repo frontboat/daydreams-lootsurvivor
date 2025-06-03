@@ -158,6 +158,22 @@ const agent = await createDreams({
 });
 ```
 
+## 🗺️ Choose Your Path
+
+### I want to...
+
+- **🚀 Build a simple chatbot** → Start with the
+  [Basic Chat Example](examples/basic)
+- **🔌 Integrate with Discord/Twitter** → Check out
+  [Platform Extensions](#platform-extensions)
+- **🧠 Understand how it works** → Read
+  [Core Concepts](#core-concepts-for-beginners)
+- **⚙️ Extend with custom actions** → See [Action System](#action-processing)
+- **🏗️ Contribute or modify core** → Study
+  [Detailed Architecture](#detailed-agent-architecture)
+- **💾 Add custom storage** → Explore
+  [Memory Architecture](#memory-architecture)
+
 ## 📚 Documentation
 
 Visit our [comprehensive documentation](https://docs.dreams.fun) to learn more:
@@ -170,6 +186,16 @@ Visit our [comprehensive documentation](https://docs.dreams.fun) to learn more:
 - **[Examples](https://docs.dreams.fun/examples)** - Learn from working code
 - **[Integration Guide](https://docs.dreams.fun/integrations)** - Connect with
   other frameworks
+
+<!--
+SUGGESTED DOCUMENTATION FLOW:
+1. Quick Start (keep current)
+2. Examples (move up - show what's possible)
+3. Core Concepts for Beginners (simplified explanation)
+4. Architecture Overview (current simple diagram)
+5. Detailed Architecture (for advanced users)
+6. Extensions & Integrations
+-->
 
 ## 🎨 Examples
 
@@ -216,9 +242,6 @@ graph TB
     N --> O[Platform Extensions]
     N --> P[Storage Extensions]
 
-    style B fill:#f9f,stroke:#333,stroke-width:4px
-    style C fill:#bbf,stroke:#333,stroke-width:2px
-    style E fill:#bbf,stroke:#333,stroke-width:2px
 ```
 
 ### Core Components
@@ -233,6 +256,248 @@ graph TB
 - **Task Runner**: Manages async operations with concurrency control
 - **Extensions**: Plugin architecture for platforms, storage, and custom
   features
+
+## 🎓 Core Concepts for Beginners
+
+Before diving into the detailed architecture, let's understand the key concepts:
+
+### Key Concepts Explained
+
+1. **Agent** - Your AI assistant that can maintain state and execute actions
+2. **Context** - A stateful conversation or task environment (like a chat
+   session)
+3. **Actions** - Functions your agent can execute (like "search web" or "send
+   email")
+4. **Memory** - Persistent storage for conversation history and learned
+   information
+5. **Engine** - The processing core that handles inputs and coordinates
+   execution
+
+### Basic Flow Example
+
+```typescript
+// 1. Create an agent
+const agent = createDreams({ model: anthropic("claude-3-5-sonnet") });
+
+// 2. Define what state it maintains (Context)
+const chatContext = context({
+  type: "chat",
+  create: () => ({ messages: [], userPreferences: {} }),
+});
+
+// 3. Give it capabilities (Actions)
+const searchAction = {
+  name: "search",
+  handler: async (query) => {
+    /* search implementation */
+  },
+};
+
+// 4. Start and use
+await agent.start();
+await agent.send({
+  context: chatContext,
+  input: { type: "text", data: "Search for AI news" },
+});
+```
+
+### Progressive Learning Path
+
+1. **Start Simple**: Begin with basic chat contexts and simple actions
+2. **Add Persistence**: Learn how memory stores conversation history
+3. **Multiple Contexts**: Understand how agents can manage multiple
+   conversations
+4. **Custom Actions**: Build your own actions for specific tasks
+5. **Extensions**: Add platform integrations (Discord, Twitter, etc.)
+6. **Advanced Features**: Explore streaming, evaluation, and custom storage
+
+## 🔍 Detailed Agent Architecture
+
+### Overview - Core Components
+
+```mermaid
+graph TB
+    subgraph "User Interface"
+        API[Agent API]
+    end
+
+    subgraph "Core System"
+        Engine[Execution Engine]
+        Context[Context Manager]
+        Memory[Memory System]
+    end
+
+    subgraph "Extensibility"
+        Actions[Action System]
+        Extensions[Extensions]
+        Providers[LLM Providers]
+    end
+
+    API --> Engine
+    Engine --> Context
+    Engine --> Actions
+    Context --> Memory
+    Extensions --> Actions
+    Extensions --> Providers
+```
+
+### Execution Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Agent
+    participant Engine
+    participant Context
+    participant Actions
+    participant Memory
+
+    User->>Agent: send(input)
+    Agent->>Engine: process(input)
+    Engine->>Context: load state
+    Context->>Memory: retrieve
+    Engine->>Actions: execute
+    Actions-->>Engine: results
+    Engine->>Memory: save state
+    Engine-->>User: output
+```
+
+### Context & Memory Architecture
+
+```mermaid
+graph LR
+    subgraph "Context System"
+        CS[Context State]
+        WM[Working Memory]
+        CS --> WM
+    end
+
+    subgraph "Storage Layer"
+        KV[KV Store]
+        Vector[Vector Store]
+        Episodic[Episodic Memory]
+    end
+
+    WM --> KV
+    WM --> Vector
+    WM --> Episodic
+```
+
+### Extension Points
+
+```mermaid
+graph TB
+    Agent[Agent Core]
+
+    subgraph "Custom Extensions"
+        CI[Custom Inputs]
+        CO[Custom Outputs]
+        CA[Custom Actions]
+        CC[Custom Contexts]
+        CS[Custom Storage]
+    end
+
+    Agent --> CI
+    Agent --> CO
+    Agent --> CA
+    Agent --> CC
+    Agent --> CS
+```
+
+### Component Deep Dive
+
+#### 🎯 Context System
+
+Contexts maintain isolated state for different conversations or tasks:
+
+```typescript
+// Define a context with typed state
+const chatContext = context({
+  type: "chat",
+  schema: z.object({ userId: z.string() }),
+  create: () => ({
+    messages: [],
+    preferences: {},
+  }),
+});
+
+// Each user gets their own isolated state
+const user1State = await agent.getContext({
+  context: chatContext,
+  args: { userId: "user1" },
+});
+```
+
+#### ⚡ Action System
+
+Actions are typed functions your agent can execute:
+
+```typescript
+const searchAction = {
+  name: "search_web",
+  description: "Search the web for information",
+  schema: z.object({
+    query: z.string(),
+    limit: z.number().optional(),
+  }),
+  handler: async ({ query, limit = 10 }) => {
+    // Your implementation
+    return results;
+  },
+};
+```
+
+#### 💾 Memory Architecture
+
+Flexible storage with both key-value and vector capabilities:
+
+```typescript
+// Key-value storage
+await agent.memory.store.set("user:preferences", { theme: "dark" });
+
+// Vector storage for semantic search
+await agent.memory.vectors.upsert("context-123", {
+  text: "User prefers Python for data science",
+  embedding: await generateEmbedding(text),
+});
+```
+
+### Common Patterns
+
+#### Multi-Agent Coordination
+
+```typescript
+const researchAgent = createDreams({
+  /* config */
+});
+const writerAgent = createDreams({
+  /* config */
+});
+
+// Agents can share context
+const sharedContext = context({ type: "project" });
+const research = await researchAgent.run({ context: sharedContext });
+const article = await writerAgent.run({
+  context: sharedContext,
+  input: research,
+});
+```
+
+#### Streaming Responses
+
+```typescript
+await agent.send({
+  context: chatContext,
+  input: { type: "text", data: "Explain quantum computing" },
+  handlers: {
+    onLogStream: (log, done) => {
+      if (log.ref === "output") {
+        process.stdout.write(log.content);
+      }
+    },
+  },
+});
+```
 
 ## 🔗 Optional Extensions
 
@@ -275,6 +540,87 @@ Daydreams works with any LLM provider through the AI SDK adapters:
 - **Ollama** - Local model support
 - **LangChain** - Use any LangChain model
 - **Custom** - Bring your own provider
+
+## ❓ Frequently Asked Questions
+
+### When should I use Daydreams vs other frameworks?
+
+**Use Daydreams when you need:**
+
+- Stateful agents that remember context across sessions
+- Multiple isolated conversation contexts
+- Type-safe action system with schema validation
+- Lightweight, framework-agnostic solution
+- Both Node.js and browser support
+
+**Consider alternatives when:**
+
+- You only need simple, stateless chat completions
+- You're heavily invested in a specific framework's ecosystem
+- You need specialized features (e.g., specific to LangChain)
+
+### How does memory persistence work?
+
+Daydreams uses a two-tier memory system:
+
+1. **Working Memory**: Temporary state for current execution
+2. **Persistent Storage**: Long-term memory via pluggable stores (KV, Vector,
+   etc.)
+
+```typescript
+// Memory is automatically persisted between sessions
+const agent = await createDreams({
+  /* config */
+}).start();
+// ... agent processes requests ...
+await agent.stop(); // State is saved
+
+// Later, restart and state is restored
+const agent2 = await createDreams({
+  /* config */
+}).start();
+// Previous conversations and state are available
+```
+
+### Can I use multiple LLM providers?
+
+Yes! You can use different models for different purposes:
+
+```typescript
+const agent = await createDreams({
+  model: openai("gpt-4"), // Primary model
+  reasoningModel: anthropic("claude-3-opus"), // For complex reasoning
+  // Different contexts can use different models
+  contexts: [
+    context({
+      type: "analysis",
+      model: groq("mixtral-8x7b"), // Fast model for data analysis
+    }),
+  ],
+});
+```
+
+### How do I debug my agent?
+
+Daydreams provides multiple debugging options:
+
+```typescript
+const agent = await createDreams({
+  logLevel: LogLevel.DEBUG,
+  debugger: (contextId, keys, data) => {
+    console.log(`[${contextId}]`, keys.join("."), data);
+  },
+});
+
+// Use handlers to trace execution
+await agent.send({
+  handlers: {
+    onLogStream: (log, done) => {
+      console.log(`${log.ref}: ${JSON.stringify(log.data)}`);
+    },
+  },
+});
+```
 
 ## 🤝 Contributing
 

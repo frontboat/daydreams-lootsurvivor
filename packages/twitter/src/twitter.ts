@@ -87,7 +87,8 @@ export const twitter = extension({
         content: z.string().max(280),
         inReplyTo: z.string(),
       }),
-      description: "Use this to reply to a tweet",
+      description:
+        "Use this to reply to a tweet. Always use this to reply to a tweet. Never use template tags, always repond in human readable text.",
 
       handler: async (data, ctx, { container }) => {
         const twitter = container.resolve<TwitterClient>("twitter");

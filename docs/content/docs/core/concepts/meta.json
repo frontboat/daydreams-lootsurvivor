@@ -1,0 +1,15 @@
+{
+  "pages": [
+    "core",
+    "agent-lifecycle",
+    "building-blocks",
+    "contexts",
+    "inputs",
+    "outputs",
+    "actions",
+    "memory",
+    "prompting",
+    "tasks",
+    "mcp"
+  ]
+}
