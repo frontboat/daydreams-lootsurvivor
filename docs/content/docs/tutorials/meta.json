@@ -1,14 +1,15 @@
 {
   "title": "Tutorials  ",
-  "description": "Guides and examples",
+  "description": "Guides and examples ",
   "icon": "Cuboid",
   "root": true,
   "pages": [
     "index",
+
     "---Basic---",
     "examples",
 
-    "---Games and Blockchain---",
+    "---Games---",
     "gaming",
 
     "---Social---",

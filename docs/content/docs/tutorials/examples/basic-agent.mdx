@@ -23,7 +23,7 @@ environment variable before running the agent.
 
 ## 2. Define the goal context and memory structure
 
-```ts
+```typescript title="index.ts"
 type GoalMemory = {
   goal: string;
   tasks: string[];
@@ -54,7 +54,7 @@ currently active. Memory persists between conversations.
 
 ## 3. Define task management actions
 
-```ts
+```typescript title="index.ts"
 const taskActions = [
   action({
     name: "setGoal",
@@ -113,7 +113,7 @@ const taskActions = [
 
 ## 4. Create and start the agent
 
-```ts
+```typescript title="index.ts"
 createDreams({
   model: anthropic("claude-3-7-sonnet-latest"),
   extensions: [cliExtension],
@@ -121,30 +121,3 @@ createDreams({
   actions: taskActions,
 }).start({ id: "basic-agent" });
 ```
-
-## How it works
-
-The basic goal-oriented agent demonstrates core Daydreams functionality:
-
-1. **Context management**: Maintains goal and task state across conversations
-2. **Memory persistence**: Agent remembers goals and tasks between sessions
-3. **Action system**: LLM can call actions to modify agent state
-4. **CLI interaction**: Users can communicate through terminal input/output
-
-**Example conversation:**
-
-```
-User: "I want to build a web application"
-Agent: *calls setGoal action*
-Agent: "I've set your goal to build a web application. Let me add some tasks."
-
-Agent: *calls addTask multiple times*
-Agent: "Added tasks: Set up development environment, Design user interface, Implement backend API"
-
-User: "I finished setting up my environment"
-Agent: *calls completeTask action*
-Agent: "Great! Marked 'Set up development environment' as complete. Next task: Design user interface"
-```
-
-The agent automatically manages task progression and maintains awareness of the
-current goal state.

@@ -5,18 +5,15 @@ description:
   Gigaverse dungeon crawler game using Daydreams.
 ---
 
-This guide will walk you through creating an AI agent that can play the
-Gigaverse dungeon crawler game using Daydreams.
-
 ## Prerequisites
 
 Before starting, make sure you have:
 
-1. A Gigaverse account
-2. The following environment variables set up:
-   - `ANTHROPIC_API_KEY`: Your Anthropic API key
-   - `GIGA_TOKEN`: Your Gigaverse authentication token (Bearer token from
-     browser)
+1.  A Gigaverse account
+2.  The following environment variables set up:
+    - `ANTHROPIC_API_KEY`: Your Anthropic API key
+    - `GIGA_TOKEN`: Your Gigaverse authentication token (Bearer token from
+      browser)
 
 ## Creating the Agent
 
@@ -95,59 +92,25 @@ createDreams({
 });
 ```
 
-## How It Works
-
-The Gigaverse agent is built using several key components:
-
-1. **Context Template**: Defines the agent's understanding of the game and its
-   current state:
-
-```ts
-const template = `
-# Gigaverse Dungeon Game
-
-You are an AI agent playing a rock-paper-scissors dungeon crawler game.
-
-## Game Rules:
-- Combat is resolved through rock-paper-scissors mechanics
-- You can collect loot after defeating enemies
-- Your goal is to progress as far as possible in the dungeon
-
-## Current Status:
-Goal: {{goal}} 
-Tasks: {{tasks}}
-Current Task: {{currentTask}}
-
-Make strategic decisions based on enemy patterns and your current state.
-`;
-```
-
-2. **Game Actions**: The agent can perform several actions in the game:
-
-   - `attackInDungeon`: Make combat decisions (rock, paper, scissors) or select
-     loot
-   - `getPlayerState`: Retrieve the current game state
-   - `startNewRun`: Begin a new dungeon run
-
 ## Understanding Gigaverse Game Mechanics
 
 Gigaverse is a dungeon crawler game with the following key mechanics:
 
-1. **Rock-Paper-Scissors Combat**: Battles are resolved using the classic
-   rock-paper-scissors game:
+1.  **Rock-Paper-Scissors Combat**: Battles are resolved using the classic
+    rock-paper-scissors game:
 
-   - Rock beats Scissors
-   - Scissors beats Paper
-   - Paper beats Rock
+    - Rock beats Scissors
+    - Scissors beats Paper
+    - Paper beats Rock
 
-2. **Dungeon Progression**: Players advance through the dungeon by defeating
-   enemies.
+2.  **Dungeon Progression**: Players advance through the dungeon by defeating
+    enemies.
 
-3. **Loot System**: After defeating enemies, players can select one of three
-   loot options to enhance their character.
+3.  **Loot System**: After defeating enemies, players can select one of three
+    loot options to enhance their character.
 
-4. **Health Management**: Players must manage their health throughout the
-   dungeon run.
+4.  **Health Management**: Players must manage their health throughout the
+    dungeon run.
 
 ## Core Game Actions
 
@@ -329,59 +292,6 @@ action({
   },
 }),
 ```
-
-## Agent Decision Making
-
-The agent uses the context and player state to make strategic decisions. Here's
-how the agent approaches the game:
-
-1. **Analyzing Enemy Patterns**:
-
-   - The agent observes patterns in enemy moves over multiple encounters
-   - It can identify if an enemy favors certain moves (like using "rock" more
-     frequently)
-   - This information helps the agent make counter-moves (like choosing "paper"
-     against a "rock"-favoring enemy)
-
-2. **Loot Selection Strategy**:
-
-   - After defeating enemies, the agent evaluates the three loot options
-   - It considers the player's current health, inventory, and progression
-   - The agent selects loot that complements the player's build or addresses
-     weaknesses
-
-3. **Adaptive Gameplay**:
-
-   - As the dungeon difficulty increases, the agent adjusts its strategy
-   - It may prioritize health-restoring items when health is low
-   - The agent can become more conservative or aggressive based on the player's
-     current state
-
-4. **Goal-Oriented Planning**:
-   - The agent maintains awareness of its overall goal and current tasks
-   - It can reprioritize tasks based on the changing game state
-   - This ensures the agent makes decisions that contribute to long-term success
-
-## Integrating with Daydreams
-
-This example showcases several key Daydreams features:
-
-1. **Goal-Oriented Context**: The agent maintains a structured goal and task
-   list.
-
-2. **Action Definitions**: Clear, typed actions with Zod schemas for validation.
-
-3. **API Integration**: Seamless interaction with external APIs (Gigaverse in
-   this case).
-
-4. **Error Handling**: Robust error handling to manage API failures gracefully.
-
-## Next Steps
-
-- Customize the agent's strategy by modifying the context template
-- Add more sophisticated decision-making logic
-- Implement inventory management and character progression
-- Extend the agent to handle more complex game scenarios
 
 For a more thorough demonstration of API implementation for Gigaverse, you can
 find the complete example in the

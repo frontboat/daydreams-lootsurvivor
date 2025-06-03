@@ -5,7 +5,7 @@ description: Agent with custom actions for searching and fetching web content.
 
 ## 1. Environment setup and dependencies
 
-```typescript title="index.ts"
+```typescript title="web-search.ts"
 import { createDreams, action, validateEnv } from "@daydreamsai/core";
 import { cliExtension } from "@daydreamsai/cli";
 import { anthropic } from "@ai-sdk/anthropic";
@@ -26,7 +26,7 @@ variable.
 
 ## 2. Web search action with service injection
 
-```ts
+```typescript title="web-search.ts"
 const searchWebAction = action({
   name: "searchWeb",
   description: "Search the web for current information",
@@ -89,7 +89,7 @@ singleton service, making it available throughout the agent.
 
 ## 3. URL fetching action
 
-```ts
+```typescript title="web-search.ts"
 const fetchUrlAction = action({
   name: "fetchUrl",
   description: "Fetch content from a specific URL",
@@ -143,7 +143,7 @@ const fetchUrlAction = action({
 
 ## 4. Wikipedia search action
 
-```ts
+```typescript title="web-search.ts"
 const searchWikipediaAction = action({
   name: "searchWikipedia",
   description: "Search Wikipedia for information",
@@ -194,40 +194,10 @@ const searchWikipediaAction = action({
 
 ## 5. Create the search agent
 
-```ts
+```typescript title="web-search.ts"
 createDreams({
   model: anthropic("claude-3-7-sonnet-latest"),
   extensions: [cliExtension],
   actions: [searchWebAction, fetchUrlAction, searchWikipediaAction],
 }).start();
 ```
-
-## How it works
-
-The web search agent demonstrates custom action development:
-
-1. **Service injection**: The `install` hook registers external services with
-   the container
-2. **Error handling**: Actions handle network failures and API errors gracefully
-3. **Input validation**: Zod schemas validate and type action parameters
-4. **Response formatting**: Actions return structured data the LLM can
-   understand
-
-**Example interactions:**
-
-```
-User: "Search for information about TypeScript"
-Agent: *calls searchWeb action*
-Agent: "Found 5 results about TypeScript. It's a strongly typed programming language..."
-
-User: "Get more details from the official TypeScript website"
-Agent: *calls fetchUrl action*
-Agent: "Fetched content from typescriptlang.org. Here are the key details..."
-
-User: "Find the Wikipedia article about JavaScript"
-Agent: *calls searchWikipedia action*
-Agent: "Found Wikipedia article: JavaScript is a programming language..."
-```
-
-The actions enable the agent to access current web information, fetch specific
-pages, and search specialized sources like Wikipedia.
