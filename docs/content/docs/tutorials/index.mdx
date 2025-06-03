@@ -3,24 +3,6 @@ title: Daydreams Tutorials
 description: Examples and Guides for building with Daydreams.
 ---
 
-Welcome to the Daydreams tutorials section. Here you'll find a variety of guides
-and examples to help you get started and build advanced agent capabilities.
-
-## Tutorial Categories
-
-Explore tutorials based on your interests and needs:
-
-- **Basic Tutorials**: Fundamental guides for Daydreams agents.
-- **Advanced Tutorials**: Explore advanced capabilities of Daydreams agents.
-- **Social Platform Integrations**: Tutorials for integrating Daydreams agents
-  with social platforms.
-- **MCP Tutorials**: Guides for using the Multi-Context Protocol with Daydreams.
-- **Gaming Integrations**: Tutorials for building Daydreams agents for gaming
-  applications.
-
-Dive into the "Getting Started" section if you are new, or browse the categories
-above to find specific examples.
-
 ## Getting Started
 
 This tutorial shows how to create a basic Daydreams chat agent that responds in
@@ -54,7 +36,7 @@ the terminal and remembers conversation history.
 
 ## Core Agent Code
 
-```typescript title="my-agent/index.ts"
+```typescript title="index.ts"
 import { createGroq } from "@ai-sdk/groq";
 import {
   createDreams,
@@ -128,16 +110,7 @@ async function main() {
 main();
 ```
 
-## Learning Path
-
-Choose your next step based on your goals:
-
-### Build Specific Agents
-
-- **[Discord Bot](/docs/tutorials/examples/discord-weather-bot)** - Weather bot
-  for Discord servers
-
-### Understand Architecture
+### Review Concepts
 
 - **[Building Blocks](/docs/core/concepts/building-blocks)** - Core components
   explained
@@ -145,43 +118,3 @@ Choose your next step based on your goals:
   and act
 - **[Memory Systems](/docs/core/concepts/memory)** - Persistent and working
   memory
-
-### Advanced Features
-
-- **[Custom Extensions](/docs/core/advanced/extensions)** - Build reusable
-  components
-- **[MCP Integration](/docs/core/concepts/mcp)** - Connect to external services
-
-## Key Takeaways
-
-- **Environment validation** - Always validate API keys and configuration with
-  zod
-- **Typed contexts** - Use proper context creation with schemas and memory types
-- **Template rendering** - Contexts render their memory state for the AI model
-- **Memory management** - Actions can access and modify typed agent memory
-- **Type safety** - Full TypeScript support throughout the framework
-
-You now have a working AI agent with proper patterns. The examples show
-production-ready practices for environment handling, memory management, and type
-safety.
-
-## Try These Examples
-
-### Add Environment Validation
-
-Always validate your environment for safety:
-
-```typescript title="robust-environment.ts"
-import { validateEnv } from "@daydreamsai/core";
-// ... existing code ...
-);
-
-console.log(`✅ Running in ${env.NODE_ENV} mode with ${env.LOG_LEVEL} logging`);
-```
-
-### Multiple Contexts with Types
-
-```typescript title="multiple-contexts.ts"
-import { createGroq } from "@ai-sdk/groq";
-// ... existing code ...
-```
