@@ -1,5 +1,6 @@
-import { action, type Agent } from "@daydreamsai/core";
+import { action } from "@daydreamsai/core";
 import { StarknetChain } from "@daydreamsai/defai";
+import type { Agent } from "@daydreamsai/core";
 import { z } from "zod";
 import { get_balances_str } from "../utils/querys";
 

@@ -1,19 +1,21 @@
-import { action } from "@daydreamsai/core";
+import { action, type ActionSchema } from "@daydreamsai/core";
 import { StarknetChain } from "@daydreamsai/defai";
-import { type ActionCall, type Agent } from "@daydreamsai/core";
+import type { Agent } from "@daydreamsai/core";
 import { z } from "zod";
+import { Abi, Contract } from "starknet";
 import { CONTEXT } from "../../contexts/ponziland-context";
 import {
   get_auctions_str,
-  get_balances_str,
   get_claims_str,
   get_lands_str,
   get_neighbors_str,
-  get_nukeable_lands_str,
-  get_auction_yield_str,
   get_all_lands_str,
+  get_auction_yield_str,
+  get_prices_str,
 } from "../../utils/querys";
 import { env } from "../../../env";
+import { lookupUserByProvider } from "extensions/ponziland/utils/ponziland_api";
+import view_manifest from "../../../contracts/view_manifest_mainnet.json";
 
 export const get_auctions = (chain: StarknetChain) =>
   action({
@@ -27,6 +29,18 @@ export const get_auctions = (chain: StarknetChain) =>
       console.log("auctions", auctions);
 
       return auctions;
+    },
+  });
+
+export const get_prices = (chain: StarknetChain) =>
+  action({
+    name: "get-prices",
+    description: "Get the current prices of all tokens in ponziland",
+    schema: z.object({}),
+    async handler(data: {}, ctx: any, agent: Agent) {
+      let prices = await get_prices_str();
+
+      return prices;
     },
   });
 
@@ -139,3 +153,17 @@ export const get_player_lands = (chain: StarknetChain) =>
       return res;
     },
   });
+
+export const get_prices_str = async () => {
+  let tokens = await getAllTokensFromAPI();
+
+  let prices = tokens
+    .map((token) => {
+      return `
+      ${token.symbol}: ${token.ratio} estark
+      `;
+    })
+    .join("\n");
+
+  return prices;
+};

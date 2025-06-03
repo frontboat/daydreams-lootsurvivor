@@ -1,9 +1,10 @@
-import { action } from "@daydreamsai/core";
+import { action, type ActionSchema } from "@daydreamsai/core";
 import { StarknetChain } from "@daydreamsai/defai";
 import { z } from "zod";
-import { CallData, type Call, Contract, cairo, type Abi } from "starknet";
-import manifest from "../../../contracts/view_manifest_sepolia.json";
-import ponziland_manifest from "../../../contracts/ponziland_manifest_sepolia.json";
+import { type Abi, CallData, Contract, cairo } from "starknet";
+import { type Call } from "starknet";
+import { indexToPosition } from "../../utils/utils";
+import ponziland_manifest from "../../../contracts/ponziland_manifest_mainnet.json";
 
 export const bid = (chain: StarknetChain) =>
   action({
@@ -26,13 +27,14 @@ export const bid = (chain: StarknetChain) =>
         .describe(
           "The amount to be staked to pay the lands taxes (in wei, so x10^18)"
         ),
-    }),
+    }) as ActionSchema,
     async handler(data, ctx, agent) {
       let calls = [];
 
+      let manifest = ponziland_manifest;
       let estark_address =
-        "0x071de745c1ae996cfd39fb292b4342b7c086622e3ecf3a5692bd623060ff3fa0";
-      let ponziland_address = ponziland_manifest.contracts[0].address;
+        "0x056893df1e063190aabda3c71304e9842a1b3d638134253dd0f69806a4f106eb";
+      let ponziland_address = manifest.contracts[0].address;
 
       let { abi: token_abi } = await chain.provider.getClassAt(
         data.token_for_sale
@@ -40,10 +42,10 @@ export const bid = (chain: StarknetChain) =>
       let { abi: estark_abi } = await chain.provider.getClassAt(estark_address);
 
       let ponziLandContract = new Contract(
-        ponziland_manifest.contracts[0].abi,
+        manifest.contracts[0].abi,
         ponziland_address,
         chain.provider
-      ).typedv2(ponziland_manifest.contracts[0].abi as Abi);
+      ).typedv2(manifest.contracts[0].abi as Abi);
 
       let price = await ponziLandContract.get_current_auction_price(
         data.land_location
@@ -95,6 +97,15 @@ export const bid = (chain: StarknetChain) =>
 
       let res = await chain.write(calls);
 
-      return res;
+      return {
+        res,
+        str:
+          "Bid on land " +
+          Number(data.land_location) +
+          " at " +
+          indexToPosition(Number(data.land_location))[0] +
+          "," +
+          indexToPosition(Number(data.land_location))[1],
+      };
     },
   });

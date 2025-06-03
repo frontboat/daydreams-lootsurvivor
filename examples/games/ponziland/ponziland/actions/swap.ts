@@ -67,9 +67,10 @@ export const swap = (chain: StarknetChain) =>
 
         console.log("Fetching quotes with params:", quoteParams);
 
+        let baseUrl = "https://api.avnu.fi";
         // Fetch quotes from AVNU
         const quotes = await fetch(
-          `https://sepolia.api.avnu.fi/swap/v2/quotes?sellTokenAddress=${quoteParams.sellTokenAddress}&buyTokenAddress=${quoteParams.buyTokenAddress}&sellAmount=${quoteParams.sellAmount}`
+          `${baseUrl}/swap/v2/quotes?sellTokenAddress=${quoteParams.sellTokenAddress}&buyTokenAddress=${quoteParams.buyTokenAddress}&sellAmount=${quoteParams.sellAmount}`
         );
 
         let res = await quotes.json();
@@ -88,7 +89,7 @@ export const swap = (chain: StarknetChain) =>
           chain.account,
           bestQuote,
           {},
-          { baseUrl: "https://sepolia.api.avnu.fi" }
+          { baseUrl: baseUrl }
         );
 
         console.log("Swap executed successfully:", swapResult);
