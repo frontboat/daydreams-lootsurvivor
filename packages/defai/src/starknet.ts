@@ -31,7 +31,7 @@ export class StarknetChain implements IChain {
   /** RPC provider instance for connecting to Starknet */
   public provider: RpcProvider;
   /** Account instance for transaction signing */
-  private account: Account;
+  public account: Account;
 
   /**
    * Creates a new StarknetChain instance
