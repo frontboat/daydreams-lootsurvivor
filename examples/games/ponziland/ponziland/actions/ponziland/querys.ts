@@ -1,7 +1,4 @@
-import {
-  action,
-  type ActionSchema,
-} from "@daydreamsai/core";
+import { action, type ActionSchema } from "@daydreamsai/core";
 import { StarknetChain } from "@daydreamsai/defai";
 import type { Agent } from "@daydreamsai/core";
 import { z } from "zod";
@@ -157,16 +154,16 @@ export const get_player_lands = (chain: StarknetChain) =>
     },
   });
 
-
-
 export const get_prices_str = async () => {
-    let tokens = await getAllTokensFromAPI();
-  
-    let prices = tokens.map((token) => {
+  let tokens = await getAllTokensFromAPI();
+
+  let prices = tokens
+    .map((token) => {
       return `
       ${token.symbol}: ${token.ratio} estark
       `;
-    }).join("\n");
-  
-    return prices;
-  }
+    })
+    .join("\n");
+
+  return prices;
+};
