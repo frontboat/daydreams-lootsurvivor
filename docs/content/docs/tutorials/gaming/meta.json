@@ -1,3 +1,6 @@
 {
-  "pages": ["game-agent", "blockchain-game-agent", "giga"]
+  "title": "Blockchain games",
+  "description": "Tutorials for building Daydreams agents for gaming applications.",
+  "icon": "Gamepad2",
+  "pages": ["---", "giga", "game-agent", "blockchain-game-agent"]
 }
