@@ -43,30 +43,6 @@ const agent = createDreams({
 await agent.start();
 ```
 
-## How It Works
-
-The Twitter agent is created using a few key components:
-
-1. **Groq Integration**: We use Groq's language model for processing and
-   understanding Twitter interactions.
-
-2. **Logger**: Set to DEBUG level for detailed logging during development.
-
-3. **Container**: Manages dependencies and services.
-
-4. **Twitter Extension**: The `twitter` extension provides built-in capabilities
-   for:
-   - Monitoring mentions
-   - Replying to tweets
-   - Posting new tweets
-   - Managing Twitter authentication
-
-## Next Steps
-
-- Set up Twitter authentication in your environment variables
-- Customize the agent's behavior by adding your own extensions
-- Implement specific use cases like auto-replies or content monitoring
-
 For the full twitter example, check out the
 [Example-Twitter](https://github.com/daydreamsai/daydreams/tree/main/examples/twitter)
 on Github.

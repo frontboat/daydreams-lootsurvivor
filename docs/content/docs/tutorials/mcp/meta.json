@@ -1,3 +1,6 @@
 {
-  "pages": ["mcp-guide", "mcp"]
+  "title": "Model Context Protocol",
+  "description": "Guides for using the Multi-Context Protocol with Daydreams.",
+  "icon": "Network",
+  "pages": ["---", "mcp", "mcp-guide"]
 }

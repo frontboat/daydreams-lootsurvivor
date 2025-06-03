@@ -1,5 +1,5 @@
 ---
-title: Task Management Agent with Context and Actions
+title: Task Management Agent
 description: Agent that uses a custom task context and exposes three actions.
 ---
 
@@ -38,7 +38,7 @@ const taskContext = context({
 
 ## 2. Define the three task actions
 
-```ts
+```typescript title="index.ts"
 const taskActions = [
   action({
     name: "addTask",
@@ -98,7 +98,7 @@ const taskActions = [
 
 ## 3. Create the agent that ties everything together
 
-```ts
+```typescript title="index.ts"
 const agent = createDreams({
   model: openrouter("google/gemini-2.0-flash-001"),
   extensions: [cliExtension],
@@ -107,3 +107,5 @@ const agent = createDreams({
 
 await agent.start();
 ```
+
+The agent will now listen for input and update, add, and retrieve tasks.

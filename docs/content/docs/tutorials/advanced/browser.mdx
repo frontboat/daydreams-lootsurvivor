@@ -5,7 +5,7 @@ description: Build web applications with daydreams agents in the browser.
 
 ## 1. Agent setup with browser storage
 
-```typescript title="lib/agent.ts"
+```typescript title="browser.ts"
 import {
   createDreams,
   createMemoryStore,
@@ -61,7 +61,7 @@ For production applications, consider IndexedDB for larger data storage.
 
 ## 2. Chat extension for web applications
 
-```typescript title="lib/chat.ts"
+```typescript title="browser.ts"
 import { extension, context, input, output } from "@daydreamsai/core";
 import { z } from "zod";
 
@@ -127,7 +127,7 @@ export const chatExtension = extension({
 
 ## 3. React chat component
 
-```typescript title="components/Chat.tsx"
+```typescript title="chat.tsx"
 import { useState, useEffect, useRef } from "react";
 import { createAgent } from "@/lib/agent";
 import { chatExtension } from "@/lib/chat";
@@ -270,7 +270,7 @@ export function Chat() {
 
 ## 4. Custom actions for web applications
 
-```typescript title="lib/actions.ts"
+```typescript title="actions.ts"
 import { action } from "@daydreamsai/core";
 import { z } from "zod";
 
@@ -322,7 +322,7 @@ export const webActions = [
 
 ## 5. Agent with custom actions
 
-```typescript title="lib/enhanced-agent.ts"
+```typescript title="custom-actions.ts"
 import { createDreams } from "@daydreamsai/core";
 import { openai } from "@ai-sdk/openai";
 import { chatExtension } from "./chat";
@@ -339,28 +339,3 @@ export function createEnhancedAgent() {
   });
 }
 ```
-
-## How it works
-
-Browser integration enables daydreams agents to run directly in web
-applications:
-
-1. **Browser storage**: Uses localStorage for simple persistence or IndexedDB
-   for complex data
-2. **Session management**: Each chat session maintains its own context and
-   memory
-3. **React integration**: Clean component patterns for UI integration
-4. **Custom actions**: Web-specific actions for API calls, data persistence, and
-   browser APIs
-5. **Real-time updates**: Immediate response to user inputs without server
-   round-trips
-
-**Key benefits:**
-
-- **Client-side processing**: No server required for basic agent functionality
-- **Persistent memory**: Conversations survive page reloads
-- **Custom actions**: Extend agent capabilities with browser-specific functions
-- **Real-time interaction**: Direct agent communication without network latency
-
-The browser environment provides access to Web APIs, local storage, and
-real-time user interaction, making it ideal for interactive agent applications.

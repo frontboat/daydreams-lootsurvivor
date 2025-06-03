@@ -4,7 +4,12 @@ description:
   Agent that plays games by interacting with game APIs and managing game state.
 ---
 
-## 1. Environment setup and game client
+## Setup
+
+Ensure the following environment variables are set:
+
+- `ANTHROPIC_API_KEY`: Your Anthropic API key
+- `GAME_API_TOKEN`: API token for your target game
 
 ```typescript title="index.ts"
 import { createDreams, context, action, validateEnv } from "@daydreamsai/core";
@@ -266,33 +271,3 @@ createDreams({
   actions: [getGameStateAction, performCombatAction, manageInventoryAction],
 }).start({ playerId: "player123" });
 ```
-
-## How it works
-
-The game agent demonstrates game API integration patterns:
-
-1. **State synchronization**: Regularly fetches and updates game state from the
-   API
-2. **Action validation**: Checks game state before performing actions
-3. **Memory management**: Maintains local copy of game state for decision making
-4. **Error handling**: Manages API failures and invalid game states
-
-**Example gameplay:**
-
-```
-User: "Check my current status"
-Agent: *calls getGameState action*
-Agent: "You're level 3 with 85/100 health at the forest_entrance. You have a sword and potion."
-
-User: "I see an enemy, what should I do?"
-Agent: "Based on your health and equipment, I recommend attacking. You have a sword equipped."
-Agent: *calls performCombat action with "attack"*
-Agent: "Combat successful! Dealt 25 damage and gained 15 experience. Your health is now 75/100."
-
-User: "Use my health potion"
-Agent: *calls manageInventory action*
-Agent: "Used health potion. Your health restored to 100/100."
-```
-
-The agent makes tactical decisions based on current game state, manages
-resources, and learns from combat outcomes.
