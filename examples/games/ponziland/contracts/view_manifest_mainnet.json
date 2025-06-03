@@ -1716,9 +1716,7 @@
       "init_calldata": [],
       "tag": "orchards3-player_actions",
       "selector": "0x4414fa4aed997b646fb104f53c09ba3d49d9c573eb713abe6a58cec053cc6ee",
-      "systems": [
-        "upgrade"
-      ]
+      "systems": ["upgrade"]
     }
   ],
   "libraries": [],

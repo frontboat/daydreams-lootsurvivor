@@ -1,4 +1,10 @@
-import { get_balances_str, get_auctions_str, get_lands_str, get_claims_str, get_neighbors_str } from "../utils/querys";
+import {
+  get_balances_str,
+  get_auctions_str,
+  get_lands_str,
+  get_claims_str,
+  get_neighbors_str,
+} from "../utils/querys";
 import { render } from "@daydreamsai/core";
 import { env } from "../../env";
 /*
@@ -121,7 +127,6 @@ ALL LANDS CAN BE BOUGHT FOR THEIR LISTED SELL PRICE IN THEIR STAKED TOKEN
 
 `;
 
-
 export const CONTEXT = async () => {
   let balance_str = await get_balances_str();
   let auction_str = await get_auctions_str();
@@ -135,4 +140,4 @@ export const CONTEXT = async () => {
     claims: claims_str,
     neighbors: get_neighbors_str(2020),
   });
-}
+};
