@@ -67,13 +67,14 @@ export const buy = (chain: StarknetChain) =>
             "Not enough balance of " +
             data.token_for_sale +
             " to buy land " +
-            data.land_location,
+            data.land_location +
+            " (" +
+            indexToPosition(Number(data.land_location))[0] +
+            "," +
+            indexToPosition(Number(data.land_location))[1] +
+            ")",
         };
       }
-
-      console.log("land", land);
-      console.log("land 0", land[0]);
-      console.log("price", price);
 
       if (token == data.token_for_sale) {
         let approve_call: Call = {
@@ -130,10 +131,11 @@ export const buy = (chain: StarknetChain) =>
         str:
           "Bought land " +
           Number(data.land_location) +
-          " at " +
+          " at (" +
           indexToPosition(Number(data.land_location))[0] +
           "," +
-          indexToPosition(Number(data.land_location))[1],
+          indexToPosition(Number(data.land_location))[1] +
+          ")",
       };
     },
   });

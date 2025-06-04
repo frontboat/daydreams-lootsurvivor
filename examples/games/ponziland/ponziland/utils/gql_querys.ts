@@ -1,4 +1,4 @@
-import { env } from "../env";
+import { env } from "../../env";
 
 export const balance_query = `query GetTokenBalances {
     tokenBalances(accountAddress:"${env.STARKNET_ADDRESS}"){
