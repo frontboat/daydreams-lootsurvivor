@@ -14,7 +14,6 @@ import {
   get_prices_str,
 } from "../../utils/querys";
 import { env } from "../../../env";
-import { lookupUserByProvider } from "extensions/ponziland/utils/ponziland_api";
 import view_manifest from "../../../contracts/view_manifest_mainnet.json";
 
 export const get_auctions = (chain: StarknetChain) =>
@@ -25,8 +24,6 @@ export const get_auctions = (chain: StarknetChain) =>
     async handler(data: {}, ctx: any, agent: Agent) {
       //todo
       let auctions = await get_auctions_str();
-
-      console.log("auctions", auctions);
 
       return auctions;
     },
@@ -54,8 +51,6 @@ export const get_owned_lands = (chain: StarknetChain) =>
       let address = env.STARKNET_ADDRESS!;
       //todo
       let lands = await get_lands_str(address);
-
-      console.log("lands str", lands);
 
       if (lands == "") {
         return "You do not own any lands";
@@ -109,8 +104,6 @@ export const get_all_lands = (chain: StarknetChain) =>
     async handler(data: {}, ctx: any, agent: Agent) {
       let lands = await get_all_lands_str();
 
-      console.log("lands", lands);
-
       return lands;
     },
   });
@@ -123,7 +116,7 @@ export const get_context = (chain: StarknetChain) =>
     schema: z.object({}),
     async handler(data: {}, ctx: any, agent: Agent) {
       let res = await CONTEXT();
-      console.log("res", res);
+
       return res;
     },
   });

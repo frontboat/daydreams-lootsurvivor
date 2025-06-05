@@ -102,10 +102,11 @@ export const bid = (chain: StarknetChain) =>
         str:
           "Bid on land " +
           Number(data.land_location) +
-          " at " +
+          " at (" +
           indexToPosition(Number(data.land_location))[0] +
           "," +
-          indexToPosition(Number(data.land_location))[1],
+          indexToPosition(Number(data.land_location))[1] +
+          ")",
       };
     },
   });
