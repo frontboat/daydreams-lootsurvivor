@@ -1,3 +1,6 @@
 {
-  "pages": ["discord", "telegram", "twitter"]
+  "title": "Social Media",
+  "description": "Tutorials for integrating Daydreams agents with social platforms.",
+  "icon": "Users",
+  "pages": ["---", "twitter", "telegram", "discord"]
 }

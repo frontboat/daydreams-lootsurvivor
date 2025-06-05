@@ -1,4 +1,4 @@
-import { RpcProvider, Account, type Call, CallData } from "starknet";
+import { RpcProvider, Account, type Call, CallData, constants } from "starknet";
 import type { IChain } from "@daydreamsai/core";
 
 /**
@@ -31,7 +31,7 @@ export class StarknetChain implements IChain {
   /** RPC provider instance for connecting to Starknet */
   public provider: RpcProvider;
   /** Account instance for transaction signing */
-  private account: Account;
+  public account: Account;
 
   /**
    * Creates a new StarknetChain instance
@@ -42,7 +42,9 @@ export class StarknetChain implements IChain {
     this.account = new Account(
       this.provider,
       config.address,
-      config.privateKey
+      config.privateKey,
+      undefined,
+      constants.TRANSACTION_VERSION.V3
     );
   }
 

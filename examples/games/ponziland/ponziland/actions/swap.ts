@@ -2,7 +2,6 @@ import { action, type ActionSchema } from "@daydreamsai/core";
 import { StarknetChain } from "@daydreamsai/defai";
 import type { Agent } from "@daydreamsai/core";
 import { z } from "zod";
-import { get_balances_str } from "../utils/querys";
 import { executeSwap as executeAvnuSwap, fetchQuotes } from "@avnu/avnu-sdk";
 
 import { env } from "../../env";
@@ -40,9 +39,6 @@ export const swap = (chain: StarknetChain) =>
         (t) => BigInt(t.address) == BigInt(data.buying_address)
       );
 
-      console.log("token_in", token_selling);
-      console.log("token_out", token_buying);
-
       if (!token_selling || !token_buying) {
         throw new Error("Token not found");
       }
@@ -67,31 +63,23 @@ export const swap = (chain: StarknetChain) =>
 
         console.log("Fetching quotes with params:", quoteParams);
 
+        let baseUrl = "https://api.avnu.fi";
         // Fetch quotes from AVNU
         const quotes = await fetch(
-          `https://sepolia.api.avnu.fi/swap/v2/quotes?sellTokenAddress=${quoteParams.sellTokenAddress}&buyTokenAddress=${quoteParams.buyTokenAddress}&sellAmount=${quoteParams.sellAmount}`
+          `${baseUrl}/swap/v2/quotes?sellTokenAddress=${quoteParams.sellTokenAddress}&buyTokenAddress=${quoteParams.buyTokenAddress}&sellAmount=${quoteParams.sellAmount}`
         );
 
         let res = await quotes.json();
-        console.log("quotes", res);
-
-        console.log("Found quotes:", res.length);
         // Use the best quote (first one)
         const bestQuote = res[0];
-
-        console.log("Executing swap with AVNU SDK...");
-
-        console.log("bestQuote", bestQuote);
 
         // Execute the swap using AVNU SDK with the chain's account
         const swapResult = await executeAvnuSwap(
           chain.account,
           bestQuote,
           {},
-          { baseUrl: "https://sepolia.api.avnu.fi" }
+          { baseUrl: baseUrl }
         );
-
-        console.log("Swap executed successfully:", swapResult);
 
         const result = {
           success: true,

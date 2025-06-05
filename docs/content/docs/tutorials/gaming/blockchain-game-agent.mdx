@@ -5,7 +5,14 @@ description:
   interactions.
 ---
 
-## 1. Environment setup and blockchain client
+## Setup
+
+Ensure the following environment variables are set:
+
+- `ANTHROPIC_API_KEY`: Your Anthropic API key
+- `BLOCKCHAIN_RPC_URL`: RPC URL for your target blockchain
+- `GAME_CONTRACT_ADDRESS`: Address of the game's smart contract
+- `PLAYER_PRIVATE_KEY`: Private key for the player's wallet
 
 ```typescript title="index.ts"
 import {
@@ -488,35 +495,3 @@ createDreams({
   context: gameContext,
 }).start({ playerId: "player123" });
 ```
-
-## How it works
-
-The blockchain game agent demonstrates on-chain game integration:
-
-1. **State synchronization**: Fetches game state from blockchain contracts
-2. **Transaction management**: Submits game actions as blockchain transactions
-3. **Game logic validation**: Checks game rules before performing actions
-4. **Progress tracking**: Manages experience, levels, and equipment progression
-
-**Example gameplay:**
-
-```
-User: "Check my game status"
-Agent: *calls getGameState action*
-Agent: "You're level 1 with 100/100 health. You have a Basic Sword and Basic Armor."
-
-User: "Go explore"
-Agent: *calls explore action*
-Agent: "Encountered Goblin Warrior! Prepare for battle."
-
-User: "Attack the enemy"
-Agent: *calls attack action*
-Agent: "Dealt 15 damage, took 8 damage. Enemy health: 35/50"
-
-User: "I leveled up, allocate my stats"
-Agent: *calls allocateStats action*
-Agent: "Allocated 3 stat points: +2 STR, +1 VIT. Max health increased to 110."
-```
-
-The agent manages blockchain transactions, validates game state, and makes
-strategic decisions based on current player status and available actions.

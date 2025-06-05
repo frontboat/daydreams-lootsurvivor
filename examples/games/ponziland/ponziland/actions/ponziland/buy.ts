@@ -1,9 +1,11 @@
 import { action } from "@daydreamsai/core";
 import { StarknetChain } from "@daydreamsai/defai";
 import { z } from "zod";
-import { CallData, type Call, Contract, cairo, type Abi } from "starknet";
-import manifest from "../../../contracts/view_manifest_sepolia.json";
-import ponziland_manifest from "../../../contracts/ponziland_manifest_sepolia.json";
+import { type Abi, CallData, Contract, cairo } from "starknet";
+import type { Call } from "starknet";
+import { env } from "../../../env";
+import { indexToPosition } from "../../utils/utils";
+import ponziland_manifest from "../../../contracts/ponziland_manifest_mainnet.json";
 
 export const buy = (chain: StarknetChain) =>
   action({
@@ -30,9 +32,11 @@ export const buy = (chain: StarknetChain) =>
     async handler(data, ctx, agent) {
       let calls = [];
 
+      let manifest = ponziland_manifest;
+
       let estark_address =
-        "0x071de745c1ae996cfd39fb292b4342b7c086622e3ecf3a5692bd623060ff3fa0";
-      let ponziland_address = ponziland_manifest.contracts[0].address;
+        "0x056893df1e063190aabda3c71304e9842a1b3d638134253dd0f69806a4f106eb";
+      let ponziland_address = manifest.contracts[0].address;
 
       let { abi: token_abi } = await chain.provider.getClassAt(
         data.token_for_sale
@@ -40,15 +44,37 @@ export const buy = (chain: StarknetChain) =>
       let { abi: estark_abi } = await chain.provider.getClassAt(estark_address);
 
       let ponziLandContract = new Contract(
-        ponziland_manifest.contracts[0].abi,
+        manifest.contracts[0].abi,
         ponziland_address,
         chain.provider
-      ).typedv2(ponziland_manifest.contracts[0].abi as Abi);
+      ).typedv2(manifest.contracts[0].abi as Abi);
 
       let land = await ponziLandContract.get_land(data.land_location);
 
-      let token = land.token_for_sale;
-      let price = land.sell_price;
+      let balance = await chain.provider.callContract({
+        contractAddress: data.token_for_sale,
+        entrypoint: "balanceOf",
+        calldata: CallData.compile({ address: env.STARKNET_ADDRESS! }),
+      });
+
+      let token = land[0].token_used;
+      let price = land[0].sell_price;
+
+      if (BigInt(balance[0]) < BigInt(price)) {
+        return {
+          res: null,
+          str:
+            "Not enough balance of " +
+            data.token_for_sale +
+            " to buy land " +
+            data.land_location +
+            " (" +
+            indexToPosition(Number(data.land_location))[0] +
+            "," +
+            indexToPosition(Number(data.land_location))[1] +
+            ")",
+        };
+      }
 
       if (token == data.token_for_sale) {
         let approve_call: Call = {
@@ -56,7 +82,9 @@ export const buy = (chain: StarknetChain) =>
           entrypoint: "approve",
           calldata: CallData.compile({
             spender: ponziland_address,
-            amount: cairo.uint256(price),
+            amount: cairo.uint256(
+              Math.floor((Number(price) + Number(data.amount_to_stake)) * 1.5)
+            ),
           }),
         };
         calls.push(approve_call);
@@ -66,7 +94,9 @@ export const buy = (chain: StarknetChain) =>
           entrypoint: "approve",
           calldata: CallData.compile({
             spender: ponziland_address,
-            amount: cairo.uint256(data.amount_to_stake),
+            amount: cairo.uint256(
+              Math.floor(Number(data.amount_to_stake) * 1.5)
+            ),
           }),
         };
         let sale_call: Call = {
@@ -74,7 +104,7 @@ export const buy = (chain: StarknetChain) =>
           entrypoint: "approve",
           calldata: CallData.compile({
             spender: ponziland_address,
-            amount: cairo.uint256(price),
+            amount: cairo.uint256(Math.floor(Number(price) * 1.5)),
           }),
         };
         calls.push(token_call);
@@ -96,6 +126,16 @@ export const buy = (chain: StarknetChain) =>
 
       let res = await chain.write(calls);
 
-      return res;
+      return {
+        res,
+        str:
+          "Bought land " +
+          Number(data.land_location) +
+          " at (" +
+          indexToPosition(Number(data.land_location))[0] +
+          "," +
+          indexToPosition(Number(data.land_location))[1] +
+          ")",
+      };
     },
   });

@@ -82,30 +82,6 @@ const agent = createDreams({
 await agent.start();
 ```
 
-## How It Works
-
-The Discord agent is created using a few key components:
-
-1. **Groq Integration**: We use Groq's language model for processing and
-   understanding Discord interactions.
-
-2. **Logger**: Set to DEBUG level for detailed logging during development.
-
-3. **Container**: Manages dependencies and services.
-
-4. **Discord Extension**: The `discord` extension provides built-in capabilities
-   for:
-   - Listening to messages in channels
-   - Responding to direct messages
-   - Reacting to messages
-   - Managing Discord server interactions
-
-## Next Steps
-
-- Set up Discord bot authentication in your environment variables
-- Customize the agent's behavior by adding your own extensions
-- Implement specific use cases like auto-replies or server moderation
-
 For the full discord example, check out the
 [Example-Discord](https://github.com/daydreamsai/daydreams/tree/main/examples/discord)
 on Github.

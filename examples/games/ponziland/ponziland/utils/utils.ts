@@ -1,10 +1,5 @@
 import {
-  Provider,
-  constants,
-  provider,
-  RpcProvider,
   type GetTransactionReceiptResponse,
-  type ReceiptTx,
 } from "starknet";
 import { getAllTokensFromAPI } from "./ponziland_api";
 import { type TokenPrice } from "./ponziland_api";
@@ -85,8 +80,6 @@ export async function decodeTokenTransferEvents(
       }
     );
 
-    console.log("tokenTotals", results);
-
     return results;
   } catch (error) {
     console.error("Error decoding events:", error);
@@ -116,4 +109,20 @@ export const formatTokenAmount = (amount: bigint): string => {
   const decimalPlaces = fractionalStr.slice(0, 4);
 
   return `${wholePart}.${decimalPlaces}`;
+};
+// Grid width constant - adjust this value as needed
+const GRID_WIDTH = 64; // You may need to adjust this value
+
+export const indexToPosition = (
+  index: number,
+  gridWidth: number = GRID_WIDTH
+): [number, number] => {
+  if (index < 0 || index >= gridWidth * gridWidth) {
+    throw new Error("Index out of bounds");
+  }
+
+  const row = Math.floor(index / gridWidth);
+  const col = index % gridWidth;
+
+  return [row, col];
 };

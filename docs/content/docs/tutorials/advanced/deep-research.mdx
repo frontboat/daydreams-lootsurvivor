@@ -28,7 +28,7 @@ analysis. The container provides dependency injection for shared services.
 
 ## 2. Configure debugging and start the agent
 
-```ts
+```typescript title="index.ts"
 createDreams({
   logger: LogLevel.DEBUG,
   model: anthropic("claude-3-7-sonnet-latest"),
@@ -75,7 +75,7 @@ research process.
 
 ## 4. Web search with content analysis
 
-```ts
+```typescript title="research.ts"
 const researchQueryTask = task(
   "deep-research:query",
   async (
@@ -106,7 +106,7 @@ filters results for quality and relevance.
 
 ## 5. Iterative research with depth control
 
-```ts
+```typescript title="research.ts"
 export async function startDeepResearch({
   contextId,
   model,
@@ -161,7 +161,7 @@ queries based on previous findings until the maximum depth is reached.
 
 ## 6. Research actions
 
-```ts
+```typescript title="research.ts"
 const startDeepResearchAction = action({
   name: "start-deep-research",
   schema: researchSchema,
@@ -196,21 +196,3 @@ const startDeepResearchAction = action({
   },
 });
 ```
-
-## How it works
-
-The deep research system conducts multi-stage web research:
-
-1. **Initial queries**: Start with user-defined research questions and goals
-2. **Web search**: Use Tavily to search for relevant information with domain
-   diversity
-3. **Content analysis**: Process search results to extract key learnings and
-   insights
-4. **Follow-up generation**: Create new queries based on findings to explore
-   deeper
-5. **Iteration**: Repeat the process up to the specified depth limit
-6. **Report generation**: Synthesize all learnings into a comprehensive final
-   report
-
-The system maintains memory of all researches, allows cancellation and
-resumption, and provides detailed logging for transparency and debugging.

@@ -7,12 +7,7 @@ description:
 
 ## Prerequisites
 
-Before starting, make sure you have:
-
-2. The following environment variables set up:
-   - `OPENAI_API_KEY`: Your OpenAI API key
-
-Create a file named `agent.ts`:
+- `OPENAI_API_KEY`: Your OpenAI API key
 
 ```typescript title="agent.ts"
 import { createDreams, context, input, output } from "@daydreamsai/core";
@@ -62,16 +57,6 @@ async function main() {
 main();
 ```
 
-### Run your agent
-
-Ensure your `OPENAI_API_KEY` environment variable is set, then run:
-
-```bash title="run the agent"
-node agent.ts
-```
-
 Your agent will start listening for input. Type any message and watch as the
 agent echoes it back using the LLM and CLI handlers provided by the
 `cliExtension`.
-
----
