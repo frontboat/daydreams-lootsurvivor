@@ -496,6 +496,21 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
 
     async stop() {
       logger.info("agent:stop", "Stopping agent");
+      booted = false;
+
+      for (const unsubscribe of Array.from(inputSubscriptions.values())) {
+        try {
+          unsubscribe();
+        } catch (error) {}
+      }
+
+      for (const { controller } of contextsRunning.values()) {
+        controller.abort();
+      }
+
+      try {
+        await serviceManager.stopAll();
+      } catch (error) {}
     },
 
     async run(params) {
