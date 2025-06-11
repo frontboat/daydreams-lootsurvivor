@@ -3,6 +3,7 @@ import type { Container } from "./container";
 type ServiceProvider = {
   register?: (container: Container) => void;
   boot?: (container: Container) => void | Promise<void>;
+  stop?: (container: Container) => void | Promise<void>;
 };
 
 type ServiceState = {
@@ -14,6 +15,7 @@ type ServiceState = {
 type ServiceManager = {
   register: (provider: ServiceProvider) => void;
   bootAll: () => Promise<void>;
+  stopAll: () => Promise<void>;
   isBooted: (provider: ServiceProvider) => boolean;
   isRegistered: (provider: ServiceProvider) => boolean;
 };
@@ -45,6 +47,14 @@ const createServiceManager = (container: Container): ServiceManager => {
     if (provider.boot) await provider.boot(container);
   };
 
+  const stopProvider = async (
+    container: Container,
+    provider: ServiceProvider
+  ): Promise<void> => {
+    if (!state.booted.has(provider)) return;
+    if (provider.stop) await provider.stop(container);
+  };
+
   return {
     register: (provider: ServiceProvider): void => {
       if (!state.providers.includes(provider)) {
@@ -62,6 +72,12 @@ const createServiceManager = (container: Container): ServiceManager => {
       // Then boot them
       for (const provider of state.providers) {
         await bootProvider(container, provider);
+      }
+    },
+
+    stopAll: async (): Promise<void> => {
+      for (const provider of state.providers) {
+        await stopProvider(container, provider);
       }
     },
 
