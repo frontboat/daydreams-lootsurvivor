@@ -11,10 +11,11 @@
   },
   "dependencies": {
     "@ai-sdk/anthropic": "catalog:",
+    "@daydreamsai/cli": "workspace:*",
     "@daydreamsai/core": "workspace:*",
     "@daydreamsai/mcp": "workspace:*",
     "@modelcontextprotocol/sdk": "catalog:",
-    "@daydreamsai/cli": "workspace:*",
+    "@openrouter/ai-sdk-provider": "catalog:",
     "zod": "catalog:"
   }
 }
