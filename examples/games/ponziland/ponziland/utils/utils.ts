@@ -1,10 +1,5 @@
 import {
-  Provider,
-  constants,
-  provider,
-  RpcProvider,
   type GetTransactionReceiptResponse,
-  type ReceiptTx,
 } from "starknet";
 import { getAllTokensFromAPI } from "./ponziland_api";
 import { type TokenPrice } from "./ponziland_api";
@@ -84,8 +79,6 @@ export async function decodeTokenTransferEvents(
         };
       }
     );
-
-    console.log("tokenTotals", results);
 
     return results;
   } catch (error) {

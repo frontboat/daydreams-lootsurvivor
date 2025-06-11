@@ -38,10 +38,11 @@ export const level_up = (chain: StarknetChain) =>
         str:
           "Leveled up land " +
           Number(data.land_location) +
-          " at " +
+          " at (" +
           indexToPosition(Number(data.land_location))[0] +
           "," +
-          indexToPosition(Number(data.land_location))[1],
+          indexToPosition(Number(data.land_location))[1] +
+          ")",
       };
     },
   });
@@ -85,7 +86,6 @@ export const increase_stake = (chain: StarknetChain) =>
           }
         }
         let token_address = land.token_used;
-        console.log("token_address", token_address);
 
         // Track total amount needed for each token
         if (!tokenAmounts[token_address]) {
@@ -123,7 +123,6 @@ export const increase_stake = (chain: StarknetChain) =>
       calls = [...approveCalls, ...calls];
 
       let res = await chain.write(calls);
-      console.log("res", res);
 
       let str =
         "Increased stake on lands " +
@@ -175,10 +174,11 @@ export const increase_price = (chain: StarknetChain) =>
         str:
           "Increased price on land " +
           Number(data.land_location) +
-          " at " +
+          " at (" +
           indexToPosition(Number(data.land_location))[0] +
           "," +
-          indexToPosition(Number(data.land_location))[1],
+          indexToPosition(Number(data.land_location))[1] +
+          ")",
       };
     },
   });

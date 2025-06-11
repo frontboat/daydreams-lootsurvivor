@@ -131,13 +131,10 @@ export const CONTEXT = async () => {
   let balance_str = await get_balances_str();
   let auction_str = await get_auctions_str();
   let land_str = await get_lands_str(env.STARKNET_ADDRESS!);
-  let claims_str = await get_claims_str();
 
   return render(PONZILAND_CONTEXT, {
     balances: balance_str,
     auctions: auction_str,
     lands: land_str,
-    claims: claims_str,
-    neighbors: get_neighbors_str(2020),
   });
 };
