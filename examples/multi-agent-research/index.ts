@@ -1,6 +1,6 @@
 import { createContainer, createDreams, LogLevel } from "@daydreamsai/core";
 import { cliExtension } from "@daydreamsai/cli";
-import { multiAgentResearch } from "./research-actions";
+import { multiAgentResearch } from "./multi-agent-research.js";
 import { tavily } from "@tavily/core";
 import { anthropic } from "@ai-sdk/anthropic";
 
