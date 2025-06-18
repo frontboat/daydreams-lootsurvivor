@@ -1,12 +1,30 @@
 import { action } from "@daydreamsai/core";
 import { z } from "zod";
-import { researchMemory } from "../utils/research-memory.js";
+import {
+  researchMemory,
+  saveSubagentFindings,
+  loadSession,
+} from "../utils/research-memory.js";
 import {
   getAdaptiveSearchConfig,
   determineDateFilter,
   filterAndRankResults,
   executeSearchWithRetry,
 } from "../utils/research-helpers.js";
+import type { ResearchSession } from "../types/research-types.js";
+
+// Helper function to find session ID for a task
+function findSessionIdForTask(
+  taskId: string,
+  activeSessions: Map<string, ResearchSession>
+): string {
+  for (const [sessionId, session] of activeSessions) {
+    if (session.subagentResults.some((result) => result.taskId === taskId)) {
+      return sessionId;
+    }
+  }
+  throw new Error(`No session found for task ${taskId}`);
+}
 
 // Action: Execute Research Searches with Advanced Tavily Integration
 export const executeResearchSearchesAction = action({
@@ -34,12 +52,18 @@ export const executeResearchSearchesAction = action({
       const tavilyApiKey = process.env.TAVILY_API_KEY;
       if (!tavilyApiKey) {
         ctx.memory.status = "failed";
-        return `❌ Error: TAVILY_API_KEY environment variable not found. Please set your Tavily API key to enable research searches.
+        return `<error>
+❌ TAVILY_API_KEY environment variable not found
 
+<setup_instructions>
 **Setup Instructions:**
 1. Get API key from https://tavily.com
 2. Set environment variable: export TAVILY_API_KEY="your-key-here"
-3. Restart the application`;
+3. Restart the application
+</setup_instructions>
+
+<status>Please set your Tavily API key to enable research searches</status>
+</error>`;
       }
 
       // Initialize Tavily client
@@ -138,11 +162,44 @@ Generate your synthesis now:`;
       // Store results in memory
       ctx.memory.searchResults = allResults;
       ctx.memory.synthesisPrompt = synthesisPrompt;
-      ctx.memory.status = "synthesizing";
+      ctx.memory.status = "complete";
+
+      // Extract findings from search results
+      const findings = allResults
+        .filter(
+          (result) =>
+            result.qualityIndicator.includes("🏆") ||
+            result.qualityIndicator.includes("✅")
+        )
+        .map(
+          (result) =>
+            `${result.title}: ${result.content} (Source: ${result.url})`
+        )
+        .slice(0, 20); // Limit to top 20 findings
+
+      const sources = Array.from(
+        new Set(allResults.map((result) => result.url))
+      ).slice(0, 15);
+
+      // Save findings to persistent store using helper function
+      try {
+        await saveSubagentFindings(
+          findSessionIdForTask(taskId, ctx.actionMemory.activeSessions),
+          taskId,
+          findings,
+          sources,
+          agent.memory.store,
+          ctx.actionMemory
+        );
+      } catch (error) {
+        console.warn("Failed to save subagent findings:", error);
+      }
 
       // Generate synthesis using the prompt (this is where the model processes the results)
-      const resultSummary = `📊 **SEARCH EXECUTION COMPLETE**
+      const resultSummary = `<search_execution_complete>
+📊 **SEARCH EXECUTION COMPLETE**
 
+<search_metrics>
 **Searches Performed:** ${searchQueries.length}
 **Results Retrieved:** ${allResults.length}
 **High Authority Sources:** ${
@@ -151,7 +208,11 @@ Generate your synthesis now:`;
 **Recent Content:** ${
         allResults.filter((r) => r.publishedIndicator.includes("🆕")).length
       }
+**Findings Extracted:** ${findings.length}
+**Sources Collected:** ${sources.length}
+</search_metrics>
 
+<quality_analysis>
 **Search Quality Analysis:**
 ${searchResults
   .map(
@@ -161,38 +222,46 @@ ${searchResults
       }`
   )
   .join("\n")}
+</quality_analysis>
 
-**🧠 SYNTHESIS TASK:**
-${synthesisPrompt}
+<findings_summary>
+**🔍 KEY FINDINGS EXTRACTED:**
+${findings
+  .slice(0, 5)
+  .map((finding, i) => `${i + 1}. ${finding.split(":")[0]}`)
+  .join("\n")}
+${findings.length > 5 ? `\n...and ${findings.length - 5} more findings` : ""}
+</findings_summary>
 
-**📋 NEXT STEP:** Process the search results according to your role expertise and provide your synthesized findings.`;
+<completion_status>
+✅ **RESEARCH COMPLETE!** Findings have been successfully saved to the research session.
 
-      // Update shared session memory for the lead agent
-      for (const session of Array.from(
-        ctx.actionMemory.activeSessions.values()
-      )) {
-        const subagentResult = session.subagentResults.find(
-          (result: any) => result.taskId === taskId
-        );
-        if (subagentResult) {
-          // This will be updated after synthesis
-          subagentResult.status = "synthesizing";
-          break;
-        }
-      }
+<thinking>
+Research complete for this domain. Key insights gathered and preserved for synthesis.
+</thinking>
+</completion_status>
+</search_execution_complete>`;
 
       return resultSummary;
     } catch (error) {
       ctx.memory.status = "failed";
-      return `❌ Research search failed: ${error}
+      return `<search_failed>
+❌ Research search failed
 
-**Error Details:** ${error instanceof Error ? error.message : String(error)}
+<error_details>
+**Error:** ${error instanceof Error ? error.message : String(error)}
+</error_details>
 
-**Troubleshooting:**
+<troubleshooting>
+**Troubleshooting Steps:**
 1. Check your TAVILY_API_KEY environment variable
 2. Verify internet connectivity
 3. Try with fewer or simpler search queries
-4. Check Tavily API status and limits`;
+4. Check Tavily API status and limits
+</troubleshooting>
+
+<status>Search execution terminated due to error</status>
+</search_failed>`;
     }
   },
 });
@@ -207,9 +276,13 @@ export const synthesizeReportAction = action({
   }),
   memory: researchMemory,
   async handler({ sessionId }, ctx, agent) {
-    const session = ctx.actionMemory.activeSessions.get(sessionId);
+    const session = await loadSession(
+      sessionId,
+      agent.memory.store,
+      ctx.actionMemory
+    );
     if (!session) {
-      return `❌ Research session ${sessionId} not found.`;
+      return `<error>❌ Research session ${sessionId} not found</error>`;
     }
 
     // Collect all findings from subagents
@@ -219,7 +292,11 @@ export const synthesizeReportAction = action({
     );
 
     if (allFindings.length === 0) {
-      return `❌ No findings were collected during this research session. Cannot generate report.`;
+      return `<error>
+❌ No findings were collected during this research session
+
+<status>Cannot generate report without research findings</status>
+</error>`;
     }
 
     // Store synthesis context for the model
@@ -232,22 +309,30 @@ export const synthesizeReportAction = action({
       sourcesCount: allSources.length,
     };
 
-    return `🧠 **RESEARCH SYNTHESIS READY**
+    return `<synthesis_ready>
+🧠 **RESEARCH SYNTHESIS READY**
 
+<role>
 You are an expert research analyst tasked with synthesizing findings from a multi-agent research investigation.
+</role>
 
+<research_context>
 **📋 RESEARCH CONTEXT:**
 - **Original Query:** "${session.query}"
 - **Research Complexity:** ${session.plan?.complexity || "moderate"}
 - **Specialized Subagents:** ${session.subagentResults.length}
 - **Total Findings:** ${allFindings.length}
 - **Unique Sources:** ${allSources.length}
+</research_context>
 
+<all_findings>
 **📄 ALL RESEARCH FINDINGS:**
 ${allFindings
   .map((finding: string, i: number) => `${i + 1}. ${finding}`)
   .join("\n\n")}
+</all_findings>
 
+<synthesis_task>
 **🎯 YOUR SYNTHESIS TASK:**
 Write a comprehensive, natural language research report that synthesizes all the above findings into a coherent narrative. Your report should:
 
@@ -259,17 +344,31 @@ Write a comprehensive, natural language research report that synthesizes all the
 6. **Include specific data and examples** from the findings
 7. **Note any contradictions or uncertainties** discovered
 8. **Provide a clear conclusion** that directly addresses the original query
+</synthesis_task>
 
+<guidelines>
 **IMPORTANT GUIDELINES:** 
 - Do NOT just summarize each finding individually
 - DO synthesize findings into themes and insights
 - Write as if explaining to an intelligent audience who wants to understand the topic
 - Use natural, flowing prose rather than formal academic language
 - Focus on what was actually discovered, not methodology
+</guidelines>
 
+<thinking>
+Before writing, think through:
+- What are the key themes that emerged across all findings?
+- How do the findings connect to answer the original query?
+- What patterns or insights can I identify?
+- Are there any contradictions I need to address?
+</thinking>
+
+<next_step>
 **📋 NEXT STEP:** Write your comprehensive synthesis report as a natural language narrative that brings together all these research findings into a coherent, insightful analysis.
 
-Begin your synthesis report now.`;
+Begin your synthesis report now.
+</next_step>
+</synthesis_ready>`;
   },
 });
 
@@ -283,9 +382,13 @@ export const checkResearchProgressAction = action({
   }),
   memory: researchMemory,
   async handler({ sessionId }, ctx, agent) {
-    const session = ctx.actionMemory.activeSessions.get(sessionId);
+    const session = await loadSession(
+      sessionId,
+      agent.memory.store,
+      ctx.actionMemory
+    );
     if (!session) {
-      return `❌ Research session ${sessionId} not found.`;
+      return `<error>❌ Research session ${sessionId} not found</error>`;
     }
 
     // Check completion status of all subagents
@@ -311,38 +414,68 @@ export const checkResearchProgressAction = action({
           new Set(session.subagentResults.flatMap((r) => r.sources))
         );
 
-        return `✅ **RESEARCH COMPLETE!** All ${completedSubagents} subagents have finished their investigations.
+        return `<research_complete>
+✅ **RESEARCH COMPLETE!** All ${completedSubagents} subagents have finished their investigations.
 
+<final_summary>
 📊 **FINAL RESEARCH SUMMARY:**
 - **Query:** "${session.query}"
 - **Complexity:** ${session.plan?.complexity}
 - **Subagents Deployed:** ${totalSubagents} (${completedSubagents} successful, ${failedSubagents} failed)
 - **Total Findings:** ${allFindings.length}
 - **Unique Sources:** ${allSources.length}
+</final_summary>
 
+<next_step>
 🧠 **NEXT STEP:** All research data has been collected. Now synthesize these findings into a comprehensive report.
 
-**RECOMMENDED ACTION:** Call \`research.synthesizeReport\` with sessionId "${sessionId}" to generate the final research report that brings together all subagent findings into a coherent analysis.`;
+**RECOMMENDED ACTION:** Call \`research.synthesizeReport\` with sessionId "${sessionId}" to generate the final research report that brings together all subagent findings into a coherent analysis.
+</next_step>
+
+<thinking>
+Review all findings for completeness before synthesis - do I have comprehensive coverage of the research query?
+</thinking>
+</research_complete>`;
       } catch (error) {
         session.status = "failed";
-        return `❌ Failed to synthesize research results: ${error}
+        return `<synthesis_failed>
+❌ Failed to synthesize research results
 
-Research data is available but synthesis failed. You can review the individual subagent findings.`;
+<error_details>
+**Error:** ${error}
+</error_details>
+
+<status>
+Research data is available but synthesis failed. You can review the individual subagent findings.
+</status>
+</synthesis_failed>`;
       }
     } else {
       // Research still in progress
-      return `📊 **RESEARCH IN PROGRESS**
+      return `<research_in_progress>
+📊 **RESEARCH IN PROGRESS**
 
+<session_info>
 **Session:** ${sessionId}
 **Status:** ${session.status}
 **Progress:** ${completedSubagents}/${totalSubagents} subagents completed
+</session_info>
 
+<subagent_status>
 **Subagent Status:**
 ${session.subagentResults
   .map((r) => `- ${r.role}: ${r.status} (${r.findings?.length || 0} findings)`)
   .join("\n")}
+</subagent_status>
 
-**🎯 NEXT STEP:** Wait for remaining subagents to complete, then research will automatically synthesize into a comprehensive report.`;
+<next_step>
+**🎯 NEXT STEP:** Wait for remaining subagents to complete, then research will automatically synthesize into a comprehensive report.
+</next_step>
+
+<thinking>
+Track progress and assess when all critical research is complete
+</thinking>
+</research_in_progress>`;
     }
   },
 });
@@ -384,31 +517,35 @@ export const getResultsAction = action({
     sessionId: z.string().describe("Research session ID"),
   }),
   memory: researchMemory,
-  async handler({ sessionId }, ctx) {
-    const active = ctx.actionMemory.activeSessions.get(sessionId);
+  async handler({ sessionId }, ctx, agent) {
+    const session = await loadSession(
+      sessionId,
+      agent.memory.store,
+      ctx.actionMemory
+    );
     const completed = ctx.actionMemory.completedSessions.find(
       (s) => s.id === sessionId
     );
 
-    const session = active || completed;
+    const finalSession = session || completed;
 
-    if (!session) {
-      return `Research session "${sessionId}" not found.`;
+    if (!finalSession) {
+      return `<error>Research session "${sessionId}" not found</error>`;
     }
 
     return {
       session: {
-        id: session.id,
-        query: session.query,
-        status: session.status,
-        startTime: new Date(session.startTime).toISOString(),
-        endTime: session.endTime
-          ? new Date(session.endTime).toISOString()
+        id: finalSession.id,
+        query: finalSession.query,
+        status: finalSession.status,
+        startTime: new Date(finalSession.startTime).toISOString(),
+        endTime: finalSession.endTime
+          ? new Date(finalSession.endTime).toISOString()
           : null,
       },
-      plan: session.plan,
-      results: session.subagentResults,
-      finalReport: session.finalReport,
+      plan: finalSession.plan,
+      results: finalSession.subagentResults,
+      finalReport: finalSession.finalReport,
     };
   },
 });

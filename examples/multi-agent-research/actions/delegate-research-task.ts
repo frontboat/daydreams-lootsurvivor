@@ -1,6 +1,11 @@
 import { action } from "@daydreamsai/core";
 import { z } from "zod";
-import { researchMemory } from "../utils/research-memory.js";
+import {
+  researchMemory,
+  loadSession,
+  saveSession,
+  saveTask,
+} from "../utils/research-memory.js";
 import { subagentContext } from "../contexts/subagent.js";
 import type { SubagentTask } from "../types/research-types.js";
 
@@ -45,14 +50,22 @@ export const delegateResearchTaskAction = action({
     ctx,
     agent
   ) {
-    const session = ctx.actionMemory.activeSessions.get(sessionId);
+    const session = await loadSession(
+      sessionId,
+      agent.memory.store,
+      ctx.actionMemory
+    );
     if (!session) {
-      return `Error: Research session ${sessionId} not found.
+      return `<error>
+**Status:** Research session ${sessionId} not found
 
+<recommended_steps>
 **RECOMMENDED NEXT STEPS:**
 1. Check active sessions with research.listResearchSessions
 2. Create new research plan if session expired
-3. Ensure sessionId is correct: ${sessionId}`;
+3. Ensure sessionId is correct: ${sessionId}
+</recommended_steps>
+</error>`;
     }
 
     const taskId = `${role}-${Date.now()}`;
@@ -67,7 +80,7 @@ export const delegateResearchTaskAction = action({
     };
 
     // Store task in shared memory for the subagent to access
-    ctx.actionMemory.activeTasks.set(taskId, task);
+    await saveTask(taskId, task, agent.memory.store, ctx.actionMemory);
 
     session.subagentResults.push({
       taskId,
@@ -85,8 +98,13 @@ export const delegateResearchTaskAction = action({
 
     session.status = "researching";
 
-    return `✅ Successfully delegated research task to ${role} subagent:
+    // Save updated session
+    await saveSession(sessionId, session, agent.memory.store, ctx.actionMemory);
 
+    return `<task_delegated>
+✅ Successfully delegated research task to ${role} subagent
+
+<subagent_briefing>
 **🎯 SUBAGENT BRIEFING:**
 - **Task ID:** ${taskId}
 - **Primary Objective:** ${objective}
@@ -96,13 +114,23 @@ export const delegateResearchTaskAction = action({
     }
 - **Output Format:** ${outputFormat}
 - **Estimated Searches:** ${estimatedQueries}
+</subagent_briefing>
 
+<search_strategy>
 **📋 SEARCH STRATEGY GUIDANCE:**
 - Start with broad, short queries to explore the landscape
 - Progressively narrow focus based on initial findings
 - Prioritize authoritative sources over SEO-optimized content
 - Use ${estimatedQueries} parallel searches for comprehensive coverage
+</search_strategy>
 
-The subagent is now active and ready to begin research with clear boundaries and objectives.`;
+<status_update>
+The subagent is now active and ready to begin research with clear boundaries and objectives.
+</status_update>
+
+<next_action>
+Use research.startSubagentResearch with taskId "${taskId}" to provide search queries
+</next_action>
+</task_delegated>`;
   },
 });

@@ -1,6 +1,6 @@
 import { action } from "@daydreamsai/core";
 import { z } from "zod";
-import { researchMemory } from "../utils/research-memory.js";
+import { researchMemory, saveSession } from "../utils/research-memory.js";
 import {
   analyzeComplexity,
   getSubagentCount,
@@ -34,21 +34,34 @@ export const createResearchPlanAction = action({
       subagentResults: [],
     };
 
-    ctx.actionMemory.activeSessions.set(sessionId, session);
+    await saveSession(sessionId, session, agent.memory.store, ctx.actionMemory);
 
-    return `I'll create a comprehensive research plan for: "${query}"
+    return `<research_plan_created>
+I'll create a comprehensive research plan for: "${query}"
 
-**Analysis:**
-- Query complexity: ${complexity}
-- Recommended subagents: ${numSubagents}
-- Research strategy: ${getResearchStrategy(complexity)}
+<analysis>
+**Query complexity:** ${complexity}
+**Recommended subagents:** ${numSubagents}
+**Research strategy:** ${getResearchStrategy(complexity)}
+</analysis>
 
+<proposed_plan>
 **Proposed Research Plan:**
 ${createDetailedPlan(query, complexity, numSubagents)}
+</proposed_plan>
 
+<plan_summary>
 The plan divides the research into specialized subtasks with clear boundaries to prevent overlap and ensure comprehensive coverage. Each subagent will have specific objectives and output requirements.
+</plan_summary>
 
-Session ID: ${sessionId}
-Ready to delegate tasks to subagents.`;
+<session_info>
+**Session ID:** ${sessionId}
+**Status:** Ready to delegate tasks to subagents
+</session_info>
+
+<next_action>
+Use research.delegateResearchTask to assign work to specialized subagents
+</next_action>
+</research_plan_created>`;
   },
 });

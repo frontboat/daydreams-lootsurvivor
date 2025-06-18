@@ -2,8 +2,26 @@ import { context } from "@daydreamsai/core";
 import { z } from "zod";
 import type { ResearchSession, ResearchPlan } from "../types/research-types.js";
 
+import { openrouter } from "@openrouter/ai-sdk-provider";
+
 // Lead Agent Context - orchestrates research through actions
 export const leadAgentContext = context({
+  model: openrouter("google/gemini-2.5-pro"),
+  modelSettings: {
+    temperature: 0.3,
+    maxTokens: 8192,
+    stopSequences: ["\n</response>", "\n</thinking>"],
+    providerOptions: {
+      openrouter: {
+        reasoning: {
+          max_tokens: 32768,
+        },
+      },
+      anthropic: {
+        max_tokens: 8192,
+      },
+    },
+  },
   type: "lead-agent",
   maxSteps: 200,
   schema: z.object({
@@ -16,7 +34,9 @@ export const leadAgentContext = context({
   render: ({ memory, args }) => {
     const session = memory.currentSession;
     if (!session)
-      return "No active research session. Use research.createResearchPlan to begin.";
+      return `<status>No active research session</status>
+      
+<next_action>Use research.createResearchPlan to begin</next_action>`;
 
     const completedCount = session.subagentResults.filter(
       (r) => r.status === "complete"
@@ -29,59 +49,69 @@ export const leadAgentContext = context({
     ).length;
     const totalCount = session.subagentResults.length;
 
-    return `
+    return `<session_header>
 # Lead Research Agent Status
 
 **Session ID:** ${args.sessionId}
 **Query:** ${session.query}
 **Status:** ${session.status}
 **Complexity:** ${session.plan?.complexity || "Not determined"}
+</session_header>
 
+<current_plan>
 ## Current Plan
 ${
   session.plan
     ? `
-Strategy: ${session.plan.strategy}
-Subagents: ${session.plan.subagents.length} planned
+**Strategy:** ${session.plan.strategy}
+**Subagents:** ${session.plan.subagents.length} planned
 `
-    : "🔍 No plan created yet - call research.createResearchPlan first"
+    : `<missing_plan>🔍 No plan created yet - call research.createResearchPlan first</missing_plan>`
 }
+</current_plan>
 
+<progress_tracking>
 ## Progress Tracking
-- Total subagents: ${totalCount}
-- ✅ Completed: ${completedCount}
-- ⏳ Working: ${workingCount}
-- ❌ Failed: ${failedCount}
+- **Total subagents:** ${totalCount}
+- ✅ **Completed:** ${completedCount}
+- ⏳ **Working:** ${workingCount}
+- ❌ **Failed:** ${failedCount}
+</progress_tracking>
 
+<status_assessment>
 ${
   totalCount > 0 && workingCount === 0
-    ? `
+    ? `<completion_ready>
 🚨 **ALL SUBAGENTS COMPLETE!** 🚨
 ⭐ NEXT STEP: Call research.checkResearchProgress with sessionId "${args.sessionId}"
 🎯 This will automatically synthesize and present the final comprehensive report to the user!
-`
+</completion_ready>`
     : workingCount > 0
-    ? `
+    ? `<research_in_progress>
 ⏳ Research in progress... ${workingCount} subagent(s) still working.
 Wait for all to complete, then use research.checkResearchProgress to automatically synthesize results.
-`
+</research_in_progress>`
     : totalCount === 0
-    ? `
+    ? `<ready_to_delegate>
 📋 Ready to delegate tasks. Use research.delegateResearchTask to assign work to subagents.
-`
+</ready_to_delegate>`
     : ""
 }
+</status_assessment>
 
+<subagent_details>
 ## Subagent Details
 ${session.subagentResults
   .map(
     (r) =>
-      `- ${r.role}: ${r.status} (${r.findings.length} findings, ${r.sources.length} sources)`
+      `- **${r.role}:** ${r.status} (${r.findings.length} findings, ${r.sources.length} sources)`
   )
   .join("\n")}
+</subagent_details>
 
+<completion_reminder>
 **Remember:** Your job isn't complete until you call research.checkResearchProgress to automatically synthesize and present the final report!
-    `;
+</completion_reminder>`;
   },
   instructions: `<role>
 You are the Lead Research Agent in a multi-agent system. Your role is to orchestrate comprehensive research and ALWAYS deliver a complete final report.

@@ -94,6 +94,7 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
     extensions = [],
     model,
     reasoningModel,
+    modelSettings,
     exportTrainingData,
     trainingDataPath,
     streaming = true,
@@ -166,6 +167,7 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
     container,
     model,
     reasoningModel,
+    modelSettings,
     taskRunner,
     debugger: debug,
     context: config.context ?? undefined,
@@ -666,6 +668,7 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
               workingMemory,
               logger,
               streaming,
+              contextSettings: ctxState.settings,
               onError: (error) => {
                 streamError = error;
                 // state.errors.push(error);

@@ -2,7 +2,7 @@ import { createContainer, createDreams, LogLevel } from "@daydreamsai/core";
 import { cliExtension } from "@daydreamsai/cli";
 import { multiAgentResearch } from "./multi-agent-research.js";
 import { tavily } from "@tavily/core";
-import { anthropic } from "@ai-sdk/anthropic";
+import { openrouter } from "@openrouter/ai-sdk-provider";
 
 const container = createContainer();
 
@@ -16,8 +16,20 @@ container.singleton("tavily", () =>
 // Create the multi-agent research system
 const agent = createDreams({
   logLevel: LogLevel.DEBUG,
-  model: anthropic("claude-sonnet-4-20250514"),
-  reasoningModel: anthropic("claude-sonnet-4-20250514"), // Use same model for reasoning
+  model: openrouter("google/gemini-2.5-pro"),
+  reasoningModel: openrouter("deepseek/deepseek-reasoning"),
+  modelSettings: {
+    temperature: 0.4,
+    maxTokens: 4096,
+    stopSequences: ["\n</response>"],
+    providerOptions: {
+      openrouter: {
+        reasoning: {
+          max_tokens: 16384,
+        },
+      },
+    },
+  },
   debugger: async (contextId, keys, data) => {
     const [type, id] = keys;
     // Create logs directory structure

@@ -11,6 +11,7 @@
   "dependencies": {
     "@daydreamsai/core": "workspace:*",
     "@daydreamsai/cli": "workspace:*",
+    "@openrouter/ai-sdk-provider": "^0.7.2",
     "@ai-sdk/anthropic": "^0.0.56",
     "@tavily/core": "^0.5.7",
     "zod": "^3.24.1"

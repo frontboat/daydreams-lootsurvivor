@@ -1,6 +1,6 @@
 import { action } from "@daydreamsai/core";
 import { z } from "zod";
-import { researchMemory } from "../utils/research-memory.js";
+import { researchMemory, loadTask } from "../utils/research-memory.js";
 import { generateSearchQueries } from "../utils/research-helpers.js";
 
 // Action: Start Subagent Research
@@ -13,21 +13,28 @@ export const startSubagentResearchAction = action({
   }),
   memory: researchMemory,
   async handler({ taskId }, ctx, agent) {
-    const task = ctx.actionMemory.activeTasks.get(taskId);
+    const task = await loadTask(taskId, agent.memory.store, ctx.actionMemory);
     if (!task) {
-      return `Error: Task ${taskId} not found.`;
+      return `<error>Task ${taskId} not found</error>`;
     }
 
     // Generate search queries based on the task objective and role
     const queries = generateSearchQueries(task);
 
-    return `Starting research for ${task.role} subagent (Task: ${taskId})
+    return `<subagent_research_started>
+Starting research for ${task.role} subagent (Task: ${taskId})
 
+<generated_queries>
 **Generated Search Queries:**
 ${queries.map((q, i) => `${i + 1}. "${q}"`).join("\n")}
+</generated_queries>
 
+<task_context>
 **Task Objective:** ${task.objective}
+**Query Count:** ${queries.length}
+</task_context>
 
+<execution_instructions>
 The subagent should now execute these ${
       queries.length
     } search queries using the research.executeResearchSearches action.
@@ -35,6 +42,12 @@ The subagent should now execute these ${
 **IMPORTANT**: When calling research.executeResearchSearches, include:
 - taskId: "${taskId}" 
 - searchQueries: [list of the generated queries above]
-- synthesisInstructions: "${task.outputFormat}"`;
+- synthesisInstructions: "${task.outputFormat}"
+</execution_instructions>
+
+<thinking>
+Review the queries and think about how they align with my domain expertise before executing
+</thinking>
+</subagent_research_started>`;
   },
 });
