@@ -61,15 +61,34 @@ type GenerateOptions = {
   model: LanguageModelV1;
   streaming: boolean;
   onError: (error: unknown) => void;
+  contextSettings?: {
+    modelSettings?: {
+      temperature?: number;
+      maxTokens?: number;
+      topP?: number;
+      topK?: number;
+      stopSequences?: string[];
+      providerOptions?: Record<string, any>;
+      [key: string]: any;
+    };
+  };
 };
 
 export const runGenerate = task({
   key: "agent:run:generate",
   handler: async (
-    { prompt, workingMemory, model, streaming, onError }: GenerateOptions,
+    {
+      prompt,
+      workingMemory,
+      model,
+      streaming,
+      onError,
+      contextSettings,
+    }: GenerateOptions,
     { abortSignal }
   ) => {
     const isReasoningModel = reasoningModels.includes(model.modelId);
+    const modelSettings = contextSettings?.modelSettings || {};
 
     const messages: CoreMessage[] = [
       {
@@ -106,7 +125,13 @@ export const runGenerate = task({
         const response = await generateText({
           model,
           messages,
-          temperature: 0.2,
+          temperature: modelSettings.temperature ?? 0.2,
+          maxTokens: modelSettings.maxTokens,
+          topP: modelSettings.topP,
+          topK: modelSettings.topK,
+          stopSequences: modelSettings.stopSequences,
+          providerOptions: modelSettings.providerOptions,
+          ...modelSettings,
         });
 
         let getTextResponse = async () => response.text;
@@ -117,15 +142,26 @@ export const runGenerate = task({
         const stream = streamText({
           model,
           messages,
-          stopSequences: ["\n</response>"],
-          temperature: 0.5,
+          stopSequences: modelSettings.stopSequences ?? ["\n</response>"],
+          temperature: modelSettings.temperature ?? 0.5,
+          maxTokens: modelSettings.maxTokens,
+          topP: modelSettings.topP,
+          topK: modelSettings.topK,
           abortSignal,
           // experimental_transform: smoothStream({
           //   chunking: "word",
           // }),
+          providerOptions: modelSettings.providerOptions || {
+            openrouter: {
+              reasoning: {
+                max_tokens: 32768,
+              },
+            },
+          },
           onError: (event) => {
             onError(event.error);
           },
+          ...modelSettings,
         });
 
         return prepareStreamResponse({

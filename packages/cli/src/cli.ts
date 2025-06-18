@@ -16,6 +16,7 @@ export const readlineService = service({
 export const cli = context({
   type: "cli",
   key: ({ user }) => user.toString(),
+  maxSteps: 100,
   schema: { user: z.string() },
   inputs: {
     "cli:message": input({
