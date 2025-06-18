@@ -17,11 +17,8 @@ container.singleton("tavily", () =>
 const agent = createDreams({
   logLevel: LogLevel.DEBUG,
   model: openrouter("google/gemini-2.5-pro"),
-  reasoningModel: openrouter("deepseek/deepseek-reasoning"),
   modelSettings: {
     temperature: 0.4,
-    maxTokens: 4096,
-    stopSequences: ["\n</response>"],
     providerOptions: {
       openrouter: {
         reasoning: {
