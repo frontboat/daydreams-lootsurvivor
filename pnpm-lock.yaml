@@ -807,6 +807,21 @@ importers:
         specifier: ^3.24.1
         version: 3.25.23
 
+  examples/request-tracking:
+    dependencies:
+      '@ai-sdk/anthropic':
+        specifier: 'catalog:'
+        version: 1.2.3(zod@3.25.23)
+      '@daydreamsai/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      dotenv:
+        specifier: 'catalog:'
+        version: 16.4.7
+      zod:
+        specifier: 'catalog:'
+        version: 3.25.23
+
   examples/server:
     dependencies:
       '@daydreamsai/core':
