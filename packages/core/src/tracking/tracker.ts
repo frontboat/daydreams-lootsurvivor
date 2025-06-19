@@ -36,6 +36,9 @@ export class RequestTracker {
   private activeContexts = new Map<string, ContextTracking>();
   private activeActionCalls = new Map<string, ActionCallTracking>();
   private logger?: Logger;
+  private cleanupInterval?: NodeJS.Timeout;
+  private readonly CLEANUP_INTERVAL_MS = 300000; // 5 minutes
+  private readonly STALE_TIMEOUT_MS = 1800000; // 30 minutes
 
   constructor(config?: Partial<RequestTrackingConfig>, logger?: Logger) {
     this.config = {
@@ -55,6 +58,11 @@ export class RequestTracker {
       : new NoOpRequestTrackingStorage();
 
     this.logger = logger;
+    
+    // Start cleanup interval if tracking is enabled
+    if (this.config.enabled) {
+      this.startCleanupInterval();
+    }
   }
 
   /**
@@ -484,7 +492,15 @@ export class RequestTracker {
       actionCall.modelCalls.push(modelCall);
     }
 
-    await this.storage.storeModelCall(modelCall);
+    try {
+      await this.storage.storeModelCall(modelCall);
+    } catch (error) {
+      this.logger!.error(
+        "RequestTracker",
+        `Failed to store model call: ${callType} on ${modelId}`,
+        { error }
+      );
+    }
 
     const logData = {
       modelCallId: modelCall.id,
@@ -558,7 +574,159 @@ export class RequestTracker {
    * Update configuration
    */
   updateConfig(updates: Partial<RequestTrackingConfig>): void {
+    const wasEnabled = this.config.enabled;
     this.config = { ...this.config, ...updates };
+    
+    // Handle cleanup interval based on enabled state
+    if (this.config.enabled && !wasEnabled) {
+      this.startCleanupInterval();
+    } else if (!this.config.enabled && wasEnabled) {
+      this.stopCleanupInterval();
+    }
+  }
+  
+  /**
+   * Start the cleanup interval for stale entries
+   */
+  private startCleanupInterval(): void {
+    if (this.cleanupInterval) return;
+    
+    this.cleanupInterval = setInterval(() => {
+      this.cleanupStaleEntries();
+    }, this.CLEANUP_INTERVAL_MS);
+  }
+  
+  /**
+   * Stop the cleanup interval
+   */
+  private stopCleanupInterval(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = undefined;
+    }
+  }
+  
+  /**
+   * Clean up stale entries that haven't been completed
+   */
+  private cleanupStaleEntries(): void {
+    const now = Date.now();
+    const staleThreshold = now - this.STALE_TIMEOUT_MS;
+    
+    // Clean up stale requests
+    for (const [id, request] of this.activeRequests.entries()) {
+      if (request.startTime < staleThreshold) {
+        this.completeRequest(id, "failed", { 
+          message: "Request timed out - automatically cleaned up" 
+        });
+        
+        if (this.shouldLog("warn")) {
+          this.logger!.warn(
+            "RequestTracker", 
+            `Cleaned up stale request: ${id}`,
+            { requestId: id, age: now - request.startTime }
+          );
+        }
+      }
+    }
+    
+    // Clean up stale agent runs
+    for (const [id, agentRun] of this.activeAgentRuns.entries()) {
+      if (agentRun.startTime < staleThreshold) {
+        this.completeAgentRun(id, "failed", { 
+          message: "Agent run timed out - automatically cleaned up" 
+        });
+        
+        if (this.shouldLog("warn")) {
+          this.logger!.warn(
+            "RequestTracker", 
+            `Cleaned up stale agent run: ${id}`,
+            { agentRunId: id, age: now - agentRun.startTime }
+          );
+        }
+      }
+    }
+    
+    // Clean up stale action calls
+    for (const [id, actionCall] of this.activeActionCalls.entries()) {
+      if (actionCall.startTime < staleThreshold) {
+        this.completeActionCall(id, "failed", { 
+          message: "Action call timed out - automatically cleaned up" 
+        });
+        
+        if (this.shouldLog("warn")) {
+          this.logger!.warn(
+            "RequestTracker", 
+            `Cleaned up stale action call: ${id}`,
+            { actionCallId: id, age: now - actionCall.startTime }
+          );
+        }
+      }
+    }
+    
+    // Clean up orphaned contexts (contexts without active parent agent runs)
+    for (const [id, context] of this.activeContexts.entries()) {
+      if (!this.activeAgentRuns.has(context.agentRunId) || 
+          context.startTime < staleThreshold) {
+        this.activeContexts.delete(id);
+        
+        if (this.shouldLog("debug")) {
+          this.logger!.debug(
+            "RequestTracker", 
+            `Cleaned up orphaned context: ${id}`,
+            { contextId: id }
+          );
+        }
+      }
+    }
+    
+    // Log cleanup summary if there are many active entries
+    const totalActive = this.activeRequests.size + this.activeAgentRuns.size + 
+                       this.activeContexts.size + this.activeActionCalls.size;
+    
+    if (totalActive > 100 && this.shouldLog("info")) {
+      this.logger!.info(
+        "RequestTracker", 
+        `Active tracking entries: ${totalActive}`,
+        {
+          requests: this.activeRequests.size,
+          agentRuns: this.activeAgentRuns.size,
+          contexts: this.activeContexts.size,
+          actionCalls: this.activeActionCalls.size
+        }
+      );
+    }
+  }
+  
+  /**
+   * Force cleanup of all active entries (useful for shutdown)
+   */
+  async cleanup(): Promise<void> {
+    this.stopCleanupInterval();
+    
+    // Complete all active requests
+    const requestPromises = Array.from(this.activeRequests.keys()).map(id =>
+      this.completeRequest(id, "failed", { message: "Tracker cleanup" })
+    );
+    
+    // Complete all active agent runs
+    const agentRunPromises = Array.from(this.activeAgentRuns.keys()).map(id =>
+      this.completeAgentRun(id, "failed", { message: "Tracker cleanup" })
+    );
+    
+    // Complete all active action calls
+    const actionCallPromises = Array.from(this.activeActionCalls.keys()).map(id =>
+      this.completeActionCall(id, "failed", { message: "Tracker cleanup" })
+    );
+    
+    await Promise.all([...requestPromises, ...agentRunPromises, ...actionCallPromises]);
+    
+    // Clear remaining contexts
+    this.activeContexts.clear();
+    
+    if (this.shouldLog("info")) {
+      this.logger!.info("RequestTracker", "Cleanup completed");
+    }
   }
 }
 
