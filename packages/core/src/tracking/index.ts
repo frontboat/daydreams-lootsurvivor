@@ -426,20 +426,20 @@ export function getCorrelationIds(context: RequestContext): CorrelationIds {
  */
 export function formatCorrelationIds(ids: CorrelationIds): string {
   const parts = [`req:${ids.requestId.slice(-8)}`];
-  
+
   if (ids.agentRunId) {
     parts.push(`run:${ids.agentRunId.slice(-8)}`);
   }
-  
+
   if (ids.contextId) {
     parts.push(`ctx:${ids.contextId.slice(-8)}`);
   }
-  
+
   if (ids.actionCallId) {
     parts.push(`act:${ids.actionCallId.slice(-8)}`);
   }
-  
-  return parts.join('|');
+
+  return parts.join("|");
 }
 
 /**
@@ -477,12 +477,17 @@ export function estimateCost(
     return 0;
   }
 
+  const perMillionTokens = 1000000;
+
   const rates = costConfig[modelProvider];
-  const inputCost = (tokenUsage.inputTokens / 1000000) * rates.inputTokenCost;
-  const outputCost = (tokenUsage.outputTokens / 1000000) * rates.outputTokenCost;
+  const inputCost =
+    (tokenUsage.inputTokens / perMillionTokens) * rates.inputTokenCost;
+  const outputCost =
+    (tokenUsage.outputTokens / perMillionTokens) * rates.outputTokenCost;
   const reasoningCost =
     tokenUsage.reasoningTokens && rates.reasoningTokenCost
-      ? (tokenUsage.reasoningTokens / 1000000) * rates.reasoningTokenCost
+      ? (tokenUsage.reasoningTokens / perMillionTokens) *
+        rates.reasoningTokenCost
       : 0;
 
   return inputCost + outputCost + reasoningCost;

@@ -39,6 +39,9 @@ export class RequestTracker {
   private cleanupInterval?: NodeJS.Timeout;
   private readonly CLEANUP_INTERVAL_MS = 300000; // 5 minutes
   private readonly STALE_TIMEOUT_MS = 1800000; // 30 minutes
+  private storageFailures = new Map<string, number>(); // Track storage failures per operation
+  private readonly MAX_STORAGE_RETRIES = 3;
+  private readonly STORAGE_RETRY_DELAY_MS = 1000;
 
   constructor(config?: Partial<RequestTrackingConfig>, logger?: Logger) {
     this.config = {
@@ -112,7 +115,28 @@ export class RequestTracker {
     };
 
     this.activeRequests.set(request.id, request);
-    await this.storage.storeRequest(request);
+    
+    try {
+      await this.storeWithRetry(
+        () => this.storage.storeRequest(request),
+        `storeRequest-${request.id}`
+      );
+    } catch (error) {
+      // Remove from active requests if storage fails after retries
+      this.activeRequests.delete(request.id);
+      const errorMessage = `Failed to store request ${request.id} after retries: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      if (this.shouldLog("error")) {
+        this.logger!.error("RequestTracker", errorMessage, { requestId: request.id, error });
+      }
+      // Continue without throwing if storage is generally unhealthy
+      if (!this.isStorageHealthy()) {
+        if (this.shouldLog("warn")) {
+          this.logger!.warn("RequestTracker", "Storage is unhealthy, continuing without persisting request", { requestId: request.id });
+        }
+      } else {
+        throw new Error(errorMessage);
+      }
+    }
 
     if (this.shouldLog("debug")) {
       this.logger!.debug(
@@ -165,7 +189,20 @@ export class RequestTracker {
       );
     }
 
-    await this.storage.storeRequest(request);
+    try {
+      await this.storeWithRetry(
+        () => this.storage.storeRequest(request),
+        `completeRequest-${requestId}`,
+        2 // Fewer retries for completion to avoid delays
+      );
+    } catch (error) {
+      const errorMessage = `Failed to store completed request ${requestId} after retries: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      if (this.shouldLog("error")) {
+        this.logger!.error("RequestTracker", errorMessage, { requestId, error });
+      }
+      // Continue with cleanup even if storage fails
+    }
+    
     this.activeRequests.delete(requestId);
 
     const duration = request.endTime - request.startTime;
@@ -493,13 +530,23 @@ export class RequestTracker {
     }
 
     try {
-      await this.storage.storeModelCall(modelCall);
-    } catch (error) {
-      this.logger!.error(
-        "RequestTracker",
-        `Failed to store model call: ${callType} on ${modelId}`,
-        { error }
+      await this.storeWithRetry(
+        () => this.storage.storeModelCall(modelCall),
+        `storeModelCall-${modelCall.id}`,
+        2 // Fewer retries for model calls to avoid blocking
       );
+    } catch (error) {
+      const errorMessage = `Failed to store model call after retries: ${callType} on ${modelId}`;
+      if (this.shouldLog("error")) {
+        this.logger!.error("RequestTracker", errorMessage, { 
+          modelCallId: modelCall.id,
+          callType,
+          modelId,
+          provider,
+          error 
+        });
+      }
+      // Don't throw here as we want to continue tracking even if storage fails
     }
 
     const logData = {
@@ -561,6 +608,79 @@ export class RequestTracker {
    */
   getStorage(): RequestTrackingStorage {
     return this.storage;
+  }
+
+  /**
+   * Attempt to store with retry logic
+   */
+  private async storeWithRetry<T>(
+    operation: () => Promise<T>,
+    operationName: string,
+    maxRetries: number = this.MAX_STORAGE_RETRIES
+  ): Promise<T> {
+    let lastError: Error | null = null;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const result = await operation();
+        
+        // Reset failure count on success
+        if (this.storageFailures.has(operationName)) {
+          this.storageFailures.delete(operationName);
+        }
+        
+        return result;
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error('Unknown error');
+        
+        // Track failure count
+        const currentFailures = this.storageFailures.get(operationName) || 0;
+        this.storageFailures.set(operationName, currentFailures + 1);
+        
+        if (this.shouldLog("warn")) {
+          this.logger!.warn(
+            "RequestTracker",
+            `Storage operation ${operationName} failed (attempt ${attempt}/${maxRetries})`,
+            { error: lastError.message, attempt, maxRetries }
+          );
+        }
+        
+        // Don't retry on final attempt
+        if (attempt === maxRetries) {
+          break;
+        }
+        
+        // Wait before retry with exponential backoff
+        const delay = this.STORAGE_RETRY_DELAY_MS * Math.pow(2, attempt - 1);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+    
+    // If we get here, all retries failed
+    throw lastError || new Error(`Storage operation ${operationName} failed after ${maxRetries} attempts`);
+  }
+
+  /**
+   * Check if storage is experiencing issues
+   */
+  private isStorageHealthy(): boolean {
+    const totalFailures = Array.from(this.storageFailures.values()).reduce((sum, count) => sum + count, 0);
+    const recentOperations = Math.max(totalFailures, 10); // Assume at least 10 operations
+    const failureRate = totalFailures / recentOperations;
+    
+    return failureRate < 0.5; // Consider unhealthy if >50% failure rate
+  }
+
+  /**
+   * Get storage health status
+   */
+  getStorageHealth(): { healthy: boolean; failureCount: number; details: Record<string, number> } {
+    const totalFailures = Array.from(this.storageFailures.values()).reduce((sum, count) => sum + count, 0);
+    return {
+      healthy: this.isStorageHealthy(),
+      failureCount: totalFailures,
+      details: Object.fromEntries(this.storageFailures.entries())
+    };
   }
 
   /**

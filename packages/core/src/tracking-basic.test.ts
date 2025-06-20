@@ -30,9 +30,25 @@ describe("Request Tracking - Basic Functionality", () => {
   describe("Token Usage Utilities", () => {
     it("should aggregate token usage correctly", () => {
       const usages: TokenUsage[] = [
-        { inputTokens: 100, outputTokens: 200, totalTokens: 300, estimatedCost: 0.05 },
-        { inputTokens: 50, outputTokens: 100, totalTokens: 150, estimatedCost: 0.025 },
-        { inputTokens: 25, outputTokens: 75, totalTokens: 100, reasoningTokens: 10, estimatedCost: 0.02 },
+        {
+          inputTokens: 100,
+          outputTokens: 200,
+          totalTokens: 300,
+          estimatedCost: 0.05,
+        },
+        {
+          inputTokens: 50,
+          outputTokens: 100,
+          totalTokens: 150,
+          estimatedCost: 0.025,
+        },
+        {
+          inputTokens: 25,
+          outputTokens: 75,
+          totalTokens: 100,
+          reasoningTokens: 10,
+          estimatedCost: 0.02,
+        },
       ];
 
       const aggregated = aggregateTokenUsage(usages);
@@ -53,12 +69,11 @@ describe("Request Tracking - Basic Functionality", () => {
 
       const cost = estimateCost(tokenUsage, "anthropic", {
         anthropic: {
-          inputTokenCost: 3.0,  // $3 per 1K tokens
-          outputTokenCost: 15.0, // $15 per 1K tokens
+          inputTokenCost: 3.0,
+          outputTokenCost: 15.0,
         },
       });
 
-      // (1000/1000) * 3.0 + (2000/1000) * 15.0 = 1.0 * 3.0 + 2.0 * 15.0 = 3.0 + 30.0 = 33.0
       expect(cost).toBe(33);
     });
 
@@ -98,7 +113,6 @@ describe("Request Tracking - Basic Functionality", () => {
         },
       });
 
-      // (1000/1000) * 5.0 + (1000/1000) * 15.0 + (500/1000) * 30.0 = 1.0 * 5.0 + 1.0 * 15.0 + 0.5 * 30.0 = 5.0 + 15.0 + 15.0 = 35.0
       expect(cost).toBe(35);
     });
   });
@@ -119,7 +133,7 @@ describe("Request Tracking - Basic Functionality", () => {
     it("should generate unique request IDs", () => {
       const context1 = createRequestContext("test1");
       const context2 = createRequestContext("test2");
-      
+
       expect(context1.requestId).not.toBe(context2.requestId);
     });
   });
