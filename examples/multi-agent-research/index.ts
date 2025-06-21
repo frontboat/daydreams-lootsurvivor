@@ -1,5 +1,4 @@
 import {
-  configureRequestTracking,
   createContainer,
   createDreams,
   Logger,
@@ -18,18 +17,6 @@ container.singleton("tavily", () =>
     apiKey: process.env.TAVILY_API_KEY!,
   })
 );
-
-configureRequestTracking({
-  enabled: true,
-  trackTokenUsage: true,
-  trackCosts: true,
-  costEstimation: {
-    "openrouter.chat/google/gemini-2.5-pro": {
-      inputTokenCost: 1.25,
-      outputTokenCost: 10.0,
-    },
-  },
-});
 
 // Create the multi-agent research system
 const agent = createDreams({
@@ -54,6 +41,12 @@ const agent = createDreams({
     enabled: true,
     trackTokenUsage: true,
     trackCosts: true,
+    costEstimation: {
+      "openrouter.chat/google/gemini-2.5-pro": {
+        inputTokenCost: 1.25,
+        outputTokenCost: 10.0,
+      },
+    },
   },
   debugger: async (contextId, keys, data) => {
     const [type, id] = keys;

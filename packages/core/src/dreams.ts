@@ -128,6 +128,7 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
 
   // Configure request tracking with logger integration
   if (config.requestTrackingConfig) {
+    // Pass the complete config including cost estimation to the global tracker
     configureRequestTracking(config.requestTrackingConfig, logger);
   }
 

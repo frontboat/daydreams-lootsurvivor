@@ -229,9 +229,9 @@ export interface RequestTrackingConfig {
   /** Cost estimation per model/provider */
   costEstimation?: {
     [modelProvider: string]: {
-      inputTokenCost: number; // Cost per 1K input tokens
-      outputTokenCost: number; // Cost per 1K output tokens
-      reasoningTokenCost?: number; // Cost per 1K reasoning tokens
+      inputTokenCost: number; // Cost per 1 million input tokens
+      outputTokenCost: number; // Cost per 1 million output tokens
+      reasoningTokenCost?: number; // Cost per 1 million reasoning tokens
     };
   };
   /** Storage backend for tracking data */
