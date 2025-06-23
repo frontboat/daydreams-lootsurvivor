@@ -205,6 +205,11 @@ export async function createContextState<TContext extends AnyContext>({
     model: context.model,
     maxSteps: context.maxSteps,
     maxWorkingMemorySize: context.maxWorkingMemorySize,
+    modelSettings: {
+      ...(agent.modelSettings || {}),
+      ...(context.modelSettings || {}),
+      ...(initialSettings.modelSettings || {}),
+    },
     ...initialSettings,
   };
 

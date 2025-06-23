@@ -1,6 +1,6 @@
 {
   "name": "@daydreamsai/core",
-  "version": "0.3.7",
+  "version": "0.3.8",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -39,6 +39,9 @@
   },
   "scripts": {
     "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
     "build": "tsup --dts-resolve",
     "prepublishOnly": "pnpm run build"
   },
