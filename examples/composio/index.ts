@@ -9,6 +9,7 @@ import {
   context,
   render,
   action,
+  Logger,
   validateEnv,
 } from "@daydreamsai/core";
 import { cliExtension } from "@daydreamsai/cli";
@@ -71,6 +72,6 @@ const goalContexts = context({
 createDreams({
   model: groq("deepseek-r1-distill-llama-70b"),
   extensions: [cliExtension, composio],
-  logger: LogLevel.ERROR,
+  logger: new Logger({ level: LogLevel.ERROR }),
   context: goalContexts,
 }).start({ id: "test", initialGoal: "", initialTasks: [] });

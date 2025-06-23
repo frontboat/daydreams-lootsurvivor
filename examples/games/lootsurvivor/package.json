@@ -1,5 +1,5 @@
 {
-  "name": "chains",
+  "name": "lootsurvivor",
   "module": "index.ts",
   "type": "module",
   "private": true,
@@ -13,17 +13,13 @@
     "@ai-sdk/anthropic": "catalog:",
     "@ai-sdk/openai": "catalog:",
     "@ai-sdk/groq": "catalog:",
-    "@daydreamsai/core": "workspace:*",
     "@daydreamsai/cli": "workspace:*",
+    "@daydreamsai/core": "workspace:*",
+    "@daydreamsai/chromadb": "workspace:*",
+    "@daydreamsai/discord": "workspace:*",
     "@daydreamsai/defai": "workspace:*",
-    "@daydreamsai/hyperliquid": "workspace:*",
-    "@tavily/core": "catalog:",
-    "discord.js": "catalog:",
-    "hyperliquid": "catalog:",
+    "@openrouter/ai-sdk-provider": "catalog:",
     "zod": "catalog:",
-    "chalk": "catalog:",
-    "@solana/web3.js": "1.98.2",
-    "bs58": "6.0.0",
-    "@openrouter/ai-sdk-provider": "catalog:"
+    "@lootsurvivor/core": "^0.0.2"
   }
 }
