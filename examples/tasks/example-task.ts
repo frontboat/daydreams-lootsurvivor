@@ -23,6 +23,7 @@ import {
   fetchGraphQL,
   type InferContextMemory,
   validateEnv,
+  Logger,
 } from "@daydreamsai/core";
 import { cliExtension } from "@daydreamsai/cli";
 import { deepResearch } from "../deep-research/research";
@@ -215,7 +216,7 @@ type GoalContextMemory = InferContextMemory<typeof goalContexts>;
  * Create the Dreams agent with all necessary components
  */
 createDreams({
-  logger: LogLevel.INFO,
+  logger: new Logger({ level: LogLevel.INFO }),
   debugger: async (contextId, keys, data) => {
     const [type, id] = keys;
     await Bun.write(`./logs/tasks/${contextId}/${id}-${type}.md`, data);

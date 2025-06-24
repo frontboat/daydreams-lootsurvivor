@@ -1,10 +1,10 @@
-import { expect, test, describe } from "bun:test";
+import { expect, test, describe } from "vitest";
 import { isElement, parse, type ElementNode } from "./xml";
+import { testData } from "./__tests__/utils";
 
 describe("XMLParser", () => {
   test("parses simple element", () => {
-    const xml = "<test>content</test>";
-    const nodes = parse(xml, (node) => node);
+    const nodes = parse(testData.simpleXml, (node) => node);
 
     expect(nodes).toHaveLength(1);
     expect(nodes[0]).toMatchObject({
@@ -16,8 +16,7 @@ describe("XMLParser", () => {
   });
 
   test("parses attributes", () => {
-    const xml = '<test id="123" class="main">content</test>';
-    const nodes = parse(xml, (node) => node);
+    const nodes = parse(testData.xmlWithAttributes, (node) => node);
 
     expect(nodes[0].type === "element" ? nodes[0].attributes : {}).toEqual({
       id: "123",
@@ -26,8 +25,7 @@ describe("XMLParser", () => {
   });
 
   test("parses nested elements", () => {
-    const xml = "<parent><child>content</child></parent>";
-    const nodes = parse(xml, (node, parse) => {
+    const nodes = parse(testData.nestedXml, (node, parse) => {
       if (node.type === "element") {
         return { ...node, children: parse() };
       }
@@ -42,8 +40,7 @@ describe("XMLParser", () => {
   });
 
   test("parses self-closing tags", () => {
-    const xml = "<parent><child/></parent>";
-    const nodes = parse(xml, (node, parse) => {
+    const nodes = parse(testData.selfClosingXml, (node, parse) => {
       if (node.type === "element") {
         return { ...node, children: parse() };
       }

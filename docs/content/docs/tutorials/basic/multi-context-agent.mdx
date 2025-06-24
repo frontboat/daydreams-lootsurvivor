@@ -7,12 +7,7 @@ description:
 
 ## Prerequisites
 
-Before starting, make sure you have:
-
-1. The following environment variables set up:
-   - `OPENAI_API_KEY`: Your OpenAI API key
-
-Create a file named `agent.ts`:
+- `OPENAI_API_KEY`: Your OpenAI API key
 
 ```typescript title="agent.ts"
 import { createDreams, context, input, output } from "@daydreamsai/core";
@@ -59,7 +54,6 @@ const echoContext = context({
   type: "echo",
   // No specific arguments needed for this simple context
   schema: z.object({}),
-  // Instructions that guide the LLM's behavior
   instructions:
     "You are a simple echo bot. Repeat the user's message back to them.",
 });
@@ -92,7 +86,7 @@ async function main() {
     args: {}, // Empty object since our schema requires no arguments
   });
 
-  // Agent stops when the input loop breaks (e.g., user types "exit")
+  // Agent stops when the input loop breaks
   console.log("Agent stopped.");
 }
 
@@ -104,28 +98,6 @@ main();
 
 Ensure your `OPENAI_API_KEY` environment variable is set, then run:
 
-```bash title="run the agent"
+```bash title="run-agent.sh"
 node agent.ts
 ```
-
-Your agent will start listening for input. You can interact with it in different
-ways:
-
-1. **Using the fetch context**: Ask it to fetch posts or user information from
-   the JSONPlaceholder API (a free fake REST API for testing):
-
-   - "Fetch me some posts"
-   - "Get user with ID 1"
-   - "Show me 3 posts from the API"
-
-2. **Using the echo context**: Simply change the context in the `main()`
-   function to `echoContext` to have it repeat your messages back.
-
-The JSONPlaceholder API provides fake data for testing and prototyping,
-including:
-
-- `/posts` - 100 fake blog posts
-- `/users` - 10 fake users with detailed information
-- And more endpoints for comments, albums, photos, and todos
-
----

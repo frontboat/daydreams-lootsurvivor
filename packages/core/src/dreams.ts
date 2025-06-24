@@ -94,6 +94,7 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
     extensions = [],
     model,
     reasoningModel,
+    modelSettings,
     exportTrainingData,
     trainingDataPath,
     streaming = true,
@@ -166,6 +167,7 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
     container,
     model,
     reasoningModel,
+    modelSettings,
     taskRunner,
     debugger: debug,
     context: config.context ?? undefined,
@@ -496,6 +498,21 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
 
     async stop() {
       logger.info("agent:stop", "Stopping agent");
+      booted = false;
+
+      for (const unsubscribe of Array.from(inputSubscriptions.values())) {
+        try {
+          unsubscribe();
+        } catch (error) {}
+      }
+
+      for (const { controller } of contextsRunning.values()) {
+        controller.abort();
+      }
+
+      try {
+        await serviceManager.stopAll();
+      } catch (error) {}
     },
 
     async run(params) {
@@ -651,6 +668,7 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
               workingMemory,
               logger,
               streaming,
+              contextSettings: ctxState.settings,
               onError: (error) => {
                 streamError = error;
                 // state.errors.push(error);

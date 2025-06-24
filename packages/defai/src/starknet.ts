@@ -1,4 +1,4 @@
-import { RpcProvider, Account, type Call, CallData } from "starknet";
+import { RpcProvider, Account, type Call, CallData, constants } from "starknet";
 import type { IChain } from "@daydreamsai/core";
 
 /**
@@ -29,9 +29,9 @@ export class StarknetChain implements IChain {
   /** Unique identifier for this chain implementation */
   public chainId = "starknet";
   /** RPC provider instance for connecting to Starknet */
-  private provider: RpcProvider;
+  public provider: RpcProvider;
   /** Account instance for transaction signing */
-  private account: Account;
+  public account: Account;
 
   /**
    * Creates a new StarknetChain instance
@@ -42,7 +42,9 @@ export class StarknetChain implements IChain {
     this.account = new Account(
       this.provider,
       config.address,
-      config.privateKey
+      config.privateKey,
+      undefined,
+      constants.TRANSACTION_VERSION.V3
     );
   }
 
@@ -69,9 +71,8 @@ export class StarknetChain implements IChain {
    * @returns The transaction receipt after confirmation
    * @throws Error if the transaction fails
    */
-  public async write(call: Call): Promise<any> {
+  public async write(call: Call | Call[]): Promise<any> {
     try {
-      call.calldata = CallData.compile(call.calldata || []);
       const { transaction_hash } = await this.account.execute(call);
       return this.account.waitForTransaction(transaction_hash, {
         retryInterval: 1000,

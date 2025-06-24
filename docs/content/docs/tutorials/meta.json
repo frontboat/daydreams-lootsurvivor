@@ -1,22 +1,20 @@
 {
-  "title": "Tutorials  ",
-  "description": "Guides and examples",
+  "title": "Daydreams Tutorials  ",
+  "description": "Examples and Guides",
   "icon": "Cuboid",
   "root": true,
   "pages": [
     "index",
     "---Basic---",
-    "examples",
-
-    "---Games and Blockchain---",
-    "gaming",
-
+    "basic",
     "---Social---",
     "social",
-
     "---MCP---",
     "mcp",
-
+    "---Gaming---",
+    "gaming",
+    "---Chains---",
+    "chains",
     "---Advanced---",
     "advanced"
   ]
