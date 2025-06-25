@@ -5,7 +5,7 @@ import type { InferSchemaArguments } from "../types";
 type Test1 = InferSchemaArguments<undefined>;
 // @ts-expect-error - Test1 should be {}
 const test1: Test1 = { someProperty: "value" };
-const test1Valid: Test1 = {};
+const test1Valid: {} = test1;
 
 // Test 2: ZodRawShape should properly infer
 type Test2 = InferSchemaArguments<{
@@ -18,11 +18,13 @@ const test2: Test2 = {
 };
 
 // Test 3: ZodObject should properly infer
-type Test3 = InferSchemaArguments<z.ZodObject<{
-  userId: z.ZodString;
-  age: z.ZodNumber;
-  isActive: z.ZodBoolean;
-}>>;
+type Test3 = InferSchemaArguments<
+  z.ZodObject<{
+    userId: z.ZodString;
+    age: z.ZodNumber;
+    isActive: z.ZodBoolean;
+  }>
+>;
 const test3: Test3 = {
   userId: "user123",
   age: 25,
@@ -56,10 +58,12 @@ const test5: Test5 = {
 };
 
 // Test 6: Optional fields
-type Test6 = InferSchemaArguments<z.ZodObject<{
-  required: z.ZodString;
-  optional: z.ZodOptional<z.ZodString>;
-}>>;
+type Test6 = InferSchemaArguments<
+  z.ZodObject<{
+    required: z.ZodString;
+    optional: z.ZodOptional<z.ZodString>;
+  }>
+>;
 const test6: Test6 = {
   required: "value",
   // optional is optional

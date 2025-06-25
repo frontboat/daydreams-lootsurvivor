@@ -104,8 +104,7 @@ export function formatOutput(output: OutputRef) {
 export function formatSchema(schema: any, key: string = "schema") {
   return "_type" in schema
     ? (schema as Schema).jsonSchema
-    : z.toJSONSchema("parse" in schema ? schema : z.object(schema))
-        .definitions![key];
+    : z.toJSONSchema("parse" in schema ? schema : z.object(schema));
 }
 
 /**
