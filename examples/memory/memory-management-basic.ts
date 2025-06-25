@@ -135,6 +135,14 @@ async function runBasicExample() {
     model: gpt4,
     contexts: [chatContext, assistantContext, projectContext],
     actions: [searchAction, analyzeAction, saveProgressAction],
+    inputs: {
+      text: {
+        description: "Text input",
+        handler: async (input) => {
+          return input;
+        },
+      },
+    },
   }).start();
 
   console.log("🚀 Starting memory management demo...\n");
