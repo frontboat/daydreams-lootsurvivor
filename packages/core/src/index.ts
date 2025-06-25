@@ -18,3 +18,4 @@ export * from "./tasks/index";
 export * from "./tracking";
 export * from "./logging-events";
 export * from "./logging-utils";
+export * from "./memory-managers";

@@ -39,7 +39,7 @@ import type {
   ActionCallContext,
 } from "./types";
 import pDefer, { type DeferredPromise } from "p-defer";
-import { pushToWorkingMemory } from "./context";
+import { pushToWorkingMemory, pushToWorkingMemoryWithManagement } from "./context";
 import { createEventRef, randomUUIDv7 } from "./utils";
 import { ZodError, type ZodIssue } from "zod/v4";
 
@@ -202,7 +202,12 @@ export function createEngine({
       }
 
       if (log.ref !== "output") {
-        pushToWorkingMemory(workingMemory, log);
+        if (ctxState.context.memoryManager) {
+          const updatedMemory = await pushToWorkingMemoryWithManagement(workingMemory, log, ctxState, agent);
+          Object.assign(workingMemory, updatedMemory);
+        } else {
+          pushToWorkingMemory(workingMemory, log);
+        }
       }
 
       return res;
@@ -217,7 +222,12 @@ export function createEngine({
 
       __push(createErrorEvent(errorRef), true, true);
 
-      pushToWorkingMemory(workingMemory, log);
+      if (ctxState.context.memoryManager) {
+        const updatedMemory = await pushToWorkingMemoryWithManagement(workingMemory, log, ctxState, agent);
+        Object.assign(workingMemory, updatedMemory);
+      } else {
+        pushToWorkingMemory(workingMemory, log);
+      }
     } finally {
       pushLogToSubscribers(log, true);
     }
@@ -408,7 +418,12 @@ export function createEngine({
 
         state.chain.push(ref);
 
-        pushToWorkingMemory(workingMemory, ref);
+        if (ctxState.context.memoryManager) {
+          const updatedMemory = await pushToWorkingMemoryWithManagement(workingMemory, ref, ctxState, agent);
+          Object.assign(workingMemory, updatedMemory);
+        } else {
+          pushToWorkingMemory(workingMemory, ref);
+        }
       }
 
       return refs;

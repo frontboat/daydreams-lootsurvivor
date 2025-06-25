@@ -144,6 +144,51 @@ export interface WorkingMemory {
   events: EventRef[];
 }
 
+/**
+ * Memory management configuration for contexts
+ */
+export interface MemoryManager<TContext extends AnyContext = AnyContext> {
+  /** Called when memory needs pruning due to size constraints */
+  onMemoryPressure?: (
+    ctx: AgentContext<TContext>, 
+    workingMemory: WorkingMemory,
+    agent: AnyAgent
+  ) => Promise<WorkingMemory> | WorkingMemory;
+  
+  /** Called before adding new entries to determine if pruning is needed */
+  shouldPrune?: (
+    ctx: AgentContext<TContext>, 
+    workingMemory: WorkingMemory, 
+    newEntry: AnyRef,
+    agent: AnyAgent
+  ) => Promise<boolean> | boolean;
+  
+  /** Called to compress/summarize old entries into a compact representation */
+  compress?: (
+    ctx: AgentContext<TContext>, 
+    entries: AnyRef[],
+    agent: AnyAgent
+  ) => Promise<string> | string;
+  
+  /** Maximum number of entries before triggering memory management */
+  maxSize?: number;
+  
+  /** Memory management strategy */
+  strategy?: 'fifo' | 'lru' | 'smart' | 'custom';
+  
+  /** Whether to preserve certain types of entries during pruning */
+  preserve?: {
+    /** Always keep the last N inputs */
+    recentInputs?: number;
+    /** Always keep the last N outputs */
+    recentOutputs?: number;
+    /** Always keep action calls with these names */
+    actionNames?: string[];
+    /** Custom preservation logic */
+    custom?: (entry: AnyRef, ctx: AgentContext<TContext>) => boolean;
+  };
+}
+
 export type InferSchema<T> = T extends {
   schema?: infer S extends z.ZodTypeAny;
 }
@@ -1241,6 +1286,9 @@ export interface Context<
   maxSteps?: number;
 
   maxWorkingMemorySize?: number;
+
+  /** Memory management configuration for this context */
+  memoryManager?: MemoryManager<this>;
 
   actions?: Resolver<Action[], ContextState<this>>;
 

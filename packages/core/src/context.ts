@@ -11,6 +11,8 @@ import type {
   InferSchemaArguments,
   Log,
   WorkingMemory,
+  MemoryManager,
+  AgentContext,
 } from "./types";
 import { formatContextLog } from "./formatters";
 import { memory } from "./utils";
@@ -167,6 +169,310 @@ export function pushToWorkingMemory(workingMemory: WorkingMemory, ref: AnyRef) {
     default:
       throw new Error("invalid ref");
   }
+}
+
+/**
+ * Pushes entry to working memory and applies memory management if configured
+ */
+export async function pushToWorkingMemoryWithManagement<
+  TContext extends AnyContext
+>(
+  workingMemory: WorkingMemory,
+  ref: AnyRef,
+  contextState: ContextState<TContext>,
+  agent: AnyAgent
+): Promise<WorkingMemory> {
+  pushToWorkingMemory(workingMemory, ref);
+  return await applyMemoryManagement(contextState, workingMemory, ref, agent);
+}
+
+/**
+ * Counts total entries in working memory
+ */
+export function getWorkingMemorySize(workingMemory: WorkingMemory): number {
+  return (
+    workingMemory.inputs.length +
+    workingMemory.outputs.length +
+    workingMemory.thoughts.length +
+    workingMemory.calls.length +
+    workingMemory.results.length +
+    workingMemory.runs.length +
+    workingMemory.steps.length +
+    workingMemory.events.length
+  );
+}
+
+/**
+ * Applies memory management based on context configuration
+ */
+export async function applyMemoryManagement<TContext extends AnyContext>(
+  contextState: ContextState<TContext>,
+  workingMemory: WorkingMemory,
+  newEntry: AnyRef,
+  agent: AnyAgent
+): Promise<WorkingMemory> {
+  const memoryManager = contextState.context.memoryManager;
+
+  if (!memoryManager) {
+    return workingMemory;
+  }
+
+  const agentContext: AgentContext<TContext> = {
+    id: contextState.id,
+    context: contextState.context,
+    args: contextState.args,
+    options: contextState.options,
+    settings: contextState.settings,
+    memory: contextState.memory,
+    workingMemory,
+  };
+
+  if (memoryManager.shouldPrune) {
+    const shouldPrune = await memoryManager.shouldPrune(
+      agentContext,
+      workingMemory,
+      newEntry,
+      agent
+    );
+    if (shouldPrune) {
+      if (memoryManager.onMemoryPressure) {
+        return await memoryManager.onMemoryPressure(
+          agentContext,
+          workingMemory,
+          agent
+        );
+      } else {
+        return await applyDefaultMemoryStrategy(
+          memoryManager,
+          workingMemory,
+          agentContext,
+          agent
+        );
+      }
+    }
+  }
+
+  if (memoryManager.maxSize) {
+    const currentSize = getWorkingMemorySize(workingMemory);
+    if (currentSize >= memoryManager.maxSize) {
+      if (memoryManager.onMemoryPressure) {
+        return await memoryManager.onMemoryPressure(
+          agentContext,
+          workingMemory,
+          agent
+        );
+      } else {
+        return await applyDefaultMemoryStrategy(
+          memoryManager,
+          workingMemory,
+          agentContext,
+          agent
+        );
+      }
+    }
+  }
+
+  return workingMemory;
+}
+
+/**
+ * Applies default memory management strategies
+ */
+async function applyDefaultMemoryStrategy<TContext extends AnyContext>(
+  memoryManager: MemoryManager<TContext>,
+  workingMemory: WorkingMemory,
+  agentContext: AgentContext<TContext>,
+  agent: AnyAgent
+): Promise<WorkingMemory> {
+  const strategy = memoryManager.strategy || "fifo";
+  const maxSize = memoryManager.maxSize || 100;
+  const currentSize = getWorkingMemorySize(workingMemory);
+
+  if (currentSize <= maxSize) {
+    return workingMemory;
+  }
+
+  const excessCount = currentSize - maxSize;
+
+  switch (strategy) {
+    case "fifo":
+      return applyFifoStrategy(workingMemory, excessCount, memoryManager);
+
+    case "lru":
+      return applyLruStrategy(workingMemory, excessCount, memoryManager);
+
+    case "smart":
+      return await applySmartStrategy(
+        workingMemory,
+        excessCount,
+        memoryManager,
+        agentContext,
+        agent
+      );
+
+    case "custom":
+      return workingMemory;
+
+    default:
+      return applyFifoStrategy(workingMemory, excessCount, memoryManager);
+  }
+}
+
+/**
+ * First-in-first-out memory pruning
+ */
+function applyFifoStrategy<TContext extends AnyContext>(
+  workingMemory: WorkingMemory,
+  excessCount: number,
+  memoryManager: MemoryManager<TContext>
+): WorkingMemory {
+  const allEntries = getWorkingMemoryLogs(workingMemory, true);
+  const entriesToRemove = allEntries.slice(0, excessCount);
+
+  const filteredEntries = memoryManager.preserve
+    ? applyPreservationRules(
+        entriesToRemove,
+        workingMemory,
+        memoryManager.preserve
+      )
+    : entriesToRemove;
+
+  return removeEntriesFromMemory(workingMemory, filteredEntries);
+}
+
+/**
+ * Least-recently-used memory pruning
+ */
+function applyLruStrategy<TContext extends AnyContext>(
+  workingMemory: WorkingMemory,
+  excessCount: number,
+  memoryManager: MemoryManager<TContext>
+): WorkingMemory {
+  const allEntries = getWorkingMemoryLogs(workingMemory, true);
+
+  const sortedEntries = allEntries.sort((a, b) => a.timestamp - b.timestamp);
+  const entriesToRemove = sortedEntries.slice(0, excessCount);
+
+  const filteredEntries = memoryManager.preserve
+    ? applyPreservationRules(
+        entriesToRemove,
+        workingMemory,
+        memoryManager.preserve
+      )
+    : entriesToRemove;
+
+  return removeEntriesFromMemory(workingMemory, filteredEntries);
+}
+
+/**
+ * Smart memory pruning with compression
+ */
+async function applySmartStrategy<TContext extends AnyContext>(
+  workingMemory: WorkingMemory,
+  excessCount: number,
+  memoryManager: MemoryManager<TContext>,
+  agentContext: AgentContext<TContext>,
+  agent: AnyAgent
+): Promise<WorkingMemory> {
+  const allEntries = getWorkingMemoryLogs(workingMemory, true);
+  const entriesToRemove = allEntries.slice(0, excessCount);
+
+  const filteredEntries = memoryManager.preserve
+    ? applyPreservationRules(
+        entriesToRemove,
+        workingMemory,
+        memoryManager.preserve
+      )
+    : entriesToRemove;
+
+  if (memoryManager.compress && filteredEntries.length > 0) {
+    const summary = await memoryManager.compress(
+      agentContext,
+      filteredEntries,
+      agent
+    );
+
+    const summaryThought: AnyRef = {
+      id: `memory-summary-${Date.now()}`,
+      ref: "thought",
+      content: `[Memory Summary] ${summary}`,
+      timestamp: Date.now(),
+      processed: true,
+    };
+
+    const prunedMemory = removeEntriesFromMemory(
+      workingMemory,
+      filteredEntries
+    );
+    prunedMemory.thoughts.unshift(summaryThought);
+    return prunedMemory;
+  }
+
+  return removeEntriesFromMemory(workingMemory, filteredEntries);
+}
+
+/**
+ * Applies preservation rules to protect important entries
+ */
+function applyPreservationRules<TContext extends AnyContext>(
+  entriesToRemove: AnyRef[],
+  workingMemory: WorkingMemory,
+  preserve: NonNullable<MemoryManager<TContext>["preserve"]>
+): AnyRef[] {
+  return entriesToRemove.filter((entry) => {
+    if (preserve.recentInputs && entry.ref === "input") {
+      const recentInputs = workingMemory.inputs.slice(-preserve.recentInputs);
+      if (recentInputs.some((input) => input.id === entry.id)) {
+        return false;
+      }
+    }
+
+    if (preserve.recentOutputs && entry.ref === "output") {
+      const recentOutputs = workingMemory.outputs.slice(
+        -preserve.recentOutputs
+      );
+      if (recentOutputs.some((output) => output.id === entry.id)) {
+        return false;
+      }
+    }
+
+    if (preserve.actionNames && entry.ref === "action_call") {
+      const actionCall = entry as any;
+      if (preserve.actionNames.includes(actionCall.name)) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+}
+
+/**
+ * Removes specified entries from working memory
+ */
+function removeEntriesFromMemory(
+  workingMemory: WorkingMemory,
+  entriesToRemove: AnyRef[]
+): WorkingMemory {
+  const idsToRemove = new Set(entriesToRemove.map((entry) => entry.id));
+
+  return {
+    ...workingMemory,
+    inputs: workingMemory.inputs.filter((entry) => !idsToRemove.has(entry.id)),
+    outputs: workingMemory.outputs.filter(
+      (entry) => !idsToRemove.has(entry.id)
+    ),
+    thoughts: workingMemory.thoughts.filter(
+      (entry) => !idsToRemove.has(entry.id)
+    ),
+    calls: workingMemory.calls.filter((entry) => !idsToRemove.has(entry.id)),
+    results: workingMemory.results.filter(
+      (entry) => !idsToRemove.has(entry.id)
+    ),
+    runs: workingMemory.runs.filter((entry) => !idsToRemove.has(entry.id)),
+    steps: workingMemory.steps.filter((entry) => !idsToRemove.has(entry.id)),
+    events: workingMemory.events.filter((entry) => !idsToRemove.has(entry.id)),
+  };
 }
 
 /**
