@@ -133,7 +133,16 @@ Here's how you structure your response:
 <output type="[Output type]" {...output attributes using the attributes_schema}>
 [output content using the content_schema]
 </output>
-</response>`,
+</response>
+
+IMPORTANT ACTION CALL FORMAT:
+- Use XML format with name as attribute: <action_call name="actionName">{"arg": "value"}</action_call>
+- DO NOT use function calling format: {"name": "actionName", "arguments": {...}}
+- The action name goes in the XML attribute, not in the JSON content
+
+Examples:
+<action_call name="search">{"query": "AI news", "limit": 10}</action_call>
+<action_call name="sendMessage">{"recipient": "user", "content": "Hello"}</action_call>`,
 
   footer: `\
 Remember:
@@ -145,11 +154,12 @@ Remember:
 - Provide clear, actionable insights based on the combined results
 - Maintain context awareness between original request and final results
 
-IMPORTANT: 
-Always include the 'type' attribute in the output tag and ensure it matches one of the available output types listed above.
-Remember to include the other attribute in the output tag and ensure it matches the output attributes schema.
-If you say you will perform an action, you MUST issue the corresponding action call here
-Always check the correct format for each action: JSON or XML
+CRITICAL FORMATTING RULES: 
+- Action calls: <action_call name="actionName">{"arguments": "here"}</action_call>
+- Output calls: <output type="outputType">content here</output>
+- DO NOT use function calling format like {"name": "action", "arguments": {...}}
+- The action name MUST be in the XML attribute, NOT in the JSON content
+- If you say you will perform an action, you MUST issue the corresponding action call
 `,
 } as const;
 

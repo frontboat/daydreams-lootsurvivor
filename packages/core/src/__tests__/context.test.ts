@@ -8,8 +8,8 @@ import {
   formatWorkingMemory,
   pushToWorkingMemory,
   getContextId,
-} from "./context";
-import type { WorkingMemory, AnyRef, ContextSettings } from "./types";
+} from "../context";
+import type { WorkingMemory, AnyRef, ContextSettings } from "../types";
 
 describe("Context Module", () => {
   describe("context", () => {
@@ -47,9 +47,7 @@ describe("Context Module", () => {
         type: "actionable-context",
       });
 
-      const mockActions = [
-        { name: "test-action", handler: vi.fn() },
-      ] as any;
+      const mockActions = [{ name: "test-action", handler: vi.fn() }] as any;
 
       const updatedContext = testContext.setActions(mockActions);
       expect(updatedContext.actions).toBe(mockActions);
@@ -213,7 +211,9 @@ describe("Context Module", () => {
         data: {},
       } as any;
 
-      expect(() => pushToWorkingMemory(memory, invalidRef)).toThrow("invalid ref");
+      expect(() => pushToWorkingMemory(memory, invalidRef)).toThrow(
+        "invalid ref"
+      );
     });
 
     it("should throw error for null memory", () => {
@@ -240,10 +240,10 @@ describe("Context Module", () => {
 
     beforeEach(() => {
       memory = createWorkingMemory();
-      
+
       // Add some test data with different timestamps
       const baseTime = Date.now();
-      
+
       memory.inputs.push({
         ref: "input",
         timestamp: baseTime + 100,
@@ -251,7 +251,7 @@ describe("Context Module", () => {
       } as any);
 
       memory.outputs.push({
-        ref: "output", 
+        ref: "output",
         timestamp: baseTime + 300,
         data: { response: "output 1" },
       } as any);
@@ -283,25 +283,25 @@ describe("Context Module", () => {
 
     it("should retrieve and sort all logs including thoughts", () => {
       const logs = getWorkingMemoryLogs(memory, true);
-      
+
       expect(logs).toHaveLength(6);
-      
+
       // Should be sorted by timestamp
       expect(logs[0].ref).toBe("thought"); // baseTime + 50
-      expect(logs[1].ref).toBe("input");   // baseTime + 100
-      expect(logs[2].ref).toBe("event");   // baseTime + 150  
+      expect(logs[1].ref).toBe("input"); // baseTime + 100
+      expect(logs[2].ref).toBe("event"); // baseTime + 150
       expect(logs[3].ref).toBe("action_call"); // baseTime + 200
-      expect(logs[4].ref).toBe("output");  // baseTime + 300
+      expect(logs[4].ref).toBe("output"); // baseTime + 300
       expect(logs[5].ref).toBe("action_result"); // baseTime + 400
     });
 
     it("should retrieve and sort logs excluding thoughts", () => {
       const logs = getWorkingMemoryLogs(memory, false);
-      
+
       expect(logs).toHaveLength(5);
-      
+
       // Should not include thoughts
-      const refTypes = logs.map(log => log.ref);
+      const refTypes = logs.map((log) => log.ref);
       expect(refTypes).not.toContain("thought");
       expect(refTypes).toContain("input");
       expect(refTypes).toContain("output");
@@ -313,7 +313,7 @@ describe("Context Module", () => {
     it("should handle empty memory arrays", () => {
       const emptyMemory = createWorkingMemory();
       const logs = getWorkingMemoryLogs(emptyMemory);
-      
+
       expect(logs).toEqual([]);
     });
   });
@@ -323,9 +323,9 @@ describe("Context Module", () => {
 
     beforeEach(() => {
       memory = createWorkingMemory();
-      
+
       const baseTime = Date.now();
-      
+
       memory.steps.push({
         ref: "step",
         timestamp: baseTime + 250,
@@ -341,8 +341,8 @@ describe("Context Module", () => {
 
     it("should include steps and runs in addition to regular logs", () => {
       const allLogs = getWorkingMemoryAllLogs(memory);
-      
-      const refTypes = allLogs.map(log => log.ref);
+
+      const refTypes = allLogs.map((log) => log.ref);
       expect(refTypes).toContain("step");
       expect(refTypes).toContain("run");
     });
@@ -372,7 +372,7 @@ describe("Context Module", () => {
     it("should handle complex key generation", () => {
       const testContext = context({
         type: "complex-context",
-        key: (args: { tenant: string; project: string }) => 
+        key: (args: { tenant: string; project: string }) =>
           `${args.tenant}/${args.project}`,
         schema: z.object({
           tenant: z.string(),
@@ -380,9 +380,9 @@ describe("Context Module", () => {
         }),
       });
 
-      const id = getContextId(testContext, { 
-        tenant: "acme-corp", 
-        project: "web-app" 
+      const id = getContextId(testContext, {
+        tenant: "acme-corp",
+        project: "web-app",
       });
       expect(id).toBe("complex-context:acme-corp/web-app");
     });
@@ -469,7 +469,7 @@ describe("Context Module", () => {
 
       // Test working memory management
       const memory = createWorkingMemory();
-      
+
       const userMessage: AnyRef = {
         ref: "input",
         timestamp: Date.now(),

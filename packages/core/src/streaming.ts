@@ -202,7 +202,7 @@ export function createContextStreamHandler({
   };
 
   function getOrCreateRef<
-    TLog extends Omit<PartialLog, "id" | "timestamp" | "processed">,
+    TLog extends Omit<PartialLog, "id" | "timestamp" | "processed">
   >(
     index: number,
     ref: TLog
@@ -347,7 +347,9 @@ export function createContextStreamHandler({
         const ref = getOrCreateRef(el.index, {
           ref: "action_call",
         });
+
         const { name, ...params } = el.attributes;
+
         pushLog(
           {
             ...ref,
