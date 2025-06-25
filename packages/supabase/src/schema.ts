@@ -14,17 +14,17 @@ export const SupabaseVectorRecordSchema = z.object({
   key: z.string(),
   content: z.string(),
   embedding: z.array(z.number()),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.any(), z.any()).optional(),
 });
 
 export const SupabaseVectorFilterSchema = z.object({
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.any(), z.any()).optional(),
   keys: z.array(z.string()).optional(),
 });
 
 export const SupabaseSearchResultSchema = z.object({
   key: z.string(),
   content: z.string(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.any(), z.any()).optional(),
   similarity: z.number().optional(),
 });

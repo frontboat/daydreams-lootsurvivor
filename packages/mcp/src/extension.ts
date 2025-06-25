@@ -146,7 +146,7 @@ export function createMcpExtension(servers: McpServerConfig[]) {
           serverId: z.string().describe("ID of the MCP server to query"),
           name: z.string().describe("Name of the prompt to get"),
           arguments: z
-            .record(z.any())
+            .record(z.any(), z.any())
             .optional()
             .describe("Arguments for the prompt"),
         },
@@ -218,7 +218,7 @@ export function createMcpExtension(servers: McpServerConfig[]) {
           serverId: z.string().describe("ID of the MCP server to query"),
           name: z.string().describe("Name of the tool to call"),
           arguments: z
-            .record(z.any())
+            .record(z.any(), z.any())
             .optional()
             .describe("Arguments for the tool"),
         },
