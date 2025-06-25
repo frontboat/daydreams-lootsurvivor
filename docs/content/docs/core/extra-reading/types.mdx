@@ -25,7 +25,7 @@ the types defined here frequently when writing your agent code:
     type ActionCallContext,
     type AnyAgent,
   } from "@daydreamsai/core";
-  import { z } from "zod";
+  import * as z from "zod/v4";
 
   // Define the memory structure for a specific context
   interface MyChatMemory {

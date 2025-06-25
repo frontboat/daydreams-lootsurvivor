@@ -11,7 +11,7 @@ import {
 } from "@daydreamsai/core";
 import { chat } from "./chat";
 import { groq, openai } from "./models";
-import { z } from "zod";
+import * as z from "zod/v4";
 import { createStorage, Storage } from "unstorage";
 // import localStorageDriver from "unstorage/drivers/localstorage";
 import indexedDbDriver from "unstorage/drivers/indexedb";

@@ -1,7 +1,7 @@
 import { Scraper, SearchMode, type Tweet } from "agent-twitter-client";
 import { Logger } from "@daydreamsai/core";
 import { LogLevel } from "@daydreamsai/core";
-import { z } from "zod";
+import * as z from "zod/v4";
 
 const envSchema = z.object({
   TWITTER_USERNAME: z.string(),

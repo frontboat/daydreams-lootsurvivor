@@ -1,4 +1,4 @@
-import { z, ZodSchema } from "zod";
+import { z } from "zod/v4";
 import type { Logger } from "./logger";
 import type { TaskRunner } from "./task";
 import { runAction } from "./tasks";
@@ -445,7 +445,7 @@ export async function prepareActionCall({
 
       call.data =
         "parse" in schema
-          ? (schema as ZodSchema).parse(data)
+          ? (schema as z.ZodType).parse(data)
           : schema.validate
           ? schema.validate(data)
           : data;
@@ -544,13 +544,13 @@ export function prepareOutputRef({
   if (output.schema) {
     const schema = (
       "parse" in output.schema ? output.schema : z.object(output.schema)
-    ) as z.AnyZodObject | z.ZodString;
+    ) as z.ZodType | z.ZodString;
 
     let parsedContent = outputRef.content;
 
     try {
       if (typeof parsedContent === "string") {
-        if (schema._def.typeName !== "ZodString") {
+        if (schema.constructor.name !== "ZodString") {
           parsedContent = JSON.parse(parsedContent.trim());
         }
       }
@@ -952,7 +952,7 @@ export async function handleInput({
     if (input.schema) {
       const schema = (
         "parse" in input.schema ? input.schema : z.object(input.schema)
-      ) as z.AnyZodObject | z.ZodString;
+      ) as z.ZodType | z.ZodString;
       inputRef.data = schema.parse(inputRef.content);
     } else {
       inputRef.data = z.string().parse(inputRef.content);

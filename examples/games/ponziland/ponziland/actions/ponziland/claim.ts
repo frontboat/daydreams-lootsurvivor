@@ -1,6 +1,6 @@
 import { input, context } from "@daydreamsai/core";
 import { StarknetChain } from "@daydreamsai/defai";
-import { z } from "zod";
+import * as z from "zod/v4";
 import { CallData } from "starknet";
 import type { Call } from "starknet";
 import { decodeTokenTransferEvents } from "../../utils/utils";
@@ -81,7 +81,11 @@ export const claim_all = (chain: StarknetChain) =>
               transfers = "No transfers. Do you own any lands?";
             }
 
-            const claimResult = `Claimed taxes from ${locations.length} lands. TX: ${res.transaction_hash} - Status: ${res.execution_status} - Transfers: ${JSON.stringify(transfers)}`;
+            const claimResult = `Claimed taxes from ${
+              locations.length
+            } lands. TX: ${res.transaction_hash} - Status: ${
+              res.execution_status
+            } - Transfers: ${JSON.stringify(transfers)}`;
 
             console.log("Claim completed: " + claimResult);
 

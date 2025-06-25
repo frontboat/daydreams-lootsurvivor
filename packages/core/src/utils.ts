@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod/v4";
 import type {
   Action,
   ActionCall,
@@ -29,7 +29,10 @@ export { randomUUIDv7 };
  * @returns Typed input configuration
  */
 export function input<
-  Schema extends z.AnyZodObject | z.ZodString | z.ZodRawShape = z.ZodString,
+  Schema extends
+    | z.ZodRawShape
+    | z.ZodString
+    | z.ZodObject<any, any> = z.ZodString,
   TContext extends AnyContext = AnyContext,
   TAgent extends AnyAgent = AnyAgent
 >(config: InputConfig<Schema, TContext, TAgent>) {
@@ -170,7 +173,7 @@ export function validateEnv<T extends z.ZodTypeAny>(
     return schema.parse(env);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const errors = error.errors.map((err) => `- ${err.message}`);
+      const errors = error.issues.map((err) => `- ${err.message}`);
       throw new Error(`Environment validation failed:\n${errors.join("\n")}`);
     }
     throw error;

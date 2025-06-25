@@ -1,5 +1,5 @@
 import { output } from "@daydreamsai/core";
-import { z } from "zod";
+import * as z from "zod/v4";
 
 export const artifact = output({
   attributes: {

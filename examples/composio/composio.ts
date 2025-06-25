@@ -1,7 +1,7 @@
 import OpenAI from "openai/index.mjs";
 import { OpenAIToolSet } from "composio-core";
 import { action, extension } from "@daydreamsai/core";
-import { z } from "zod";
+import * as z from "zod/v4";
 
 const openai_client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const composio_toolset = new OpenAIToolSet({
@@ -227,7 +227,9 @@ export const composio = extension({
         };
 
         const response = await makeOpenAIRequest(
-          `Execute action ${data.action_name} with parameters: ${JSON.stringify(executionMessage)}`,
+          `Execute action ${data.action_name} with parameters: ${JSON.stringify(
+            executionMessage
+          )}`,
           tools
         );
         const tool_response = await composio_toolset.handleToolCall(response);

@@ -20,7 +20,7 @@ your agent's components, typically in separate files.
 
   ```typescript
   import { action } from "@daydreamsai/core";
-  import { z } from "zod";
+  import * as z from "zod/v4";
 
   export const myAction = action({
     name: "myTool",

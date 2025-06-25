@@ -5,7 +5,7 @@
 import { createGroq } from "@ai-sdk/groq";
 import { createDreams, context, action, validateEnv } from "@daydreamsai/core";
 import { cliExtension } from "@daydreamsai/cli";
-import { z } from "zod";
+import * as z from "zod/v4";
 import chalk from "chalk";
 import { SuiChain, supportedSuiTokens } from "@daydreamsai/defai";
 import type { FaucetNetwork, SuiNetwork } from "@daydreamsai/defai";

@@ -11,7 +11,7 @@ import {
   output,
 } from "@daydreamsai/core";
 import { cliExtension } from "@daydreamsai/cli";
-import { string, z } from "zod";
+import { string, z } from "zod/v4";
 
 validateEnv(
   z.object({

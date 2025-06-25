@@ -12,7 +12,7 @@ import {
 } from "@daydreamsai/core";
 import { createChromaVectorStore } from "@daydreamsai/chromadb";
 import { createMongoMemoryStore } from "@daydreamsai/mongodb";
-import { z } from "zod";
+import * as z from "zod/v4";
 import { cliExtension } from "@daydreamsai/cli";
 
 const env = validateEnv(

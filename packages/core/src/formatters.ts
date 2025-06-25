@@ -1,4 +1,3 @@
-import zodToJsonSchema from "zod-to-json-schema";
 import type {
   AnyAction,
   ContextState,
@@ -9,7 +8,7 @@ import type {
   TemplateVariables,
   XMLElement,
 } from "./types";
-import { z } from "zod";
+import * as z from "zod/v4";
 import { type Schema } from "@ai-sdk/ui-utils";
 
 export function xml(
@@ -105,7 +104,7 @@ export function formatOutput(output: OutputRef) {
 export function formatSchema(schema: any, key: string = "schema") {
   return "_type" in schema
     ? (schema as Schema).jsonSchema
-    : zodToJsonSchema("parse" in schema ? schema : z.object(schema), key)
+    : z.toJSONSchema("parse" in schema ? schema : z.object(schema))
         .definitions![key];
 }
 

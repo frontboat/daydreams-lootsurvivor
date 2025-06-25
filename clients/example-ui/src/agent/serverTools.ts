@@ -1,7 +1,7 @@
 import { action, AnyAction, context, Schema } from "@daydreamsai/core";
 import { JSONSchema7 } from "@ai-sdk/provider";
 import { jsonSchema } from "@ai-sdk/ui-utils";
-import { z } from "zod";
+import * as z from "zod/v4";
 import type { SandboxTools } from "../../../../examples/server/tools/sandbox";
 import { ToolSet } from "../../../../examples/server/utils";
 import { Tool } from "ai";
@@ -51,8 +51,12 @@ export function createActionsFromTools(
   );
 }
 
-type InferToolResult<T extends Tool<any, any>> =
-  T extends Tool<any, infer Result> ? Result : never;
+type InferToolResult<T extends Tool<any, any>> = T extends Tool<
+  any,
+  infer Result
+>
+  ? Result
+  : never;
 
 type ClientProxy<T extends ToolSet> = {
   [K in keyof T]: (

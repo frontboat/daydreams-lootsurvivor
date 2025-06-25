@@ -1,5 +1,5 @@
 import { type LanguageModelV1, type Schema } from "ai";
-import { z, ZodObject, ZodType, type ZodRawShape } from "zod";
+import { z, ZodObject, ZodType, type ZodRawShape } from "zod/v4";
 import type { Container } from "./container";
 import type { ServiceProvider } from "./serviceProvider";
 import type { BaseMemory } from "./memory";
@@ -145,7 +145,7 @@ export interface WorkingMemory {
 }
 
 export type InferSchema<T> = T extends {
-  schema?: infer S extends z.AnyZodObject;
+  schema?: infer S extends z.ZodTypeAny;
 }
   ? z.infer<S>
   : unknown;
@@ -186,16 +186,12 @@ export type Evaluator<
   onFailure?: (ctx: Context, agent: TAgent) => Promise<void> | void;
 };
 
-export type ActionSchema =
-  | ZodRawShape
-  | z.AnyZodObject
-  | Schema<any>
-  | undefined;
+export type ActionSchema = ZodRawShape | z.ZodObject | Schema<any> | undefined;
 
 export type InferActionArguments<TSchema = undefined> =
   TSchema extends ZodRawShape
     ? z.infer<ZodObject<TSchema>>
-    : TSchema extends z.AnyZodObject
+    : TSchema extends z.ZodObject
     ? z.infer<TSchema>
     : TSchema extends Schema
     ? TSchema["_type"]
@@ -367,14 +363,14 @@ export type OutputCtxRef = AnyOutput & {
   };
 };
 
-export type OutputSchema = z.AnyZodObject | z.ZodString | ZodRawShape;
+export type OutputSchema = z.ZodTypeAny | ZodRawShape | unknown;
 
 type InferOutputSchemaParams<Schema extends OutputSchema> =
   Schema extends ZodRawShape
     ? z.infer<ZodObject<Schema>>
-    : Schema extends z.AnyZodObject | z.ZodString
+    : Schema extends z.ZodTypeAny
     ? z.infer<Schema>
-    : never;
+    : unknown;
 
 export type OutputRefResponse = Pick<OutputRef, "data" | "params"> & {
   processed?: boolean;
@@ -428,8 +424,8 @@ export type AnyActionWithContext<Ctx extends Context<any, any, any, any, any>> =
  * @template Context - Context type for input handling
  */
 export type Input<
-  Schema extends z.AnyZodObject | z.ZodString | z.ZodRawShape =
-    | z.AnyZodObject
+  Schema extends z.ZodObject | z.ZodString | z.ZodRawShape =
+    | z.ZodObject
     | z.ZodString
     | z.ZodRawShape,
   TContext extends AnyContext = AnyContext,
@@ -772,7 +768,7 @@ interface AgentDef<TContext extends AnyContext = AnyContext> {
   /**
    * A record of event schemas for the agent.
    */
-  events: Record<string, z.AnyZodObject>;
+  events: Record<string, z.ZodObject>;
 
   /**
    * A record of expert configurations for the agent.
@@ -997,8 +993,8 @@ export type Config<TContext extends AnyContext = AnyContext> = Partial<
 
 /** Configuration type for inputs without type field */
 export type InputConfig<
-  Schema extends z.AnyZodObject | z.ZodString | z.ZodRawShape =
-    | z.AnyZodObject
+  Schema extends z.ZodObject | z.ZodString | z.ZodRawShape =
+    | z.ZodObject
     | z.ZodString
     | z.ZodRawShape,
   TContext extends AnyContext = AnyContext,
@@ -1073,13 +1069,12 @@ export type InferContextOptions<TContext extends AnyContext> =
  * @template Exports - Type of exported data
  */
 
-export type InferSchemaArguments<
-  Schema extends z.ZodTypeAny | ZodRawShape | undefined = z.ZodTypeAny
-> = Schema extends ZodRawShape
-  ? z.infer<ZodObject<Schema>>
-  : Schema extends z.ZodTypeAny
-  ? z.infer<Schema>
-  : never;
+export type InferSchemaArguments<Schema = undefined> =
+  Schema extends ZodRawShape
+    ? z.infer<ZodObject<Schema>>
+    : Schema extends z.ZodTypeAny
+    ? z.infer<Schema>
+    : never;
 
 interface ContextConfigApi<
   TMemory = any,
@@ -1099,10 +1094,7 @@ interface ContextConfigApi<
     actions: TActions
   ): Context<TMemory, Schema, Ctx, TActions, Events>;
   setInputs<
-    TSchemas extends Record<
-      string,
-      z.AnyZodObject | z.ZodString | z.ZodRawShape
-    >
+    TSchemas extends Record<string, z.ZodObject | z.ZodString | z.ZodRawShape>
   >(inputs: {
     [K in keyof TSchemas]: InputConfig<
       TSchemas[K],
@@ -1111,10 +1103,7 @@ interface ContextConfigApi<
     >;
   }): Context<TMemory, Schema, Ctx, Actions, Events>;
   setOutputs<
-    TSchemas extends Record<
-      string,
-      z.AnyZodObject | z.ZodString | z.ZodRawShape
-    >
+    TSchemas extends Record<string, z.ZodObject | z.ZodString | z.ZodRawShape>
   >(outputs: {
     [K in keyof TSchemas]: OutputConfig<
       TSchemas[K],

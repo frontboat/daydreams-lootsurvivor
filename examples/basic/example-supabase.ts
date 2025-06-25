@@ -14,7 +14,7 @@ import {
   validateEnv,
 } from "@daydreamsai/core";
 import { createSupabaseBaseMemory } from "@daydreamsai/supabase";
-import { z } from "zod";
+import * as z from "zod/v4";
 import { cliExtension } from "@daydreamsai/cli";
 import { openrouter } from "@openrouter/ai-sdk-provider";
 

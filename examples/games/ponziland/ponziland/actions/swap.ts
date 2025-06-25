@@ -1,7 +1,7 @@
 import { action, type ActionSchema } from "@daydreamsai/core";
 import { StarknetChain } from "@daydreamsai/defai";
 import type { Agent } from "@daydreamsai/core";
-import { z } from "zod";
+import * as z from "zod/v4";
 import { executeSwap as executeAvnuSwap, fetchQuotes } from "@avnu/avnu-sdk";
 
 import { env } from "../../env";
@@ -96,7 +96,9 @@ export const swap = (chain: StarknetChain) =>
       } catch (error) {
         console.error("Swap failed:", error);
         throw new Error(
-          `Swap failed: ${error instanceof Error ? error.message : "Unknown error"}`
+          `Swap failed: ${
+            error instanceof Error ? error.message : "Unknown error"
+          }`
         );
       }
     },

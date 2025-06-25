@@ -13,7 +13,7 @@ description:
 import { createDreams, context, input, output } from "@daydreamsai/core";
 import { cliExtension } from "@daydreamsai/cli";
 import { openai } from "@ai-sdk/openai";
-import { z } from "zod";
+import * as z from "zod/v4";
 
 const fetchContext = context({
   type: "fetch",

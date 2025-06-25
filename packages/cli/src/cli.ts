@@ -1,6 +1,6 @@
 import * as readline from "readline/promises";
 import { service, context, input, extension, output } from "@daydreamsai/core";
-import { z } from "zod";
+import * as z from "zod/v4";
 
 export const readlineService = service({
   register(container) {

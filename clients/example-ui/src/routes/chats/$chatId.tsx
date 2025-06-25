@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { LogsList } from "@/components/message-list";
 import { Textarea } from "@/components/ui/textarea";
-import { z } from "zod";
+import * as z from "zod/v4";
 import { ChatSidebar } from "@/components/chat-sidebar";
 import { getModel, ModelSelect } from "@/components/model-select";
 import { useSendMessage } from "@/hooks/use-send-message";

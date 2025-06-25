@@ -41,7 +41,7 @@ import type {
 import pDefer, { type DeferredPromise } from "p-defer";
 import { pushToWorkingMemory } from "./context";
 import { createEventRef, randomUUIDv7 } from "./utils";
-import { ZodError, type ZodIssue } from "zod";
+import { ZodError, type ZodIssue } from "zod/v4";
 
 type CallOptions = Partial<{
   templateResolvers: Record<string, TemplateResolver>;
@@ -534,7 +534,9 @@ function prettifyZodError(error: ZodError): string {
 
   const errorMessages = error.issues.map((issue: ZodIssue) => {
     const pathString = issue.path.join(".");
-    return `- Field \`${pathString || "object root"}\`: ${issue.message} (Code: ${issue.code})`;
+    return `- Field \`${pathString || "object root"}\`: ${
+      issue.message
+    } (Code: ${issue.code})`;
   });
 
   return `Validation Errors:\n${errorMessages.join("\n")}`;

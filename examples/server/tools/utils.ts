@@ -1,5 +1,5 @@
 import { tool } from "ai";
-import { z } from "zod";
+import * as z from "zod/v4";
 import { createToolSet } from "../utils";
 import { createContainer, http } from "@daydreamsai/core";
 import { tavily, type TavilyClient } from "@tavily/core";

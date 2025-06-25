@@ -13,7 +13,7 @@ import {
   output,
   xml,
 } from "@daydreamsai/core";
-import { z } from "zod";
+import * as z from "zod/v4";
 import { artifact, secureForm } from "./outputs";
 import { planner } from "./planner";
 import { sandboxContext } from "./sandbox";

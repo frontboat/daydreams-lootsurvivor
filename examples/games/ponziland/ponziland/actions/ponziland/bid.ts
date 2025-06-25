@@ -1,6 +1,6 @@
 import { action, type ActionSchema } from "@daydreamsai/core";
 import { StarknetChain } from "@daydreamsai/defai";
-import { z } from "zod";
+import * as z from "zod/v4";
 import { type Abi, CallData, Contract, cairo } from "starknet";
 import { type Call } from "starknet";
 import { indexToPosition } from "../../utils/utils";

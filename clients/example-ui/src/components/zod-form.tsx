@@ -11,7 +11,7 @@ import {
   ZodEnum,
   ZodOptional,
   ZodDefault,
-} from "zod";
+} from "zod/v4";
 
 // Helper to get the underlying type if it's Optional or Default
 function getBaseZodType(schema: ZodTypeAny): ZodTypeAny {

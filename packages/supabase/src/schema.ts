@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod/v4";
 
 export const SupabaseVectorStoreSchema = z.object({
   url: z.string().url(),

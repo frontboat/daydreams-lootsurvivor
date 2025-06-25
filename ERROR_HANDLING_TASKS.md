@@ -1,12 +1,17 @@
 # Error Handling & Recovery Implementation Tasks
 
 ## Overview
-This document outlines the implementation tasks for improving error handling and recovery in the Daydreams framework, addressing the issues identified in CLAUDE.md.
+
+This document outlines the implementation tasks for improving error handling and
+recovery in the Daydreams framework, addressing the issues identified in
+CLAUDE.md.
 
 ## Phase 1: Foundation (Week 1-2)
 
 ### 1.1 Create Typed Error Classes
+
 - [ ] Create `packages/core/src/errors/base.ts`
+
   - [ ] Define `DaydreamsError` base class extending Error
   - [ ] Add error codes enum (`ERROR_CODES`)
   - [ ] Include context information (contextId, step, timestamp)
@@ -22,7 +27,9 @@ This document outlines the implementation tasks for improving error handling and
   - [ ] `TimeoutError` - For operation timeouts
 
 ### 1.2 Error Context and Metadata
+
 - [ ] Add error metadata types in `packages/core/src/types.ts`:
+
   ```typescript
   interface ErrorMetadata {
     code: ERROR_CODES;
@@ -46,11 +53,13 @@ This document outlines the implementation tasks for improving error handling and
 ## Phase 2: Retry Mechanisms (Week 2-3)
 
 ### 2.1 Retry Configuration
+
 - [ ] Add retry configuration to `packages/core/src/types.ts`:
+
   ```typescript
   interface RetryConfig {
     maxAttempts: number;
-    backoffStrategy: 'exponential' | 'linear' | 'fixed';
+    backoffStrategy: "exponential" | "linear" | "fixed";
     initialDelay: number;
     maxDelay: number;
     retryableErrors: ERROR_CODES[];
@@ -62,12 +71,15 @@ This document outlines the implementation tasks for improving error handling and
 - [ ] Add per-model retry configuration
 
 ### 2.2 Implement Retry Logic
+
 - [ ] Create `packages/core/src/retry/retry-manager.ts`:
+
   - [ ] `RetryManager` class with backoff strategies
   - [ ] Jitter for avoiding thundering herd
   - [ ] Circuit breaker pattern for repeated failures
 
 - [ ] Update `packages/core/src/tasks/index.ts`:
+
   - [ ] Wrap `runGenerate` with retry logic
   - [ ] Add retry for rate limit errors (429)
   - [ ] Add retry for network timeouts
@@ -79,6 +91,7 @@ This document outlines the implementation tasks for improving error handling and
   - [ ] Track retry attempts in error metadata
 
 ### 2.3 LLM-Specific Retry Handling
+
 - [ ] Create `packages/core/src/errors/llm-errors.ts`:
   - [ ] Rate limit detection and handling
   - [ ] Model-specific error parsing
@@ -88,7 +101,9 @@ This document outlines the implementation tasks for improving error handling and
 ## Phase 3: Error Recovery (Week 3-4)
 
 ### 3.1 State Recovery Mechanisms
+
 - [ ] Create `packages/core/src/recovery/checkpoint.ts`:
+
   - [ ] `CheckpointManager` for saving execution state
   - [ ] Checkpoint creation before risky operations
   - [ ] State restoration from checkpoint
@@ -99,7 +114,9 @@ This document outlines the implementation tasks for improving error handling and
   - [ ] Add state validation after recovery
 
 ### 3.2 Recovery Strategies
+
 - [ ] Create `packages/core/src/recovery/strategies.ts`:
+
   - [ ] `RecoveryStrategy` interface
   - [ ] `SkipAndContinue` - Skip failed action
   - [ ] `RetryFromCheckpoint` - Restore and retry
@@ -112,6 +129,7 @@ This document outlines the implementation tasks for improving error handling and
   - [ ] Implement recovery state machine
 
 ### 3.3 Graceful Degradation
+
 - [ ] Implement fallback mechanisms:
   - [ ] Fallback to simpler prompts on repeated failures
   - [ ] Reduce context size if token limit hit
@@ -121,7 +139,9 @@ This document outlines the implementation tasks for improving error handling and
 ## Phase 4: Error Aggregation & Reporting (Week 4-5)
 
 ### 4.1 Error Collection System
+
 - [ ] Create `packages/core/src/errors/error-collector.ts`:
+
   - [ ] Centralized error collection
   - [ ] Error deduplication
   - [ ] Error categorization
@@ -133,7 +153,9 @@ This document outlines the implementation tasks for improving error handling and
   - [ ] Track error frequency and patterns
 
 ### 4.2 Error Reporting
+
 - [ ] Create `packages/core/src/errors/error-reporter.ts`:
+
   - [ ] Error summary generation
   - [ ] Error report formatting (JSON, HTML, Markdown)
   - [ ] Integration points for external services
@@ -143,17 +165,12 @@ This document outlines the implementation tasks for improving error handling and
   - [ ] `agent.getErrorSummary()`
   - [ ] `agent.clearErrors()`
 
-### 4.3 Developer Dashboard
-- [ ] Create error dashboard components:
-  - [ ] Real-time error feed
-  - [ ] Error statistics and trends
-  - [ ] Recovery success rates
-  - [ ] Performance impact analysis
-
 ## Phase 5: Integration & Testing (Week 5-6)
 
 ### 5.1 Update Existing Code
+
 - [ ] Refactor `packages/core/src/engine.ts`:
+
   - [ ] Replace try-catch blocks with typed errors
   - [ ] Integrate retry manager
   - [ ] Add recovery checkpoints
@@ -164,7 +181,9 @@ This document outlines the implementation tasks for improving error handling and
   - [ ] Implement recovery strategies
 
 ### 5.2 Testing Infrastructure
+
 - [ ] Create test utilities in `packages/core/src/__tests__/errors/`:
+
   - [ ] Error simulation helpers
   - [ ] Retry behavior tests
   - [ ] Recovery scenario tests
@@ -177,7 +196,9 @@ This document outlines the implementation tasks for improving error handling and
   - [ ] Error reporting accuracy
 
 ### 5.3 Documentation
+
 - [ ] Create error handling guide:
+
   - [ ] Error types and when they occur
   - [ ] Recovery strategies and configuration
   - [ ] Best practices for error handling
@@ -191,6 +212,7 @@ This document outlines the implementation tasks for improving error handling and
 ## Phase 6: Monitoring & Observability (Week 6)
 
 ### 6.1 Error Metrics
+
 - [ ] Add error tracking to structured logger:
   - [ ] Error rate by type
   - [ ] Recovery success rate
@@ -198,6 +220,7 @@ This document outlines the implementation tasks for improving error handling and
   - [ ] Error resolution time
 
 ### 6.2 Alerts and Notifications
+
 - [ ] Create alert system:
   - [ ] Critical error thresholds
   - [ ] Repeated failure detection
@@ -205,18 +228,21 @@ This document outlines the implementation tasks for improving error handling and
   - [ ] Performance degradation warnings
 
 ## Success Metrics
+
 - [ ] 90% of transient errors automatically recovered
 - [ ] Average error resolution time < 5 seconds
 - [ ] Zero data loss during error recovery
 - [ ] 50% reduction in error-related user reports
 
 ## Dependencies
+
 - Current error handling code audit
 - Agreement on error taxonomy
 - Performance baseline measurements
 - Testing environment setup
 
 ## Risks
+
 - Breaking changes to existing error handling
 - Performance overhead from checkpointing
 - Complexity increase for developers

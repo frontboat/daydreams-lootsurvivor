@@ -8,7 +8,7 @@ import {
 } from "@daydreamsai/core";
 import { createChromaVectorStore } from "@daydreamsai/chromadb";
 import { deepResearch } from "../deep-research/research";
-import { z } from "zod";
+import * as z from "zod/v4";
 import { tavily } from "@tavily/core";
 import { anthropic } from "@ai-sdk/anthropic";
 import { openai } from "@ai-sdk/openai";

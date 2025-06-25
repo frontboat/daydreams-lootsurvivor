@@ -1,4 +1,4 @@
-import { z, type ZodRawShape } from "zod";
+import { z, type ZodRawShape } from "zod/v4";
 import type {
   AnyAction,
   AnyAgent,
@@ -203,7 +203,8 @@ export async function createContextState<TContext extends AnyContext>({
   const id = key ? [context.type, key].join(":") : context.type;
 
   // Log structured context create event if structured logger is available
-  const structuredLogger = agent.container?.resolve<StructuredLogger>("structuredLogger");
+  const structuredLogger =
+    agent.container?.resolve<StructuredLogger>("structuredLogger");
   if (structuredLogger) {
     structuredLogger.logEvent({
       eventType: LogEventType.CONTEXT_CREATE,
@@ -299,9 +300,10 @@ type ContextStateSnapshot = {
 
 export async function saveContextState(agent: AnyAgent, state: ContextState) {
   const { id, context, key, args, settings, contexts } = state;
-  
+
   // Log structured context update event
-  const structuredLogger = agent.container?.resolve<StructuredLogger>("structuredLogger");
+  const structuredLogger =
+    agent.container?.resolve<StructuredLogger>("structuredLogger");
   if (structuredLogger) {
     structuredLogger.logEvent({
       eventType: LogEventType.CONTEXT_UPDATE,

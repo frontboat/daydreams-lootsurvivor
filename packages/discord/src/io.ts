@@ -10,7 +10,7 @@ import {
   type Channel,
 } from "discord.js";
 import { Logger, LogLevel } from "@daydreamsai/core";
-import { z } from "zod";
+import * as z from "zod/v4";
 
 export interface DiscordCredentials {
   discord_token: string;
@@ -19,7 +19,7 @@ export interface DiscordCredentials {
 
 export interface AttachmentData {
   attachment: string; // URL or file path
-  name?: string;      // Optional filename 
+  name?: string; // Optional filename
   description?: string; // Optional description
 }
 
@@ -39,13 +39,19 @@ export const messageSchema = z.object({
     .string()
     .optional()
     .describe("The conversation ID (if applicable)"),
-  files: z.array(
-    z.object({
-      attachment: z.string().describe("URL or file path of the attachment"),
-      name: z.string().optional().describe("Filename of the attachment"),
-      description: z.string().optional().describe("Description of the attachment")
-    })
-  ).optional().describe("Files to attach to the message"),
+  files: z
+    .array(
+      z.object({
+        attachment: z.string().describe("URL or file path of the attachment"),
+        name: z.string().optional().describe("Filename of the attachment"),
+        description: z
+          .string()
+          .optional()
+          .describe("Description of the attachment"),
+      })
+    )
+    .optional()
+    .describe("Files to attach to the message"),
 });
 
 export class DiscordClient {
@@ -104,11 +110,11 @@ export class DiscordClient {
       }
 
       // Extract attachments if any
-      const attachments = message.attachments.map(att => ({
+      const attachments = message.attachments.map((att) => ({
         url: att.url,
         filename: att.name || "unknown",
         contentType: att.contentType || "application/octet-stream",
-        size: att.size
+        size: att.size,
       }));
 
       onData({
@@ -119,7 +125,7 @@ export class DiscordClient {
         contentId: message.id,
         data: {
           content: message.content,
-          attachments: attachments.length > 0 ? attachments : undefined
+          attachments: attachments.length > 0 ? attachments : undefined,
         },
       });
     };
@@ -262,9 +268,13 @@ export class DiscordClient {
     error?: string;
   }> {
     try {
-      this.logger.info("DiscordClient.sendMessageWithAttachments", "Sending message with attachments", {
-        data,
-      });
+      this.logger.info(
+        "DiscordClient.sendMessageWithAttachments",
+        "Sending message with attachments",
+        {
+          data,
+        }
+      );
 
       if (!data?.channelId || !data?.content) {
         return {
@@ -334,7 +344,7 @@ export class DiscordClient {
         if (chunks.length > 0 && data.files && data.files.length > 0) {
           sentMessage = await channel.send({
             content: chunks[0],
-            files: data.files
+            files: data.files,
           });
 
           // Send the rest of the chunks as normal messages
@@ -352,7 +362,7 @@ export class DiscordClient {
         if (data.files && data.files.length > 0) {
           sentMessage = await channel.send({
             content: data.content,
-            files: data.files
+            files: data.files,
           });
         } else {
           sentMessage = await channel.send(data.content);
@@ -366,9 +376,13 @@ export class DiscordClient {
         error: undefined,
       };
     } catch (error) {
-      this.logger.error("DiscordClient.sendMessageWithAttachments", "Error sending message with attachments", {
-        error,
-      });
+      this.logger.error(
+        "DiscordClient.sendMessageWithAttachments",
+        "Error sending message with attachments",
+        {
+          error,
+        }
+      );
       return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",

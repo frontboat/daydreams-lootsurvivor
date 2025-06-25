@@ -101,7 +101,7 @@ Create a file named `agent.ts`:
 import { createDreams, context, input, output } from "@daydreamsai/core";
 import { cliExtension } from "@daydreamsai/cli";
 import { openai } from "@ai-sdk/openai";
-import { z } from "zod";
+import * as z from "zod/v4";
 
 // 1. Define the main context for our agent
 const echoContext = context({

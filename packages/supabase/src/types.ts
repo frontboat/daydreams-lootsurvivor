@@ -1,5 +1,5 @@
 import { type SupabaseClient } from "@supabase/supabase-js";
-import { z } from "zod";
+import * as z from "zod/v4";
 import type { SupabaseVectorStoreSchema } from "./schema";
 
 export type SupabaseVectorStoreConfig = z.infer<

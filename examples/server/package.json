@@ -11,7 +11,8 @@
     "@daydreamsai/mcp": "workspace:*",
     "@e2b/code-interpreter": "catalog:",
     "h3": "catalog:",
-    "unstorage": "catalog:"
+    "unstorage": "catalog:",
+    "zod": "catalog:"
   },
   "peerDependencies": {
     "typescript": "catalog:"

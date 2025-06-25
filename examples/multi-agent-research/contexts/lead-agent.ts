@@ -1,5 +1,5 @@
 import { context } from "@daydreamsai/core";
-import { z } from "zod";
+import * as z from "zod/v4";
 import type { ResearchSession, ResearchPlan } from "../types/research-types.js";
 
 import { openrouter } from "@openrouter/ai-sdk-provider";
