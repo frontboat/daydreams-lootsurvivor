@@ -7,7 +7,9 @@
     "examples/*"
   ],
   "scripts": {
-    "test": "bun run packages/core",
+    "test": "pnpm -r test",
+    "test:core": "pnpm --filter @daydreamsai/core test",
+    "test:watch": "pnpm -r test --watch",
     "build:packages": "./scripts/build.sh",
     "build:packages:watch": "./scripts/build.sh --watch",
     "release": "./scripts/release.sh",

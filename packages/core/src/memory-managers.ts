@@ -70,7 +70,14 @@ Summary:`;
 
         return response.text.trim();
       } catch (error) {
-        agent.logger.warn("AI compression failed:", JSON.stringify(error));
+        agent.logger.warn(
+          "AI compression failed:",
+          JSON.stringify({
+            error: error instanceof Error ? error.message : "Unknown error",
+            contextId: ctx.id,
+            entriesCount: entries.length,
+          })
+        );
         return `Compressed ${entries.length} entries (${
           entries.filter((e) => e.ref === "input").length
         } inputs, ${entries.filter((e) => e.ref === "output").length} outputs)`;
@@ -122,16 +129,26 @@ export function contextAwareManager(options: {
         return false;
       };
 
+      const preservedInputs = workingMemory.inputs.filter(preserveEntry);
+      const recentInputs = workingMemory.inputs.slice(
+        -Math.max(5, options.maxSize * 0.2)
+      );
+      const combinedInputs = [
+        ...new Set([...preservedInputs, ...recentInputs]),
+      ];
+
+      const preservedOutputs = workingMemory.outputs.filter(preserveEntry);
+      const recentOutputs = workingMemory.outputs.slice(
+        -Math.max(5, options.maxSize * 0.2)
+      );
+      const combinedOutputs = [
+        ...new Set([...preservedOutputs, ...recentOutputs]),
+      ];
+
       return {
         ...workingMemory,
-        inputs: [
-          ...workingMemory.inputs.filter(preserveEntry),
-          ...workingMemory.inputs.slice(-Math.max(5, options.maxSize * 0.2)),
-        ],
-        outputs: [
-          ...workingMemory.outputs.filter(preserveEntry),
-          ...workingMemory.outputs.slice(-Math.max(5, options.maxSize * 0.2)),
-        ],
+        inputs: combinedInputs,
+        outputs: combinedOutputs,
         thoughts: workingMemory.thoughts.slice(
           -Math.max(3, options.maxSize * 0.1)
         ),
