@@ -114,7 +114,7 @@ export const runGenerate = task({
         role: "assistant",
         content: isReasoningModel
           ? modelsResponseConfig[model.modelId]?.thinkTag ?? "<think>"
-          : "<response>",
+          : "<response>\n<reasoning>",
       });
 
     if (workingMemory.currentImage) {

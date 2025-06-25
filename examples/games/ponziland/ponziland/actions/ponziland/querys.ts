@@ -1,7 +1,7 @@
 import { action, type ActionSchema } from "@daydreamsai/core";
 import { StarknetChain } from "@daydreamsai/defai";
 import type { Agent } from "@daydreamsai/core";
-import { z } from "zod";
+import * as z from "zod/v4";
 import { Abi, Contract } from "starknet";
 import { CONTEXT } from "../../contexts/ponziland-context";
 import {

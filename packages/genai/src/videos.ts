@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod/v4";
 import { action, type LanguageModelV1, type Agent } from "@daydreamsai/core";
 import {
   generateText,

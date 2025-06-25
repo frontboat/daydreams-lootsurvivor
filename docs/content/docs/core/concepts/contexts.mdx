@@ -191,7 +191,7 @@ Here's a simple todo list context:
 
 ```typescript title="todo-context.ts"
 import { context } from "@daydreamsai/core";
-import { z } from "zod";
+import * as z from "zod/v4";
 
 // Define what this context remembers
 interface TodoMemory {

@@ -1,5 +1,5 @@
 import { type CoreMessage } from "ai";
-import zodToJsonSchema from "zod-to-json-schema";
+import { z } from "zod/v4";
 import { randomUUIDv7, type RouterTypes } from "bun";
 import { api, type ToolSet } from "../utils";
 
@@ -24,8 +24,9 @@ export function createToolsApi<Tools extends ToolSet>({
             tools: state.tools.map((tool) => ({
               name: tool.name,
               description: tool.description,
-              parameters: zodToJsonSchema(tool.parameters, "schema")
-                .definitions!["schema"],
+              parameters: z.toJSONSchema(tool.parameters).definitions![
+                "schema"
+              ],
             })),
           });
         },

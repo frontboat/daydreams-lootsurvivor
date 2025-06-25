@@ -2,7 +2,7 @@ import { createDreams, Logger, LogLevel, validateEnv } from "@daydreamsai/core";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { discord } from "@daydreamsai/discord";
 import { genai } from "@daydreamsai/genai";
-import { z } from "zod";
+import * as z from "zod/v4";
 
 const env = validateEnv(
   z.object({

@@ -177,7 +177,7 @@ Here's a simple input that listens for file changes:
 
 ```typescript title="file-watcher-input.ts"
 import { input } from "@daydreamsai/core";
-import { z } from "zod";
+import * as z from "zod/v4";
 import fs from "fs";
 
 export const fileWatcher = input({

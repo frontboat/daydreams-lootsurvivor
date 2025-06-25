@@ -9,7 +9,7 @@ import {
   LogLevel,
   validateEnv,
 } from "@daydreamsai/core";
-import { z } from "zod";
+import * as z from "zod/v4";
 
 const env = validateEnv(
   z.object({

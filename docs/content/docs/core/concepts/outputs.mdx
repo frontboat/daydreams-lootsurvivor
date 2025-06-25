@@ -154,7 +154,7 @@ Here's a simple output that saves messages to a file:
 
 ```typescript title="file-output.ts"
 import { output } from "@daydreamsai/core";
-import { z } from "zod";
+import * as z from "zod/v4";
 import fs from "fs/promises";
 
 export const saveToFile = output({

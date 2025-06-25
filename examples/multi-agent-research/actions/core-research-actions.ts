@@ -1,5 +1,5 @@
 import { action } from "@daydreamsai/core";
-import { z } from "zod";
+import * as z from "zod/v4";
 import {
   researchMemory,
   saveSubagentFindings,
@@ -44,32 +44,11 @@ export const executeResearchSearchesAction = action({
   async handler({ taskId, searchQueries, synthesisInstructions }, ctx, agent) {
     try {
       ctx.memory.status = "searching";
-      ctx.memory.searchQueries = searchQueries;
-      ctx.memory.findings = ctx.memory.findings || [];
-      ctx.memory.sources = ctx.memory.sources || [];
-
-      // Get Tavily API key
-      const tavilyApiKey = process.env.TAVILY_API_KEY;
-      if (!tavilyApiKey) {
-        ctx.memory.status = "failed";
-        return `<error>
-❌ TAVILY_API_KEY environment variable not found
-
-<setup_instructions>
-**Setup Instructions:**
-1. Get API key from https://tavily.com
-2. Set environment variable: export TAVILY_API_KEY="your-key-here"
-3. Restart the application
-</setup_instructions>
-
-<status>Please set your Tavily API key to enable research searches</status>
-</error>`;
-      }
 
       // Initialize Tavily client
       const { tavily } = await import("@tavily/core");
       const tavilyClient = tavily({
-        apiKey: tavilyApiKey,
+        apiKey: process.env.TAVILY_API_KEY,
       });
 
       // Get adaptive search configuration

@@ -1,6 +1,6 @@
 import * as readline from "readline/promises";
 import { context } from "../context";
-import { z } from "zod";
+import * as z from "zod/v4";
 import { extension, input, output } from "../utils";
 import { formatMsg } from "../formatters";
 import { type AnyAgent } from "../types";

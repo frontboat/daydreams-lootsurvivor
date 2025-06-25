@@ -4,7 +4,7 @@ import {
   type Extension,
   type AnyAgent,
 } from "@daydreamsai/core";
-import { z } from "zod";
+import * as z from "zod/v4";
 import { promises as fs } from "fs";
 import path from "path";
 

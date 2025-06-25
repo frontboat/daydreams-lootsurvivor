@@ -1,7 +1,7 @@
 import { createGroq } from "@ai-sdk/groq";
 import { twitter } from "@daydreamsai/twitter";
 import { createDreams, LogLevel, validateEnv } from "@daydreamsai/core";
-import { z } from "zod";
+import * as z from "zod/v4";
 
 const env = validateEnv(
   z.object({

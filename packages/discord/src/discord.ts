@@ -1,14 +1,14 @@
-import { z } from "zod";
+import * as z from "zod/v4";
 import {
   extension,
   input,
   output,
-  validateEnv /* action, type LanguageModelV1 */,
+  validateEnv,
+  context,
+  service,
 } from "@daydreamsai/core";
 import { Events, type Message } from "discord.js";
 import { DiscordClient } from "./io";
-import { context } from "@daydreamsai/core";
-import { service } from "@daydreamsai/core";
 
 const envSchema = z.object({
   DISCORD_TOKEN: z.string(),

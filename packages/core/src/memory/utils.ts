@@ -9,7 +9,7 @@ import type {
   ActionCall,
   AnyAction,
 } from "../types";
-import { z } from "zod";
+import * as z from "zod/v4";
 import { v7 as randomUUIDv7 } from "uuid";
 
 // Check if we're in a browser environment

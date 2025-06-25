@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { TaskRunner, task } from "./task";
-import { delay, ExecutionTracker } from "./__tests__/utils";
+import { TaskRunner, task } from "../task";
+import { delay, ExecutionTracker } from "../__tests__/utils";
 
 describe("TaskRunner", () => {
   let runner: TaskRunner;
@@ -24,7 +24,7 @@ describe("TaskRunner", () => {
     });
 
     const mediumTask = task({
-      key: "medium-task", 
+      key: "medium-task",
       handler: async () => {
         tracker.track(2);
         await delay(100);
@@ -68,7 +68,7 @@ describe("TaskRunner", () => {
     });
 
     const mediumPriorityTask = task({
-      key: "medium", 
+      key: "medium",
       handler: async () => {
         await delay(20);
         executionOrder.push(2);
@@ -106,7 +106,9 @@ describe("TaskRunner", () => {
       },
     });
 
-    await expect(runner.enqueueTask(errorTask, {})).rejects.toThrow("Task failed");
+    await expect(runner.enqueueTask(errorTask, {})).rejects.toThrow(
+      "Task failed"
+    );
   });
 
   it("should maintain concurrency limit", async () => {
@@ -124,7 +126,7 @@ describe("TaskRunner", () => {
           return i;
         },
       });
-      
+
       tasks.push(runner.enqueueTask(taskDef, {}));
     }
 
@@ -136,7 +138,7 @@ describe("TaskRunner", () => {
 
   it("should handle task options correctly", async () => {
     const debugFn = vi.fn();
-    
+
     const testTask = task({
       key: "test-task",
       handler: async (params: { value: number }) => {
@@ -154,7 +156,7 @@ describe("TaskRunner", () => {
 
   it("should handle retry logic", async () => {
     let attempts = 0;
-    
+
     const retryTask = task({
       key: "retry-task",
       handler: async () => {
@@ -168,14 +170,14 @@ describe("TaskRunner", () => {
     });
 
     const result = await runner.enqueueTask(retryTask, {});
-    
+
     expect(result).toBe("success");
     expect(attempts).toBe(3);
   });
 
   it("should handle custom queue", async () => {
     runner.setQueue("custom", 1); // Different concurrency for custom queue
-    
+
     const tracker = new ExecutionTracker();
     const customTasks = [];
 
@@ -191,7 +193,7 @@ describe("TaskRunner", () => {
         },
         queueKey: "custom",
       });
-      
+
       customTasks.push(runner.enqueueTask(taskDef, {}, { queueKey: "custom" }));
     }
 
@@ -220,7 +222,7 @@ describe("task function", () => {
 
   it("should work with TaskRunner", async () => {
     const runner = new TaskRunner(1);
-    
+
     const testTask = task({
       key: "integration-test",
       handler: async (params: { message: string }) => {

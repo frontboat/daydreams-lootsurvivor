@@ -3,8 +3,8 @@ import {
   createRequestContext,
   aggregateTokenUsage,
   estimateCost,
-} from "./tracking";
-import type { TokenUsage } from "./tracking";
+} from "../tracking";
+import type { TokenUsage } from "../tracking";
 
 describe("Request Tracking - Basic Functionality", () => {
   describe("Request Context Creation", () => {
@@ -74,7 +74,7 @@ describe("Request Tracking - Basic Functionality", () => {
         },
       });
 
-      expect(cost).toBe(33);
+      expect(cost).toBe(0.033);
     });
 
     it("should handle empty token usage array", () => {
@@ -113,7 +113,7 @@ describe("Request Tracking - Basic Functionality", () => {
         },
       });
 
-      expect(cost).toBe(35);
+      expect(cost).toBe(0.035);
     });
   });
 

@@ -1,5 +1,5 @@
 import { action } from "@daydreamsai/core";
-import { z } from "zod";
+import * as z from "zod/v4";
 import { researchMemory, loadTask } from "../utils/research-memory.js";
 import { generateSearchQueries } from "../utils/research-helpers.js";
 

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod/v4";
 import { context } from "@daydreamsai/core";
 import { service } from "@daydreamsai/core";
 import { Telegraf } from "telegraf";

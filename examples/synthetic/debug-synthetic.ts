@@ -7,7 +7,7 @@
 import { createDreams, context, action } from "@daydreamsai/core";
 import { createSyntheticData } from "@daydreamsai/synthetic";
 import { cliExtension } from "@daydreamsai/cli";
-import { z } from "zod";
+import * as z from "zod/v4";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 
 export const openrouter = createOpenRouter({

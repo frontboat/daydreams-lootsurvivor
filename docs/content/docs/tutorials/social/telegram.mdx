@@ -11,7 +11,7 @@ description:
 import { createGroq } from "@ai-sdk/groq";
 import { createDreams, LogLevel, validateEnv } from "@daydreamsai/core";
 import { telegram } from "@daydreamsai/telegram";
-import { z } from "zod";
+import * as z from "zod/v4";
 
 const env = validateEnv(
   z.object({

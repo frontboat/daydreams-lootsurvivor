@@ -11,7 +11,7 @@
 
 import { createDreams, context } from "@daydreamsai/core";
 import { openrouter } from "@openrouter/ai-sdk-provider";
-import { z } from "zod";
+import * as z from "zod/v4";
 
 // Context with custom model settings
 const fastChatContext = context({

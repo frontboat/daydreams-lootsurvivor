@@ -14,7 +14,7 @@ import {
   type Debugger,
 } from "@daydreamsai/core";
 import { v7 as randomUUUIDv7 } from "uuid";
-import { z } from "zod";
+import * as z from "zod/v4";
 
 export type Research = {
   id: string;
@@ -174,7 +174,11 @@ const researchQueryTask = task(
         think: "Search error occurred",
         learnings: [
           {
-            content: `Error occurred while researching: ${query.query}. ${searchError instanceof Error ? searchError.message : String(searchError)}`,
+            content: `Error occurred while researching: ${query.query}. ${
+              searchError instanceof Error
+                ? searchError.message
+                : String(searchError)
+            }`,
             references: [],
           },
         ],

@@ -24,7 +24,7 @@ import {
 } from "@daydreamsai/core";
 import { cliExtension } from "@daydreamsai/cli";
 import { anthropic } from "@ai-sdk/anthropic";
-import { z } from "zod";
+import * as z from "zod/v4";
 
 validateEnv(
   z.object({

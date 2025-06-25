@@ -1,6 +1,6 @@
 import { createParser, createPrompt, formatXml } from "@daydreamsai/core";
-import { z } from "zod";
-import zodToJsonSchema from "zod-to-json-schema";
+import * as z from "zod/v4";
+
 import { type Research } from "./research";
 import { type TavilySearchResponse } from "@tavily/core";
 import { type SearchResultSchema, searchResultsSchema } from "./schemas";
@@ -60,7 +60,7 @@ Example:
     query: string;
     results: TavilySearchResponse["results"];
     research: Research;
-    schema: z.AnyZodObject;
+    schema: z.ZodObject<any>;
   }) => ({
     goal,
     query,
@@ -71,7 +71,7 @@ Example:
         children: r.content,
       })
     ),
-    schema: JSON.stringify(zodToJsonSchema(schema, "schema")),
+    schema: JSON.stringify(z.toJSONSchema(schema).definitions!.schema),
     research: formatResearch(research),
   })
 );

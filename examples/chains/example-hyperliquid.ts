@@ -20,7 +20,7 @@ import {
   validateEnv,
 } from "@daydreamsai/core";
 import { cliExtension } from "@daydreamsai/cli";
-import { z } from "zod";
+import * as z from "zod/v4";
 import chalk from "chalk";
 import { HyperliquidClient } from "@daydreamsai/hyperliquid";
 
@@ -113,7 +113,9 @@ const hyperliquidContexts = context({
       );
 
       const resultStr = JSON.stringify(result, null, 2);
-      memory.lastTransaction = `IOC Order: ${is_buy ? "Buy" : "Sell"} ${sz}x${ticker} @ ${limit_px}`;
+      memory.lastTransaction = `IOC Order: ${
+        is_buy ? "Buy" : "Sell"
+      } ${sz}x${ticker} @ ${limit_px}`;
       memory.transactions.push(memory.lastTransaction);
 
       return { content: `Transaction: ${resultStr}` };
@@ -142,7 +144,9 @@ const hyperliquidContexts = context({
       );
 
       const resultStr = JSON.stringify(result, null, 2);
-      memory.lastTransaction = `GTC Order: ${is_buy ? "Buy" : "Sell"} ${sz}x${ticker} @ ${limit_px}`;
+      memory.lastTransaction = `GTC Order: ${
+        is_buy ? "Buy" : "Sell"
+      } ${sz}x${ticker} @ ${limit_px}`;
       memory.transactions.push(memory.lastTransaction);
       return { content: `Transaction: ${resultStr}` };
     },
@@ -164,7 +168,9 @@ const hyperliquidContexts = context({
       const result = await hyperliquid.placeMarketOrder(ticker, sz, is_buy);
 
       const resultStr = JSON.stringify(result, null, 2);
-      memory.lastTransaction = `Market Order: ${is_buy ? "Buy" : "Sell"} ${sz}x${ticker}`;
+      memory.lastTransaction = `Market Order: ${
+        is_buy ? "Buy" : "Sell"
+      } ${sz}x${ticker}`;
       memory.transactions.push(memory.lastTransaction);
 
       return { content: `Transaction: ${resultStr}` };
@@ -191,7 +197,9 @@ const hyperliquidContexts = context({
       );
 
       const resultStr = JSON.stringify(result, null, 2);
-      ctx.memory.lastTransaction = `Market Order USD: ${is_buy ? "Buy" : "Sell"} ${ticker} for $${usdtotalprice}`;
+      ctx.memory.lastTransaction = `Market Order USD: ${
+        is_buy ? "Buy" : "Sell"
+      } ${ticker} for $${usdtotalprice}`;
       ctx.memory.transactions.push(ctx.memory.lastTransaction);
 
       return { content: `Transaction: ${resultStr}` };
@@ -255,7 +263,9 @@ const hyperliquidContexts = context({
     async handler({ tickers }, { memory }) {
       const result = await hyperliquid.marketSellPositions(tickers);
       const resultStr = JSON.stringify(result, null, 2);
-      memory.lastTransaction = `Market sold positions for ${tickers.join(", ")}`;
+      memory.lastTransaction = `Market sold positions for ${tickers.join(
+        ", "
+      )}`;
       memory.transactions.push(memory.lastTransaction);
       return { content: `Market Sell Result: ${resultStr}` };
     },

@@ -27,7 +27,7 @@ import {
 } from "@daydreamsai/core";
 import { cliExtension } from "@daydreamsai/cli";
 import { deepResearch } from "../deep-research/research";
-import { string, z } from "zod";
+import { string, z } from "zod/v4";
 import { tavily } from "@tavily/core";
 import { ETERNUM_CONTEXT } from "./eternum";
 import { anthropic } from "@ai-sdk/anthropic";

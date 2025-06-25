@@ -1,6 +1,6 @@
 import { action, context, extension, randomUUIDv7 } from "@daydreamsai/core";
 import { Sandbox, SandboxInfo } from "@e2b/code-interpreter";
-import { z } from "zod";
+import * as z from "zod/v4";
 import { createToolClient, createToolClientProxy } from "./serverTools";
 import { SandboxTools } from "../../../../examples/server/tools/sandbox";
 

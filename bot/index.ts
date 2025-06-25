@@ -10,7 +10,7 @@ import {
 import { discord } from "@daydreamsai/discord";
 import { createMongoMemoryStore } from "@daydreamsai/mongodb";
 import { openrouter } from "@openrouter/ai-sdk-provider";
-import { z } from "zod";
+import * as z from "zod/v4";
 import { genai } from "@daydreamsai/genai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 

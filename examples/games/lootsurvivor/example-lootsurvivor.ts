@@ -9,7 +9,7 @@ import {
 import { StarknetChain } from "@daydreamsai/defai";
 import { cliExtension } from "@daydreamsai/cli";
 import { openrouter } from "@openrouter/ai-sdk-provider";
-import { z } from "zod";
+import * as z from "zod/v4";
 
 // Import Loot Survivor core types and utilities
 import {
@@ -41,30 +41,36 @@ function calculateLevel(xp: number): number {
 
 // Helper function to get item name from ID
 function getItemName(itemId: number): string {
-  if (itemId === 0) return 'None';
+  if (itemId === 0) return "None";
   return Loot[itemId] || `Unknown(${itemId})`;
 }
 
 // Helper to format item with level and type
-function formatItem(item: { id: number; xp: number }, seed: bigint = BigInt(0)): string {
-  if (item.id === 0) return 'None';
+function formatItem(
+  item: { id: number; xp: number },
+  seed: bigint = BigInt(0)
+): string {
+  if (item.id === 0) return "None";
   const name = getItemName(item.id);
-  const level = item.xp > 0 ? ` (Lvl ${Math.floor(Math.sqrt(item.xp))})` : '';
-  
+  const level = item.xp > 0 ? ` (Lvl ${Math.floor(Math.sqrt(item.xp))})` : "";
+
   // Get item type
   const lootManager = new LootManager(item.id, item.xp, seed);
   const itemType = lootManager.getItemType();
-  
+
   return `${name}${level} [${itemType}]`;
 }
 
 // Calculate item price based on tier and charisma
 function calculateItemPrice(itemId: number, charisma: number): number {
   if (itemId === 0) return 0;
-  
+
   const tier = ITEM_TIERS[itemId as Loot] || 1;
   const basePrice = tier * ITEM_BASE_PRICE;
-  const discount = Math.min(charisma * ITEM_CHARISMA_DISCOUNT, basePrice - ITEM_MINIMUM_PRICE);
+  const discount = Math.min(
+    charisma * ITEM_CHARISMA_DISCOUNT,
+    basePrice - ITEM_MINIMUM_PRICE
+  );
   return Math.max(basePrice - discount, ITEM_MINIMUM_PRICE);
 }
 
@@ -87,16 +93,20 @@ validateEnv(
 
 // 2. Create and configure the DI container
 const container = createContainer();
-container.singleton("starknet", () => new StarknetChain({
-  rpcUrl: process.env.STARKNET_RPC_URL!,
-  address: process.env.STARKNET_ADDRESS!,
-  privateKey: process.env.STARKNET_PRIVATE_KEY!,
-}));
+container.singleton(
+  "starknet",
+  () =>
+    new StarknetChain({
+      rpcUrl: process.env.STARKNET_RPC_URL!,
+      address: process.env.STARKNET_ADDRESS!,
+      privateKey: process.env.STARKNET_PRIVATE_KEY!,
+    })
+);
 
 // 3. Define the game context
 const lootSurvivorContext = context<LootSurvivorMemory>({
   type: "loot-survivor-agent",
-  maxSteps: 100,  // Allow many steps for continuous play
+  maxSteps: 100, // Allow many steps for continuous play
   schema: z.object({
     adventurerId: z.string().describe("The ID of the adventurer to play as"),
   }),
@@ -171,18 +181,18 @@ const lootSurvivorContext = context<LootSurvivorMemory>({
     const adv = memory.adventurer?.adventurer;
     const stats = adv?.stats;
     const equipment = adv?.equipment;
-    
+
     if (!memory.adventurer) {
       return `
-Adventurer ID: ${args.adventurerId || 'Not set'}
+Adventurer ID: ${args.adventurerId || "Not set"}
 Status: No adventurer data loaded. Use getAndUpdateAdventurerState to fetch data.
 `;
     }
-    
+
     const level = calculateLevel(adv.xp);
-    const maxHealth = 50 + (adv.stats.vitality * 15) + ((level - 1) * 15);
+    const maxHealth = 50 + adv.stats.vitality * 15 + (level - 1) * 15;
     const healthPercent = Math.round((adv.health / maxHealth) * 100);
-    
+
     return `
 === ADVENTURER #${memory.adventurer.adventurerId} ===
 
@@ -190,33 +200,72 @@ Status: No adventurer data loaded. Use getAndUpdateAdventurerState to fetch data
 Health: ${adv.health}/${maxHealth} (${healthPercent}%)
 Level: ${level} (${adv.xp} XP)
 Gold: ${adv.gold}
-${adv.beastHealth > 0 ? `⚔️ IN COMBAT - Beast Health: ${adv.beastHealth}` : ''}
-${adv.statUpgradesAvailable > 0 ? `📈 ${adv.statUpgradesAvailable} stat upgrades available!` : ''}
+${adv.beastHealth > 0 ? `⚔️ IN COMBAT - Beast Health: ${adv.beastHealth}` : ""}
+${
+  adv.statUpgradesAvailable > 0
+    ? `📈 ${adv.statUpgradesAvailable} stat upgrades available!`
+    : ""
+}
 
 **STATS**
 STR: ${stats.strength} | DEX: ${stats.dexterity} | VIT: ${stats.vitality}
-INT: ${stats.intelligence} | WIS: ${stats.wisdom} | CHA: ${stats.charisma} | LUCK: ${stats.luck}
+INT: ${stats.intelligence} | WIS: ${stats.wisdom} | CHA: ${
+      stats.charisma
+    } | LUCK: ${stats.luck}
 
 **EQUIPMENT**
-Weapon: ${formatItem(equipment.weapon, BigInt(memory.adventurer.adventurerEntropy))}
-Chest:  ${formatItem(equipment.chest, BigInt(memory.adventurer.adventurerEntropy))}
-Head:   ${formatItem(equipment.head, BigInt(memory.adventurer.adventurerEntropy))}
-Waist:  ${formatItem(equipment.waist, BigInt(memory.adventurer.adventurerEntropy))}
-Foot:   ${formatItem(equipment.foot, BigInt(memory.adventurer.adventurerEntropy))}
-Hand:   ${formatItem(equipment.hand, BigInt(memory.adventurer.adventurerEntropy))}
-Neck:   ${formatItem(equipment.neck, BigInt(memory.adventurer.adventurerEntropy))}
-Ring:   ${formatItem(equipment.ring, BigInt(memory.adventurer.adventurerEntropy))}
+Weapon: ${formatItem(
+      equipment.weapon,
+      BigInt(memory.adventurer.adventurerEntropy)
+    )}
+Chest:  ${formatItem(
+      equipment.chest,
+      BigInt(memory.adventurer.adventurerEntropy)
+    )}
+Head:   ${formatItem(
+      equipment.head,
+      BigInt(memory.adventurer.adventurerEntropy)
+    )}
+Waist:  ${formatItem(
+      equipment.waist,
+      BigInt(memory.adventurer.adventurerEntropy)
+    )}
+Foot:   ${formatItem(
+      equipment.foot,
+      BigInt(memory.adventurer.adventurerEntropy)
+    )}
+Hand:   ${formatItem(
+      equipment.hand,
+      BigInt(memory.adventurer.adventurerEntropy)
+    )}
+Neck:   ${formatItem(
+      equipment.neck,
+      BigInt(memory.adventurer.adventurerEntropy)
+    )}
+Ring:   ${formatItem(
+      equipment.ring,
+      BigInt(memory.adventurer.adventurerEntropy)
+    )}
 
 **LAST ACTION**
 ${memory.lastResult || "No actions taken yet"}
 ${
-  adv.statUpgradesAvailable > 0 && memory.marketItems ? 
-  `\n**MARKET OPEN**\nGold: ${adv.gold}\nPotion Price: ${calculatePotionPrice(stats.charisma)} gold\n\nAvailable Items:\n${memory.marketItems.map(id => {
-    const lootManager = new LootManager(id, 0, BigInt(0));
-    const itemType = lootManager.getItemType();
-    const price = calculateItemPrice(id, stats.charisma);
-    return `- ${getItemName(id)} [${itemType}] - ${price}g`;
-  }).join('\n')}\n\nYou can:\n- Buy potions with lootSurvivor:upgrade (heals you)\n- Buy items with lootSurvivor:upgrade\n- Upgrade stats with lootSurvivor:upgrade` : ''
+  adv.statUpgradesAvailable > 0 && memory.marketItems
+    ? `\n**MARKET OPEN**\nGold: ${
+        adv.gold
+      }\nPotion Price: ${calculatePotionPrice(
+        stats.charisma
+      )} gold\n\nAvailable Items:\n${memory.marketItems
+        .map((id) => {
+          const lootManager = new LootManager(id, 0, BigInt(0));
+          const itemType = lootManager.getItemType();
+          const price = calculateItemPrice(id, stats.charisma);
+          return `- ${getItemName(id)} [${itemType}] - ${price}g`;
+        })
+        .join(
+          "\n"
+        )}\n\nYou can:\n- Buy potions with lootSurvivor:upgrade (heals you)\n- Buy items with lootSurvivor:upgrade\n- Upgrade stats with lootSurvivor:upgrade`
+    : ""
 }
 `;
   },
@@ -240,13 +289,15 @@ const agent = createDreams({
 // 5. Start the agent
 async function main() {
   await agent.start();
-  
+
   // The CLI extension will handle all interaction
   // User can say "Play as adventurer 10568" or pass it as command arg
   const adventurerId = process.argv[2];
   if (adventurerId) {
-    console.log(`To start playing, the agent will check adventurer #${adventurerId}`);
+    console.log(
+      `To start playing, the agent will check adventurer #${adventurerId}`
+    );
   }
 }
 
-main(); 
+main();

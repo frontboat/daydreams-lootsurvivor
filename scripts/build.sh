@@ -41,6 +41,13 @@ PACKAGES=$(find packages -maxdepth 1 -mindepth 1 -type d -not -name "core" | sor
 # Build each remaining package
 for package in $PACKAGES; do
   package_name=$(basename "$package")
+  
+  # Check if package.json exists in this directory
+  if [ ! -f "$package/package.json" ]; then
+    echo -e "${BLUE}Skipping $package_name (no package.json found)...${NC}"
+    continue
+  fi
+  
   echo -e "${GREEN}Building $package_name...${NC}"
   
   if [ "$WATCH_MODE" = true ]; then

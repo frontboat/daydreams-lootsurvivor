@@ -97,7 +97,7 @@ pnpm add @daydreamsai/core
 ```typescript
 import { createDreams, context } from "@daydreamsai/core";
 import { anthropic } from "@ai-sdk/anthropic";
-import { z } from "zod";
+import * as z from "zod/v4";
 
 // Define a stateful context
 const chatContext = context({

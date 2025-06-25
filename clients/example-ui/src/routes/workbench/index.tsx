@@ -13,7 +13,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { RefreshCw, Send } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { z } from "zod";
+import * as z from "zod/v4";
 
 export const Route = createFileRoute("/workbench/")({
   component: RouteComponent,

@@ -1,5 +1,5 @@
 import { context } from "@daydreamsai/core";
-import { z } from "zod";
+import * as z from "zod/v4";
 import type { SubagentTask } from "../types/research-types.js";
 
 // Subagent Context - handles specialized research tasks
