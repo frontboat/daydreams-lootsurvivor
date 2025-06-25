@@ -70,7 +70,7 @@ Summary:`;
 
         return response.text.trim();
       } catch (error) {
-        console.warn("AI compression failed:", error);
+        agent.logger.warn("AI compression failed:", JSON.stringify(error));
         return `Compressed ${entries.length} entries (${
           entries.filter((e) => e.ref === "input").length
         } inputs, ${entries.filter((e) => e.ref === "output").length} outputs)`;
@@ -243,7 +243,10 @@ export function hybridManager(strategies: {
           );
         }
       } catch (error) {
-        console.warn("Primary memory strategy failed, using fallback:", error);
+        agent.logger.warn(
+          "Primary memory strategy failed, using fallback:",
+          JSON.stringify(error)
+        );
         if (strategies.fallback?.onMemoryPressure) {
           return await strategies.fallback.onMemoryPressure(
             ctx,
