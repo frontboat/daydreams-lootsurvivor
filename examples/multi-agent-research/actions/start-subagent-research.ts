@@ -13,7 +13,7 @@ export const startSubagentResearchAction = action({
   }),
   memory: researchMemory,
   async handler({ taskId }, ctx, agent) {
-    const task = await loadTask(taskId, agent.memory.store, ctx.actionMemory);
+    const task = await loadTask(taskId, agent.memory, ctx.actionMemory);
     if (!task) {
       return `<error>Task ${taskId} not found</error>`;
     }

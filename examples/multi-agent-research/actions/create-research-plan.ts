@@ -34,7 +34,7 @@ export const createResearchPlanAction = action({
       subagentResults: [],
     };
 
-    await saveSession(sessionId, session, agent.memory.store, ctx.actionMemory);
+    await saveSession(sessionId, session, agent.memory, ctx.actionMemory);
 
     return `<research_plan_created>
 I'll create a comprehensive research plan for: "${query}"

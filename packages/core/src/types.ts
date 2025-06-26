@@ -47,129 +47,12 @@ export type Chain = {
   experts: { name: string; data: string }[];
 };
 
-// /**
-//  * Interface for storing and retrieving memory data
-//  */
-// export interface MemoryStore {
-//   /**
-//    * Retrieves data from memory
-//    * @template T - Type of data to retrieve
-//    * @param key - Key to lookup
-//    * @returns Promise resolving to data or null if not found
-//    */
-//   get<T>(key: string): Promise<T | null>;
-
-//   /**
-//    * Stores data in memory
-//    * @template T - Type of data to store
-//    * @param key - Key to store under
-//    * @param value - Data to store
-//    */
-//   set<T>(key: string, value: T): Promise<void>;
-
-//   /**
-//    * Removes data from memory
-//    * @param key - Key to remove
-//    */
-//   delete(key: string): Promise<void>;
-
-//   /**
-//    * Removes all data from memory
-//    */
-//   clear(): Promise<void>;
-
-//   keys(base?: string): Promise<string[]>;
-// }
-// /**
-//  * Interface for storing and retrieving vector data
-//  */
-// export interface VectorStore {
-//   /** Optional connection string for the vector store */
-//   connection?: string;
-
-//   /**
-//    * Adds or updates data in the vector store
-//    * @param contextId - Unique identifier for the context
-//    * @param data - Data to add or update
-//    */
-//   upsert(contextId: string, data: any): Promise<void>;
-
-//   /**
-//    * Searches the vector store for similar data
-//    * @param contextId - Context to search within
-//    * @param query - Query text to search for
-//    * @returns Array of matching documents
-//    */
-//   query(contextId: string, query: string): Promise<any[]>;
-
-//   /**
-//    * Creates a new index in the vector store
-//    * @param indexName - Name of the index to create
-//    */
-//   createIndex(indexName: string): Promise<void>;
-
-//   /**
-//    * Deletes an existing index from the vector store
-//    * @param indexName - Name of the index to delete
-//    */
-//   deleteIndex(indexName: string): Promise<void>;
-// }
-
 /**
  * Represents the working memory state during execution
  */
 export interface WorkingMemory extends WorkingMemoryData {
-  /** List of input references */
-
-  // chains: Chain[];
-  // episodicMemory?: EpisodicMemory;
   /** Current image URL for multimodal context */
   currentImage?: URL;
-}
-
-/**
- * Memory management configuration for contexts
- */
-export interface IMemoryManager<TContext extends AnyContext = AnyContext> {
-  /** Called when memory needs pruning due to size constraints */
-  onMemoryPressure?: (
-    ctx: AgentContext<TContext>,
-    workingMemory: WorkingMemory,
-    agent: AnyAgent
-  ) => Promise<WorkingMemory> | WorkingMemory;
-
-  /** Called before adding new entries to determine if pruning is needed */
-  shouldPrune?: (
-    ctx: AgentContext<TContext>,
-    workingMemory: WorkingMemory,
-    newEntry: AnyRef,
-    agent: AnyAgent
-  ) => Promise<boolean> | boolean;
-
-  /** Called to compress/summarize old entries into a compact representation */
-  compress?: (
-    ctx: AgentContext<TContext>,
-    entries: AnyRef[],
-    agent: AnyAgent
-  ) => Promise<string> | string;
-
-  /** Maximum number of entries before triggering memory management */
-  maxSize?: number;
-
-  /** Memory management strategy */
-  strategy?: "fifo" | "lru" | "smart" | "custom";
-
-  /** Whether to preserve certain types of entries during pruning */
-  preserve?: {
-    /** Always keep the last N inputs */
-    recentInputs?: number;
-    /** Always keep the last N outputs */
-    recentOutputs?: number;
-    /** Always keep action calls with these names */
-    actionNames?: string[];
-    /** Custom preservation logic */
-    custom?: (entry: AnyRef, ctx: AgentContext<TContext>) => boolean;
-  };
 }
 
 /**
@@ -177,7 +60,7 @@ export interface IMemoryManager<TContext extends AnyContext = AnyContext> {
  * Allows developers to customize when and how episodes are stored
  */
 export interface EpisodeHooks<TContext extends AnyContext = AnyContext> {
-  /** 
+  /**
    * Called to determine if a new episode should be started
    * @param ref - The current log reference being processed
    * @param workingMemory - Current working memory state
@@ -192,7 +75,7 @@ export interface EpisodeHooks<TContext extends AnyContext = AnyContext> {
     agent: AnyAgent
   ): Promise<boolean> | boolean;
 
-  /** 
+  /**
    * Called to determine if the current episode should be ended and stored
    * @param ref - The current log reference being processed
    * @param workingMemory - Current working memory state
@@ -207,7 +90,7 @@ export interface EpisodeHooks<TContext extends AnyContext = AnyContext> {
     agent: AnyAgent
   ): Promise<boolean> | boolean;
 
-  /** 
+  /**
    * Called to create episode data from collected logs
    * @param logs - Array of logs that make up this episode
    * @param contextState - Current context state
@@ -220,7 +103,7 @@ export interface EpisodeHooks<TContext extends AnyContext = AnyContext> {
     agent: AnyAgent
   ): Promise<any> | any;
 
-  /** 
+  /**
    * Called to classify the type of episode (optional)
    * @param episodeData - The episode data from createEpisode
    * @param contextState - Current context state
@@ -231,7 +114,7 @@ export interface EpisodeHooks<TContext extends AnyContext = AnyContext> {
     contextState: ContextState<TContext>
   ): string;
 
-  /** 
+  /**
    * Called to extract additional metadata for the episode (optional)
    * @param episodeData - The episode data from createEpisode
    * @param logs - The original logs for this episode
@@ -1341,9 +1224,6 @@ export interface Context<
   maxSteps?: number;
 
   maxWorkingMemorySize?: number;
-
-  /** Memory management configuration for this context */
-  memoryManager?: IMemoryManager<this>;
 
   /** Episode detection and creation hooks for this context */
   episodeHooks?: EpisodeHooks<this>;

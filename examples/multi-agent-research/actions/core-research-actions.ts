@@ -167,7 +167,7 @@ Generate your synthesis now:`;
           taskId,
           findings,
           sources,
-          agent.memory.store,
+          agent.memory,
           ctx.actionMemory
         );
       } catch (error) {
@@ -257,7 +257,7 @@ export const synthesizeReportAction = action({
   async handler({ sessionId }, ctx, agent) {
     const session = await loadSession(
       sessionId,
-      agent.memory.store,
+      agent.memory,
       ctx.actionMemory
     );
     if (!session) {
@@ -363,7 +363,7 @@ export const checkResearchProgressAction = action({
   async handler({ sessionId }, ctx, agent) {
     const session = await loadSession(
       sessionId,
-      agent.memory.store,
+      agent.memory,
       ctx.actionMemory
     );
     if (!session) {
@@ -499,7 +499,7 @@ export const getResultsAction = action({
   async handler({ sessionId }, ctx, agent) {
     const session = await loadSession(
       sessionId,
-      agent.memory.store,
+      agent.memory,
       ctx.actionMemory
     );
     const completed = ctx.actionMemory.completedSessions.find(
