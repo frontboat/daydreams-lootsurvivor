@@ -8,12 +8,10 @@ import type { RequestContext, RequestTrackingConfig } from "./tracking";
 import type { RequestTracker } from "./tracking/tracker";
 import type {
   EpisodeHooks,
-  IMemory,
-  InferMemoryData,
+  ActionState,
+  InferActionState,
   MemorySystem,
   WorkingMemory,
-  StronglyTypedMemory,
-  ExtractMemoryData,
 } from "./memory";
 
 // Export memory types
@@ -81,9 +79,9 @@ export type InferActionArguments<TSchema = undefined> =
 export interface ActionContext<
   TContext extends AnyContext = AnyContext,
   AContext extends AnyContext = AnyContext,
-  ActionMemory extends StronglyTypedMemory = StronglyTypedMemory
+  ActionMemory extends ActionState = ActionState
 > extends AgentContext<TContext> {
-  actionMemory: ExtractMemoryData<ActionMemory>;
+  actionMemory: InferActionState<ActionMemory>;
   agentMemory: InferContextMemory<AContext> | undefined;
   abortSignal?: AbortSignal;
 }
@@ -92,7 +90,7 @@ export interface ActionCallContext<
   Schema extends ActionSchema = undefined,
   TContext extends AnyContext = AnyContext,
   AContext extends AnyContext = AnyContext,
-  ActionMemory extends StronglyTypedMemory = StronglyTypedMemory
+  ActionMemory extends ActionState = ActionState
 > extends ActionContext<TContext, AContext, ActionMemory>,
     ContextStateApi<TContext> {
   call: ActionCall<InferActionArguments<Schema>>;
@@ -111,7 +109,7 @@ export type ActionHandler<
   Result = any,
   TContext extends AnyContext = AnyContext,
   TAgent extends AnyAgent = AnyAgent,
-  TMemory extends StronglyTypedMemory = StronglyTypedMemory
+  TMemory extends ActionState = ActionState
 > = Schema extends undefined
   ? (
       ctx: ActionCallContext<
@@ -145,7 +143,7 @@ export interface Action<
   TError = unknown,
   TContext extends AnyContext = AnyContext,
   TAgent extends AnyAgent = AnyAgent,
-  TMemory extends StronglyTypedMemory = StronglyTypedMemory
+  TState extends ActionState = ActionState
 > {
   name: string;
   description?: string;
@@ -155,15 +153,15 @@ export interface Action<
 
   attributes?: ActionSchema;
 
-  memory?: TMemory;
+  actionState?: TState;
 
   install?: (agent: TAgent) => Promise<void> | void;
 
   enabled?: (
-    ctx: ActionContext<TContext, InferAgentContext<TAgent>, TMemory>
+    ctx: ActionContext<TContext, InferAgentContext<TAgent>, TState>
   ) => boolean;
 
-  handler: ActionHandler<Schema, Result, TContext, TAgent, TMemory>;
+  handler: ActionHandler<Schema, Result, TContext, TAgent, TState>;
 
   returns?: ActionSchema;
 
@@ -175,12 +173,7 @@ export interface Action<
 
   onSuccess?: (
     result: ActionResult<Result>,
-    ctx: ActionCallContext<
-      Schema,
-      TContext,
-      InferAgentContext<TAgent>,
-      TMemory
-    >,
+    ctx: ActionCallContext<Schema, TContext, InferAgentContext<TAgent>, TState>,
     agent: TAgent
   ) => Promise<void> | void;
 
@@ -188,12 +181,7 @@ export interface Action<
 
   onError?: (
     err: TError,
-    ctx: ActionCallContext<
-      Schema,
-      TContext,
-      InferAgentContext<TAgent>,
-      TMemory
-    >,
+    ctx: ActionCallContext<Schema, TContext, InferAgentContext<TAgent>, TState>,
     agent: TAgent
   ) => MaybePromise<any>;
 
@@ -204,7 +192,7 @@ export interface Action<
           Schema,
           TContext,
           InferAgentContext<TAgent>,
-          TMemory
+          TState
         >
       ) => string);
 
@@ -223,7 +211,7 @@ export interface Action<
           Schema,
           TContext,
           InferAgentContext<TAgent>,
-          TMemory
+          TState
         >
       ) => MaybePromise<string>);
 }
@@ -294,10 +282,10 @@ export type Output<
 
 export type AnyOutput = Output<any, any, any, AnyAgent>;
 
-export type AnyAction = Action<any, any, any, any, AnyAgent, any>;
+export type AnyAction = Action<any, any, any, any, AnyAgent, ActionState>;
 
 export type AnyActionWithContext<Ctx extends Context<any, any, any, any, any>> =
-  Action<any, any, any, Ctx, AnyAgent, any>;
+  Action<any, any, any, Ctx, AnyAgent, ActionState>;
 
 /**
  * Represents an input handler with validation and subscription capability
@@ -664,7 +652,7 @@ interface AgentDef<TContext extends AnyContext = AnyContext> {
     unknown,
     AnyContext,
     Agent<TContext>,
-    IMemory<any>
+    ActionState<any>
   >[];
 
   /**

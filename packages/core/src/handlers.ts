@@ -19,7 +19,7 @@ import type {
   InputConfig,
   InputRef,
   MaybePromise,
-  IMemory,
+  ActionState,
   Output,
   OutputCtxRef,
   OutputRef,
@@ -399,9 +399,10 @@ export async function prepareActionCall({
 }) {
   let actionMemory: any = undefined;
 
-  if (action.memory) {
+  if (action.actionState) {
     actionMemory =
-      (await agent.memory.kv.get(action.memory.key)) ?? action.memory.create();
+      (await agent.memory.kv.get(action.actionState.key)) ??
+      action.actionState.create();
   }
 
   const callCtx: ActionCallContext = {
@@ -514,8 +515,8 @@ export async function handleActionCall({
 
   if (action.format) result.formatted = action.format(result);
 
-  if (callCtx.actionMemory) {
-    await agent.memory.kv.set(action.memory.key, callCtx.actionMemory);
+  if (callCtx.actionMemory && action.actionState) {
+    await agent.memory.kv.set(action.actionState.key, callCtx.actionMemory);
   }
 
   if (action.onSuccess) {
@@ -713,11 +714,12 @@ export async function prepareAction({
 }): Promise<ActionCtxRef | undefined> {
   if (action.context && action.context.type !== context.type) return undefined;
 
-  let actionMemory: IMemory | undefined = undefined;
+  let actionMemory: ActionState | undefined = undefined;
 
-  if (action.memory) {
+  if (action.actionState) {
     actionMemory =
-      (await agent.memory.kv.get(action.memory.key)) ?? action.memory.create();
+      (await agent.memory.kv.get(action.actionState.key)) ??
+      action.actionState.create();
   }
 
   const enabled = action.enabled
