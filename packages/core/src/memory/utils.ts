@@ -295,11 +295,5 @@ export async function generateEpisode(
     }
   );
 
-  await agent.memory.vector.upsert(`${contextId}`, [
-    {
-      id: episode.id,
-      text: episode.observation,
-      metadata: episode,
-    },
-  ]);
+  await agent.memory.episodes.store(episode);
 }

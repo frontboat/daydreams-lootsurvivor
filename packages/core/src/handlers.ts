@@ -19,7 +19,7 @@ import type {
   InputConfig,
   InputRef,
   MaybePromise,
-  Memory,
+  IMemory,
   Output,
   OutputCtxRef,
   OutputRef,
@@ -31,6 +31,8 @@ import { randomUUIDv7 } from "./utils";
 import { parse } from "./xml";
 import { jsonPath } from "./jsonpath";
 import { jsonSchema } from "ai";
+
+import type { WorkingMemoryData } from "./memory";
 
 export class NotFoundError extends Error {
   name = "NotFoundError";
@@ -395,12 +397,11 @@ export async function prepareActionCall({
   ) => MaybePromise<any>;
   abortSignal?: AbortSignal;
 }) {
-  let actionMemory: Memory<any> | undefined = undefined;
+  let actionMemory: IMemory<any> | undefined = undefined;
 
   if (action.memory) {
     actionMemory =
-      (await agent.memory.store.get(action.memory.key)) ??
-      action.memory.create();
+      (await agent.memory.kv.get(action.memory.key)) ?? action.memory.create();
   }
 
   const callCtx: ActionCallContext = {
@@ -514,7 +515,7 @@ export async function handleActionCall({
   if (action.format) result.formatted = action.format(result);
 
   if (callCtx.actionMemory) {
-    await agent.memory.store.set(action.memory.key, callCtx.actionMemory);
+    await agent.memory.kv.set(action.memory.key, callCtx.actionMemory);
   }
 
   if (action.onSuccess) {
@@ -712,12 +713,11 @@ export async function prepareAction({
 }): Promise<ActionCtxRef | undefined> {
   if (action.context && action.context.type !== context.type) return undefined;
 
-  let actionMemory: Memory | undefined = undefined;
+  let actionMemory: IMemory | undefined = undefined;
 
   if (action.memory) {
     actionMemory =
-      (await agent.memory.store.get(action.memory.key)) ??
-      action.memory.create();
+      (await agent.memory.kv.get(action.memory.key)) ?? action.memory.create();
   }
 
   const enabled = action.enabled
@@ -731,7 +731,7 @@ export async function prepareAction({
     : true;
 
   if (action.enabled && actionMemory) {
-    await agent.memory.store.set(actionMemory.key, actionMemory);
+    await agent.memory.kv.set(actionMemory.key, actionMemory);
   }
 
   return enabled
@@ -938,7 +938,7 @@ export async function handleInput({
   inputs: Input[];
   inputRef: InputRef;
   logger: Logger;
-  workingMemory: WorkingMemory;
+  workingMemory: WorkingMemoryData;
   ctxState: ContextState;
   agent: AnyAgent;
 }) {
@@ -961,20 +961,20 @@ export async function handleInput({
     throw new ParsingError(inputRef, error);
   }
 
-  logger.debug("agent:send", "Querying episodic memory");
+  // logger.debug("agent:send", "Querying episodic memory");
 
-  const episodicMemory = await agent.memory.vector.query(
-    `${ctxState.id}`,
-    JSON.stringify(inputRef.data)
-  );
+  // const episodicMemory = await agent.memory.vector.query(
+  //   `${ctxState.id}`,
+  //   JSON.stringify(inputRef.data)
+  // );
 
-  logger.trace("agent:send", "Episodic memory retrieved", {
-    episodesCount: episodicMemory.length,
-  });
+  // logger.trace("agent:send", "Episodic memory retrieved", {
+  //   episodesCount: episodicMemory.length,
+  // });
 
-  workingMemory.episodicMemory = {
-    episodes: episodicMemory,
-  };
+  // workingMemory.episodicMemory = {
+  //   episodes: episodicMemory,
+  // };
 
   if (input.handler) {
     logger.debug("agent:send", "Using custom input handler", {

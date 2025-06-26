@@ -1,4 +1,4 @@
-import type { MemoryManager, WorkingMemory, AnyRef } from "./types";
+import type { IMemoryManager, WorkingMemory, AnyRef } from "./types";
 import { generateText } from "ai";
 
 /**
@@ -8,7 +8,7 @@ import { generateText } from "ai";
 /**
  * Token-based memory limiter that prunes based on estimated token count
  */
-export function tokenLimiter(maxTokens: number): MemoryManager {
+export function tokenLimiter(maxTokens: number): IMemoryManager {
   return {
     maxSize: Math.floor(maxTokens / 4), // Rough estimation: 4 chars per token TODO: add tiktoken
     strategy: "fifo",
@@ -30,7 +30,7 @@ export function smartMemoryManager(options: {
   maxSize: number;
   compressionThreshold?: number;
   preserveImportant?: boolean;
-}): MemoryManager {
+}): IMemoryManager {
   return {
     maxSize: options.maxSize,
     strategy: "smart",
@@ -97,7 +97,7 @@ export function contextAwareManager(options: {
   maxSize: number;
   taskKeywords?: string[];
   preserveErrors?: boolean;
-}): MemoryManager {
+}): IMemoryManager {
   return {
     maxSize: options.maxSize,
     strategy: "custom",
@@ -169,7 +169,7 @@ export function fifoManager(options: {
   preserveInputs?: number;
   preserveOutputs?: number;
   preserveActions?: string[];
-}): MemoryManager {
+}): IMemoryManager {
   return {
     maxSize: options.maxSize,
     strategy: "fifo",
@@ -216,10 +216,10 @@ function estimateTokenCount(workingMemory: WorkingMemory): number {
  * Memory manager that combines multiple strategies
  */
 export function hybridManager(strategies: {
-  primary: MemoryManager;
-  fallback?: MemoryManager;
+  primary: IMemoryManager;
+  fallback?: IMemoryManager;
   useTokenLimit?: number;
-}): MemoryManager {
+}): IMemoryManager {
   return {
     maxSize: strategies.primary.maxSize,
     strategy: "custom",

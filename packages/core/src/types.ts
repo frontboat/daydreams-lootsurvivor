@@ -2,15 +2,12 @@ import { type LanguageModelV1, type Schema } from "ai";
 import { z, ZodObject, ZodType, type ZodRawShape } from "zod/v4";
 import type { Container } from "./container";
 import type { ServiceProvider } from "./serviceProvider";
-import type { BaseMemory } from "./memory";
+// import type { BaseMemory } from "./memory";
 import type { TaskRunner } from "./task";
 import type { Logger } from "./logger";
-import type {
-  RequestTracking,
-  RequestContext,
-  RequestTrackingConfig,
-} from "./tracking";
+import type { RequestContext, RequestTrackingConfig } from "./tracking";
 import type { RequestTracker } from "./tracking/tracker";
+import type { MemorySystem, WorkingMemoryData } from "./memory";
 
 export { type LanguageModelV1, type Schema } from "ai";
 
@@ -22,7 +19,7 @@ export type MaybePromise<T = any> = T | Promise<T>;
  * Represents a memory configuration for storing data
  * @template Data - Type of data stored in memory
  */
-export type Memory<Data = any> = {
+export type IMemory<Data = any> = {
   /** Unique identifier for this memory */
   key: string;
   /** Function to initialize memory data */
@@ -33,8 +30,8 @@ export type Memory<Data = any> = {
  * Extracts the data type from a Memory type
  * @template TMemory - Memory type to extract data from
  */
-export type InferMemoryData<TMemory extends Memory<any>> =
-  TMemory extends Memory<infer Data> ? Data : never;
+export type InferMemoryData<TMemory extends IMemory<any>> =
+  TMemory extends IMemory<infer Data> ? Data : never;
 
 /**
  * Represents an execution chain with experts and metadata
@@ -50,132 +47,118 @@ export type Chain = {
   experts: { name: string; data: string }[];
 };
 
-/**
- * Interface for storing and retrieving memory data
- */
-export interface MemoryStore {
-  /**
-   * Retrieves data from memory
-   * @template T - Type of data to retrieve
-   * @param key - Key to lookup
-   * @returns Promise resolving to data or null if not found
-   */
-  get<T>(key: string): Promise<T | null>;
+// /**
+//  * Interface for storing and retrieving memory data
+//  */
+// export interface MemoryStore {
+//   /**
+//    * Retrieves data from memory
+//    * @template T - Type of data to retrieve
+//    * @param key - Key to lookup
+//    * @returns Promise resolving to data or null if not found
+//    */
+//   get<T>(key: string): Promise<T | null>;
 
-  /**
-   * Stores data in memory
-   * @template T - Type of data to store
-   * @param key - Key to store under
-   * @param value - Data to store
-   */
-  set<T>(key: string, value: T): Promise<void>;
+//   /**
+//    * Stores data in memory
+//    * @template T - Type of data to store
+//    * @param key - Key to store under
+//    * @param value - Data to store
+//    */
+//   set<T>(key: string, value: T): Promise<void>;
 
-  /**
-   * Removes data from memory
-   * @param key - Key to remove
-   */
-  delete(key: string): Promise<void>;
+//   /**
+//    * Removes data from memory
+//    * @param key - Key to remove
+//    */
+//   delete(key: string): Promise<void>;
 
-  /**
-   * Removes all data from memory
-   */
-  clear(): Promise<void>;
+//   /**
+//    * Removes all data from memory
+//    */
+//   clear(): Promise<void>;
 
-  keys(base?: string): Promise<string[]>;
-}
-/**
- * Interface for storing and retrieving vector data
- */
-export interface VectorStore {
-  /** Optional connection string for the vector store */
-  connection?: string;
+//   keys(base?: string): Promise<string[]>;
+// }
+// /**
+//  * Interface for storing and retrieving vector data
+//  */
+// export interface VectorStore {
+//   /** Optional connection string for the vector store */
+//   connection?: string;
 
-  /**
-   * Adds or updates data in the vector store
-   * @param contextId - Unique identifier for the context
-   * @param data - Data to add or update
-   */
-  upsert(contextId: string, data: any): Promise<void>;
+//   /**
+//    * Adds or updates data in the vector store
+//    * @param contextId - Unique identifier for the context
+//    * @param data - Data to add or update
+//    */
+//   upsert(contextId: string, data: any): Promise<void>;
 
-  /**
-   * Searches the vector store for similar data
-   * @param contextId - Context to search within
-   * @param query - Query text to search for
-   * @returns Array of matching documents
-   */
-  query(contextId: string, query: string): Promise<any[]>;
+//   /**
+//    * Searches the vector store for similar data
+//    * @param contextId - Context to search within
+//    * @param query - Query text to search for
+//    * @returns Array of matching documents
+//    */
+//   query(contextId: string, query: string): Promise<any[]>;
 
-  /**
-   * Creates a new index in the vector store
-   * @param indexName - Name of the index to create
-   */
-  createIndex(indexName: string): Promise<void>;
+//   /**
+//    * Creates a new index in the vector store
+//    * @param indexName - Name of the index to create
+//    */
+//   createIndex(indexName: string): Promise<void>;
 
-  /**
-   * Deletes an existing index from the vector store
-   * @param indexName - Name of the index to delete
-   */
-  deleteIndex(indexName: string): Promise<void>;
-}
+//   /**
+//    * Deletes an existing index from the vector store
+//    * @param indexName - Name of the index to delete
+//    */
+//   deleteIndex(indexName: string): Promise<void>;
+// }
 
 /**
  * Represents the working memory state during execution
  */
-export interface WorkingMemory {
+export interface WorkingMemory extends WorkingMemoryData {
   /** List of input references */
-  inputs: InputRef[];
-  /** List of output references */
-  outputs: OutputRef[];
-  /** List of thought records */
-  thoughts: Thought[];
-  /** List of action calls */
-  calls: ActionCall[];
-  /** List of action results */
-  results: ActionResult[];
+
   // chains: Chain[];
-  episodicMemory?: EpisodicMemory;
+  // episodicMemory?: EpisodicMemory;
   /** Current image URL for multimodal context */
   currentImage?: URL;
-
-  runs: RunRef[];
-
-  steps: StepRef[];
-
-  events: EventRef[];
 }
 
 /**
  * Memory management configuration for contexts
  */
-export interface MemoryManager<TContext extends AnyContext = AnyContext> {
+export interface IMemoryManager<TContext extends AnyContext = AnyContext> {
   /** Called when memory needs pruning due to size constraints */
   onMemoryPressure?: (
-    ctx: AgentContext<TContext>, 
+    ctx: AgentContext<TContext>,
     workingMemory: WorkingMemory,
     agent: AnyAgent
   ) => Promise<WorkingMemory> | WorkingMemory;
-  
+
   /** Called before adding new entries to determine if pruning is needed */
   shouldPrune?: (
-    ctx: AgentContext<TContext>, 
-    workingMemory: WorkingMemory, 
+    ctx: AgentContext<TContext>,
+    workingMemory: WorkingMemory,
     newEntry: AnyRef,
     agent: AnyAgent
   ) => Promise<boolean> | boolean;
-  
+
   /** Called to compress/summarize old entries into a compact representation */
   compress?: (
-    ctx: AgentContext<TContext>, 
+    ctx: AgentContext<TContext>,
     entries: AnyRef[],
     agent: AnyAgent
   ) => Promise<string> | string;
-  
+
   /** Maximum number of entries before triggering memory management */
   maxSize?: number;
-  
+
   /** Memory management strategy */
-  strategy?: 'fifo' | 'lru' | 'smart' | 'custom';
-  
+  strategy?: "fifo" | "lru" | "smart" | "custom";
+
   /** Whether to preserve certain types of entries during pruning */
   preserve?: {
     /** Always keep the last N inputs */
@@ -245,7 +228,7 @@ export type InferActionArguments<TSchema = undefined> =
 export interface ActionContext<
   TContext extends AnyContext = AnyContext,
   AContext extends AnyContext = AnyContext,
-  ActionMemory extends Memory<any> = Memory<any>
+  ActionMemory extends IMemory<any> = IMemory<any>
 > extends AgentContext<TContext> {
   actionMemory: InferMemoryData<ActionMemory>;
   agentMemory: InferContextMemory<AContext> | undefined;
@@ -256,7 +239,7 @@ export interface ActionCallContext<
   Schema extends ActionSchema = undefined,
   TContext extends AnyContext = AnyContext,
   AContext extends AnyContext = AnyContext,
-  ActionMemory extends Memory<any> = Memory<any>
+  ActionMemory extends IMemory<any> = IMemory<any>
 > extends ActionContext<TContext, AContext, ActionMemory>,
     ContextStateApi<TContext> {
   call: ActionCall<InferActionArguments<Schema>>;
@@ -275,7 +258,7 @@ export type ActionHandler<
   Result = any,
   TContext extends AnyContext = AnyContext,
   TAgent extends AnyAgent = AnyAgent,
-  TMemory extends Memory<any> = Memory<any>
+  TMemory extends IMemory<any> = IMemory<any>
 > = Schema extends undefined
   ? (
       ctx: ActionCallContext<
@@ -309,7 +292,7 @@ export interface Action<
   TError = unknown,
   TContext extends AnyContext = AnyContext,
   TAgent extends AnyAgent = AnyAgent,
-  TMemory extends Memory<any> = Memory<any>
+  TMemory extends IMemory<any> = IMemory<any>
 > {
   name: string;
   description?: string;
@@ -521,6 +504,14 @@ export type RunRef = {
   stopReason?: string;
 };
 
+export interface ThoughtRef {
+  id: string;
+  ref: "thought";
+  content: string;
+  processed: boolean;
+  timestamp: number;
+}
+
 export type StepRef = {
   id: string;
   ref: "step";
@@ -585,15 +576,6 @@ export type ActionResult<Data = any> = {
   formatted?: string | string[] | XMLElement;
 };
 
-/** Represents a thought or reasoning step */
-export type Thought = {
-  ref: "thought";
-  id: string;
-  content: string;
-  timestamp: number;
-  processed: boolean;
-};
-
 /** Represents a event */
 export type EventRef<Data = any> = {
   ref: "event";
@@ -609,7 +591,7 @@ export type EventRef<Data = any> = {
 export type Log =
   | InputRef
   | OutputRef
-  | Thought
+  | ThoughtRef
   | ActionCall
   | ActionResult
   | EventRef;
@@ -617,7 +599,7 @@ export type Log =
 export type AnyRef =
   | InputRef
   | OutputRef
-  | Thought
+  | ThoughtRef
   | ActionCall
   | ActionResult
   | EventRef
@@ -639,7 +621,7 @@ export type COTResponse = {
   plan: string[];
   actions: ActionCall[];
   outputs: OutputRef[];
-  thinking: Thought[];
+  thinking: ThoughtRef[];
 };
 
 /** Represents an XML element structure */
@@ -721,7 +703,7 @@ export type AnyAgent = Agent<any>;
 
 export interface Handlers {
   onLogStream: (log: AnyRef, done: boolean) => void;
-  onThinking: (thought: Thought) => void;
+  onThinking: (thought: ThoughtRef) => void;
 }
 
 export type Registry = {
@@ -740,7 +722,7 @@ interface AgentDef<TContext extends AnyContext = AnyContext> {
   /**
    * The memory store and vector store used by the agent.
    */
-  memory: BaseMemory;
+  memory: MemorySystem;
 
   /**
    * The current context of the agent.
@@ -829,7 +811,7 @@ interface AgentDef<TContext extends AnyContext = AnyContext> {
     unknown,
     AnyContext,
     Agent<TContext>,
-    Memory<any>
+    IMemory<any>
   >[];
 
   /**
@@ -1288,7 +1270,7 @@ export interface Context<
   maxWorkingMemorySize?: number;
 
   /** Memory management configuration for this context */
-  memoryManager?: MemoryManager<this>;
+  memoryManager?: IMemoryManager<this>;
 
   actions?: Resolver<Action[], ContextState<this>>;
 
@@ -1414,20 +1396,20 @@ export type Extension<
   inputs: Inputs;
 };
 
-export interface Episode {
-  id: string;
-  timestamp: number;
-  observation: string; // Context and setup
-  result: string; // Outcomes of actions
-  thoughts: string;
-  metadata?: {
-    success?: boolean;
-    tags?: string[];
-    [key: string]: any;
-  };
-}
+// export interface Episode {
+//   id: string;
+//   timestamp: number;
+//   observation: string; // Context and setup
+//   result: string; // Outcomes of actions
+//   thoughts: string;
+//   metadata?: {
+//     success?: boolean;
+//     tags?: string[];
+//     [key: string]: any;
+//   };
+// }
 
-export interface EpisodicMemory {
-  episodes: Episode[];
-  index?: number; // For vector store indexing
-}
+// export interface EpisodicMemory {
+//   episodes: Episode[];
+//   index?: number; // For vector store indexing
+// }

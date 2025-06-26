@@ -11,8 +11,9 @@ import type {
   InferSchemaArguments,
   Log,
   WorkingMemory,
-  MemoryManager,
+  IMemoryManager,
   AgentContext,
+  ThoughtRef,
 } from "./types";
 import { formatContextLog } from "./formatters";
 import { memory } from "./utils";
@@ -279,7 +280,7 @@ export async function applyMemoryManagement<TContext extends AnyContext>(
  * Applies default memory management strategies
  */
 async function applyDefaultMemoryStrategy<TContext extends AnyContext>(
-  memoryManager: MemoryManager<TContext>,
+  memoryManager: IMemoryManager<TContext>,
   workingMemory: WorkingMemory,
   agentContext: AgentContext<TContext>,
   agent: AnyAgent
@@ -324,7 +325,7 @@ async function applyDefaultMemoryStrategy<TContext extends AnyContext>(
 function applyFifoStrategy<TContext extends AnyContext>(
   workingMemory: WorkingMemory,
   excessCount: number,
-  memoryManager: MemoryManager<TContext>
+  memoryManager: IMemoryManager<TContext>
 ): WorkingMemory {
   const allEntries = getWorkingMemoryLogs(workingMemory, true);
   const entriesToRemove = allEntries.slice(0, excessCount);
@@ -346,7 +347,7 @@ function applyFifoStrategy<TContext extends AnyContext>(
 function applyLruStrategy<TContext extends AnyContext>(
   workingMemory: WorkingMemory,
   excessCount: number,
-  memoryManager: MemoryManager<TContext>
+  memoryManager: IMemoryManager<TContext>
 ): WorkingMemory {
   const allEntries = getWorkingMemoryLogs(workingMemory, true);
 
@@ -370,7 +371,7 @@ function applyLruStrategy<TContext extends AnyContext>(
 async function applySmartStrategy<TContext extends AnyContext>(
   workingMemory: WorkingMemory,
   excessCount: number,
-  memoryManager: MemoryManager<TContext>,
+  memoryManager: IMemoryManager<TContext>,
   agentContext: AgentContext<TContext>,
   agent: AnyAgent
 ): Promise<WorkingMemory> {
@@ -392,8 +393,8 @@ async function applySmartStrategy<TContext extends AnyContext>(
       agent
     );
 
-    const summaryThought: AnyRef = {
-      id: `memory-summary-${Date.now()}`,
+    const summaryThought: ThoughtRef = {
+      id: `memory-summary-${Date.now()}`, // todo: remove id
       ref: "thought",
       content: `[Memory Summary] ${summary}`,
       timestamp: Date.now(),
@@ -417,7 +418,7 @@ async function applySmartStrategy<TContext extends AnyContext>(
 function applyPreservationRules<TContext extends AnyContext>(
   entriesToRemove: AnyRef[],
   workingMemory: WorkingMemory,
-  preserve: NonNullable<MemoryManager<TContext>["preserve"]>
+  preserve: NonNullable<IMemoryManager<TContext>["preserve"]>
 ): AnyRef[] {
   return entriesToRemove.filter((entry) => {
     if (preserve.recentInputs && entry.ref === "input") {
@@ -544,7 +545,7 @@ export async function createContextState<TContext extends AnyContext>({
   const memory =
     (context.load
       ? await context.load(id, { options, settings })
-      : await agent.memory.store.get(`memory:${id}`)) ??
+      : await agent.memory.kv.get(`memory:${id}`)) ??
     (context.create
       ? await Promise.try(
           context.create,
@@ -569,13 +570,13 @@ export async function getContextWorkingMemory(
   agent: AnyAgent,
   contextId: string
 ) {
-  let workingMemory = await agent.memory.store.get<WorkingMemory>(
+  let workingMemory = await agent.memory.kv.get<WorkingMemory>(
     ["working-memory", contextId].join(":")
   );
 
   if (!workingMemory) {
     workingMemory = await defaultWorkingMemory.create();
-    await agent.memory.store.set(
+    await agent.memory.kv.set(
       ["working-memory", contextId].join(":"),
       workingMemory
     );
@@ -589,7 +590,7 @@ export async function saveContextWorkingMemory(
   contextId: string,
   workingMemory: WorkingMemory
 ) {
-  return await agent.memory.store.set(
+  return await agent.memory.kv.set(
     ["working-memory", contextId].join(":"),
     workingMemory
   );
@@ -629,7 +630,7 @@ export async function saveContextState(agent: AnyAgent, state: ContextState) {
     });
   }
 
-  await agent.memory.store.set<ContextStateSnapshot>(`context:${id}`, {
+  await agent.memory.kv.set<ContextStateSnapshot>(`context:${id}`, {
     id,
     type: context.type,
     key,
@@ -644,7 +645,7 @@ export async function saveContextState(agent: AnyAgent, state: ContextState) {
   if (state.context.save) {
     await state.context.save(state);
   } else {
-    await agent.memory.store.set<any>(`memory:${id}`, state.memory);
+    await agent.memory.kv.set<any>(`memory:${id}`, state.memory);
   }
 }
 export async function loadContextState(
@@ -652,7 +653,7 @@ export async function loadContextState(
   context: AnyContext,
   contextId: string
 ): Promise<Omit<ContextState, "options" | "memory"> | null> {
-  const state = await agent.memory.store.get<ContextStateSnapshot>(
+  const state = await agent.memory.kv.get<ContextStateSnapshot>(
     `context:${contextId}`
   );
 
@@ -673,7 +674,7 @@ export async function saveContextsIndex(
   agent: AnyAgent,
   contextIds: Set<string>
 ) {
-  await agent.memory.store.set<string[]>(
+  await agent.memory.kv.set<string[]>(
     "contexts",
     Array.from(contextIds.values())
   );
@@ -714,7 +715,7 @@ export function getContexts(
 }
 
 export async function deleteContext(agent: AnyAgent, contextId: string) {
-  await agent.memory.store.delete(`context:${contextId}`);
-  await agent.memory.store.delete(`memory:${contextId}`);
-  await agent.memory.store.delete(`working-memory:${contextId}`);
+  await agent.memory.kv.delete(`context:${contextId}`);
+  await agent.memory.kv.delete(`memory:${contextId}`);
+  await agent.memory.kv.delete(`working-memory:${contextId}`);
 }

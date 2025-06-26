@@ -6,7 +6,7 @@ import type {
   Debugger,
   Subscription,
   ContextState,
-  Episode,
+  // Episode,
   Registry,
   InputRef,
   WorkingMemory,
@@ -29,9 +29,13 @@ import {
   getContexts,
   deleteContext,
 } from "./context";
-import { createMemoryStore } from "./memory";
-import { createMemory } from "./memory";
-import { createVectorStore } from "./memory/base";
+import {
+  InMemoryGraphProvider,
+  InMemoryKeyValueProvider,
+  InMemoryVectorProvider,
+  MemorySystem,
+  type Episode,
+} from "./memory";
 import { runGenerate } from "./tasks";
 import { exportEpisodesAsTrainingData } from "./memory/utils";
 import { LogLevel } from "./types";
@@ -179,7 +183,14 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
     actions,
     experts,
     memory:
-      config.memory ?? createMemory(createMemoryStore(), createVectorStore()),
+      config.memory ??
+      new MemorySystem({
+        providers: {
+          kv: new InMemoryKeyValueProvider(),
+          vector: new InMemoryVectorProvider(),
+          graph: new InMemoryGraphProvider(),
+        },
+      }),
     container,
     model,
     reasoningModel,
@@ -377,10 +388,11 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
       });
 
       if (!workingMemories.has(contextId)) {
-        workingMemories.set(
-          contextId,
-          await getContextWorkingMemory(agent, contextId)
-        );
+        const memory = await getContextWorkingMemory(agent, contextId);
+        if (!memory) {
+          throw new Error(`No working memory found for context: ${contextId}`);
+        }
+        workingMemories.set(contextId, memory);
       }
 
       return workingMemories.get(contextId)!;
@@ -405,6 +417,9 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
       logger.info("agent:start", "Starting agent", { args, booted });
 
       booted = true;
+
+      logger.debug("agent:start", "Initializing memory system");
+      await agent.memory.initialize();
 
       logger.debug("agent:start", "Booting services");
       await serviceManager.bootAll();
@@ -483,7 +498,7 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
       }
 
       logger.debug("agent:start", "Loading saved contexts");
-      const savedContexts = await agent.memory.store.get<string[]>("contexts");
+      const savedContexts = await agent.memory.kv.get<string[]>("contexts");
 
       if (savedContexts) {
         logger.trace("agent:start", "Restoring saved contexts", {
@@ -528,6 +543,10 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
 
       try {
         await serviceManager.stopAll();
+      } catch (error) {}
+
+      try {
+        await agent.memory.close();
       } catch (error) {}
     },
 
@@ -946,9 +965,12 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
       const allEpisodes: Episode[] = [];
 
       for (const { id } of contexts) {
-        const episodes = await agent.memory.vector.query(id, "");
+        const episodes = await agent.memory.vector.search({
+          filter: { contextId: id },
+          limit: 1000,
+        });
         if (episodes.length > 0) {
-          allEpisodes.push(...episodes);
+          allEpisodes.push(...episodes.map((e) => e.metadata as Episode));
         }
       }
 
