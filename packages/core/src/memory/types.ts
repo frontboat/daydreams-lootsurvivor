@@ -1,5 +1,5 @@
 import type { LanguageModelV1 } from "ai";
-import type { z } from "zod/v4";
+
 import type {
   ActionCall,
   ActionResult,
@@ -10,6 +10,10 @@ import type {
   ThoughtRef,
   RunRef,
   StepRef,
+  AgentContext,
+  AnyContext,
+  WorkingMemory,
+  AnyAgent,
 } from "../types";
 
 /**
@@ -234,12 +238,46 @@ export interface PushOptions {
 /**
  * Memory manager for handling memory pressure
  */
-export interface MemoryManager {
+export interface MemoryManager<TContext extends AnyContext = AnyContext> {
+  /** Called when memory needs pruning due to size constraints */
+  onMemoryPressure?: (
+    ctx: AgentContext<TContext>,
+    workingMemory: WorkingMemory,
+    agent: AnyAgent
+  ) => Promise<WorkingMemory> | WorkingMemory;
+
+  /** Called before adding new entries to determine if pruning is needed */
+  shouldPrune?: (
+    ctx: AgentContext<TContext>,
+    workingMemory: WorkingMemory,
+    newEntry: AnyRef,
+    agent: AnyAgent
+  ) => Promise<boolean> | boolean;
+
+  /** Called to compress/summarize old entries into a compact representation */
+  compress?: (
+    ctx: AgentContext<TContext>,
+    entries: AnyRef[],
+    agent: AnyAgent
+  ) => Promise<string> | string;
+
+  /** Maximum number of entries before triggering memory management */
   maxSize?: number;
+
+  /** Memory management strategy */
   strategy?: "fifo" | "lru" | "smart" | "custom";
-  shouldPrune?: (memory: WorkingMemoryData, entry: AnyRef) => Promise<boolean>;
-  onMemoryPressure?: (memory: WorkingMemoryData) => Promise<WorkingMemoryData>;
-  compress?: (entries: AnyRef[]) => Promise<string>;
+
+  /** Whether to preserve certain types of entries during pruning */
+  preserve?: {
+    /** Always keep the last N inputs */
+    recentInputs?: number;
+    /** Always keep the last N outputs */
+    recentOutputs?: number;
+    /** Always keep action calls with these names */
+    actionNames?: string[];
+    /** Custom preservation logic */
+    custom?: (entry: AnyRef, ctx: AgentContext<TContext>) => boolean;
+  };
 }
 
 /**
@@ -247,12 +285,15 @@ export interface MemoryManager {
  */
 export interface FactualMemory {
   store(facts: Fact | Fact[]): Promise<void>;
-  get(id: string): Promise<Fact | null>;
-  search(query: string, options?: SearchOptions): Promise<Fact[]>;
-  verify(factId: string): Promise<FactVerification>;
-  update(id: string, updates: Partial<Fact>): Promise<void>;
-  delete(id: string): Promise<boolean>;
-  getByTag(tag: string, value: string): Promise<Fact[]>;
+  get(id: string, contextId?: string): Promise<Fact | null>;
+  search(
+    query: string,
+    options?: SearchOptions & { contextId?: string }
+  ): Promise<Fact[]>;
+  verify(factId: string, contextId?: string): Promise<FactVerification>;
+  update(id: string, updates: Partial<Fact>, contextId?: string): Promise<void>;
+  delete(id: string, contextId?: string): Promise<boolean>;
+  getByTag(tag: string, value: string, contextId?: string): Promise<Fact[]>;
   getByContext(contextId: string): Promise<Fact[]>;
 }
 
@@ -316,11 +357,18 @@ export interface CompressedEpisode extends Episode {
  */
 export interface SemanticMemory {
   store(concept: SemanticConcept): Promise<void>;
-  get(id: string): Promise<SemanticConcept | null>;
-  search(query: string, options?: SearchOptions): Promise<SemanticConcept[]>;
+  get(id: string, contextId?: string): Promise<SemanticConcept | null>;
+  search(
+    query: string,
+    options?: SearchOptions & { contextId?: string }
+  ): Promise<SemanticConcept[]>;
   getRelevantPatterns(contextId: string): Promise<Pattern[]>;
-  learnFromAction(action: any, result: any): Promise<void>;
-  updateConfidence(id: string, delta: number): Promise<void>;
+  learnFromAction(action: any, result: any, contextId?: string): Promise<void>;
+  updateConfidence(
+    id: string,
+    delta: number,
+    contextId?: string
+  ): Promise<void>;
 }
 
 export interface SemanticConcept {
@@ -330,6 +378,7 @@ export interface SemanticConcept {
   confidence: number;
   occurrences: number;
   examples: string[];
+  contextId?: string; // Context-specific or global if undefined
   metadata?: Record<string, any>;
 }
 

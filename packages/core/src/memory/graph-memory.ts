@@ -1,4 +1,4 @@
-import type { GraphMemory, GraphProvider, Entity, Relationship, Memory } from "./types";
+import type { GraphMemory, GraphProvider, Entity, Relationship } from "./types";
 
 export class GraphMemoryImpl implements GraphMemory {
   constructor(private provider: GraphProvider) {}
@@ -8,8 +8,8 @@ export class GraphMemoryImpl implements GraphMemory {
       id: entity.id,
       type: entity.type,
       properties: {
-        name: entity.name,
         ...entity.properties,
+        name: entity.name,
         contextIds: entity.contextIds,
       },
     };
@@ -27,23 +27,35 @@ export class GraphMemoryImpl implements GraphMemory {
         ...relationship.properties,
       },
     };
-    return this.provider.addEdge(edge);
+    const edgeId = await this.provider.addEdge(edge);
+
+    // Update the original relationship object with the generated ID
+    if (!relationship.id) {
+      relationship.id = edge.id;
+    }
+
+    return edgeId;
   }
 
   async getEntity(id: string): Promise<Entity | null> {
     const node = await this.provider.getNode(id);
     if (!node) return null;
 
+    const { name, contextIds, ...otherProperties } = node.properties;
+
     return {
       id: node.id,
       type: node.type,
-      name: node.properties.name,
-      properties: node.properties,
-      contextIds: node.properties.contextIds || [],
+      name: name,
+      properties: otherProperties,
+      contextIds: contextIds || [],
     };
   }
 
-  async findRelated(entityId: string, relationshipType?: string): Promise<Entity[]> {
+  async findRelated(
+    entityId: string,
+    relationshipType?: string
+  ): Promise<Entity[]> {
     const edges = await this.provider.getEdges(entityId, "both");
     const relatedIds = new Set<string>();
 

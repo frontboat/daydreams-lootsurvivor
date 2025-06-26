@@ -196,8 +196,39 @@ export class InMemoryVectorProvider implements VectorProvider {
         if (!match) continue;
       }
 
-      // Simple similarity - just return all matching documents with random scores
-      const score = Math.random() * 0.5 + 0.5; // 0.5 to 1.0
+      // Simple similarity - check if query matches content
+      let score = 0;
+      if (query.query && query.query.trim() !== "") {
+        const contentLower = doc.content.toLowerCase();
+        const queryLower = query.query.toLowerCase();
+        
+        // Check for exact match first
+        if (contentLower.includes(queryLower)) {
+          const exactMatch = contentLower === queryLower;
+          const startsWith = contentLower.startsWith(queryLower);
+          score = exactMatch ? 1.0 : startsWith ? 0.9 : 0.7;
+        } else {
+          // For similarity, check if most of the query words appear as whole words in content
+          const queryWords = queryLower.split(/\s+/).filter(w => w.length > 2);
+          if (queryWords.length === 0) {
+            continue; // Skip if no meaningful words in query
+          }
+          
+          const matchingWords = queryWords.filter(qw => {
+            const wordRegex = new RegExp(`\\b${qw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`);
+            return wordRegex.test(contentLower);
+          });
+          
+          // Require at least half the query words to match for a valid result
+          if (matchingWords.length >= Math.ceil(queryWords.length / 2)) {
+            score = (matchingWords.length / queryWords.length) * 0.6;
+          } else {
+            continue; // Skip non-matching content entirely
+          }
+        }
+      } else {
+        score = Math.random() * 0.5 + 0.5; // Random score if no query
+      }
       
       if (!query.minScore || score >= query.minScore) {
         results.push({
@@ -348,15 +379,15 @@ export class InMemoryGraphProvider implements GraphProvider {
     this.ensureReady();
     
     if (!edge.id) {
-      edge.id = `edge:${Date.now()}:${Math.random()}`;
+      edge.id = `relationship:${Date.now()}:${Math.random()}`;
     }
 
     // Verify nodes exist
     if (!this.nodes.has(edge.from)) {
-      throw new Error(`Source node ${edge.from} not found`);
+      throw new Error(`Source entity ${edge.from} not found`);
     }
     if (!this.nodes.has(edge.to)) {
-      throw new Error(`Target node ${edge.to} not found`);
+      throw new Error(`Target entity ${edge.to} not found`);
     }
 
     this.edges.set(edge.id, edge);

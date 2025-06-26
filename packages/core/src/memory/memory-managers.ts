@@ -1,0 +1,214 @@
+import type { WorkingMemory, AnyRef } from "../types";
+import type { MemoryManager } from "./types";
+import { generateText } from "ai";
+
+/**
+ * Built-in memory managers that users can easily adopt
+ */
+
+/**
+ * Token-based memory limiter that prunes based on estimated token count
+ */
+export function tokenLimiter(maxTokens: number): MemoryManager {
+  return {
+    maxSize: Math.floor(maxTokens / 4), // Rough estimation: 4 chars per token TODO: add tiktoken
+    strategy: "fifo",
+    shouldPrune: async (ctx, workingMemory, newEntry) => {
+      const estimatedTokens = estimateTokenCount(workingMemory);
+      return estimatedTokens >= maxTokens;
+    },
+    preserve: {
+      recentInputs: 3,
+      recentOutputs: 3,
+    },
+  };
+}
+
+/**
+ * Smart memory manager with AI-powered compression
+ */
+export function smartMemoryManager(options: {
+  maxSize: number;
+  compressionThreshold?: number;
+  preserveImportant?: boolean;
+}): MemoryManager {
+  return {
+    maxSize: options.maxSize,
+    strategy: "smart",
+    compress: async (ctx, entries, agent) => {
+      if (!agent.model) {
+        return `Compressed ${entries.length} entries (no model available for AI compression)`;
+      }
+
+      const conversationEntries = entries
+        .filter((entry) => entry.ref === "input" || entry.ref === "output")
+        .slice(-10)
+        .map((entry) => {
+          const type = entry.ref === "input" ? "User" : "Assistant";
+          const content =
+            "content" in entry ? entry.content : JSON.stringify(entry);
+          return `${type}: ${content}`;
+        })
+        .join("\n");
+
+      if (!conversationEntries) {
+        return `Compressed ${entries.length} system entries`;
+      }
+
+      try {
+        const prompt = `Summarize this conversation segment in 2-3 concise sentences. Focus on key topics, decisions, and important information:
+
+${conversationEntries}
+
+Summary:`;
+
+        const response = await generateText({
+          model: agent.model,
+          prompt,
+          maxTokens: 2000,
+          temperature: 0.3,
+        });
+
+        return response.text.trim();
+      } catch (error) {
+        agent.logger.warn(
+          "AI compression failed:",
+          JSON.stringify({
+            error: error instanceof Error ? error.message : "Unknown error",
+            contextId: ctx.id,
+            entriesCount: entries.length,
+          })
+        );
+        return `Compressed ${entries.length} entries (${
+          entries.filter((e) => e.ref === "input").length
+        } inputs, ${entries.filter((e) => e.ref === "output").length} outputs)`;
+      }
+    },
+    preserve: {
+      recentInputs: options.preserveImportant ? 5 : 2,
+      recentOutputs: options.preserveImportant ? 5 : 2,
+    },
+  };
+}
+
+/**
+ * Context-aware memory manager that preserves task-relevant information
+ */
+export function contextAwareManager(options: {
+  maxSize: number;
+  taskKeywords?: string[];
+  preserveErrors?: boolean;
+}): MemoryManager {
+  return {
+    maxSize: options.maxSize,
+    strategy: "custom",
+    shouldPrune: async (ctx, workingMemory, newEntry) => {
+      const currentSize =
+        workingMemory.inputs.length +
+        workingMemory.outputs.length +
+        workingMemory.calls.length +
+        workingMemory.results.length;
+      return currentSize >= options.maxSize;
+    },
+    onMemoryPressure: async (ctx, workingMemory) => {
+      const { taskKeywords = [], preserveErrors = true } = options;
+
+      const preserveEntry = (entry: AnyRef): boolean => {
+        if (preserveErrors && "error" in entry && entry.error) {
+          return true;
+        }
+
+        if (taskKeywords.length > 0) {
+          const content =
+            "content" in entry ? entry.content : JSON.stringify(entry);
+          const hasKeyword = taskKeywords.some((keyword) =>
+            content.toLowerCase().includes(keyword.toLowerCase())
+          );
+          if (hasKeyword) return true;
+        }
+
+        return false;
+      };
+
+      const preservedInputs = workingMemory.inputs.filter(preserveEntry);
+      const recentInputs = workingMemory.inputs.slice(
+        -Math.max(5, options.maxSize * 0.2)
+      );
+      const combinedInputs = [
+        ...new Set([...preservedInputs, ...recentInputs]),
+      ];
+
+      const preservedOutputs = workingMemory.outputs.filter(preserveEntry);
+      const recentOutputs = workingMemory.outputs.slice(
+        -Math.max(5, options.maxSize * 0.2)
+      );
+      const combinedOutputs = [
+        ...new Set([...preservedOutputs, ...recentOutputs]),
+      ];
+
+      return {
+        ...workingMemory,
+        inputs: combinedInputs,
+        outputs: combinedOutputs,
+        thoughts: workingMemory.thoughts.slice(
+          -Math.max(3, options.maxSize * 0.1)
+        ),
+        calls: workingMemory.calls.slice(-Math.max(10, options.maxSize * 0.3)),
+        results: workingMemory.results.slice(
+          -Math.max(10, options.maxSize * 0.3)
+        ),
+      };
+    },
+  };
+}
+
+/**
+ * Simple FIFO memory manager with preservation rules
+ */
+export function fifoManager(options: {
+  maxSize: number;
+  preserveInputs?: number;
+  preserveOutputs?: number;
+  preserveActions?: string[];
+}): MemoryManager {
+  return {
+    maxSize: options.maxSize,
+    strategy: "fifo",
+    preserve: {
+      recentInputs: options.preserveInputs || 3,
+      recentOutputs: options.preserveOutputs || 3,
+      actionNames: options.preserveActions || [],
+    },
+  };
+}
+
+/**
+ * Utility function to estimate token count for memory entries
+ */
+function estimateTokenCount(workingMemory: WorkingMemory): number {
+  let totalChars = 0;
+
+  // Count characters in all text content
+  workingMemory.inputs.forEach((entry) => {
+    totalChars += (entry.content?.toString() || "").length;
+  });
+
+  workingMemory.outputs.forEach((entry) => {
+    totalChars += (entry.content?.toString() || "").length;
+  });
+
+  workingMemory.thoughts.forEach((entry) => {
+    totalChars += entry.content.length;
+  });
+
+  workingMemory.calls.forEach((entry) => {
+    totalChars += entry.content.length;
+  });
+
+  workingMemory.results.forEach((entry) => {
+    totalChars += JSON.stringify(entry.data || "").length;
+  });
+
+  // Rough estimation: 4 characters per token on average
+  return Math.ceil(totalChars / 4);
+}

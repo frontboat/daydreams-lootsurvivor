@@ -119,7 +119,7 @@ export class MemorySystem implements Memory {
     const context: MemoryContext = {
       operation: "remember",
       data: content,
-      options,
+      options: options || {},
       memory: this,
     };
 
@@ -132,16 +132,22 @@ export class MemorySystem implements Memory {
 
     await this.lifecycle.emit("beforeRemember", context);
 
+    // Use potentially modified context data and options
+    let transformedContent = context.data;
+    const finalOptions = context.options;
+
     // Transform content if middleware provides transformation
-    let transformedContent = content;
     for (const mw of this.middleware) {
       if (mw.transformStore) {
         transformedContent = await mw.transformStore(transformedContent);
       }
     }
 
-    // Classify and route content
-    const classified = await this.classifyContent(transformedContent, options);
+    // Update context with transformed content
+    context.data = transformedContent;
+
+    // Classify and route content using final options
+    const classified = await this.classifyContent(transformedContent, finalOptions);
 
     // Store in appropriate memory types
     const promises: Promise<void>[] = [];
@@ -167,26 +173,26 @@ export class MemorySystem implements Memory {
     }
 
     // Store raw content if requested
-    if (options?.key) {
+    if (finalOptions?.key) {
       promises.push(
-        this.kv.set(options.key, transformedContent, {
-          ttl: options.ttl,
-          tags: options.metadata,
+        this.kv.set(finalOptions.key, transformedContent, {
+          ttl: finalOptions.ttl,
+          tags: finalOptions.metadata,
         })
       );
     }
 
     // Index for vector search if requested
-    if (options?.index !== false && typeof transformedContent === "string") {
+    if (finalOptions?.index !== false && typeof transformedContent === "string") {
       promises.push(
         this.vector.index([
           {
-            id: options?.key || `memory:${Date.now()}`,
+            id: finalOptions?.key || `memory:${Date.now()}`,
             content: transformedContent,
             metadata: {
-              type: options?.type || "generic",
-              context: options?.context,
-              ...options?.metadata,
+              type: finalOptions?.type || "generic",
+              context: finalOptions?.context,
+              ...finalOptions?.metadata,
             },
           },
         ])
@@ -238,12 +244,14 @@ export class MemorySystem implements Memory {
           limit: options?.limit || 20,
           filter: options?.filter,
           minScore: options?.minRelevance,
+          includeContent: true,
+          includeMetadata: true,
         })
         .then((vectorResults) =>
           vectorResults.map((vr) => ({
             id: vr.id,
             type: "vector",
-            content: vr.content || vr.metadata || {},
+            content: vr.content,
             score: vr.score,
             metadata: vr.metadata,
           }))

@@ -48,19 +48,7 @@ export class WorkingMemoryImpl implements IWorkingMemory {
     entry: AnyRef,
     options?: PushOptions
   ): Promise<void> {
-    const data = await this.get(contextId);
-
-    // Check memory pressure if manager provided
-    if (options?.memoryManager) {
-      const shouldPrune = await this.shouldPrune(
-        data,
-        entry,
-        options.memoryManager
-      );
-      if (shouldPrune) {
-        await this.handleMemoryPressure(contextId, data, options.memoryManager);
-      }
-    }
+    let data = await this.get(contextId);
 
     // Add entry to appropriate array based on ref type
     switch (entry.ref) {
@@ -91,6 +79,18 @@ export class WorkingMemoryImpl implements IWorkingMemory {
       default:
         // Add to events as fallback
         data.events.push(entry as any);
+    }
+
+    // Check memory pressure if manager provided AFTER adding the entry
+    if (options?.memoryManager) {
+      const shouldPrune = await this.shouldPrune(
+        data,
+        entry,
+        options.memoryManager
+      );
+      if (shouldPrune) {
+        data = await this.handleMemoryPressure(contextId, data, options.memoryManager);
+      }
     }
 
     // Save updated data
@@ -144,11 +144,10 @@ export class WorkingMemoryImpl implements IWorkingMemory {
     contextId: string,
     data: WorkingMemoryData,
     manager: MemoryManager
-  ): Promise<void> {
+  ): Promise<WorkingMemoryData> {
     if (manager.onMemoryPressure) {
       const pruned = await manager.onMemoryPressure(data);
-      await this.set(contextId, pruned);
-      return;
+      return pruned;
     }
 
     // Default FIFO pruning
@@ -196,7 +195,7 @@ export class WorkingMemoryImpl implements IWorkingMemory {
         break;
     }
 
-    await this.set(contextId, data);
+    return data;
   }
 
   private calculateSize(data: WorkingMemoryData): number {
