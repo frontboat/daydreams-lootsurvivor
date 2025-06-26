@@ -172,6 +172,79 @@ export interface IMemoryManager<TContext extends AnyContext = AnyContext> {
   };
 }
 
+/**
+ * Episode detection and creation hooks for contexts
+ * Allows developers to customize when and how episodes are stored
+ */
+export interface EpisodeHooks<TContext extends AnyContext = AnyContext> {
+  /** 
+   * Called to determine if a new episode should be started
+   * @param ref - The current log reference being processed
+   * @param workingMemory - Current working memory state
+   * @param contextState - Current context state
+   * @param agent - Agent instance
+   * @returns true if a new episode should start
+   */
+  shouldStartEpisode?(
+    ref: AnyRef,
+    workingMemory: WorkingMemory,
+    contextState: ContextState<TContext>,
+    agent: AnyAgent
+  ): Promise<boolean> | boolean;
+
+  /** 
+   * Called to determine if the current episode should be ended and stored
+   * @param ref - The current log reference being processed
+   * @param workingMemory - Current working memory state
+   * @param contextState - Current context state
+   * @param agent - Agent instance
+   * @returns true if the current episode should be stored
+   */
+  shouldEndEpisode?(
+    ref: AnyRef,
+    workingMemory: WorkingMemory,
+    contextState: ContextState<TContext>,
+    agent: AnyAgent
+  ): Promise<boolean> | boolean;
+
+  /** 
+   * Called to create episode data from collected logs
+   * @param logs - Array of logs that make up this episode
+   * @param contextState - Current context state
+   * @param agent - Agent instance
+   * @returns Episode data to be stored
+   */
+  createEpisode?(
+    logs: AnyRef[],
+    contextState: ContextState<TContext>,
+    agent: AnyAgent
+  ): Promise<any> | any;
+
+  /** 
+   * Called to classify the type of episode (optional)
+   * @param episodeData - The episode data from createEpisode
+   * @param contextState - Current context state
+   * @returns Episode type/classification string
+   */
+  classifyEpisode?(
+    episodeData: any,
+    contextState: ContextState<TContext>
+  ): string;
+
+  /** 
+   * Called to extract additional metadata for the episode (optional)
+   * @param episodeData - The episode data from createEpisode
+   * @param logs - The original logs for this episode
+   * @param contextState - Current context state
+   * @returns Metadata object
+   */
+  extractMetadata?(
+    episodeData: any,
+    logs: AnyRef[],
+    contextState: ContextState<TContext>
+  ): Record<string, any>;
+}
+
 export type InferSchema<T> = T extends {
   schema?: infer S extends z.ZodTypeAny;
 }
@@ -1271,6 +1344,9 @@ export interface Context<
 
   /** Memory management configuration for this context */
   memoryManager?: IMemoryManager<this>;
+
+  /** Episode detection and creation hooks for this context */
+  episodeHooks?: EpisodeHooks<this>;
 
   actions?: Resolver<Action[], ContextState<this>>;
 

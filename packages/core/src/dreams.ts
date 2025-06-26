@@ -965,12 +965,9 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
       const allEpisodes: Episode[] = [];
 
       for (const { id } of contexts) {
-        const episodes = await agent.memory.vector.search({
-          filter: { contextId: id },
-          limit: 1000,
-        });
+        const episodes = await agent.memory.episodes.getByContext(id);
         if (episodes.length > 0) {
-          allEpisodes.push(...episodes.map((e) => e.metadata as Episode));
+          allEpisodes.push(...episodes);
         }
       }
 
