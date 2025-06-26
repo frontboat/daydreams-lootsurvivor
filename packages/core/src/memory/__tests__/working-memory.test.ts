@@ -6,10 +6,12 @@ import {
   InMemoryGraphProvider,
 } from "../providers/in-memory";
 import type { Memory, WorkingMemoryData, MemoryManager } from "../types";
-import type { AnyRef } from "../../types";
+import type { AnyRef, AgentContext, AnyAgent } from "../../types";
 
 describe("WorkingMemory", () => {
   let memory: Memory;
+  let mockCtx: AgentContext;
+  let mockAgent: AnyAgent;
 
   beforeEach(async () => {
     memory = new MemorySystem({
@@ -20,6 +22,26 @@ describe("WorkingMemory", () => {
       },
     });
     await memory.initialize();
+
+    // Create mock agent context and agent for testing
+    mockCtx = {
+      id: "test-context",
+      type: "test",
+      key: "test-key",
+      memory: {} as any,
+      settings: {},
+      workingMemory: {} as any,
+    } as unknown as AgentContext;
+
+    mockAgent = {
+      model: {} as any,
+      logger: {
+        info: () => {},
+        warn: () => {},
+        error: () => {},
+        debug: () => {},
+      },
+    } as unknown as AnyAgent;
   });
 
   afterEach(async () => {
@@ -94,7 +116,7 @@ describe("WorkingMemory", () => {
         processed: false,
       };
 
-      await memory.working.push(contextId, inputRef);
+      await memory.working.push(contextId, inputRef, mockCtx, mockAgent);
 
       const workingMemory = await memory.working.get(contextId);
       expect(workingMemory.inputs).toHaveLength(1);
@@ -112,7 +134,7 @@ describe("WorkingMemory", () => {
         processed: true,
       };
 
-      await memory.working.push(contextId, outputRef);
+      await memory.working.push(contextId, outputRef, mockCtx, mockAgent);
 
       const workingMemory = await memory.working.get(contextId);
       expect(workingMemory.outputs).toHaveLength(1);
@@ -128,7 +150,7 @@ describe("WorkingMemory", () => {
         processed: true,
       };
 
-      await memory.working.push(contextId, thoughtRef);
+      await memory.working.push(contextId, thoughtRef, mockCtx, mockAgent);
 
       const workingMemory = await memory.working.get(contextId);
       expect(workingMemory.thoughts).toHaveLength(1);
@@ -147,7 +169,7 @@ describe("WorkingMemory", () => {
         processed: true,
       };
 
-      await memory.working.push(contextId, callRef);
+      await memory.working.push(contextId, callRef, mockCtx, mockAgent);
 
       const workingMemory = await memory.working.get(contextId);
       expect(workingMemory.calls).toHaveLength(1);
@@ -165,7 +187,7 @@ describe("WorkingMemory", () => {
         processed: true,
       };
 
-      await memory.working.push(contextId, resultRef);
+      await memory.working.push(contextId, resultRef, mockCtx, mockAgent);
 
       const workingMemory = await memory.working.get(contextId);
       expect(workingMemory.results).toHaveLength(1);
@@ -182,7 +204,7 @@ describe("WorkingMemory", () => {
         processed: true,
       };
 
-      await memory.working.push(contextId, eventRef);
+      await memory.working.push(contextId, eventRef, mockCtx, mockAgent);
 
       const workingMemory = await memory.working.get(contextId);
       expect(workingMemory.events).toHaveLength(1);
@@ -203,7 +225,7 @@ describe("WorkingMemory", () => {
         processed: false,
       };
 
-      await memory.working.push(contextId, stepRef);
+      await memory.working.push(contextId, stepRef, mockCtx, mockAgent);
 
       const workingMemory = await memory.working.get(contextId);
       expect(workingMemory.steps).toHaveLength(1);
@@ -222,7 +244,7 @@ describe("WorkingMemory", () => {
         processed: false,
       };
 
-      await memory.working.push(contextId, runRef);
+      await memory.working.push(contextId, runRef, mockCtx, mockAgent);
 
       const workingMemory = await memory.working.get(contextId);
       expect(workingMemory.runs).toHaveLength(1);
@@ -246,7 +268,7 @@ describe("WorkingMemory", () => {
         processed: false,
       };
 
-      await memory.working.push(contextId, inputRef);
+      await memory.working.push(contextId, inputRef, mockCtx, mockAgent);
 
       expect(emittedEvent).toBeDefined();
       expect(emittedEvent.contextId).toBe(contextId);
@@ -281,7 +303,9 @@ describe("WorkingMemory", () => {
           processed: false,
         };
 
-        await memory.working.push(contextId, inputRef, { memoryManager });
+        await memory.working.push(contextId, inputRef, mockCtx, mockAgent, {
+          memoryManager,
+        });
       }
 
       const workingMemory = await memory.working.get(contextId);
@@ -295,7 +319,7 @@ describe("WorkingMemory", () => {
 
       const memoryManager: MemoryManager = {
         maxSize: 2,
-        shouldPrune: async (memory, entry) => {
+        shouldPrune: async (ctx, memory, entry, agent) => {
           pruneCallCount++;
           return memory.inputs.length >= 2;
         },
@@ -313,7 +337,9 @@ describe("WorkingMemory", () => {
           processed: false,
         };
 
-        await memory.working.push(contextId, inputRef, { memoryManager });
+        await memory.working.push(contextId, inputRef, mockCtx, mockAgent, {
+          memoryManager,
+        });
       }
 
       expect(pruneCallCount).toBeGreaterThan(0);
@@ -324,7 +350,7 @@ describe("WorkingMemory", () => {
 
       const memoryManager: MemoryManager = {
         maxSize: 1,
-        onMemoryPressure: async (memory) => {
+        onMemoryPressure: async (ctx, memory, agent) => {
           pressureCallCount++;
           // Custom pruning logic - keep only the last input
           return {
@@ -346,7 +372,9 @@ describe("WorkingMemory", () => {
           processed: false,
         };
 
-        await memory.working.push(contextId, inputRef, { memoryManager });
+        await memory.working.push(contextId, inputRef, mockCtx, mockAgent, {
+          memoryManager,
+        });
       }
 
       expect(pressureCallCount).toBeGreaterThan(0);
@@ -362,7 +390,7 @@ describe("WorkingMemory", () => {
       const memoryManager: MemoryManager = {
         maxSize: 2,
         strategy: "smart",
-        compress: async (entries) => {
+        compress: async (ctx, entries, agent) => {
           compressCallCount++;
           return `Compressed ${entries.length} entries`;
         },
@@ -380,7 +408,9 @@ describe("WorkingMemory", () => {
           processed: false,
         };
 
-        await memory.working.push(contextId, inputRef, { memoryManager });
+        await memory.working.push(contextId, inputRef, mockCtx, mockAgent, {
+          memoryManager,
+        });
       }
 
       expect(compressCallCount).toBeGreaterThan(0);
@@ -397,15 +427,20 @@ describe("WorkingMemory", () => {
 
       // Create and populate working memory
       await memory.working.create(contextId);
-      await memory.working.push(contextId, {
-        id: "input:1",
-        ref: "input",
-        type: "text",
-        content: "test",
-        data: "test",
-        timestamp: Date.now(),
-        processed: false,
-      });
+      await memory.working.push(
+        contextId,
+        {
+          id: "input:1",
+          ref: "input",
+          type: "text",
+          content: "test",
+          data: "test",
+          timestamp: Date.now(),
+          processed: false,
+        },
+        mockCtx,
+        mockAgent
+      );
 
       // Verify it has content
       let workingMemory = await memory.working.get(contextId);
@@ -456,25 +491,35 @@ describe("WorkingMemory", () => {
       await memory.working.create(contextId);
 
       // Add some entries
-      await memory.working.push(contextId, {
-        id: "input:1",
-        ref: "input",
-        type: "text",
-        content: "test input",
-        data: "test input",
-        timestamp: Date.now(),
-        processed: false,
-      });
+      await memory.working.push(
+        contextId,
+        {
+          id: "input:1",
+          ref: "input",
+          type: "text",
+          content: "test input",
+          data: "test input",
+          timestamp: Date.now(),
+          processed: false,
+        },
+        mockCtx,
+        mockAgent
+      );
 
-      await memory.working.push(contextId, {
-        id: "output:1",
-        ref: "output",
-        type: "text",
-        content: "test output",
-        data: "test output",
-        timestamp: Date.now(),
-        processed: true,
-      });
+      await memory.working.push(
+        contextId,
+        {
+          id: "output:1",
+          ref: "output",
+          type: "text",
+          content: "test output",
+          data: "test output",
+          timestamp: Date.now(),
+          processed: true,
+        },
+        mockCtx,
+        mockAgent
+      );
 
       const summary = await memory.working.summarize(contextId);
 
@@ -506,7 +551,7 @@ describe("WorkingMemory", () => {
 
       // Should not crash, may return gracefully
       try {
-        await memory.working.push(contextId, invalidRef);
+        await memory.working.push(contextId, invalidRef, mockCtx, mockAgent);
         expect(true).toBe(true); // If no error, that's fine
       } catch (error) {
         expect(true).toBe(true); // If error, that's also acceptable behavior

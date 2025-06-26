@@ -2,131 +2,28 @@ import { type LanguageModelV1, type Schema } from "ai";
 import { z, ZodObject, ZodType, type ZodRawShape } from "zod/v4";
 import type { Container } from "./container";
 import type { ServiceProvider } from "./serviceProvider";
-// import type { BaseMemory } from "./memory";
 import type { TaskRunner } from "./task";
 import type { Logger } from "./logger";
 import type { RequestContext, RequestTrackingConfig } from "./tracking";
 import type { RequestTracker } from "./tracking/tracker";
-import type { MemorySystem, WorkingMemoryData } from "./memory";
+import type {
+  EpisodeHooks,
+  IMemory,
+  InferMemoryData,
+  MemorySystem,
+  WorkingMemory,
+  StronglyTypedMemory,
+  ExtractMemoryData,
+} from "./memory";
+
+// Export memory types
+export * from "./memory";
 
 export { type LanguageModelV1, type Schema } from "ai";
 
 export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
 export type MaybePromise<T = any> = T | Promise<T>;
-
-/**
- * Represents a memory configuration for storing data
- * @template Data - Type of data stored in memory
- */
-export type IMemory<Data = any> = {
-  /** Unique identifier for this memory */
-  key: string;
-  /** Function to initialize memory data */
-  create: () => Promise<Data> | Data;
-};
-
-/**
- * Extracts the data type from a Memory type
- * @template TMemory - Memory type to extract data from
- */
-export type InferMemoryData<TMemory extends IMemory<any>> =
-  TMemory extends IMemory<infer Data> ? Data : never;
-
-/**
- * Represents an execution chain with experts and metadata
- */
-export type Chain = {
-  /** Unique identifier for the chain */
-  id: string;
-  /** Current thinking/reasoning state */
-  thinking: string;
-  /** Goal or purpose of this chain */
-  purpose: string;
-  /** List of experts involved in the chain */
-  experts: { name: string; data: string }[];
-};
-
-/**
- * Represents the working memory state during execution
- */
-export interface WorkingMemory extends WorkingMemoryData {
-  /** Current image URL for multimodal context */
-  currentImage?: URL;
-}
-
-/**
- * Episode detection and creation hooks for contexts
- * Allows developers to customize when and how episodes are stored
- */
-export interface EpisodeHooks<TContext extends AnyContext = AnyContext> {
-  /**
-   * Called to determine if a new episode should be started
-   * @param ref - The current log reference being processed
-   * @param workingMemory - Current working memory state
-   * @param contextState - Current context state
-   * @param agent - Agent instance
-   * @returns true if a new episode should start
-   */
-  shouldStartEpisode?(
-    ref: AnyRef,
-    workingMemory: WorkingMemory,
-    contextState: ContextState<TContext>,
-    agent: AnyAgent
-  ): Promise<boolean> | boolean;
-
-  /**
-   * Called to determine if the current episode should be ended and stored
-   * @param ref - The current log reference being processed
-   * @param workingMemory - Current working memory state
-   * @param contextState - Current context state
-   * @param agent - Agent instance
-   * @returns true if the current episode should be stored
-   */
-  shouldEndEpisode?(
-    ref: AnyRef,
-    workingMemory: WorkingMemory,
-    contextState: ContextState<TContext>,
-    agent: AnyAgent
-  ): Promise<boolean> | boolean;
-
-  /**
-   * Called to create episode data from collected logs
-   * @param logs - Array of logs that make up this episode
-   * @param contextState - Current context state
-   * @param agent - Agent instance
-   * @returns Episode data to be stored
-   */
-  createEpisode?(
-    logs: AnyRef[],
-    contextState: ContextState<TContext>,
-    agent: AnyAgent
-  ): Promise<any> | any;
-
-  /**
-   * Called to classify the type of episode (optional)
-   * @param episodeData - The episode data from createEpisode
-   * @param contextState - Current context state
-   * @returns Episode type/classification string
-   */
-  classifyEpisode?(
-    episodeData: any,
-    contextState: ContextState<TContext>
-  ): string;
-
-  /**
-   * Called to extract additional metadata for the episode (optional)
-   * @param episodeData - The episode data from createEpisode
-   * @param logs - The original logs for this episode
-   * @param contextState - Current context state
-   * @returns Metadata object
-   */
-  extractMetadata?(
-    episodeData: any,
-    logs: AnyRef[],
-    contextState: ContextState<TContext>
-  ): Record<string, any>;
-}
 
 export type InferSchema<T> = T extends {
   schema?: infer S extends z.ZodTypeAny;
@@ -184,9 +81,9 @@ export type InferActionArguments<TSchema = undefined> =
 export interface ActionContext<
   TContext extends AnyContext = AnyContext,
   AContext extends AnyContext = AnyContext,
-  ActionMemory extends IMemory<any> = IMemory<any>
+  ActionMemory extends StronglyTypedMemory = StronglyTypedMemory
 > extends AgentContext<TContext> {
-  actionMemory: InferMemoryData<ActionMemory>;
+  actionMemory: ExtractMemoryData<ActionMemory>;
   agentMemory: InferContextMemory<AContext> | undefined;
   abortSignal?: AbortSignal;
 }
@@ -195,7 +92,7 @@ export interface ActionCallContext<
   Schema extends ActionSchema = undefined,
   TContext extends AnyContext = AnyContext,
   AContext extends AnyContext = AnyContext,
-  ActionMemory extends IMemory<any> = IMemory<any>
+  ActionMemory extends StronglyTypedMemory = StronglyTypedMemory
 > extends ActionContext<TContext, AContext, ActionMemory>,
     ContextStateApi<TContext> {
   call: ActionCall<InferActionArguments<Schema>>;
@@ -214,7 +111,7 @@ export type ActionHandler<
   Result = any,
   TContext extends AnyContext = AnyContext,
   TAgent extends AnyAgent = AnyAgent,
-  TMemory extends IMemory<any> = IMemory<any>
+  TMemory extends StronglyTypedMemory = StronglyTypedMemory
 > = Schema extends undefined
   ? (
       ctx: ActionCallContext<
@@ -248,7 +145,7 @@ export interface Action<
   TError = unknown,
   TContext extends AnyContext = AnyContext,
   TAgent extends AnyAgent = AnyAgent,
-  TMemory extends IMemory<any> = IMemory<any>
+  TMemory extends StronglyTypedMemory = StronglyTypedMemory
 > {
   name: string;
   description?: string;

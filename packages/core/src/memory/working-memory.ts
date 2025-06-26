@@ -1,4 +1,4 @@
-import type { AnyRef } from "../types";
+import type { AnyRef, AgentContext, AnyContext, AnyAgent, WorkingMemory } from "../types";
 import type {
   IWorkingMemory,
   WorkingMemoryData,
@@ -43,9 +43,11 @@ export class WorkingMemoryImpl implements IWorkingMemory {
     await this.memory.kv.set(`working-memory:${contextId}`, data);
   }
 
-  async push(
+  async push<TContext extends AnyContext = AnyContext>(
     contextId: string,
     entry: AnyRef,
+    ctx: AgentContext<TContext>,
+    agent: AnyAgent,
     options?: PushOptions
   ): Promise<void> {
     let data = await this.get(contextId);
@@ -84,12 +86,14 @@ export class WorkingMemoryImpl implements IWorkingMemory {
     // Check memory pressure if manager provided AFTER adding the entry
     if (options?.memoryManager) {
       const shouldPrune = await this.shouldPrune(
+        ctx,
         data,
         entry,
+        agent,
         options.memoryManager
       );
       if (shouldPrune) {
-        data = await this.handleMemoryPressure(contextId, data, options.memoryManager);
+        data = await this.handleMemoryPressure(contextId, ctx, data, agent, options.memoryManager);
       }
     }
 
@@ -126,13 +130,15 @@ export class WorkingMemoryImpl implements IWorkingMemory {
     return `Working memory contains: ${JSON.stringify(summary)}`;
   }
 
-  private async shouldPrune(
+  private async shouldPrune<TContext extends AnyContext = AnyContext>(
+    ctx: AgentContext<TContext>,
     data: WorkingMemoryData,
     entry: AnyRef,
-    manager: MemoryManager
+    agent: AnyAgent,
+    manager: MemoryManager<TContext>
   ): Promise<boolean> {
     if (manager.shouldPrune) {
-      return manager.shouldPrune(data, entry);
+      return manager.shouldPrune(ctx, data as WorkingMemory, entry, agent);
     }
 
     // Default size-based pruning
@@ -140,14 +146,16 @@ export class WorkingMemoryImpl implements IWorkingMemory {
     return currentSize >= (manager.maxSize || 1000);
   }
 
-  private async handleMemoryPressure(
+  private async handleMemoryPressure<TContext extends AnyContext = AnyContext>(
     contextId: string,
+    ctx: AgentContext<TContext>,
     data: WorkingMemoryData,
-    manager: MemoryManager
+    agent: AnyAgent,
+    manager: MemoryManager<TContext>
   ): Promise<WorkingMemoryData> {
     if (manager.onMemoryPressure) {
-      const pruned = await manager.onMemoryPressure(data);
-      return pruned;
+      const pruned = await manager.onMemoryPressure(ctx, data as WorkingMemory, agent);
+      return pruned as WorkingMemoryData;
     }
 
     // Default FIFO pruning
@@ -173,7 +181,7 @@ export class WorkingMemoryImpl implements IWorkingMemory {
           ];
 
           if (oldEntries.length > 0) {
-            const compressed = await manager.compress(oldEntries);
+            const compressed = await manager.compress(ctx, oldEntries, agent);
 
             // Store compressed version
             await this.memory.episodes.store({

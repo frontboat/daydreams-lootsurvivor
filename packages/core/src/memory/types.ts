@@ -1,4 +1,5 @@
 import type { LanguageModelV1 } from "ai";
+import type { z } from "zod";
 
 import type {
   ActionCall,
@@ -12,8 +13,8 @@ import type {
   StepRef,
   AgentContext,
   AnyContext,
-  WorkingMemory,
   AnyAgent,
+  ContextState,
 } from "../types";
 
 /**
@@ -213,7 +214,13 @@ export interface IWorkingMemory {
   create(contextId: string): Promise<WorkingMemoryData>;
   get(contextId: string): Promise<WorkingMemoryData>;
   set(contextId: string, data: WorkingMemoryData): Promise<void>;
-  push(contextId: string, entry: AnyRef, options?: PushOptions): Promise<void>;
+  push<TContext extends AnyContext = AnyContext>(
+    contextId: string,
+    entry: AnyRef,
+    ctx: AgentContext<TContext>,
+    agent: AnyAgent,
+    options?: PushOptions
+  ): Promise<void>;
   clear(contextId: string): Promise<void>;
   summarize(contextId: string): Promise<string>;
 }
@@ -552,75 +559,277 @@ export interface Event {
   timestamp: number;
   contextId: string;
 }
+/**
+ * Represents a memory configuration for storing data
+ * @template Data - Type of data stored in memory
+ */
+export type IMemory<Data = any> = {
+  /** Unique identifier for this memory */
+  key: string;
+  /** Function to initialize memory data */
+  create: () => Promise<Data> | Data;
+};
 
 /**
- * Reference types from existing system
+ * Extracts the data type from a Memory type
+ * @template TMemory - Memory type to extract data from
  */
-// export interface AnyRef {
-//   ref: string;
-//   id?: string;
-//   timestamp?: number;
-//   [key: string]: any;
-// }
+export type InferMemoryData<TMemory extends IMemory<any>> =
+  TMemory extends IMemory<infer Data> ? Data : never;
 
-// export interface InputRef<T> extends AnyRef {
-//   ref: "input";
-//   type: string;
-//   content: T;
-//   data: any;
-//   params?: Record<string, string>;
-//   processed: boolean;
-//   formatted?: string | string[];
-// }
+/**
+ * Strongly typed memory for primitive values
+ */
+export interface PrimitiveMemory<T extends string | number | boolean | null> extends IMemory<T> {
+  readonly _type: 'primitive';
+}
 
-// export interface OutputRef<T> extends AnyRef {
-//   ref: "output";
-//   type: string;
-//   content: string;
-//   data: T;
-//   params?: Record<string, string>;
-//   processed: boolean;
-//   formatted?: string | string[];
-//   error?: unknown;
-// }
+/**
+ * Strongly typed memory for object data
+ * @template T - The object type structure
+ */
+export interface ObjectMemory<T extends Record<string, any>> extends IMemory<T> {
+  readonly _type: 'object';
+  /** Schema definition for runtime validation */
+  schema?: z.ZodType<T>;
+}
 
-// export interface ActionCall<T> extends AnyRef {
-//   ref: "action_call";
-//   name: string;
-//   input: T;
-//   content: string;
-//   data: any;
-//   params?: Record<string, string>;
-//   processed: boolean;
-// }
+/**
+ * Strongly typed memory for array data
+ * @template T - The array element type
+ */
+export interface ArrayMemory<T> extends IMemory<T[]> {
+  readonly _type: 'array';
+  /** Schema for array elements */
+  elementSchema?: z.ZodType<T>;
+}
 
-// export interface ActionResult<T> extends AnyRef {
-//   ref: "action_result";
-//   data: T;
-//   error?: string;
-//   duration?: number;
-//   callId: string;
-//   name: string;
-//   processed: boolean;
-//   formatted?: string | string[];
-// }
+/**
+ * Strongly typed memory for counters and numeric operations
+ */
+export interface CounterMemory extends IMemory<number> {
+  readonly _type: 'counter';
+  /** Increment the counter by specified amount (default: 1) */
+  increment?: (amount?: number) => Promise<number> | number;
+  /** Decrement the counter by specified amount (default: 1) */
+  decrement?: (amount?: number) => Promise<number> | number;
+  /** Reset counter to initial value */
+  reset?: () => Promise<void> | void;
+}
 
-// export interface EventRef extends AnyRef {
-//   ref: "event";
-//   name: string;
-//   type: string;
-//   data: any;
-//   params?: Record<string, string>;
-//   processed: boolean;
-//   formatted?: string | string[];
-// }
+/**
+ * Strongly typed memory for set operations
+ * @template T - The set element type
+ */
+export interface SetMemory<T> extends IMemory<Set<T>> {
+  readonly _type: 'set';
+  /** Add item to set */
+  add?: (item: T) => Promise<boolean> | boolean;
+  /** Remove item from set */
+  remove?: (item: T) => Promise<boolean> | boolean;
+  /** Check if set contains item */
+  has?: (item: T) => Promise<boolean> | boolean;
+  /** Clear all items from set */
+  clear?: () => Promise<void> | void;
+}
 
-// export interface StepRef extends AnyRef {
-//   ref: "step";
-//   number: number;
-// }
+/**
+ * Strongly typed memory for map/dictionary operations
+ * @template K - The key type
+ * @template V - The value type
+ */
+export interface MapMemory<K extends string | number | symbol, V> extends IMemory<Record<K, V>> {
+  readonly _type: 'map';
+  /** Set a key-value pair */
+  set?: (key: K, value: V) => Promise<void> | void;
+  /** Get value by key */
+  get?: (key: K) => Promise<V | undefined> | V | undefined;
+  /** Delete key-value pair */
+  delete?: (key: K) => Promise<boolean> | boolean;
+  /** Check if key exists */
+  has?: (key: K) => Promise<boolean> | boolean;
+  /** Get all keys */
+  keys?: () => Promise<K[]> | K[];
+  /** Get all values */
+  values?: () => Promise<V[]> | V[];
+}
 
-// export interface RunRef extends AnyRef {
-//   ref: "run";
-//   id: string;
-// }
+/**
+ * Union type of all strongly typed memory interfaces
+ */
+export type StronglyTypedMemory<T = any> = 
+  | PrimitiveMemory<any>
+  | ObjectMemory<any>
+  | ArrayMemory<any>
+  | CounterMemory
+  | SetMemory<any>
+  | MapMemory<any, any>
+  | IMemory<T>;
+
+/**
+ * Helper type to extract data from any memory type
+ */
+export type ExtractMemoryData<TMemory> = 
+  TMemory extends IMemory<infer Data> ? Data : never;
+
+/**
+ * Memory factory functions for creating strongly typed memory configs
+ */
+export const MemoryTypes = {
+  /**
+   * Create a primitive memory (string, number, boolean, null)
+   */
+  primitive: <T extends string | number | boolean | null>(
+    key: string,
+    initialValue: T
+  ): PrimitiveMemory<T> => ({
+    _type: 'primitive' as const,
+    key,
+    create: () => initialValue,
+  }),
+
+  /**
+   * Create an object memory with optional schema validation
+   */
+  object: <T extends Record<string, any>>(
+    key: string,
+    initialValue: T,
+    schema?: z.ZodType<T>
+  ): ObjectMemory<T> => ({
+    _type: 'object' as const,
+    key,
+    create: () => initialValue,
+    schema,
+  }),
+
+  /**
+   * Create an array memory
+   */
+  array: <T>(
+    key: string,
+    initialValue: T[] = [],
+    elementSchema?: z.ZodType<T>
+  ): ArrayMemory<T> => ({
+    _type: 'array' as const,
+    key,
+    create: () => initialValue,
+    elementSchema,
+  }),
+
+  /**
+   * Create a counter memory
+   */
+  counter: (
+    key: string,
+    initialValue: number = 0
+  ): CounterMemory => ({
+    _type: 'counter' as const,
+    key,
+    create: () => initialValue,
+  }),
+
+  /**
+   * Create a set memory
+   */
+  set: <T>(
+    key: string,
+    initialValue: Set<T> = new Set()
+  ): SetMemory<T> => ({
+    _type: 'set' as const,
+    key,
+    create: () => initialValue,
+  }),
+
+  /**
+   * Create a map memory
+   */
+  map: <K extends string | number | symbol, V>(
+    key: string,
+    initialValue: Record<K, V> = {} as Record<K, V>
+  ): MapMemory<K, V> => ({
+    _type: 'map' as const,
+    key,
+    create: () => initialValue,
+  }),
+};
+
+/**
+ * Represents the working memory state during execution
+ */
+export interface WorkingMemory extends WorkingMemoryData {
+  /** Current image URL for multimodal context */
+  currentImage?: URL;
+}
+
+/**
+ * Episode detection and creation hooks for contexts
+ * Allows developers to customize when and how episodes are stored
+ */
+export interface EpisodeHooks<TContext extends AnyContext = AnyContext> {
+  /**
+   * Called to determine if a new episode should be started
+   * @param ref - The current log reference being processed
+   * @param workingMemory - Current working memory state
+   * @param contextState - Current context state
+   * @param agent - Agent instance
+   * @returns true if a new episode should start
+   */
+  shouldStartEpisode?(
+    ref: AnyRef,
+    workingMemory: WorkingMemory,
+    contextState: ContextState<TContext>,
+    agent: AnyAgent
+  ): Promise<boolean> | boolean;
+
+  /**
+   * Called to determine if the current episode should be ended and stored
+   * @param ref - The current log reference being processed
+   * @param workingMemory - Current working memory state
+   * @param contextState - Current context state
+   * @param agent - Agent instance
+   * @returns true if the current episode should be stored
+   */
+  shouldEndEpisode?(
+    ref: AnyRef,
+    workingMemory: WorkingMemory,
+    contextState: ContextState<TContext>,
+    agent: AnyAgent
+  ): Promise<boolean> | boolean;
+
+  /**
+   * Called to create episode data from collected logs
+   * @param logs - Array of logs that make up this episode
+   * @param contextState - Current context state
+   * @param agent - Agent instance
+   * @returns Episode data to be stored
+   */
+  createEpisode?(
+    logs: AnyRef[],
+    contextState: ContextState<TContext>,
+    agent: AnyAgent
+  ): Promise<any> | any;
+
+  /**
+   * Called to classify the type of episode (optional)
+   * @param episodeData - The episode data from createEpisode
+   * @param contextState - Current context state
+   * @returns Episode type/classification string
+   */
+  classifyEpisode?(
+    episodeData: any,
+    contextState: ContextState<TContext>
+  ): string;
+
+  /**
+   * Called to extract additional metadata for the episode (optional)
+   * @param episodeData - The episode data from createEpisode
+   * @param logs - The original logs for this episode
+   * @param contextState - Current context state
+   * @returns Metadata object
+   */
+  extractMetadata?(
+    episodeData: any,
+    logs: AnyRef[],
+    contextState: ContextState<TContext>
+  ): Record<string, any>;
+}

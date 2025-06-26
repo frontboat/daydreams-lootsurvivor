@@ -6,9 +6,12 @@ import {
   InMemoryGraphProvider,
 } from "../index";
 import type { Memory } from "../types";
+import type { AgentContext, AnyAgent } from "../../types";
 
 describe("MemorySystem", () => {
   let memory: Memory;
+  let mockCtx: AgentContext;
+  let mockAgent: AnyAgent;
 
   beforeEach(async () => {
     memory = new MemorySystem({
@@ -19,6 +22,26 @@ describe("MemorySystem", () => {
       },
     });
     await memory.initialize();
+
+    // Create mock agent context and agent for testing
+    mockCtx = {
+      id: "test-context",
+      type: "test",
+      key: "test-key",
+      memory: {} as any,
+      settings: {},
+      workingMemory: {} as any,
+    } as unknown as AgentContext;
+
+    mockAgent = {
+      model: {} as any,
+      logger: {
+        info: () => {},
+        warn: () => {},
+        error: () => {},
+        debug: () => {},
+      },
+    } as unknown as AnyAgent;
   });
 
   afterEach(async () => {
@@ -152,15 +175,20 @@ describe("MemorySystem", () => {
       expect(wm.outputs).toEqual([]);
 
       // Push entries
-      await memory.working.push(contextId, {
-        id: "input-1",
-        ref: "input",
-        type: "test",
-        content: "Hello",
-        data: "Hello",
-        timestamp: Date.now(),
-        processed: false,
-      });
+      await memory.working.push(
+        contextId,
+        {
+          id: "input-1",
+          ref: "input",
+          type: "test",
+          content: "Hello",
+          data: "Hello",
+          timestamp: Date.now(),
+          processed: false,
+        },
+        mockCtx,
+        mockAgent
+      );
 
       // Get updated working memory
       const updated = await memory.working.get(contextId);
@@ -190,6 +218,8 @@ describe("MemorySystem", () => {
             timestamp: Date.now(),
             processed: false,
           },
+          mockCtx,
+          mockAgent,
           { memoryManager }
         );
       }

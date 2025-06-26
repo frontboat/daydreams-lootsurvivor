@@ -397,7 +397,7 @@ export async function prepareActionCall({
   ) => MaybePromise<any>;
   abortSignal?: AbortSignal;
 }) {
-  let actionMemory: IMemory<any> | undefined = undefined;
+  let actionMemory: any = undefined;
 
   if (action.memory) {
     actionMemory =
@@ -965,7 +965,9 @@ export async function handleInput({
 
   const episodicMemory = await agent.memory.episodes.findSimilar(
     ctxState.id,
-    typeof inputRef.data === 'string' ? inputRef.data : JSON.stringify(inputRef.data),
+    typeof inputRef.data === "string"
+      ? inputRef.data
+      : JSON.stringify(inputRef.data),
     5
   );
 
@@ -973,7 +975,7 @@ export async function handleInput({
     episodesCount: episodicMemory.length,
   });
 
-  workingMemory.relevantMemories = episodicMemory.map(episode => ({
+  workingMemory.relevantMemories = episodicMemory.map((episode) => ({
     id: episode.id,
     type: "episode",
     content: episode.input || episode.output,
