@@ -39,7 +39,10 @@ import type {
   ActionCallContext,
 } from "./types";
 import pDefer, { type DeferredPromise } from "p-defer";
-import { pushToWorkingMemory, pushToWorkingMemoryWithManagement } from "./context";
+import {
+  pushToWorkingMemory,
+  pushToWorkingMemoryWithManagement,
+} from "./context";
 import { createEventRef, randomUUIDv7 } from "./utils";
 import { ZodError, type ZodIssue } from "zod/v4";
 
@@ -202,8 +205,13 @@ export function createEngine({
       }
 
       if (log.ref !== "output") {
-        if (ctxState.context.memoryManager) {
-          const updatedMemory = await pushToWorkingMemoryWithManagement(workingMemory, log, ctxState, agent);
+        if (agent.memory) {
+          const updatedMemory = await pushToWorkingMemoryWithManagement(
+            workingMemory,
+            log,
+            ctxState,
+            agent
+          );
           Object.assign(workingMemory, updatedMemory);
         } else {
           pushToWorkingMemory(workingMemory, log);
@@ -222,8 +230,13 @@ export function createEngine({
 
       __push(createErrorEvent(errorRef), true, true);
 
-      if (ctxState.context.memoryManager) {
-        const updatedMemory = await pushToWorkingMemoryWithManagement(workingMemory, log, ctxState, agent);
+      if (agent.memory) {
+        const updatedMemory = await pushToWorkingMemoryWithManagement(
+          workingMemory,
+          log,
+          ctxState,
+          agent
+        );
         Object.assign(workingMemory, updatedMemory);
       } else {
         pushToWorkingMemory(workingMemory, log);
@@ -418,8 +431,13 @@ export function createEngine({
 
         state.chain.push(ref);
 
-        if (ctxState.context.memoryManager) {
-          const updatedMemory = await pushToWorkingMemoryWithManagement(workingMemory, ref, ctxState, agent);
+        if (agent.memory) {
+          const updatedMemory = await pushToWorkingMemoryWithManagement(
+            workingMemory,
+            ref,
+            ctxState,
+            agent
+          );
           Object.assign(workingMemory, updatedMemory);
         } else {
           pushToWorkingMemory(workingMemory, ref);
