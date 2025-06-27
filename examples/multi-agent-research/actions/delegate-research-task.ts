@@ -36,7 +36,7 @@ export const delegateResearchTaskAction = action({
       ),
     estimatedQueries: z.number().min(2).max(8).default(4),
   }),
-  memory: researchMemory,
+  actionState: researchMemory,
   async handler(
     {
       sessionId,

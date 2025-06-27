@@ -11,7 +11,7 @@ export const startSubagentResearchAction = action({
   schema: z.object({
     taskId: z.string().describe("The task ID of the subagent to start"),
   }),
-  memory: researchMemory,
+  actionState: researchMemory,
   async handler({ taskId }, ctx, agent) {
     const task = await loadTask(taskId, agent.memory, ctx.actionMemory);
     if (!task) {
