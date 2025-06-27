@@ -8,9 +8,6 @@
     "dev:with-types": "npm run docs:watch",
     "start": "next start",
     "postinstall": "fumadocs-mdx",
-    "docs:generate": "node scripts/generate-docs.js",
-    "docs:watch": "node scripts/watch-types.js",
-    "docs:clean": "rm -rf content/docs/api",
     "typedoc": "typedoc"
   },
   "dependencies": {
