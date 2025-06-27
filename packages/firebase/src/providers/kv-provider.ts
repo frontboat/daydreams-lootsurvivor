@@ -1,5 +1,5 @@
 import { initializeApp, cert, getApps, type App } from "firebase-admin/app";
-import { getFirestore, Firestore } from "firebase-admin/firestore";
+import { getFirestore, Firestore, Timestamp } from "firebase-admin/firestore";
 import type {
   KeyValueProvider,
   SetOptions,
@@ -38,10 +38,10 @@ export interface FirebaseKVProviderConfig {
 
 interface KVDocument {
   value: any;
-  expiresAt?: Date;
+  expiresAt?: Timestamp;
   tags?: Record<string, string>;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }
 
 /**
@@ -108,15 +108,15 @@ export class FirebaseKVProvider implements KeyValueProvider {
 
         // Exponential backoff with jitter
         const delay =
-          this.retryDelay *
-          Math.pow(2, attempt) *
-          (0.5 + Math.random() * 0.5);
+          this.retryDelay * Math.pow(2, attempt) * (0.5 + Math.random() * 0.5);
 
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
 
-    throw lastError || new Error("Operation failed after maximum retry attempts");
+    throw (
+      lastError || new Error("Operation failed after maximum retry attempts")
+    );
   }
 
   /**
@@ -209,9 +209,11 @@ export class FirebaseKVProvider implements KeyValueProvider {
       const docRef = this.db.collection(this.collectionName).doc(key);
       const now = new Date();
 
-      let expiresAt: Date | undefined;
+      let expiresAt: Timestamp | undefined;
       if (options?.ttl) {
-        expiresAt = new Date(Date.now() + options.ttl * 1000);
+        expiresAt = Timestamp.fromDate(
+          new Date(Date.now() + options.ttl * 1000)
+        );
       }
 
       const processedValue = this.processValue(value);
@@ -219,13 +221,13 @@ export class FirebaseKVProvider implements KeyValueProvider {
         value: processedValue,
         expiresAt,
         tags: options?.tags,
-        updatedAt: now,
+        updatedAt: Timestamp.fromDate(now),
       };
 
       // Use set with merge to avoid overwriting createdAt if it exists
       const existingDoc = await docRef.get();
       if (!existingDoc.exists) {
-        document.createdAt = now;
+        document.createdAt = Timestamp.fromDate(now);
       }
 
       await docRef.set(document, { merge: true });
@@ -275,7 +277,10 @@ export class FirebaseKVProvider implements KeyValueProvider {
     }
 
     return this.withRetry(async () => {
-      const snapshot = await this.db.collection(this.collectionName).count().get();
+      const snapshot = await this.db
+        .collection(this.collectionName)
+        .count()
+        .get();
       return snapshot.data().count;
     });
   }
@@ -347,14 +352,19 @@ export class FirebaseKVProvider implements KeyValueProvider {
     });
   }
 
-  async setBatch<T>(entries: Map<string, T>, options?: SetOptions): Promise<void> {
+  async setBatch<T>(
+    entries: Map<string, T>,
+    options?: SetOptions
+  ): Promise<void> {
     return this.withRetry(async () => {
       const batch = this.db.batch();
       const now = new Date();
 
-      let expiresAt: Date | undefined;
+      let expiresAt: Timestamp | undefined;
       if (options?.ttl) {
-        expiresAt = new Date(Date.now() + options.ttl * 1000);
+        expiresAt = Timestamp.fromDate(
+          new Date(Date.now() + options.ttl * 1000)
+        );
       }
 
       for (const [key, value] of entries) {
@@ -365,8 +375,8 @@ export class FirebaseKVProvider implements KeyValueProvider {
           value: processedValue,
           expiresAt,
           tags: options?.tags,
-          createdAt: now,
-          updatedAt: now,
+          createdAt: Timestamp.fromDate(now),
+          updatedAt: Timestamp.fromDate(now),
         };
 
         batch.set(docRef, document, { merge: true });
