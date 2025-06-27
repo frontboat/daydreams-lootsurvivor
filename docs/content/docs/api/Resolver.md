@@ -12,7 +12,7 @@ title: "Resolver"
 
 > **Resolver**\<`Result`, `Ctx`\> = `Result` \| (`ctx`) => `Result`
 
-Defined in: [packages/core/src/types.ts:1104](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L1104)
+Defined in: [packages/core/src/types.ts:1104](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L1104)
 
 Type that can be either a static value or a function that computes the value from context
 

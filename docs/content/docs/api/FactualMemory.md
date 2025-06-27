@@ -10,7 +10,7 @@ title: "FactualMemory"
 
 # Interface: FactualMemory
 
-Defined in: [packages/core/src/memory/types.ts:293](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L293)
+Defined in: [packages/core/src/memory/types.ts:293](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L293)
 
 Factual Memory - stores verified facts
 
@@ -20,7 +20,7 @@ Factual Memory - stores verified facts
 
 > **delete**(`id`, `contextId?`): `Promise`\<`boolean`\>
 
-Defined in: [packages/core/src/memory/types.ts:302](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L302)
+Defined in: [packages/core/src/memory/types.ts:302](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L302)
 
 #### Parameters
 
@@ -42,7 +42,7 @@ Defined in: [packages/core/src/memory/types.ts:302](https://github.com/dojoengin
 
 > **get**(`id`, `contextId?`): `Promise`\<`null` \| [`Fact`](./Fact.md)\>
 
-Defined in: [packages/core/src/memory/types.ts:295](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L295)
+Defined in: [packages/core/src/memory/types.ts:295](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L295)
 
 #### Parameters
 
@@ -64,7 +64,7 @@ Defined in: [packages/core/src/memory/types.ts:295](https://github.com/dojoengin
 
 > **getByContext**(`contextId`): `Promise`\<[`Fact`](./Fact.md)[]\>
 
-Defined in: [packages/core/src/memory/types.ts:304](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L304)
+Defined in: [packages/core/src/memory/types.ts:304](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L304)
 
 #### Parameters
 
@@ -82,7 +82,7 @@ Defined in: [packages/core/src/memory/types.ts:304](https://github.com/dojoengin
 
 > **getByTag**(`tag`, `value`, `contextId?`): `Promise`\<[`Fact`](./Fact.md)[]\>
 
-Defined in: [packages/core/src/memory/types.ts:303](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L303)
+Defined in: [packages/core/src/memory/types.ts:303](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L303)
 
 #### Parameters
 
@@ -108,7 +108,7 @@ Defined in: [packages/core/src/memory/types.ts:303](https://github.com/dojoengin
 
 > **search**(`query`, `options?`): `Promise`\<[`Fact`](./Fact.md)[]\>
 
-Defined in: [packages/core/src/memory/types.ts:296](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L296)
+Defined in: [packages/core/src/memory/types.ts:296](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L296)
 
 #### Parameters
 
@@ -130,7 +130,7 @@ Defined in: [packages/core/src/memory/types.ts:296](https://github.com/dojoengin
 
 > **store**(`facts`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/types.ts:294](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L294)
+Defined in: [packages/core/src/memory/types.ts:294](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L294)
 
 #### Parameters
 
@@ -148,7 +148,7 @@ Defined in: [packages/core/src/memory/types.ts:294](https://github.com/dojoengin
 
 > **update**(`id`, `updates`, `contextId?`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/types.ts:301](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L301)
+Defined in: [packages/core/src/memory/types.ts:301](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L301)
 
 #### Parameters
 
@@ -174,7 +174,7 @@ Defined in: [packages/core/src/memory/types.ts:301](https://github.com/dojoengin
 
 > **verify**(`factId`, `contextId?`): `Promise`\<[`FactVerification`](./FactVerification.md)\>
 
-Defined in: [packages/core/src/memory/types.ts:300](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L300)
+Defined in: [packages/core/src/memory/types.ts:300](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L300)
 
 #### Parameters
 

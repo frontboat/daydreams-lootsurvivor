@@ -12,7 +12,7 @@ title: "Evaluator"
 
 > **Evaluator**\<`Data`, `Context`, `TAgent`\> = `object`
 
-Defined in: [packages/core/src/types.ts:68](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L68)
+Defined in: [packages/core/src/types.ts:68](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L68)
 
 Represents an evaluator that can validate action/output results
 
@@ -40,7 +40,7 @@ Context type for the evaluation
 
 > `optional` **description**: `string`
 
-Defined in: [packages/core/src/types.ts:74](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L74)
+Defined in: [packages/core/src/types.ts:74](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L74)
 
 ***
 
@@ -48,7 +48,7 @@ Defined in: [packages/core/src/types.ts:74](https://github.com/dojoengine/daydre
 
 > `optional` **handler**: (`data`, `ctx`, `agent`) => `Promise`\<`boolean`\> \| `boolean`
 
-Defined in: [packages/core/src/types.ts:80](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L80)
+Defined in: [packages/core/src/types.ts:80](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L80)
 
 Custom handler for evaluation logic
 
@@ -76,7 +76,7 @@ Custom handler for evaluation logic
 
 > **name**: `string`
 
-Defined in: [packages/core/src/types.ts:73](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L73)
+Defined in: [packages/core/src/types.ts:73](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L73)
 
 ***
 
@@ -84,7 +84,7 @@ Defined in: [packages/core/src/types.ts:73](https://github.com/dojoengine/daydre
 
 > `optional` **onFailure**: (`ctx`, `agent`) => `Promise`\<`void`\> \| `void`
 
-Defined in: [packages/core/src/types.ts:86](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L86)
+Defined in: [packages/core/src/types.ts:86](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L86)
 
 Optional callback when evaluation fails
 
@@ -108,7 +108,7 @@ Optional callback when evaluation fails
 
 > `optional` **prompt**: `string`
 
-Defined in: [packages/core/src/types.ts:78](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L78)
+Defined in: [packages/core/src/types.ts:78](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L78)
 
 Custom prompt template for LLM-based evaluation
 
@@ -118,6 +118,6 @@ Custom prompt template for LLM-based evaluation
 
 > `optional` **schema**: `z.ZodType`\<`any`\>
 
-Defined in: [packages/core/src/types.ts:76](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L76)
+Defined in: [packages/core/src/types.ts:76](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L76)
 
 Schema for the evaluation result

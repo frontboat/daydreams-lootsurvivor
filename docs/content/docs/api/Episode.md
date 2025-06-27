@@ -10,7 +10,7 @@ title: "Episode"
 
 # Interface: Episode
 
-Defined in: [packages/core/src/memory/types.ts:344](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L344)
+Defined in: [packages/core/src/memory/types.ts:344](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L344)
 
 ## Extended by
 
@@ -22,7 +22,7 @@ Defined in: [packages/core/src/memory/types.ts:344](https://github.com/dojoengin
 
 > **context**: `string`
 
-Defined in: [packages/core/src/memory/types.ts:349](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L349)
+Defined in: [packages/core/src/memory/types.ts:349](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L349)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [packages/core/src/memory/types.ts:349](https://github.com/dojoengin
 
 > `optional` **duration**: `number`
 
-Defined in: [packages/core/src/memory/types.ts:351](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L351)
+Defined in: [packages/core/src/memory/types.ts:351](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L351)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [packages/core/src/memory/types.ts:351](https://github.com/dojoengin
 
 > **id**: `string`
 
-Defined in: [packages/core/src/memory/types.ts:345](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L345)
+Defined in: [packages/core/src/memory/types.ts:345](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L345)
 
 ***
 
@@ -46,7 +46,7 @@ Defined in: [packages/core/src/memory/types.ts:345](https://github.com/dojoengin
 
 > `optional` **input**: `any`
 
-Defined in: [packages/core/src/memory/types.ts:347](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L347)
+Defined in: [packages/core/src/memory/types.ts:347](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L347)
 
 ***
 
@@ -54,7 +54,7 @@ Defined in: [packages/core/src/memory/types.ts:347](https://github.com/dojoengin
 
 > `optional` **metadata**: `Record`\<`string`, `any`\>
 
-Defined in: [packages/core/src/memory/types.ts:352](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L352)
+Defined in: [packages/core/src/memory/types.ts:352](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L352)
 
 ***
 
@@ -62,7 +62,7 @@ Defined in: [packages/core/src/memory/types.ts:352](https://github.com/dojoengin
 
 > `optional` **output**: `any`
 
-Defined in: [packages/core/src/memory/types.ts:348](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L348)
+Defined in: [packages/core/src/memory/types.ts:348](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L348)
 
 ***
 
@@ -70,7 +70,7 @@ Defined in: [packages/core/src/memory/types.ts:348](https://github.com/dojoengin
 
 > `optional` **summary**: `string`
 
-Defined in: [packages/core/src/memory/types.ts:353](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L353)
+Defined in: [packages/core/src/memory/types.ts:353](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L353)
 
 ***
 
@@ -78,7 +78,7 @@ Defined in: [packages/core/src/memory/types.ts:353](https://github.com/dojoengin
 
 > **timestamp**: `number`
 
-Defined in: [packages/core/src/memory/types.ts:350](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L350)
+Defined in: [packages/core/src/memory/types.ts:350](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L350)
 
 ***
 
@@ -86,4 +86,4 @@ Defined in: [packages/core/src/memory/types.ts:350](https://github.com/dojoengin
 
 > **type**: `"event"` \| `"conversation"` \| `"action"` \| `"compression"`
 
-Defined in: [packages/core/src/memory/types.ts:346](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L346)
+Defined in: [packages/core/src/memory/types.ts:346](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L346)

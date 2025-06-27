@@ -10,7 +10,7 @@ title: "ActionCallContext"
 
 # Interface: ActionCallContext\<Schema, TContext, AContext, ActionMemory\>
 
-Defined in: [packages/core/src/types.ts:117](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L117)
+Defined in: [packages/core/src/types.ts:117](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L117)
 
 API methods available on context state
 
@@ -44,7 +44,7 @@ The context type
 
 > **\_\_getRunResults**: () => `Promise`\<[`ActionResult`](./ActionResult.md)\<`any`\>\>[]
 
-Defined in: [packages/core/src/types.ts:1319](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L1319)
+Defined in: [packages/core/src/types.ts:1319](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L1319)
 
 Get pending action results
 
@@ -62,7 +62,7 @@ Get pending action results
 
 > `optional` **abortSignal**: `AbortSignal`
 
-Defined in: [packages/core/src/types.ts:114](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L114)
+Defined in: [packages/core/src/types.ts:114](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L114)
 
 #### Inherited from
 
@@ -74,7 +74,7 @@ Defined in: [packages/core/src/types.ts:114](https://github.com/dojoengine/daydr
 
 > **actionMemory**: [`InferActionState`](./InferActionState.md)\<`ActionMemory`\>
 
-Defined in: [packages/core/src/types.ts:112](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L112)
+Defined in: [packages/core/src/types.ts:112](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L112)
 
 #### Inherited from
 
@@ -86,7 +86,7 @@ Defined in: [packages/core/src/types.ts:112](https://github.com/dojoengine/daydr
 
 > **agentMemory**: `undefined` \| [`InferContextMemory`](./InferContextMemory.md)\<`AContext`\>
 
-Defined in: [packages/core/src/types.ts:113](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L113)
+Defined in: [packages/core/src/types.ts:113](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L113)
 
 #### Inherited from
 
@@ -98,7 +98,7 @@ Defined in: [packages/core/src/types.ts:113](https://github.com/dojoengine/daydr
 
 > **args**: [`InferSchemaArguments`](./InferSchemaArguments.md)\<`TContext`\[`"schema"`\]\>
 
-Defined in: [packages/core/src/types.ts:574](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L574)
+Defined in: [packages/core/src/types.ts:574](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L574)
 
 #### Inherited from
 
@@ -110,7 +110,7 @@ Defined in: [packages/core/src/types.ts:574](https://github.com/dojoengine/daydr
 
 > **call**: [`ActionCall`](./ActionCall.md)\<[`InferActionArguments`](./InferActionArguments.md)\<`Schema`\>\>
 
-Defined in: [packages/core/src/types.ts:124](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L124)
+Defined in: [packages/core/src/types.ts:124](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L124)
 
 ***
 
@@ -118,7 +118,7 @@ Defined in: [packages/core/src/types.ts:124](https://github.com/dojoengine/daydr
 
 > **callAction**: (`call`, `options?`) => `Promise`\<[`ActionResult`](./ActionResult.md)\<`any`\>\>
 
-Defined in: [packages/core/src/types.ts:1310](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L1310)
+Defined in: [packages/core/src/types.ts:1310](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L1310)
 
 Call an action with optional configuration
 
@@ -146,7 +146,7 @@ Call an action with optional configuration
 
 > **context**: `TContext`
 
-Defined in: [packages/core/src/types.ts:573](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L573)
+Defined in: [packages/core/src/types.ts:573](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L573)
 
 #### Inherited from
 
@@ -158,7 +158,7 @@ Defined in: [packages/core/src/types.ts:573](https://github.com/dojoengine/daydr
 
 > **emit**: `ContextEventEmitter`\<`TContext`\>
 
-Defined in: [packages/core/src/types.ts:1305](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L1305)
+Defined in: [packages/core/src/types.ts:1305](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L1305)
 
 Emit an event for this context
 
@@ -172,7 +172,7 @@ Emit an event for this context
 
 > **id**: `string`
 
-Defined in: [packages/core/src/types.ts:572](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L572)
+Defined in: [packages/core/src/types.ts:572](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L572)
 
 #### Inherited from
 
@@ -184,7 +184,7 @@ Defined in: [packages/core/src/types.ts:572](https://github.com/dojoengine/daydr
 
 > **memory**: [`InferContextMemory`](./InferContextMemory.md)\<`TContext`\>
 
-Defined in: [packages/core/src/types.ts:577](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L577)
+Defined in: [packages/core/src/types.ts:577](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L577)
 
 #### Inherited from
 
@@ -196,7 +196,7 @@ Defined in: [packages/core/src/types.ts:577](https://github.com/dojoengine/daydr
 
 > **options**: [`InferContextOptions`](./InferContextOptions.md)\<`TContext`\>
 
-Defined in: [packages/core/src/types.ts:575](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L575)
+Defined in: [packages/core/src/types.ts:575](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L575)
 
 #### Inherited from
 
@@ -208,7 +208,7 @@ Defined in: [packages/core/src/types.ts:575](https://github.com/dojoengine/daydr
 
 > **push**: (`log`) => `Promise`\<`any`\>
 
-Defined in: [packages/core/src/types.ts:1307](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L1307)
+Defined in: [packages/core/src/types.ts:1307](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L1307)
 
 Push a log entry
 
@@ -232,7 +232,7 @@ Push a log entry
 
 > `optional` **requestContext**: `RequestContext`
 
-Defined in: [packages/core/src/types.ts:579](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L579)
+Defined in: [packages/core/src/types.ts:579](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L579)
 
 #### Inherited from
 
@@ -244,7 +244,7 @@ Defined in: [packages/core/src/types.ts:579](https://github.com/dojoengine/daydr
 
 > **settings**: [`ContextSettings`](./ContextSettings.md)
 
-Defined in: [packages/core/src/types.ts:576](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L576)
+Defined in: [packages/core/src/types.ts:576](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L576)
 
 #### Inherited from
 
@@ -256,7 +256,7 @@ Defined in: [packages/core/src/types.ts:576](https://github.com/dojoengine/daydr
 
 > **workingMemory**: [`WorkingMemory`](./WorkingMemory.md)
 
-Defined in: [packages/core/src/types.ts:578](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L578)
+Defined in: [packages/core/src/types.ts:578](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L578)
 
 #### Inherited from
 

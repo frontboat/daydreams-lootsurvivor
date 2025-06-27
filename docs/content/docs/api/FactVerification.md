@@ -10,7 +10,7 @@ title: "FactVerification"
 
 # Interface: FactVerification
 
-Defined in: [packages/core/src/memory/types.ts:319](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L319)
+Defined in: [packages/core/src/memory/types.ts:319](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L319)
 
 ## Properties
 
@@ -18,7 +18,7 @@ Defined in: [packages/core/src/memory/types.ts:319](https://github.com/dojoengin
 
 > **confidence**: `number`
 
-Defined in: [packages/core/src/memory/types.ts:322](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L322)
+Defined in: [packages/core/src/memory/types.ts:322](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L322)
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: [packages/core/src/memory/types.ts:322](https://github.com/dojoengin
 
 > **conflictingFacts**: `string`[]
 
-Defined in: [packages/core/src/memory/types.ts:324](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L324)
+Defined in: [packages/core/src/memory/types.ts:324](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L324)
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: [packages/core/src/memory/types.ts:324](https://github.com/dojoengin
 
 > **factId**: `string`
 
-Defined in: [packages/core/src/memory/types.ts:320](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L320)
+Defined in: [packages/core/src/memory/types.ts:320](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L320)
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: [packages/core/src/memory/types.ts:320](https://github.com/dojoengin
 
 > **lastVerified**: `number`
 
-Defined in: [packages/core/src/memory/types.ts:325](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L325)
+Defined in: [packages/core/src/memory/types.ts:325](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L325)
 
 ***
 
@@ -50,7 +50,7 @@ Defined in: [packages/core/src/memory/types.ts:325](https://github.com/dojoengin
 
 > **supportingFacts**: `string`[]
 
-Defined in: [packages/core/src/memory/types.ts:323](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L323)
+Defined in: [packages/core/src/memory/types.ts:323](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L323)
 
 ***
 
@@ -58,4 +58,4 @@ Defined in: [packages/core/src/memory/types.ts:323](https://github.com/dojoengin
 
 > **verified**: `boolean`
 
-Defined in: [packages/core/src/memory/types.ts:321](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L321)
+Defined in: [packages/core/src/memory/types.ts:321](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L321)

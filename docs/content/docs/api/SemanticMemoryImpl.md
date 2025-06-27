@@ -10,7 +10,7 @@ title: "SemanticMemoryImpl"
 
 # Class: SemanticMemoryImpl
 
-Defined in: [packages/core/src/memory/semantic-memory.ts:9](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/semantic-memory.ts#L9)
+Defined in: [packages/core/src/memory/semantic-memory.ts:9](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/semantic-memory.ts#L9)
 
 Semantic Memory - stores learned concepts and patterns
 
@@ -24,7 +24,7 @@ Semantic Memory - stores learned concepts and patterns
 
 > **new SemanticMemoryImpl**(`memory`): `SemanticMemoryImpl`
 
-Defined in: [packages/core/src/memory/semantic-memory.ts:10](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/semantic-memory.ts#L10)
+Defined in: [packages/core/src/memory/semantic-memory.ts:10](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/semantic-memory.ts#L10)
 
 #### Parameters
 
@@ -42,7 +42,7 @@ Defined in: [packages/core/src/memory/semantic-memory.ts:10](https://github.com/
 
 > **get**(`id`, `contextId?`): `Promise`\<`null` \| [`SemanticConcept`](./SemanticConcept.md)\>
 
-Defined in: [packages/core/src/memory/semantic-memory.ts:44](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/semantic-memory.ts#L44)
+Defined in: [packages/core/src/memory/semantic-memory.ts:44](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/semantic-memory.ts#L44)
 
 #### Parameters
 
@@ -68,7 +68,7 @@ Defined in: [packages/core/src/memory/semantic-memory.ts:44](https://github.com/
 
 > **getRelevantPatterns**(`contextId`): `Promise`\<[`Pattern`](./Pattern.md)[]\>
 
-Defined in: [packages/core/src/memory/semantic-memory.ts:94](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/semantic-memory.ts#L94)
+Defined in: [packages/core/src/memory/semantic-memory.ts:94](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/semantic-memory.ts#L94)
 
 #### Parameters
 
@@ -90,7 +90,7 @@ Defined in: [packages/core/src/memory/semantic-memory.ts:94](https://github.com/
 
 > **learnFromAction**(`action`, `result`, `contextId?`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/semantic-memory.ts:148](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/semantic-memory.ts#L148)
+Defined in: [packages/core/src/memory/semantic-memory.ts:148](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/semantic-memory.ts#L148)
 
 #### Parameters
 
@@ -120,7 +120,7 @@ Defined in: [packages/core/src/memory/semantic-memory.ts:148](https://github.com
 
 > **search**(`query`, `options?`): `Promise`\<[`SemanticConcept`](./SemanticConcept.md)[]\>
 
-Defined in: [packages/core/src/memory/semantic-memory.ts:59](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/semantic-memory.ts#L59)
+Defined in: [packages/core/src/memory/semantic-memory.ts:59](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/semantic-memory.ts#L59)
 
 #### Parameters
 
@@ -146,7 +146,7 @@ Defined in: [packages/core/src/memory/semantic-memory.ts:59](https://github.com/
 
 > **store**(`concept`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/semantic-memory.ts:12](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/semantic-memory.ts#L12)
+Defined in: [packages/core/src/memory/semantic-memory.ts:12](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/semantic-memory.ts#L12)
 
 #### Parameters
 
@@ -168,7 +168,7 @@ Defined in: [packages/core/src/memory/semantic-memory.ts:12](https://github.com/
 
 > **updateConfidence**(`id`, `delta`, `contextId?`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/semantic-memory.ts:192](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/semantic-memory.ts#L192)
+Defined in: [packages/core/src/memory/semantic-memory.ts:192](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/semantic-memory.ts#L192)
 
 #### Parameters
 

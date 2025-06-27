@@ -10,7 +10,7 @@ title: "GraphProvider"
 
 # Interface: GraphProvider
 
-Defined in: [packages/core/src/memory/types.ts:155](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L155)
+Defined in: [packages/core/src/memory/types.ts:155](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L155)
 
 Graph storage provider
 
@@ -24,7 +24,7 @@ Graph storage provider
 
 > **addEdge**(`edge`): `Promise`\<`string`\>
 
-Defined in: [packages/core/src/memory/types.ts:163](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L163)
+Defined in: [packages/core/src/memory/types.ts:163](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L163)
 
 #### Parameters
 
@@ -42,7 +42,7 @@ Defined in: [packages/core/src/memory/types.ts:163](https://github.com/dojoengin
 
 > **addNode**(`node`): `Promise`\<`string`\>
 
-Defined in: [packages/core/src/memory/types.ts:157](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L157)
+Defined in: [packages/core/src/memory/types.ts:157](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L157)
 
 #### Parameters
 
@@ -60,7 +60,7 @@ Defined in: [packages/core/src/memory/types.ts:157](https://github.com/dojoengin
 
 > **close**(): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/types.ts:81](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L81)
+Defined in: [packages/core/src/memory/types.ts:81](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L81)
 
 #### Returns
 
@@ -76,7 +76,7 @@ Defined in: [packages/core/src/memory/types.ts:81](https://github.com/dojoengine
 
 > **deleteEdge**(`id`): `Promise`\<`boolean`\>
 
-Defined in: [packages/core/src/memory/types.ts:168](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L168)
+Defined in: [packages/core/src/memory/types.ts:168](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L168)
 
 #### Parameters
 
@@ -94,7 +94,7 @@ Defined in: [packages/core/src/memory/types.ts:168](https://github.com/dojoengin
 
 > **deleteNode**(`id`): `Promise`\<`boolean`\>
 
-Defined in: [packages/core/src/memory/types.ts:160](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L160)
+Defined in: [packages/core/src/memory/types.ts:160](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L160)
 
 #### Parameters
 
@@ -112,7 +112,7 @@ Defined in: [packages/core/src/memory/types.ts:160](https://github.com/dojoengin
 
 > **findNodes**(`filter`): `Promise`\<[`GraphNode`](./GraphNode.md)[]\>
 
-Defined in: [packages/core/src/memory/types.ts:171](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L171)
+Defined in: [packages/core/src/memory/types.ts:171](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L171)
 
 #### Parameters
 
@@ -130,7 +130,7 @@ Defined in: [packages/core/src/memory/types.ts:171](https://github.com/dojoengin
 
 > **getEdges**(`nodeId`, `direction?`): `Promise`\<[`GraphEdge`](./GraphEdge.md)[]\>
 
-Defined in: [packages/core/src/memory/types.ts:164](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L164)
+Defined in: [packages/core/src/memory/types.ts:164](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L164)
 
 #### Parameters
 
@@ -152,7 +152,7 @@ Defined in: [packages/core/src/memory/types.ts:164](https://github.com/dojoengin
 
 > **getNode**(`id`): `Promise`\<`null` \| [`GraphNode`](./GraphNode.md)\>
 
-Defined in: [packages/core/src/memory/types.ts:158](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L158)
+Defined in: [packages/core/src/memory/types.ts:158](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L158)
 
 #### Parameters
 
@@ -170,7 +170,7 @@ Defined in: [packages/core/src/memory/types.ts:158](https://github.com/dojoengin
 
 > **health**(): `Promise`\<[`HealthStatus`](./HealthStatus.md)\>
 
-Defined in: [packages/core/src/memory/types.ts:82](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L82)
+Defined in: [packages/core/src/memory/types.ts:82](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L82)
 
 #### Returns
 
@@ -186,7 +186,7 @@ Defined in: [packages/core/src/memory/types.ts:82](https://github.com/dojoengine
 
 > **initialize**(): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/types.ts:80](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L80)
+Defined in: [packages/core/src/memory/types.ts:80](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L80)
 
 #### Returns
 
@@ -202,7 +202,7 @@ Defined in: [packages/core/src/memory/types.ts:80](https://github.com/dojoengine
 
 > **shortestPath**(`from`, `to`): `Promise`\<`null` \| [`GraphPath`](./GraphPath.md)\>
 
-Defined in: [packages/core/src/memory/types.ts:173](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L173)
+Defined in: [packages/core/src/memory/types.ts:173](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L173)
 
 #### Parameters
 
@@ -224,7 +224,7 @@ Defined in: [packages/core/src/memory/types.ts:173](https://github.com/dojoengin
 
 > **traverse**(`traversal`): `Promise`\<[`GraphPath`](./GraphPath.md)[]\>
 
-Defined in: [packages/core/src/memory/types.ts:172](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L172)
+Defined in: [packages/core/src/memory/types.ts:172](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L172)
 
 #### Parameters
 
@@ -242,7 +242,7 @@ Defined in: [packages/core/src/memory/types.ts:172](https://github.com/dojoengin
 
 > **updateNode**(`id`, `updates`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/types.ts:159](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L159)
+Defined in: [packages/core/src/memory/types.ts:159](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L159)
 
 #### Parameters
 

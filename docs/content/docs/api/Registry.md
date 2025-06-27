@@ -12,7 +12,7 @@ title: "Registry"
 
 > **Registry** = `object`
 
-Defined in: [packages/core/src/types.ts:600](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L600)
+Defined in: [packages/core/src/types.ts:600](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L600)
 
 Central registry for all agent components and resources
 
@@ -22,7 +22,7 @@ Central registry for all agent components and resources
 
 > **actions**: `Map`\<`string`, [`AnyAction`](./AnyAction.md)\>
 
-Defined in: [packages/core/src/types.ts:604](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L604)
+Defined in: [packages/core/src/types.ts:604](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L604)
 
 Map of registered action types
 
@@ -32,7 +32,7 @@ Map of registered action types
 
 > **contexts**: `Map`\<`string`, [`AnyContext`](./AnyContext.md)\>
 
-Defined in: [packages/core/src/types.ts:602](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L602)
+Defined in: [packages/core/src/types.ts:602](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L602)
 
 Map of registered context types
 
@@ -42,7 +42,7 @@ Map of registered context types
 
 > **extensions**: `Map`\<`string`, [`Extension`](./Extension.md)\>
 
-Defined in: [packages/core/src/types.ts:610](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L610)
+Defined in: [packages/core/src/types.ts:610](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L610)
 
 Map of registered extensions
 
@@ -52,7 +52,7 @@ Map of registered extensions
 
 > **inputs**: `Map`\<`string`, [`Input`](./Input.md)\>
 
-Defined in: [packages/core/src/types.ts:606](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L606)
+Defined in: [packages/core/src/types.ts:606](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L606)
 
 Map of registered input types
 
@@ -62,7 +62,7 @@ Map of registered input types
 
 > **models**: `Map`\<`string`, [`LanguageModelV1`](./LanguageModelV1.md)\>
 
-Defined in: [packages/core/src/types.ts:614](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L614)
+Defined in: [packages/core/src/types.ts:614](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L614)
 
 Map of registered language models
 
@@ -72,7 +72,7 @@ Map of registered language models
 
 > **outputs**: `Map`\<`string`, [`Output`](./Output.md)\>
 
-Defined in: [packages/core/src/types.ts:608](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L608)
+Defined in: [packages/core/src/types.ts:608](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L608)
 
 Map of registered output types
 
@@ -82,6 +82,6 @@ Map of registered output types
 
 > **prompts**: `Map`\<`string`, `string`\>
 
-Defined in: [packages/core/src/types.ts:612](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L612)
+Defined in: [packages/core/src/types.ts:612](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L612)
 
 Map of registered prompt templates

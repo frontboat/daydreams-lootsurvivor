@@ -10,7 +10,7 @@ title: "GraphPath"
 
 # Interface: GraphPath
 
-Defined in: [packages/core/src/memory/types.ts:204](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L204)
+Defined in: [packages/core/src/memory/types.ts:204](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L204)
 
 ## Properties
 
@@ -18,7 +18,7 @@ Defined in: [packages/core/src/memory/types.ts:204](https://github.com/dojoengin
 
 > **edges**: [`GraphEdge`](./GraphEdge.md)[]
 
-Defined in: [packages/core/src/memory/types.ts:206](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L206)
+Defined in: [packages/core/src/memory/types.ts:206](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L206)
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: [packages/core/src/memory/types.ts:206](https://github.com/dojoengin
 
 > **length**: `number`
 
-Defined in: [packages/core/src/memory/types.ts:207](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L207)
+Defined in: [packages/core/src/memory/types.ts:207](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L207)
 
 ***
 
@@ -34,4 +34,4 @@ Defined in: [packages/core/src/memory/types.ts:207](https://github.com/dojoengin
 
 > **nodes**: [`GraphNode`](./GraphNode.md)[]
 
-Defined in: [packages/core/src/memory/types.ts:205](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L205)
+Defined in: [packages/core/src/memory/types.ts:205](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L205)

@@ -10,7 +10,7 @@ title: "EpisodicMemory"
 
 # Interface: EpisodicMemory
 
-Defined in: [packages/core/src/memory/types.ts:331](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L331)
+Defined in: [packages/core/src/memory/types.ts:331](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L331)
 
 Episodic Memory - stores past experiences
 
@@ -20,7 +20,7 @@ Episodic Memory - stores past experiences
 
 > **compress**(`episodes`): `Promise`\<[`CompressedEpisode`](./CompressedEpisode.md)\>
 
-Defined in: [packages/core/src/memory/types.ts:341](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L341)
+Defined in: [packages/core/src/memory/types.ts:341](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L341)
 
 #### Parameters
 
@@ -38,7 +38,7 @@ Defined in: [packages/core/src/memory/types.ts:341](https://github.com/dojoengin
 
 > **findSimilar**(`contextId`, `content`, `limit?`): `Promise`\<[`Episode`](./Episode.md)[]\>
 
-Defined in: [packages/core/src/memory/types.ts:334](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L334)
+Defined in: [packages/core/src/memory/types.ts:334](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L334)
 
 #### Parameters
 
@@ -64,7 +64,7 @@ Defined in: [packages/core/src/memory/types.ts:334](https://github.com/dojoengin
 
 > **get**(`id`): `Promise`\<`null` \| [`Episode`](./Episode.md)\>
 
-Defined in: [packages/core/src/memory/types.ts:333](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L333)
+Defined in: [packages/core/src/memory/types.ts:333](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L333)
 
 #### Parameters
 
@@ -82,7 +82,7 @@ Defined in: [packages/core/src/memory/types.ts:333](https://github.com/dojoengin
 
 > **getByContext**(`contextId`): `Promise`\<[`Episode`](./Episode.md)[]\>
 
-Defined in: [packages/core/src/memory/types.ts:340](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L340)
+Defined in: [packages/core/src/memory/types.ts:340](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L340)
 
 #### Parameters
 
@@ -100,7 +100,7 @@ Defined in: [packages/core/src/memory/types.ts:340](https://github.com/dojoengin
 
 > **getTimeline**(`start`, `end`): `Promise`\<[`Episode`](./Episode.md)[]\>
 
-Defined in: [packages/core/src/memory/types.ts:339](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L339)
+Defined in: [packages/core/src/memory/types.ts:339](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L339)
 
 #### Parameters
 
@@ -122,7 +122,7 @@ Defined in: [packages/core/src/memory/types.ts:339](https://github.com/dojoengin
 
 > **store**(`episode`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/types.ts:332](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L332)
+Defined in: [packages/core/src/memory/types.ts:332](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L332)
 
 #### Parameters
 

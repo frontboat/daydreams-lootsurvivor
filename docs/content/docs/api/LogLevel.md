@@ -10,7 +10,7 @@ title: "LogLevel"
 
 # Enumeration: LogLevel
 
-Defined in: [packages/core/src/types.ts:947](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L947)
+Defined in: [packages/core/src/types.ts:947](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L947)
 
 Enum defining available log levels
 
@@ -20,7 +20,7 @@ Enum defining available log levels
 
 > **DEBUG**: `3`
 
-Defined in: [packages/core/src/types.ts:951](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L951)
+Defined in: [packages/core/src/types.ts:951](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L951)
 
 ***
 
@@ -28,7 +28,7 @@ Defined in: [packages/core/src/types.ts:951](https://github.com/dojoengine/daydr
 
 > **ERROR**: `0`
 
-Defined in: [packages/core/src/types.ts:948](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L948)
+Defined in: [packages/core/src/types.ts:948](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L948)
 
 ***
 
@@ -36,7 +36,7 @@ Defined in: [packages/core/src/types.ts:948](https://github.com/dojoengine/daydr
 
 > **INFO**: `2`
 
-Defined in: [packages/core/src/types.ts:950](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L950)
+Defined in: [packages/core/src/types.ts:950](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L950)
 
 ***
 
@@ -44,7 +44,7 @@ Defined in: [packages/core/src/types.ts:950](https://github.com/dojoengine/daydr
 
 > **TRACE**: `4`
 
-Defined in: [packages/core/src/types.ts:952](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L952)
+Defined in: [packages/core/src/types.ts:952](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L952)
 
 ***
 
@@ -52,4 +52,4 @@ Defined in: [packages/core/src/types.ts:952](https://github.com/dojoengine/daydr
 
 > **WARN**: `1`
 
-Defined in: [packages/core/src/types.ts:949](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L949)
+Defined in: [packages/core/src/types.ts:949](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L949)

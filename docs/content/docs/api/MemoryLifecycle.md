@@ -10,7 +10,7 @@ title: "MemoryLifecycle"
 
 # Interface: MemoryLifecycle
 
-Defined in: [packages/core/src/memory/types.ts:454](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L454)
+Defined in: [packages/core/src/memory/types.ts:454](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L454)
 
 Memory lifecycle events
 
@@ -20,7 +20,7 @@ Memory lifecycle events
 
 > **emit**(`event`, `data?`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/types.ts:457](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L457)
+Defined in: [packages/core/src/memory/types.ts:457](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L457)
 
 #### Parameters
 
@@ -42,7 +42,7 @@ Defined in: [packages/core/src/memory/types.ts:457](https://github.com/dojoengin
 
 > **off**(`event`, `handler`): `void`
 
-Defined in: [packages/core/src/memory/types.ts:456](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L456)
+Defined in: [packages/core/src/memory/types.ts:456](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L456)
 
 #### Parameters
 
@@ -64,7 +64,7 @@ Defined in: [packages/core/src/memory/types.ts:456](https://github.com/dojoengin
 
 > **on**(`event`, `handler`): `void`
 
-Defined in: [packages/core/src/memory/types.ts:455](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L455)
+Defined in: [packages/core/src/memory/types.ts:455](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L455)
 
 #### Parameters
 

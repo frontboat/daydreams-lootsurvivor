@@ -10,7 +10,7 @@ title: "InMemoryGraphProvider"
 
 # Class: InMemoryGraphProvider
 
-Defined in: [packages/core/src/memory/providers/in-memory.ts:290](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/providers/in-memory.ts#L290)
+Defined in: [packages/core/src/memory/providers/in-memory.ts:290](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/providers/in-memory.ts#L290)
 
 In-memory Graph Provider for testing
 
@@ -34,7 +34,7 @@ In-memory Graph Provider for testing
 
 > **addEdge**(`edge`): `Promise`\<`string`\>
 
-Defined in: [packages/core/src/memory/providers/in-memory.ts:378](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/providers/in-memory.ts#L378)
+Defined in: [packages/core/src/memory/providers/in-memory.ts:378](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/providers/in-memory.ts#L378)
 
 #### Parameters
 
@@ -56,7 +56,7 @@ Defined in: [packages/core/src/memory/providers/in-memory.ts:378](https://github
 
 > **addNode**(`node`): `Promise`\<`string`\>
 
-Defined in: [packages/core/src/memory/providers/in-memory.ts:319](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/providers/in-memory.ts#L319)
+Defined in: [packages/core/src/memory/providers/in-memory.ts:319](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/providers/in-memory.ts#L319)
 
 #### Parameters
 
@@ -78,7 +78,7 @@ Defined in: [packages/core/src/memory/providers/in-memory.ts:319](https://github
 
 > **close**(): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/providers/in-memory.ts:300](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/providers/in-memory.ts#L300)
+Defined in: [packages/core/src/memory/providers/in-memory.ts:300](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/providers/in-memory.ts#L300)
 
 #### Returns
 
@@ -94,7 +94,7 @@ Defined in: [packages/core/src/memory/providers/in-memory.ts:300](https://github
 
 > **deleteEdge**(`id`): `Promise`\<`boolean`\>
 
-Defined in: [packages/core/src/memory/providers/in-memory.ts:424](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/providers/in-memory.ts#L424)
+Defined in: [packages/core/src/memory/providers/in-memory.ts:424](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/providers/in-memory.ts#L424)
 
 #### Parameters
 
@@ -116,7 +116,7 @@ Defined in: [packages/core/src/memory/providers/in-memory.ts:424](https://github
 
 > **deleteNode**(`id`): `Promise`\<`boolean`\>
 
-Defined in: [packages/core/src/memory/providers/in-memory.ts:349](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/providers/in-memory.ts#L349)
+Defined in: [packages/core/src/memory/providers/in-memory.ts:349](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/providers/in-memory.ts#L349)
 
 #### Parameters
 
@@ -138,7 +138,7 @@ Defined in: [packages/core/src/memory/providers/in-memory.ts:349](https://github
 
 > **findNodes**(`filter`): `Promise`\<[`GraphNode`](./GraphNode.md)[]\>
 
-Defined in: [packages/core/src/memory/providers/in-memory.ts:439](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/providers/in-memory.ts#L439)
+Defined in: [packages/core/src/memory/providers/in-memory.ts:439](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/providers/in-memory.ts#L439)
 
 #### Parameters
 
@@ -160,7 +160,7 @@ Defined in: [packages/core/src/memory/providers/in-memory.ts:439](https://github
 
 > **getEdges**(`nodeId`, `direction`): `Promise`\<[`GraphEdge`](./GraphEdge.md)[]\>
 
-Defined in: [packages/core/src/memory/providers/in-memory.ts:402](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/providers/in-memory.ts#L402)
+Defined in: [packages/core/src/memory/providers/in-memory.ts:402](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/providers/in-memory.ts#L402)
 
 #### Parameters
 
@@ -186,7 +186,7 @@ Defined in: [packages/core/src/memory/providers/in-memory.ts:402](https://github
 
 > **getNode**(`id`): `Promise`\<`null` \| [`GraphNode`](./GraphNode.md)\>
 
-Defined in: [packages/core/src/memory/providers/in-memory.ts:335](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/providers/in-memory.ts#L335)
+Defined in: [packages/core/src/memory/providers/in-memory.ts:335](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/providers/in-memory.ts#L335)
 
 #### Parameters
 
@@ -208,7 +208,7 @@ Defined in: [packages/core/src/memory/providers/in-memory.ts:335](https://github
 
 > **health**(): `Promise`\<[`HealthStatus`](./HealthStatus.md)\>
 
-Defined in: [packages/core/src/memory/providers/in-memory.ts:307](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/providers/in-memory.ts#L307)
+Defined in: [packages/core/src/memory/providers/in-memory.ts:307](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/providers/in-memory.ts#L307)
 
 #### Returns
 
@@ -224,7 +224,7 @@ Defined in: [packages/core/src/memory/providers/in-memory.ts:307](https://github
 
 > **initialize**(): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/providers/in-memory.ts:296](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/providers/in-memory.ts#L296)
+Defined in: [packages/core/src/memory/providers/in-memory.ts:296](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/providers/in-memory.ts#L296)
 
 #### Returns
 
@@ -240,7 +240,7 @@ Defined in: [packages/core/src/memory/providers/in-memory.ts:296](https://github
 
 > **shortestPath**(`from`, `to`): `Promise`\<`null` \| [`GraphPath`](./GraphPath.md)\>
 
-Defined in: [packages/core/src/memory/providers/in-memory.ts:535](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/providers/in-memory.ts#L535)
+Defined in: [packages/core/src/memory/providers/in-memory.ts:535](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/providers/in-memory.ts#L535)
 
 #### Parameters
 
@@ -266,7 +266,7 @@ Defined in: [packages/core/src/memory/providers/in-memory.ts:535](https://github
 
 > **traverse**(`traversal`): `Promise`\<[`GraphPath`](./GraphPath.md)[]\>
 
-Defined in: [packages/core/src/memory/providers/in-memory.ts:477](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/providers/in-memory.ts#L477)
+Defined in: [packages/core/src/memory/providers/in-memory.ts:477](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/providers/in-memory.ts#L477)
 
 #### Parameters
 
@@ -288,7 +288,7 @@ Defined in: [packages/core/src/memory/providers/in-memory.ts:477](https://github
 
 > **updateNode**(`id`, `updates`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/providers/in-memory.ts:340](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/providers/in-memory.ts#L340)
+Defined in: [packages/core/src/memory/providers/in-memory.ts:340](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/providers/in-memory.ts#L340)
 
 #### Parameters
 

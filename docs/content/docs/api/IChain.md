@@ -10,7 +10,7 @@ title: "IChain"
 
 # Interface: IChain
 
-Defined in: [packages/core/src/types.ts:955](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L955)
+Defined in: [packages/core/src/types.ts:955](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L955)
 
 ## Properties
 
@@ -18,7 +18,7 @@ Defined in: [packages/core/src/types.ts:955](https://github.com/dojoengine/daydr
 
 > **chainId**: `string`
 
-Defined in: [packages/core/src/types.ts:959](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L959)
+Defined in: [packages/core/src/types.ts:959](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L959)
 
 A unique identifier for the chain (e.g., "starknet", "ethereum", "solana", etc.)
 
@@ -28,7 +28,7 @@ A unique identifier for the chain (e.g., "starknet", "ethereum", "solana", etc.)
 
 > **read**(`call`): `Promise`\<`any`\>
 
-Defined in: [packages/core/src/types.ts:965](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L965)
+Defined in: [packages/core/src/types.ts:965](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L965)
 
 Read (call) a contract or perform a query on this chain.
 The `call` parameter can be chain-specific data.
@@ -49,7 +49,7 @@ The `call` parameter can be chain-specific data.
 
 > **write**(`call`): `Promise`\<`any`\>
 
-Defined in: [packages/core/src/types.ts:970](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L970)
+Defined in: [packages/core/src/types.ts:970](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L970)
 
 Write (execute a transaction) on this chain, typically requiring signatures, etc.
 

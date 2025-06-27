@@ -10,7 +10,7 @@ title: "GraphMemory"
 
 # Interface: GraphMemory
 
-Defined in: [packages/core/src/memory/types.ts:402](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L402)
+Defined in: [packages/core/src/memory/types.ts:402](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L402)
 
 Graph Memory - stores entity relationships
 
@@ -20,7 +20,7 @@ Graph Memory - stores entity relationships
 
 > **addEntity**(`entity`): `Promise`\<`string`\>
 
-Defined in: [packages/core/src/memory/types.ts:403](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L403)
+Defined in: [packages/core/src/memory/types.ts:403](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L403)
 
 #### Parameters
 
@@ -38,7 +38,7 @@ Defined in: [packages/core/src/memory/types.ts:403](https://github.com/dojoengin
 
 > **addRelationship**(`relationship`): `Promise`\<`string`\>
 
-Defined in: [packages/core/src/memory/types.ts:404](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L404)
+Defined in: [packages/core/src/memory/types.ts:404](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L404)
 
 #### Parameters
 
@@ -56,7 +56,7 @@ Defined in: [packages/core/src/memory/types.ts:404](https://github.com/dojoengin
 
 > **findPath**(`from`, `to`): `Promise`\<[`Entity`](./Entity.md)[]\>
 
-Defined in: [packages/core/src/memory/types.ts:407](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L407)
+Defined in: [packages/core/src/memory/types.ts:407](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L407)
 
 #### Parameters
 
@@ -78,7 +78,7 @@ Defined in: [packages/core/src/memory/types.ts:407](https://github.com/dojoengin
 
 > **findRelated**(`entityId`, `relationshipType?`): `Promise`\<[`Entity`](./Entity.md)[]\>
 
-Defined in: [packages/core/src/memory/types.ts:406](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L406)
+Defined in: [packages/core/src/memory/types.ts:406](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L406)
 
 #### Parameters
 
@@ -100,7 +100,7 @@ Defined in: [packages/core/src/memory/types.ts:406](https://github.com/dojoengin
 
 > **getEntity**(`id`): `Promise`\<`null` \| [`Entity`](./Entity.md)\>
 
-Defined in: [packages/core/src/memory/types.ts:405](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L405)
+Defined in: [packages/core/src/memory/types.ts:405](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L405)
 
 #### Parameters
 
@@ -118,7 +118,7 @@ Defined in: [packages/core/src/memory/types.ts:405](https://github.com/dojoengin
 
 > **removeEntity**(`id`): `Promise`\<`boolean`\>
 
-Defined in: [packages/core/src/memory/types.ts:409](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L409)
+Defined in: [packages/core/src/memory/types.ts:409](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L409)
 
 #### Parameters
 
@@ -136,7 +136,7 @@ Defined in: [packages/core/src/memory/types.ts:409](https://github.com/dojoengin
 
 > **updateEntity**(`id`, `updates`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/types.ts:408](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L408)
+Defined in: [packages/core/src/memory/types.ts:408](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L408)
 
 #### Parameters
 

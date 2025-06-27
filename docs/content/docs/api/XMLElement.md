@@ -12,7 +12,7 @@ title: "XMLElement"
 
 > **XMLElement** = `object`
 
-Defined in: [packages/core/src/types.ts:525](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L525)
+Defined in: [packages/core/src/types.ts:525](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L525)
 
 Represents an XML element structure
 
@@ -22,7 +22,7 @@ Represents an XML element structure
 
 > `optional` **children**: `string` \| (`XMLElement` \| `string`)[]
 
-Defined in: [packages/core/src/types.ts:528](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L528)
+Defined in: [packages/core/src/types.ts:528](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L528)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [packages/core/src/types.ts:528](https://github.com/dojoengine/daydr
 
 > `optional` **params**: `Record`\<`string`, `string`\>
 
-Defined in: [packages/core/src/types.ts:527](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L527)
+Defined in: [packages/core/src/types.ts:527](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L527)
 
 ***
 
@@ -38,4 +38,4 @@ Defined in: [packages/core/src/types.ts:527](https://github.com/dojoengine/daydr
 
 > **tag**: `string`
 
-Defined in: [packages/core/src/types.ts:526](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/types.ts#L526)
+Defined in: [packages/core/src/types.ts:526](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L526)

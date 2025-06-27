@@ -1,8 +1,7 @@
 {
   "title": "API Reference",
-  "description": "@daydreamsai/core",
+  "description": "TypeScript API documentation for @daydreamsai/core",
   "icon": "Code",
-  "root": true,
   "pages": [
     "Action",
     "ActionCall",

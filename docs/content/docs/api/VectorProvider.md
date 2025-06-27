@@ -10,7 +10,7 @@ title: "VectorProvider"
 
 # Interface: VectorProvider
 
-Defined in: [packages/core/src/memory/types.ts:118](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L118)
+Defined in: [packages/core/src/memory/types.ts:118](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L118)
 
 Vector storage provider
 
@@ -24,7 +24,7 @@ Vector storage provider
 
 > **close**(): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/types.ts:81](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L81)
+Defined in: [packages/core/src/memory/types.ts:81](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L81)
 
 #### Returns
 
@@ -40,7 +40,7 @@ Defined in: [packages/core/src/memory/types.ts:81](https://github.com/dojoengine
 
 > **count**(`namespace?`): `Promise`\<`number`\>
 
-Defined in: [packages/core/src/memory/types.ts:123](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L123)
+Defined in: [packages/core/src/memory/types.ts:123](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L123)
 
 #### Parameters
 
@@ -58,7 +58,7 @@ Defined in: [packages/core/src/memory/types.ts:123](https://github.com/dojoengin
 
 > **delete**(`ids`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/types.ts:121](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L121)
+Defined in: [packages/core/src/memory/types.ts:121](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L121)
 
 #### Parameters
 
@@ -76,7 +76,7 @@ Defined in: [packages/core/src/memory/types.ts:121](https://github.com/dojoengin
 
 > **health**(): `Promise`\<[`HealthStatus`](./HealthStatus.md)\>
 
-Defined in: [packages/core/src/memory/types.ts:82](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L82)
+Defined in: [packages/core/src/memory/types.ts:82](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L82)
 
 #### Returns
 
@@ -92,7 +92,7 @@ Defined in: [packages/core/src/memory/types.ts:82](https://github.com/dojoengine
 
 > **index**(`documents`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/types.ts:119](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L119)
+Defined in: [packages/core/src/memory/types.ts:119](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L119)
 
 #### Parameters
 
@@ -110,7 +110,7 @@ Defined in: [packages/core/src/memory/types.ts:119](https://github.com/dojoengin
 
 > **initialize**(): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/types.ts:80](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L80)
+Defined in: [packages/core/src/memory/types.ts:80](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L80)
 
 #### Returns
 
@@ -126,7 +126,7 @@ Defined in: [packages/core/src/memory/types.ts:80](https://github.com/dojoengine
 
 > **search**(`query`): `Promise`\<[`VectorResult`](./VectorResult.md)[]\>
 
-Defined in: [packages/core/src/memory/types.ts:120](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L120)
+Defined in: [packages/core/src/memory/types.ts:120](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L120)
 
 #### Parameters
 
@@ -144,7 +144,7 @@ Defined in: [packages/core/src/memory/types.ts:120](https://github.com/dojoengin
 
 > **update**(`id`, `updates`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/types.ts:122](https://github.com/dojoengine/daydreams/blob/bbf75946e0d6d99fbdde4cebb2f8a4e8926724f1/packages/core/src/memory/types.ts#L122)
+Defined in: [packages/core/src/memory/types.ts:122](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L122)
 
 #### Parameters
 
