@@ -1,3 +1,18 @@
+/**
+ * @fileoverview Context management and working memory utilities for Dreams AI agents
+ *
+ * This module provides the core functionality for managing conversation contexts,
+ * working memory, and episode detection. It includes:
+ *
+ * - Context factory function for creating typed context definitions
+ * - Working memory management and manipulation utilities
+ * - Episode detection and lifecycle management
+ * - Context state persistence and loading
+ * - Fact and entity extraction from conversations
+ *
+ * @module context
+ */
+
 import { z, type ZodRawShape } from "zod/v4";
 import type {
   AnyAction,
@@ -16,16 +31,42 @@ import { formatContextLog } from "./formatters";
 import { memory } from "./utils";
 import { LogEventType, StructuredLogger } from "./logging-events";
 
-/**
- * Creates a context configuration
- * @template Memory - Type of working memory
- * @template Args - Zod schema type for context arguments
- * @template Ctx - Type of context data
- * @template Exports - Type of exported data
- * @param ctx - Context configuration object
- * @returns Typed context configuration
- */
+// =============================================================================
+// CONTEXT CREATION AND CONFIGURATION
+// =============================================================================
 
+/**
+ * Creates a typed context configuration with builder methods
+ *
+ * This is the main factory function for creating context definitions in Dreams.
+ * Contexts define reusable conversation patterns, memory structures, and behaviors
+ * that can be executed by agents.
+ *
+ * @template TMemory - Type of memory data stored by this context
+ * @template Args - Zod schema type for validating context arguments
+ * @template Ctx - Type of context options/configuration data
+ * @template Actions - Array type of actions available to this context
+ * @template Events - Record type of events this context can emit
+ *
+ * @param config - Context configuration object defining behavior and structure
+ * @returns A typed context configuration with fluent builder methods
+ *
+ * @example
+ * ```typescript
+ * const chatContext = context({
+ *   type: "chat",
+ *   schema: z.object({
+ *     userId: z.string(),
+ *     sessionId: z.string()
+ *   }),
+ *   setup: async (args) => ({
+ *     startTime: Date.now(),
+ *     userId: args.userId
+ *   }),
+ *   create: () => ({ messages: [], metadata: {} })
+ * });
+ * ```
+ */
 export function context<
   TMemory = any,
   Args extends z.ZodTypeAny | ZodRawShape = any,
@@ -61,6 +102,10 @@ export function context<
   return ctx;
 }
 
+// =============================================================================
+// WORKING MEMORY UTILITIES
+// =============================================================================
+
 /**
  * Retrieves and sorts working memory logs
  * @param memory - Working memory object
@@ -81,6 +126,12 @@ export function getWorkingMemoryLogs(
   ].sort((a, b) => (a.timestamp > b.timestamp ? 1 : -1));
 }
 
+/**
+ * Retrieves all working memory logs including system logs
+ * @param memory - Working memory object
+ * @param includeThoughts - Whether to include thought logs (default: true)
+ * @returns Sorted array of all memory logs including steps and runs
+ */
 export function getWorkingMemoryAllLogs(
   memory: Partial<WorkingMemory>,
   includeThoughts = true
@@ -97,6 +148,14 @@ export function getWorkingMemoryAllLogs(
   ].sort((a, b) => (a.timestamp >= b.timestamp ? 1 : -1));
 }
 
+/**
+ * Formats working memory logs for display or processing
+ * @param params - Configuration for formatting
+ * @param params.memory - Working memory to format
+ * @param params.processed - Whether to include processed or unprocessed logs
+ * @param params.size - Optional limit on number of logs to include
+ * @returns Array of formatted log strings
+ */
 export function formatWorkingMemory({
   memory,
   processed,
@@ -134,6 +193,12 @@ export function createWorkingMemory(): WorkingMemory {
   };
 }
 
+/**
+ * Adds a log reference to the appropriate working memory collection
+ * @param workingMemory - The working memory object to update
+ * @param ref - The log reference to add
+ * @throws Error if workingMemory or ref is null/undefined, or if ref type is invalid
+ */
 export function pushToWorkingMemory(workingMemory: WorkingMemory, ref: AnyRef) {
   if (!workingMemory || !ref) {
     throw new Error("workingMemory and ref must not be null or undefined");
@@ -169,6 +234,10 @@ export function pushToWorkingMemory(workingMemory: WorkingMemory, ref: AnyRef) {
   }
 }
 
+// =============================================================================
+// EPISODE MANAGEMENT AND DETECTION
+// =============================================================================
+
 // Episode tracking state (per context)
 const episodeState = new Map<
   string,
@@ -180,6 +249,17 @@ const episodeState = new Map<
 
 /**
  * Handles episode detection and storage using context-defined hooks
+ *
+ * Episodes are sequences of interactions that form meaningful units of conversation
+ * or task execution. This function manages the lifecycle of episodes using hooks
+ * defined in the context configuration.
+ *
+ * @template TContext - The context type
+ * @param workingMemory - Current working memory state
+ * @param ref - The log reference being processed
+ * @param contextState - Current context state
+ * @param agent - Agent instance for memory operations
+ * @returns Promise that resolves when episode processing is complete
  */
 async function handleEpisodeHooks<TContext extends AnyContext>(
   workingMemory: WorkingMemory,
@@ -297,7 +377,12 @@ async function handleEpisodeHooks<TContext extends AnyContext>(
 }
 
 /**
- * Default episode start detection (when no hooks provided)
+ * Default episode start detection when no custom hooks are provided
+ * @template TContext - The context type
+ * @param ref - The log reference being evaluated
+ * @param workingMemory - Current working memory state
+ * @param contextState - Current context state
+ * @returns True if an episode should start, false otherwise
  */
 function defaultShouldStartEpisode<TContext extends AnyContext>(
   ref: AnyRef,
@@ -309,7 +394,12 @@ function defaultShouldStartEpisode<TContext extends AnyContext>(
 }
 
 /**
- * Default episode end detection (when no hooks provided)
+ * Default episode end detection when no custom hooks are provided
+ * @template TContext - The context type
+ * @param ref - The log reference being evaluated
+ * @param workingMemory - Current working memory state
+ * @param contextState - Current context state
+ * @returns True if the current episode should end, false otherwise
  */
 function defaultShouldEndEpisode<TContext extends AnyContext>(
   ref: AnyRef,
@@ -321,7 +411,12 @@ function defaultShouldEndEpisode<TContext extends AnyContext>(
 }
 
 /**
- * Default episode creation (when no hooks provided)
+ * Default episode creation when no custom hooks are provided
+ * Creates a structured episode from collected logs
+ * @template TContext - The context type
+ * @param logs - Array of log references that make up the episode
+ * @param contextState - Current context state
+ * @returns Episode data object with structured information
  */
 function defaultCreateEpisode<TContext extends AnyContext>(
   logs: AnyRef[],
@@ -352,6 +447,12 @@ function defaultCreateEpisode<TContext extends AnyContext>(
 
 /**
  * Legacy fact and entity extraction for default episodes
+ * Processes logs to extract structured information when custom episode hooks aren't provided
+ * @template TContext - The context type
+ * @param logs - Array of log references from the episode
+ * @param contextState - Current context state
+ * @param agent - Agent instance for memory operations
+ * @returns Promise that resolves when extraction is complete
  */
 async function tryLegacyExtraction<TContext extends AnyContext>(
   logs: AnyRef[],
@@ -389,6 +490,16 @@ async function tryLegacyExtraction<TContext extends AnyContext>(
 
 /**
  * Attempts to extract entities and relationships from conversation content
+ *
+ * Uses pattern matching to identify entities (people, organizations, places, products)
+ * and relationships between them from input and output text content.
+ *
+ * @template TContext - The context type
+ * @param inputRef - Input reference containing conversation input
+ * @param outputRef - Output reference containing conversation output
+ * @param contextState - Current context state
+ * @param agent - Agent instance for storing extracted data
+ * @returns Promise that resolves when extraction and storage is complete
  */
 async function tryExtractEntitiesAndRelationships<TContext extends AnyContext>(
   inputRef: any,
@@ -546,7 +657,18 @@ async function tryExtractEntitiesAndRelationships<TContext extends AnyContext>(
 
 /**
  * Attempts to extract and store facts from conversation content
- * @dev TODO: this should be a model...
+ *
+ * Uses pattern matching to identify factual statements, definitions, and numerical
+ * information from conversation text. This is a basic implementation that could
+ * be enhanced with ML-based fact extraction models.
+ *
+ * @template TContext - The context type
+ * @param inputRef - Input reference containing conversation input
+ * @param outputRef - Output reference containing conversation output
+ * @param contextState - Current context state
+ * @param agent - Agent instance for storing extracted facts
+ * @returns Promise that resolves when fact extraction and storage is complete
+ * @todo Enhance with ML-based fact extraction models for better accuracy
  */
 async function tryExtractFacts<TContext extends AnyContext>(
   inputRef: any,
@@ -623,7 +745,17 @@ async function tryExtractFacts<TContext extends AnyContext>(
 }
 
 /**
- * Pushes entry to working memory and applies memory management if configured
+ * Pushes an entry to working memory and handles episode detection
+ *
+ * This is the main function for adding entries to working memory while
+ * automatically handling episode lifecycle management through context hooks.
+ *
+ * @template TContext - The context type
+ * @param workingMemory - Working memory object to update
+ * @param ref - Log reference to add
+ * @param contextState - Current context state
+ * @param agent - Agent instance for episode processing
+ * @returns Promise resolving to the updated working memory
  */
 export async function pushToWorkingMemoryWithManagement<
   TContext extends AnyContext
@@ -642,7 +774,9 @@ export async function pushToWorkingMemoryWithManagement<
 }
 
 /**
- * Counts total entries in working memory
+ * Counts the total number of entries across all working memory collections
+ * @param workingMemory - Working memory object to count
+ * @returns Total number of entries in working memory
  */
 export function getWorkingMemorySize(workingMemory: WorkingMemory): number {
   return (
@@ -658,14 +792,27 @@ export function getWorkingMemorySize(workingMemory: WorkingMemory): number {
 }
 
 /**
- * Default working memory config
- * Provides a memory container with standard working memory structure
+ * Default working memory configuration
+ *
+ * Provides a standard memory container configuration that creates
+ * working memory instances with the default structure and initialization.
  */
 export const defaultWorkingMemory = memory<WorkingMemory>({
   key: "working-memory",
   create: createWorkingMemory,
 });
 
+// =============================================================================
+// CONTEXT STATE MANAGEMENT
+// =============================================================================
+
+/**
+ * Generates a unique context identifier from context definition and arguments
+ * @template TContext - The context type
+ * @param context - Context definition
+ * @param args - Context arguments conforming to the context's schema
+ * @returns Unique context identifier string (type:key or just type)
+ */
 export function getContextId<TContext extends AnyContext>(
   context: TContext,
   args: z.infer<TContext["schema"]>
@@ -674,6 +821,25 @@ export function getContextId<TContext extends AnyContext>(
   return key ? [context.type, key].join(":") : context.type;
 }
 
+/**
+ * Creates a new context state instance with initialized memory and configuration
+ *
+ * This function handles the complete setup of a context state including:
+ * - ID generation and key resolution
+ * - Settings configuration and merging
+ * - Memory initialization (loading existing or creating new)
+ * - Options setup through context.setup function
+ * - Structured logging of context creation
+ *
+ * @template TContext - The context type
+ * @param params - Configuration object for context state creation
+ * @param params.agent - Agent instance
+ * @param params.context - Context definition
+ * @param params.args - Context arguments
+ * @param params.contexts - Array of related context IDs (default: [])
+ * @param params.settings - Initial context settings (default: {})
+ * @returns Promise resolving to the new context state
+ */
 export async function createContextState<TContext extends AnyContext>({
   agent,
   context,
@@ -747,6 +913,16 @@ export async function createContextState<TContext extends AnyContext>({
   };
 }
 
+// =============================================================================
+// PERSISTENCE AND STORAGE
+// =============================================================================
+
+/**
+ * Retrieves working memory for a context, creating it if it doesn't exist
+ * @param agent - Agent instance for memory access
+ * @param contextId - Unique identifier for the context
+ * @returns Promise resolving to the working memory object
+ */
 export async function getContextWorkingMemory(
   agent: AnyAgent,
   contextId: string
@@ -766,6 +942,13 @@ export async function getContextWorkingMemory(
   return workingMemory;
 }
 
+/**
+ * Persists working memory for a context to storage
+ * @param agent - Agent instance for memory access
+ * @param contextId - Unique identifier for the context
+ * @param workingMemory - Working memory object to save
+ * @returns Promise resolving when save is complete
+ */
 export async function saveContextWorkingMemory(
   agent: AnyAgent,
   contextId: string,
@@ -777,15 +960,36 @@ export async function saveContextWorkingMemory(
   );
 }
 
+/**
+ * Snapshot format for persisting context state to storage
+ * Models are stored as string IDs rather than object references
+ */
 type ContextStateSnapshot = {
+  /** Unique context identifier */
   id: string;
+  /** Context type name */
   type: string;
+  /** Context arguments */
   args: any;
+  /** Optional context key */
   key?: string;
+  /** Context settings with model stored as string ID */
   settings: Omit<ContextSettings, "model"> & { model?: string };
+  /** Array of related context IDs */
   contexts: string[];
 };
 
+/**
+ * Persists context state and memory to storage
+ *
+ * Saves both the context metadata (settings, args, etc.) and the context's
+ * memory data. Uses custom save function if provided by the context, otherwise
+ * saves memory to default key-value storage.
+ *
+ * @param agent - Agent instance for storage access
+ * @param state - Context state to save
+ * @returns Promise resolving when save is complete
+ */
 export async function saveContextState(agent: AnyAgent, state: ContextState) {
   const { id, context, key, args, settings, contexts } = state;
 
@@ -829,6 +1033,15 @@ export async function saveContextState(agent: AnyAgent, state: ContextState) {
     await agent.memory.kv.set<any>(`memory:${id}`, state.memory);
   }
 }
+
+/**
+ * Loads context state metadata from storage
+ * @param agent - Agent instance for storage access
+ * @param context - Context definition
+ * @param contextId - Unique identifier for the context
+ * @returns Promise resolving to context state metadata or null if not found
+ * @todo Implement agent model resolution for loaded contexts
+ */
 export async function loadContextState(
   agent: AnyAgent,
   context: AnyContext,
@@ -845,12 +1058,22 @@ export async function loadContextState(
     context,
     settings: {
       ...state?.settings,
-      // todo: agent resolve model?
+      // TODO: Implement agent model resolution
       model: undefined,
     },
   };
 }
 
+// =============================================================================
+// CONTEXT UTILITIES AND HELPERS
+// =============================================================================
+
+/**
+ * Saves the index of all active context IDs to storage
+ * @param agent - Agent instance for storage access
+ * @param contextIds - Set of active context IDs
+ * @returns Promise resolving when index is saved
+ */
 export async function saveContextsIndex(
   agent: AnyAgent,
   contextIds: Set<string>
@@ -861,11 +1084,16 @@ export async function saveContextsIndex(
   );
 }
 
+/**
+ * Retrieves context metadata for a given context ID
+ * @param contexts - Map of loaded context states
+ * @param contextId - Context ID to retrieve data for
+ * @returns Context metadata object
+ */
 function getContextData(
   contexts: Map<string, ContextState>,
   contextId: string
 ) {
-  // todo: verify type?
   if (contexts.has(contextId)) {
     const state = contexts.get(contextId)!;
     return {
@@ -886,6 +1114,12 @@ function getContextData(
   };
 }
 
+/**
+ * Retrieves metadata for all active contexts
+ * @param contextIds - Set of context IDs to retrieve
+ * @param contexts - Map of loaded context states
+ * @returns Array of context metadata objects
+ */
 export function getContexts(
   contextIds: Set<string>,
   contexts: Map<string, ContextState>
@@ -895,11 +1129,17 @@ export function getContexts(
     .map((id) => getContextData(contexts, id));
 }
 
+/**
+ * Deletes all data associated with a context from storage
+ * @param agent - Agent instance for storage access
+ * @param contextId - Unique identifier for the context to delete
+ * @returns Promise resolving when deletion is complete
+ */
 export async function deleteContext(agent: AnyAgent, contextId: string) {
   await agent.memory.kv.delete(`context:${contextId}`);
   await agent.memory.kv.delete(`memory:${contextId}`);
   await agent.memory.kv.delete(`working-memory:${contextId}`);
-  
+
   // Clean up episode state to prevent memory leak
   episodeState.delete(contextId);
 }
