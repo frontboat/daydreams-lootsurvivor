@@ -899,4 +899,7 @@ export async function deleteContext(agent: AnyAgent, contextId: string) {
   await agent.memory.kv.delete(`context:${contextId}`);
   await agent.memory.kv.delete(`memory:${contextId}`);
   await agent.memory.kv.delete(`working-memory:${contextId}`);
+  
+  // Clean up episode state to prevent memory leak
+  episodeState.delete(contextId);
 }

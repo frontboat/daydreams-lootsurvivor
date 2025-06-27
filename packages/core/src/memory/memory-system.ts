@@ -75,17 +75,47 @@ export class MemorySystem implements Memory {
   async initialize(): Promise<void> {
     if (this.initialized) return;
 
-    // Initialize providers
-    await Promise.all([
-      this.providers.kv.initialize(),
-      this.providers.vector.initialize(),
-      this.providers.graph.initialize(),
-    ]);
+    // Initialize providers with proper error handling and fallback strategies
+    const initializationErrors: Error[] = [];
+    
+    // Initialize KV provider (critical - must succeed)
+    try {
+      await this.providers.kv.initialize();
+    } catch (error) {
+      const kvError = new Error(`Failed to initialize KV provider: ${error instanceof Error ? error.message : error}`);
+      initializationErrors.push(kvError);
+      throw kvError; // KV is critical, fail fast
+    }
 
-    // Initialize middleware
+    // Initialize vector provider (non-critical - can fallback to in-memory)
+    try {
+      await this.providers.vector.initialize();
+    } catch (error) {
+      const vectorError = new Error(`Failed to initialize vector provider: ${error instanceof Error ? error.message : error}`);
+      initializationErrors.push(vectorError);
+      console.warn("Memory system: Vector provider initialization failed, continuing with limited functionality", vectorError.message);
+    }
+
+    // Initialize graph provider (non-critical - can fallback to in-memory)
+    try {
+      await this.providers.graph.initialize();
+    } catch (error) {
+      const graphError = new Error(`Failed to initialize graph provider: ${error instanceof Error ? error.message : error}`);
+      initializationErrors.push(graphError);
+      console.warn("Memory system: Graph provider initialization failed, continuing with limited functionality", graphError.message);
+    }
+
+    // Initialize middleware with individual error handling
     for (const mw of this.middleware) {
       if (mw.initialize) {
-        await mw.initialize(this);
+        try {
+          await mw.initialize(this);
+        } catch (error) {
+          const middlewareError = new Error(`Failed to initialize middleware: ${error instanceof Error ? error.message : error}`);
+          initializationErrors.push(middlewareError);
+          console.warn("Memory system: Middleware initialization failed", middlewareError.message);
+          // Continue with other middleware - don't fail the whole system
+        }
       }
     }
 

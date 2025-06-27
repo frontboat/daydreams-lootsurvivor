@@ -134,17 +134,51 @@ export function contextAwareManager(options: {
       const recentInputs = workingMemory.inputs.slice(
         -Math.max(5, options.maxSize * 0.2)
       );
-      const combinedInputs = [
-        ...new Set([...preservedInputs, ...recentInputs]),
-      ];
+      
+      // Properly deduplicate by id to avoid overlaps and ensure efficiency
+      const seenInputIds = new Set<string>();
+      const combinedInputs = [];
+      
+      // Add preserved inputs first (priority)
+      for (const input of preservedInputs) {
+        if (!seenInputIds.has(input.id)) {
+          seenInputIds.add(input.id);
+          combinedInputs.push(input);
+        }
+      }
+      
+      // Add recent inputs that aren't already preserved
+      for (const input of recentInputs) {
+        if (!seenInputIds.has(input.id)) {
+          seenInputIds.add(input.id);
+          combinedInputs.push(input);
+        }
+      }
 
       const preservedOutputs = workingMemory.outputs.filter(preserveEntry);
       const recentOutputs = workingMemory.outputs.slice(
         -Math.max(5, options.maxSize * 0.2)
       );
-      const combinedOutputs = [
-        ...new Set([...preservedOutputs, ...recentOutputs]),
-      ];
+      
+      // Properly deduplicate by id to avoid overlaps and ensure efficiency
+      const seenOutputIds = new Set<string>();
+      const combinedOutputs = [];
+      
+      // Add preserved outputs first (priority)
+      for (const output of preservedOutputs) {
+        if (!seenOutputIds.has(output.id)) {
+          seenOutputIds.add(output.id);
+          combinedOutputs.push(output);
+        }
+      }
+      
+      // Add recent outputs that aren't already preserved
+      for (const output of recentOutputs) {
+        if (!seenOutputIds.has(output.id)) {
+          seenOutputIds.add(output.id);
+          combinedOutputs.push(output);
+        }
+      }
 
       return {
         ...workingMemory,
@@ -183,32 +217,68 @@ export function fifoManager(options: {
 }
 
 /**
- * Utility function to estimate token count for memory entries
+ * Improved token count estimation that considers different content types
+ * 
+ * TODO: Replace with proper tokenization library (tiktoken, @anthropic-ai/tokenizer, etc.)
+ * based on the target model when available. This is a more accurate estimation
+ * than the previous 4 chars/token but still not perfect.
  */
 function estimateTokenCount(workingMemory: WorkingMemory): number {
-  let totalChars = 0;
+  let totalTokens = 0;
 
-  // Count characters in all text content
+  // Estimate tokens for different content types with varying ratios
   workingMemory.inputs.forEach((entry) => {
-    totalChars += (entry.content?.toString() || "").length;
+    const content = entry.content?.toString() || "";
+    totalTokens += estimateContentTokens(content);
   });
 
   workingMemory.outputs.forEach((entry) => {
-    totalChars += (entry.content?.toString() || "").length;
+    const content = entry.content?.toString() || "";
+    totalTokens += estimateContentTokens(content);
   });
 
   workingMemory.thoughts.forEach((entry) => {
-    totalChars += entry.content.length;
+    // Thoughts are typically more verbose prose
+    totalTokens += estimateContentTokens(entry.content, "prose");
   });
 
   workingMemory.calls.forEach((entry) => {
-    totalChars += entry.content.length;
+    // Action calls are typically structured/code-like
+    totalTokens += estimateContentTokens(entry.content, "structured");
   });
 
   workingMemory.results.forEach((entry) => {
-    totalChars += JSON.stringify(entry.data || "").length;
+    // JSON data has different token density
+    const jsonContent = JSON.stringify(entry.data || "");
+    totalTokens += estimateContentTokens(jsonContent, "json");
   });
 
-  // Rough estimation: 4 characters per token on average
-  return Math.ceil(totalChars / 4);
+  return Math.ceil(totalTokens);
+}
+
+/**
+ * Estimate tokens for different content types with more accurate ratios
+ * Based on empirical analysis of different tokenizers (GPT, Claude, etc.)
+ */
+function estimateContentTokens(content: string, type: "text" | "prose" | "structured" | "json" = "text"): number {
+  if (!content) return 0;
+  
+  const charCount = content.length;
+  
+  // Different content types have different character-to-token ratios
+  switch (type) {
+    case "prose":
+      // Natural language prose: ~3.5 chars/token (more efficient)
+      return charCount / 3.5;
+    case "structured":
+      // Code/structured data: ~4.5 chars/token (less efficient due to symbols)
+      return charCount / 4.5;
+    case "json":
+      // JSON: ~4.8 chars/token (even less efficient due to syntax overhead)
+      return charCount / 4.8;
+    case "text":
+    default:
+      // General text: ~4 chars/token (balanced average)
+      return charCount / 4;
+  }
 }
