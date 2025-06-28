@@ -112,6 +112,7 @@ title: "${title}"
       title: "API Reference",
       description: "TypeScript API documentation for @daydreamsai/core",
       icon: "Code",
+      root: true,
       pages: sortedPages.map((page) => {
         // Extract just the filename from the full path and remove .md extension
         const filename = page.filename.split("/").pop() || page.filename;

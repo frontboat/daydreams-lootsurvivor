@@ -1,18 +1,55 @@
 ---
 title: Memory System
 description:
-  The DaydreamsAI unified memory architecture with providers, middleware, and
+  The Daydreams memory architecture with providers, middleware, and
   multi-tier storage.
 ---
 
+## Quick Start
+
+Here's how to set up an agent with persistent memory:
+
+```typescript title="agent-with-memory.ts"
+import { createDreams } from "@daydreamsai/core";
+import { openai } from "@ai-sdk/openai";
+import { createSupabaseMemory } from "@daydreamsai/supabase";
+
+const agent = createDreams({
+  model: openai("gpt-4o"),
+  memory: createSupabaseMemory({
+    url: process.env.SUPABASE_URL!,
+    key: process.env.SUPABASE_SERVICE_KEY!,
+  }),
+});
+
+// Agent automatically remembers across conversations
+await agent.send("I prefer detailed weather reports");
+// Later...
+await agent.send("What's the weather like?");
+// Agent remembers your preference for detailed reports
+```
+
+## Memory Types
+
+Daydreams provides three types of memory storage:
+
+### Key-Value Memory
+Store structured data with keys - perfect for user preferences, session data, and configuration.
+
+### Vector Memory  
+Store text with semantic search capabilities - ideal for finding relevant information based on meaning rather than exact matches.
+
+### Graph Memory
+Store relationships between entities - useful for tracking connections, dependencies, and complex data relationships.
+
 ## Unified Memory Architecture
 
-DaydreamsAI features a **unified memory system** that provides sophisticated
+Daydreams features a **unified memory system** that provides sophisticated
 memory operations across multiple storage types with middleware, learning
 capabilities, and provider abstraction. This system enables agents to remember,
 learn, and evolve from every interaction.
 
-## The Unified Memory System
+## Memory System Overview
 
 ```typescript title="unified-memory-system.ts"
 // Unified, powerful memory system
@@ -40,7 +77,7 @@ const results = await memory.recall("weather preferences");
 
 ## Architecture Overview
 
-The new memory system consists of three main layers:
+The memory system consists of three main layers:
 
 ### 1. Memory System Core
 
@@ -66,7 +103,7 @@ Extensible processing pipeline for memory operations:
 
 ## Provider Implementations
 
-We've created comprehensive provider packages that follow the new architecture:
+We've created comprehensive provider packages that follow this architecture:
 
 ### Supabase Package (Full-Featured)
 
@@ -383,7 +420,7 @@ await memory.initialize();
 
 ## Performance Improvements
 
-The new system includes significant performance optimizations:
+The system includes significant performance optimizations:
 
 ### Memory Management
 
@@ -575,6 +612,6 @@ const hybridMemory = createMemorySystem({
 - **Learning**: Automatic knowledge extraction
 - **Evolution**: Memories strengthen and weaken over time
 
-This memory system transforms DaydreamsAI from a stateless framework into a
+This memory system transforms Daydreams from a stateless framework into a
 truly intelligent platform that learns, remembers, and evolves with every
 interaction.
