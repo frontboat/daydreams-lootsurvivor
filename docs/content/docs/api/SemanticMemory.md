@@ -10,7 +10,7 @@ title: "SemanticMemory"
 
 # Interface: SemanticMemory
 
-Defined in: [packages/core/src/memory/types.ts:365](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L365)
+Defined in: [packages/core/src/memory/types.ts:365](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L365)
 
 Semantic Memory - stores learned concepts and patterns
 
@@ -20,7 +20,7 @@ Semantic Memory - stores learned concepts and patterns
 
 > **get**(`id`, `contextId?`): `Promise`\<`null` \| [`SemanticConcept`](./SemanticConcept.md)\>
 
-Defined in: [packages/core/src/memory/types.ts:367](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L367)
+Defined in: [packages/core/src/memory/types.ts:367](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L367)
 
 #### Parameters
 
@@ -42,7 +42,7 @@ Defined in: [packages/core/src/memory/types.ts:367](https://github.com/dojoengin
 
 > **getRelevantPatterns**(`contextId`): `Promise`\<[`Pattern`](./Pattern.md)[]\>
 
-Defined in: [packages/core/src/memory/types.ts:372](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L372)
+Defined in: [packages/core/src/memory/types.ts:372](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L372)
 
 #### Parameters
 
@@ -60,7 +60,7 @@ Defined in: [packages/core/src/memory/types.ts:372](https://github.com/dojoengin
 
 > **learnFromAction**(`action`, `result`, `contextId?`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/types.ts:373](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L373)
+Defined in: [packages/core/src/memory/types.ts:373](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L373)
 
 #### Parameters
 
@@ -86,7 +86,7 @@ Defined in: [packages/core/src/memory/types.ts:373](https://github.com/dojoengin
 
 > **search**(`query`, `options?`): `Promise`\<[`SemanticConcept`](./SemanticConcept.md)[]\>
 
-Defined in: [packages/core/src/memory/types.ts:368](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L368)
+Defined in: [packages/core/src/memory/types.ts:368](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L368)
 
 #### Parameters
 
@@ -108,7 +108,7 @@ Defined in: [packages/core/src/memory/types.ts:368](https://github.com/dojoengin
 
 > **store**(`concept`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/types.ts:366](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L366)
+Defined in: [packages/core/src/memory/types.ts:366](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L366)
 
 #### Parameters
 
@@ -126,7 +126,7 @@ Defined in: [packages/core/src/memory/types.ts:366](https://github.com/dojoengin
 
 > **updateConfidence**(`id`, `delta`, `contextId?`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/types.ts:374](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L374)
+Defined in: [packages/core/src/memory/types.ts:374](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L374)
 
 #### Parameters
 

@@ -10,7 +10,7 @@ title: "VectorQuery"
 
 # Interface: VectorQuery
 
-Defined in: [packages/core/src/memory/types.ts:134](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L134)
+Defined in: [packages/core/src/memory/types.ts:134](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L134)
 
 ## Properties
 
@@ -18,7 +18,7 @@ Defined in: [packages/core/src/memory/types.ts:134](https://github.com/dojoengin
 
 > `optional` **embedding**: `number`[]
 
-Defined in: [packages/core/src/memory/types.ts:136](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L136)
+Defined in: [packages/core/src/memory/types.ts:136](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L136)
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: [packages/core/src/memory/types.ts:136](https://github.com/dojoengin
 
 > `optional` **filter**: `Record`\<`string`, `any`\>
 
-Defined in: [packages/core/src/memory/types.ts:138](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L138)
+Defined in: [packages/core/src/memory/types.ts:138](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L138)
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: [packages/core/src/memory/types.ts:138](https://github.com/dojoengin
 
 > `optional` **includeContent**: `boolean`
 
-Defined in: [packages/core/src/memory/types.ts:141](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L141)
+Defined in: [packages/core/src/memory/types.ts:141](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L141)
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: [packages/core/src/memory/types.ts:141](https://github.com/dojoengin
 
 > `optional` **includeMetadata**: `boolean`
 
-Defined in: [packages/core/src/memory/types.ts:140](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L140)
+Defined in: [packages/core/src/memory/types.ts:140](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L140)
 
 ***
 
@@ -50,7 +50,7 @@ Defined in: [packages/core/src/memory/types.ts:140](https://github.com/dojoengin
 
 > `optional` **limit**: `number`
 
-Defined in: [packages/core/src/memory/types.ts:139](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L139)
+Defined in: [packages/core/src/memory/types.ts:139](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L139)
 
 ***
 
@@ -58,7 +58,7 @@ Defined in: [packages/core/src/memory/types.ts:139](https://github.com/dojoengin
 
 > `optional` **minScore**: `number`
 
-Defined in: [packages/core/src/memory/types.ts:142](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L142)
+Defined in: [packages/core/src/memory/types.ts:142](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L142)
 
 ***
 
@@ -66,7 +66,7 @@ Defined in: [packages/core/src/memory/types.ts:142](https://github.com/dojoengin
 
 > `optional` **namespace**: `string`
 
-Defined in: [packages/core/src/memory/types.ts:137](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L137)
+Defined in: [packages/core/src/memory/types.ts:137](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L137)
 
 ***
 
@@ -74,4 +74,4 @@ Defined in: [packages/core/src/memory/types.ts:137](https://github.com/dojoengin
 
 > `optional` **query**: `string`
 
-Defined in: [packages/core/src/memory/types.ts:135](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L135)
+Defined in: [packages/core/src/memory/types.ts:135](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L135)

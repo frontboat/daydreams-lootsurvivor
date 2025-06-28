@@ -10,7 +10,7 @@ title: "KeyValueMemory"
 
 # Interface: KeyValueMemory
 
-Defined in: [packages/core/src/memory/types.ts:432](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L432)
+Defined in: [packages/core/src/memory/types.ts:432](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L432)
 
 Key-Value Memory interface
 
@@ -20,7 +20,7 @@ Key-Value Memory interface
 
 > **count**(`pattern?`): `Promise`\<`number`\>
 
-Defined in: [packages/core/src/memory/types.ts:438](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L438)
+Defined in: [packages/core/src/memory/types.ts:438](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L438)
 
 #### Parameters
 
@@ -38,7 +38,7 @@ Defined in: [packages/core/src/memory/types.ts:438](https://github.com/dojoengin
 
 > **delete**(`key`): `Promise`\<`boolean`\>
 
-Defined in: [packages/core/src/memory/types.ts:435](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L435)
+Defined in: [packages/core/src/memory/types.ts:435](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L435)
 
 #### Parameters
 
@@ -56,7 +56,7 @@ Defined in: [packages/core/src/memory/types.ts:435](https://github.com/dojoengin
 
 > **exists**(`key`): `Promise`\<`boolean`\>
 
-Defined in: [packages/core/src/memory/types.ts:436](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L436)
+Defined in: [packages/core/src/memory/types.ts:436](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L436)
 
 #### Parameters
 
@@ -74,7 +74,7 @@ Defined in: [packages/core/src/memory/types.ts:436](https://github.com/dojoengin
 
 > **get**\<`T`\>(`key`): `Promise`\<`null` \| `T`\>
 
-Defined in: [packages/core/src/memory/types.ts:433](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L433)
+Defined in: [packages/core/src/memory/types.ts:433](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L433)
 
 #### Type Parameters
 
@@ -98,7 +98,7 @@ Defined in: [packages/core/src/memory/types.ts:433](https://github.com/dojoengin
 
 > **keys**(`pattern?`): `Promise`\<`string`[]\>
 
-Defined in: [packages/core/src/memory/types.ts:437](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L437)
+Defined in: [packages/core/src/memory/types.ts:437](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L437)
 
 #### Parameters
 
@@ -116,7 +116,7 @@ Defined in: [packages/core/src/memory/types.ts:437](https://github.com/dojoengin
 
 > **scan**(`pattern?`): `AsyncIterator`\<\[`string`, `any`\]\>
 
-Defined in: [packages/core/src/memory/types.ts:439](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L439)
+Defined in: [packages/core/src/memory/types.ts:439](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L439)
 
 #### Parameters
 
@@ -134,7 +134,7 @@ Defined in: [packages/core/src/memory/types.ts:439](https://github.com/dojoengin
 
 > **set**\<`T`\>(`key`, `value`, `options?`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/types.ts:434](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L434)
+Defined in: [packages/core/src/memory/types.ts:434](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L434)
 
 #### Type Parameters
 

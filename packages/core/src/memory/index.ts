@@ -23,3 +23,5 @@ export {
   InMemoryVectorProvider,
   InMemoryGraphProvider,
 } from "./providers/in-memory";
+
+export { ExportManager, JSONExporter, MarkdownExporter } from "./exporters";

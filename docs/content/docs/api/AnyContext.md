@@ -12,6 +12,6 @@ title: "AnyContext"
 
 > **AnyContext** = [`Context`](./Context.md)\<`any`, `any`, `any`, `any`, `any`\>
 
-Defined in: [packages/core/src/types.ts:976](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L976)
+Defined in: [packages/core/src/types.ts:982](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L982)
 
 Type representing any Context with generic type parameters

@@ -10,7 +10,7 @@ title: "MemoryManager"
 
 # Interface: MemoryManager\<TContext\>
 
-Defined in: [packages/core/src/memory/types.ts:248](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L248)
+Defined in: [packages/core/src/memory/types.ts:248](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L248)
 
 Memory manager for handling memory pressure
 
@@ -26,7 +26,7 @@ Memory manager for handling memory pressure
 
 > `optional` **compress**: (`ctx`, `entries`, `agent`) => `string` \| `Promise`\<`string`\>
 
-Defined in: [packages/core/src/memory/types.ts:265](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L265)
+Defined in: [packages/core/src/memory/types.ts:265](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L265)
 
 Called to compress/summarize old entries into a compact representation
 
@@ -54,7 +54,7 @@ Called to compress/summarize old entries into a compact representation
 
 > `optional` **maxSize**: `number`
 
-Defined in: [packages/core/src/memory/types.ts:272](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L272)
+Defined in: [packages/core/src/memory/types.ts:272](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L272)
 
 Maximum number of entries before triggering memory management
 
@@ -64,7 +64,7 @@ Maximum number of entries before triggering memory management
 
 > `optional` **onMemoryPressure**: (`ctx`, `workingMemory`, `agent`) => [`WorkingMemory`](./WorkingMemory.md) \| `Promise`\<[`WorkingMemory`](./WorkingMemory.md)\>
 
-Defined in: [packages/core/src/memory/types.ts:250](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L250)
+Defined in: [packages/core/src/memory/types.ts:250](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L250)
 
 Called when memory needs pruning due to size constraints
 
@@ -92,7 +92,7 @@ Called when memory needs pruning due to size constraints
 
 > `optional` **preserve**: `object`
 
-Defined in: [packages/core/src/memory/types.ts:278](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L278)
+Defined in: [packages/core/src/memory/types.ts:278](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L278)
 
 Whether to preserve certain types of entries during pruning
 
@@ -140,7 +140,7 @@ Always keep the last N outputs
 
 > `optional` **shouldPrune**: (`ctx`, `workingMemory`, `newEntry`, `agent`) => `boolean` \| `Promise`\<`boolean`\>
 
-Defined in: [packages/core/src/memory/types.ts:257](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L257)
+Defined in: [packages/core/src/memory/types.ts:257](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L257)
 
 Called before adding new entries to determine if pruning is needed
 
@@ -172,6 +172,6 @@ Called before adding new entries to determine if pruning is needed
 
 > `optional` **strategy**: `"fifo"` \| `"lru"` \| `"smart"` \| `"custom"`
 
-Defined in: [packages/core/src/memory/types.ts:275](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L275)
+Defined in: [packages/core/src/memory/types.ts:275](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L275)
 
 Memory management strategy

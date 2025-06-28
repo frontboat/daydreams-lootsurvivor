@@ -12,7 +12,7 @@ title: "EventDef"
 
 > **EventDef**\<`Schema`\> = `object`
 
-Defined in: [packages/core/src/types.ts:1060](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L1060)
+Defined in: [packages/core/src/types.ts:1066](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L1066)
 
 Definition for an event type
 
@@ -30,7 +30,7 @@ The schema type for event data
 
 > **name**: `string`
 
-Defined in: [packages/core/src/types.ts:1063](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L1063)
+Defined in: [packages/core/src/types.ts:1069](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L1069)
 
 Name of the event
 
@@ -40,6 +40,6 @@ Name of the event
 
 > **schema**: `Schema`
 
-Defined in: [packages/core/src/types.ts:1065](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L1065)
+Defined in: [packages/core/src/types.ts:1071](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L1071)
 
 Schema for validating event data

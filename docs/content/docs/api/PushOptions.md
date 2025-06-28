@@ -10,7 +10,7 @@ title: "PushOptions"
 
 # Interface: PushOptions
 
-Defined in: [packages/core/src/memory/types.ts:240](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L240)
+Defined in: [packages/core/src/memory/types.ts:240](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L240)
 
 ## Properties
 
@@ -18,7 +18,7 @@ Defined in: [packages/core/src/memory/types.ts:240](https://github.com/dojoengin
 
 > `optional` **compress**: `boolean`
 
-Defined in: [packages/core/src/memory/types.ts:242](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L242)
+Defined in: [packages/core/src/memory/types.ts:242](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L242)
 
 ***
 
@@ -26,4 +26,4 @@ Defined in: [packages/core/src/memory/types.ts:242](https://github.com/dojoengin
 
 > `optional` **memoryManager**: [`MemoryManager`](./MemoryManager.md)\<[`AnyContext`](./AnyContext.md)\>
 
-Defined in: [packages/core/src/memory/types.ts:241](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L241)
+Defined in: [packages/core/src/memory/types.ts:241](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L241)

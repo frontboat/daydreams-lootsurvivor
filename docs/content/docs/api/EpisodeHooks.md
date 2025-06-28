@@ -10,7 +10,7 @@ title: "EpisodeHooks"
 
 # Interface: EpisodeHooks\<TContext\>
 
-Defined in: [packages/core/src/memory/types.ts:592](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L592)
+Defined in: [packages/core/src/memory/types.ts:592](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L592)
 
 Episode detection and creation hooks for contexts
 Allows developers to customize when and how episodes are stored
@@ -27,7 +27,7 @@ Allows developers to customize when and how episodes are stored
 
 > `optional` **classifyEpisode**(`episodeData`, `contextState`): `string`
 
-Defined in: [packages/core/src/memory/types.ts:642](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L642)
+Defined in: [packages/core/src/memory/types.ts:642](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L642)
 
 Called to classify the type of episode (optional)
 
@@ -57,7 +57,7 @@ Episode type/classification string
 
 > `optional` **createEpisode**(`logs`, `contextState`, `agent`): `any`
 
-Defined in: [packages/core/src/memory/types.ts:630](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L630)
+Defined in: [packages/core/src/memory/types.ts:630](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L630)
 
 Called to create episode data from collected logs
 
@@ -93,7 +93,7 @@ Episode data to be stored
 
 > `optional` **extractMetadata**(`episodeData`, `logs`, `contextState`): `Record`\<`string`, `any`\>
 
-Defined in: [packages/core/src/memory/types.ts:654](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L654)
+Defined in: [packages/core/src/memory/types.ts:654](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L654)
 
 Called to extract additional metadata for the episode (optional)
 
@@ -129,7 +129,7 @@ Metadata object
 
 > `optional` **shouldEndEpisode**(`ref`, `workingMemory`, `contextState`, `agent`): `boolean` \| `Promise`\<`boolean`\>
 
-Defined in: [packages/core/src/memory/types.ts:616](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L616)
+Defined in: [packages/core/src/memory/types.ts:616](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L616)
 
 Called to determine if the current episode should be ended and stored
 
@@ -171,7 +171,7 @@ true if the current episode should be stored
 
 > `optional` **shouldStartEpisode**(`ref`, `workingMemory`, `contextState`, `agent`): `boolean` \| `Promise`\<`boolean`\>
 
-Defined in: [packages/core/src/memory/types.ts:601](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L601)
+Defined in: [packages/core/src/memory/types.ts:601](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L601)
 
 Called to determine if a new episode should be started
 

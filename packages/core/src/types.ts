@@ -13,6 +13,7 @@ import type {
   MemorySystem,
   WorkingMemory,
 } from "./memory";
+import type { ExportManager } from "./memory/exporters";
 
 // Export memory types
 export * from "./memory";
@@ -748,6 +749,11 @@ export interface Agent<TContext extends AnyContext = AnyContext>
    * @param args - Arguments to pass to the event handler.
    */
   emit: (...args: any[]) => void;
+
+  /**
+   * Export manager for episodes
+   */
+  exports?: ExportManager;
 
   /**
    * Runs the agent with the provided options.

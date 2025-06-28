@@ -10,7 +10,7 @@ title: "MemoryContext"
 
 # Interface: MemoryContext
 
-Defined in: [packages/core/src/memory/types.ts:482](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L482)
+Defined in: [packages/core/src/memory/types.ts:482](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L482)
 
 ## Properties
 
@@ -18,7 +18,7 @@ Defined in: [packages/core/src/memory/types.ts:482](https://github.com/dojoengin
 
 > `optional` **data**: `any`
 
-Defined in: [packages/core/src/memory/types.ts:484](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L484)
+Defined in: [packages/core/src/memory/types.ts:484](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L484)
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: [packages/core/src/memory/types.ts:484](https://github.com/dojoengin
 
 > **memory**: [`Memory`](./Memory.md)
 
-Defined in: [packages/core/src/memory/types.ts:486](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L486)
+Defined in: [packages/core/src/memory/types.ts:486](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L486)
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: [packages/core/src/memory/types.ts:486](https://github.com/dojoengin
 
 > **operation**: `string`
 
-Defined in: [packages/core/src/memory/types.ts:483](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L483)
+Defined in: [packages/core/src/memory/types.ts:483](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L483)
 
 ***
 
@@ -42,4 +42,4 @@ Defined in: [packages/core/src/memory/types.ts:483](https://github.com/dojoengin
 
 > `optional` **options**: `any`
 
-Defined in: [packages/core/src/memory/types.ts:485](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L485)
+Defined in: [packages/core/src/memory/types.ts:485](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L485)

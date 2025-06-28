@@ -33,7 +33,9 @@ import {
   InMemoryKeyValueProvider,
   InMemoryVectorProvider,
   MemorySystem,
-  type Episode,
+  ExportManager,
+  JSONExporter,
+  MarkdownExporter,
 } from "./memory";
 import { runGenerate } from "./tasks";
 import { LogLevel } from "./types";
@@ -203,6 +205,22 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
     }
   }
 
+  // Initialize memory system
+  const memory =
+    config.memory ??
+    new MemorySystem({
+      providers: {
+        kv: new InMemoryKeyValueProvider(),
+        vector: new InMemoryVectorProvider(),
+        graph: new InMemoryGraphProvider(),
+      },
+    });
+
+  // Initialize export manager
+  const exportManager = new ExportManager();
+  exportManager.registerExporter(new JSONExporter());
+  exportManager.registerExporter(new MarkdownExporter());
+
   const agent: Agent<TContext> = {
     logger,
     inputs,
@@ -210,15 +228,7 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
     events,
     actions,
     experts,
-    memory:
-      config.memory ??
-      new MemorySystem({
-        providers: {
-          kv: new InMemoryKeyValueProvider(),
-          vector: new InMemoryVectorProvider(),
-          graph: new InMemoryGraphProvider(),
-        },
-      }),
+    memory,
     container,
     model,
     reasoningModel,
@@ -229,6 +239,7 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
     exportTrainingData,
     trainingDataPath,
     registry,
+    exports: exportManager,
     emit: (event: string, data: any) => {
       logger.debug("agent:event", event, data);
     },

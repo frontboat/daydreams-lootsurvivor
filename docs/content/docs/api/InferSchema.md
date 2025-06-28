@@ -12,7 +12,7 @@ title: "InferSchema"
 
 > **InferSchema**\<`T`\> = `T` *extends* `object` ? `z.infer`\<`S`\> : `unknown`
 
-Defined in: [packages/core/src/types.ts:39](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L39)
+Defined in: [packages/core/src/types.ts:40](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L40)
 
 Infers the schema type from an object with an optional schema property
 

@@ -10,7 +10,7 @@ title: "MemoryOptions"
 
 # Interface: MemoryOptions
 
-Defined in: [packages/core/src/memory/types.ts:61](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L61)
+Defined in: [packages/core/src/memory/types.ts:61](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L61)
 
 ## Properties
 
@@ -18,7 +18,7 @@ Defined in: [packages/core/src/memory/types.ts:61](https://github.com/dojoengine
 
 > `optional` **compression**: `object`
 
-Defined in: [packages/core/src/memory/types.ts:70](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L70)
+Defined in: [packages/core/src/memory/types.ts:70](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L70)
 
 #### enabled
 
@@ -34,7 +34,7 @@ Defined in: [packages/core/src/memory/types.ts:70](https://github.com/dojoengine
 
 > `optional` **evolution**: `object`
 
-Defined in: [packages/core/src/memory/types.ts:62](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L62)
+Defined in: [packages/core/src/memory/types.ts:62](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L62)
 
 #### enabled
 
@@ -50,7 +50,7 @@ Defined in: [packages/core/src/memory/types.ts:62](https://github.com/dojoengine
 
 > `optional` **learning**: `object`
 
-Defined in: [packages/core/src/memory/types.ts:66](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L66)
+Defined in: [packages/core/src/memory/types.ts:66](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L66)
 
 #### enabled
 

@@ -12,7 +12,7 @@ title: "InferAgentMemory"
 
 > **InferAgentMemory**\<`TAgent`\> = [`InferContextMemory`](./InferContextMemory.md)\<[`InferAgentContext`](./InferAgentContext.md)\<`TAgent`\>\>
 
-Defined in: [packages/core/src/types.ts:59](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L59)
+Defined in: [packages/core/src/types.ts:60](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L60)
 
 Extracts the memory type from an Agent by inferring its context
 

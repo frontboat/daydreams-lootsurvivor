@@ -12,7 +12,7 @@ title: "AnyActionWithContext"
 
 > **AnyActionWithContext**\<`Ctx`\> = [`Action`](./Action.md)\<`any`, `any`, `any`, `Ctx`, [`AnyAgent`](./AnyAgent.md), [`ActionState`](./ActionState.md)\>
 
-Defined in: [packages/core/src/types.ts:344](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L344)
+Defined in: [packages/core/src/types.ts:345](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L345)
 
 Type alias for an Action with a specific Context type
 

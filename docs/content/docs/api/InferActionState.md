@@ -12,7 +12,7 @@ title: "InferActionState"
 
 > **InferActionState**\<`TMemory`\> = `TMemory` *extends* [`ActionState`](./ActionState.md)\<infer Data\> ? `Data` : `never`
 
-Defined in: [packages/core/src/memory/types.ts:577](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/memory/types.ts#L577)
+Defined in: [packages/core/src/memory/types.ts:577](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L577)
 
 Extracts the data type from a Memory type
 

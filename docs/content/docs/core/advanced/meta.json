@@ -2,6 +2,7 @@
   "pages": [
     "introduction",
     "memory-system",
+    "episode-export",
     "extensions-vs-services",
     "extensions",
     "services",

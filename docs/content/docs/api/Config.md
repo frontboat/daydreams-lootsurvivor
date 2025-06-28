@@ -12,7 +12,7 @@ title: "Config"
 
 > **Config**\<`TContext`\> = `Partial`\<`AgentDef`\<`TContext`\>\> & `object`
 
-Defined in: [packages/core/src/types.ts:897](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L897)
+Defined in: [packages/core/src/types.ts:903](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L903)
 
 ## Type declaration
 

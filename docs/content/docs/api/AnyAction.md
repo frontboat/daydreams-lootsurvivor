@@ -12,6 +12,6 @@ title: "AnyAction"
 
 > **AnyAction** = [`Action`](./Action.md)\<`any`, `any`, `any`, `any`, [`AnyAgent`](./AnyAgent.md), [`ActionState`](./ActionState.md)\>
 
-Defined in: [packages/core/src/types.ts:338](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L338)
+Defined in: [packages/core/src/types.ts:339](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L339)
 
 Type alias for any Action with generic parameters

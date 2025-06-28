@@ -12,7 +12,7 @@ title: "ContextRef"
 
 > **ContextRef**\<`TContext`\> = `object`
 
-Defined in: [packages/core/src/types.ts:1248](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L1248)
+Defined in: [packages/core/src/types.ts:1254](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L1254)
 
 Reference to a context with its arguments
 
@@ -30,7 +30,7 @@ The context type
 
 > **args**: [`InferSchemaArguments`](./InferSchemaArguments.md)\<`TContext`\[`"schema"`\]\>
 
-Defined in: [packages/core/src/types.ts:1250](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L1250)
+Defined in: [packages/core/src/types.ts:1256](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L1256)
 
 ***
 
@@ -38,4 +38,4 @@ Defined in: [packages/core/src/types.ts:1250](https://github.com/dojoengine/dayd
 
 > **context**: `TContext`
 
-Defined in: [packages/core/src/types.ts:1249](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L1249)
+Defined in: [packages/core/src/types.ts:1255](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L1255)

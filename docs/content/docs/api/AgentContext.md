@@ -10,7 +10,7 @@ title: "AgentContext"
 
 # Interface: AgentContext\<TContext\>
 
-Defined in: [packages/core/src/types.ts:571](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L571)
+Defined in: [packages/core/src/types.ts:572](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L572)
 
 ## Extended by
 
@@ -28,7 +28,7 @@ Defined in: [packages/core/src/types.ts:571](https://github.com/dojoengine/daydr
 
 > **args**: [`InferSchemaArguments`](./InferSchemaArguments.md)\<`TContext`\[`"schema"`\]\>
 
-Defined in: [packages/core/src/types.ts:574](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L574)
+Defined in: [packages/core/src/types.ts:575](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L575)
 
 ***
 
@@ -36,7 +36,7 @@ Defined in: [packages/core/src/types.ts:574](https://github.com/dojoengine/daydr
 
 > **context**: `TContext`
 
-Defined in: [packages/core/src/types.ts:573](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L573)
+Defined in: [packages/core/src/types.ts:574](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L574)
 
 ***
 
@@ -44,7 +44,7 @@ Defined in: [packages/core/src/types.ts:573](https://github.com/dojoengine/daydr
 
 > **id**: `string`
 
-Defined in: [packages/core/src/types.ts:572](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L572)
+Defined in: [packages/core/src/types.ts:573](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L573)
 
 ***
 
@@ -52,7 +52,7 @@ Defined in: [packages/core/src/types.ts:572](https://github.com/dojoengine/daydr
 
 > **memory**: [`InferContextMemory`](./InferContextMemory.md)\<`TContext`\>
 
-Defined in: [packages/core/src/types.ts:577](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L577)
+Defined in: [packages/core/src/types.ts:578](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L578)
 
 ***
 
@@ -60,7 +60,7 @@ Defined in: [packages/core/src/types.ts:577](https://github.com/dojoengine/daydr
 
 > **options**: [`InferContextOptions`](./InferContextOptions.md)\<`TContext`\>
 
-Defined in: [packages/core/src/types.ts:575](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L575)
+Defined in: [packages/core/src/types.ts:576](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L576)
 
 ***
 
@@ -68,7 +68,7 @@ Defined in: [packages/core/src/types.ts:575](https://github.com/dojoengine/daydr
 
 > `optional` **requestContext**: `RequestContext`
 
-Defined in: [packages/core/src/types.ts:579](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L579)
+Defined in: [packages/core/src/types.ts:580](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L580)
 
 ***
 
@@ -76,7 +76,7 @@ Defined in: [packages/core/src/types.ts:579](https://github.com/dojoengine/daydr
 
 > **settings**: [`ContextSettings`](./ContextSettings.md)
 
-Defined in: [packages/core/src/types.ts:576](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L576)
+Defined in: [packages/core/src/types.ts:577](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L577)
 
 ***
 
@@ -84,4 +84,4 @@ Defined in: [packages/core/src/types.ts:576](https://github.com/dojoengine/daydr
 
 > **workingMemory**: [`WorkingMemory`](./WorkingMemory.md)
 
-Defined in: [packages/core/src/types.ts:578](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L578)
+Defined in: [packages/core/src/types.ts:579](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L579)

@@ -12,7 +12,7 @@ title: "MaybePromise"
 
 > **MaybePromise**\<`T`\> = `T` \| `Promise`\<`T`\>
 
-Defined in: [packages/core/src/types.ts:33](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L33)
+Defined in: [packages/core/src/types.ts:34](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L34)
 
 Represents a value that can be a promise or a direct value
 

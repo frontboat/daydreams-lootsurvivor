@@ -12,7 +12,7 @@ title: "Optional"
 
 > **Optional**\<`T`, `K`\> = `Omit`\<`T`, `K`\> & `Partial`\<`Pick`\<`T`, `K`\>\>
 
-Defined in: [packages/core/src/types.ts:27](https://github.com/dojoengine/daydreams/blob/cade502c379b7b9e103832026447c86310638fce/packages/core/src/types.ts#L27)
+Defined in: [packages/core/src/types.ts:28](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L28)
 
 Makes specified keys optional in a type
 
