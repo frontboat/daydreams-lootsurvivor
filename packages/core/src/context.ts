@@ -1022,7 +1022,10 @@ export async function saveContextState(agent: AnyAgent, state: ContextState) {
     args,
     settings: {
       ...settings,
-      model: settings.model?.modelId,
+      model:
+        typeof settings.model === "string"
+          ? settings.model
+          : settings.model?.modelId,
     },
     contexts,
   });

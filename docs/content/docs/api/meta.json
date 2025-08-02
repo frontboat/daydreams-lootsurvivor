@@ -83,7 +83,7 @@
     "KeyValueMemory",
     "KeyValueMemoryImpl",
     "KeyValueProvider",
-    "LanguageModelV1",
+    "LanguageModel",
     "LifecycleHandler",
     "Log",
     "LogChunk",

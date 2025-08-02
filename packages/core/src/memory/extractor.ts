@@ -1,16 +1,21 @@
-import type { Memory, ExtractedMemories, Fact, Preference, Entity, Event, Relationship } from "./types";
-import type { LanguageModelV1 } from "ai";
+import type {
+  Memory,
+  ExtractedMemories,
+  Fact,
+  Preference,
+  Entity,
+  Event,
+  Relationship,
+} from "./types";
+import type { LanguageModel } from "ai";
 
 export class MemoryExtractor {
-  constructor(
-    private memory: Memory,
-    private model?: LanguageModelV1
-  ) {}
+  constructor(private memory: Memory, private model?: LanguageModel) {}
 
   async extract(content: any, context: any): Promise<ExtractedMemories> {
     // Placeholder implementation
     // In production, this would use the LLM to extract structured information
-    
+
     const extracted: ExtractedMemories = {
       facts: [],
       preferences: [],
@@ -34,7 +39,11 @@ export class MemoryExtractor {
       }
 
       // Extract potential preferences
-      if (content.includes("like") || content.includes("prefer") || content.includes("favorite")) {
+      if (
+        content.includes("like") ||
+        content.includes("prefer") ||
+        content.includes("favorite")
+      ) {
         extracted.preferences.push({
           id: `pref:${Date.now()}`,
           subject: "user",

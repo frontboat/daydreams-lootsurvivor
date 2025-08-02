@@ -4,7 +4,7 @@ title: "daydreamsai/core"
 
 **@daydreamsai/core**
 
-***
+---
 
 # @daydreamsai/core
 
@@ -132,7 +132,7 @@ title: "daydreamsai/core"
 - [InputConfig](./InputConfig.md)
 - [InputRef](./InputRef.md)
 - [Instruction](./Instruction.md)
-- [LanguageModelV1](./LanguageModelV1.md)
+- [LanguageModel](./LanguageModel.md)
 - [LifecycleHandler](./LifecycleHandler.md)
 - [Log](./Log.md)
 - [LogChunk](./LogChunk.md)

@@ -1,5 +1,5 @@
 import { MemorySystem, type MemoryConfig } from "@daydreamsai/core";
-import type { LanguageModelV1 } from "ai";
+import type { LanguageModel } from "ai";
 import {
   createSupabaseKVProvider,
   createSupabaseVectorProvider,

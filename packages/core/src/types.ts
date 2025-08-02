@@ -1,4 +1,4 @@
-import { type LanguageModelV1, type Schema } from "ai";
+import { type LanguageModel, type Schema } from "ai";
 import { z, ZodObject, ZodType, type ZodRawShape } from "zod/v4";
 import type { Container } from "./container";
 import type { ServiceProvider } from "./serviceProvider";
@@ -17,8 +17,6 @@ import type { ExportManager } from "./memory/exporters";
 
 // Export memory types
 export * from "./memory";
-
-export { type LanguageModelV1, type Schema } from "ai";
 
 /**
  * Makes specified keys optional in a type
@@ -564,7 +562,7 @@ export type Expert = {
   /** Detailed instructions for the expert's behavior */
   instructions: string;
   /** Optional language model specific to this expert */
-  model?: LanguageModelV1;
+  model?: LanguageModel;
   /** Optional actions available to this expert */
   actions?: AnyAction[];
 };
@@ -612,7 +610,7 @@ export type Registry = {
   /** Map of registered prompt templates */
   prompts: Map<string, string>;
   /** Map of registered language models */
-  models: Map<string, LanguageModelV1>;
+  models: Map<string, LanguageModel>;
 };
 
 interface AgentDef<TContext extends AnyContext = AnyContext> {
@@ -656,17 +654,17 @@ interface AgentDef<TContext extends AnyContext = AnyContext> {
   /**
    * The primary language model used by the agent.
    */
-  model?: LanguageModelV1;
+  model?: LanguageModel;
 
   /**
    * The reasoning model used by the agent, if any.
    */
-  reasoningModel?: LanguageModelV1;
+  reasoningModel?: LanguageModel;
 
   /**
    * The vector model used by the agent, if any.
    */
-  vectorModel?: LanguageModelV1;
+  vectorModel?: LanguageModel;
 
   /**
    * Model settings for the agent.
@@ -766,7 +764,7 @@ export interface Agent<TContext extends AnyContext = AnyContext>
   >(opts: {
     context: TContext;
     args: InferSchemaArguments<TContext["schema"]>;
-    model?: LanguageModelV1;
+    model?: LanguageModel;
     modelSettings?: {
       temperature?: number;
       maxTokens?: number;
@@ -797,7 +795,7 @@ export interface Agent<TContext extends AnyContext = AnyContext>
     context: SContext;
     args: InferSchemaArguments<SContext["schema"]>;
     input: { type: string; data: any };
-    model?: LanguageModelV1;
+    model?: LanguageModel;
     contexts?: ContextRefArray<SubContextRefs>;
     outputs?: Record<string, Omit<Output<any, any, SContext, any>, "type">>;
     actions?: AnyAction[];
@@ -1164,7 +1162,7 @@ export interface Context<
     state: ContextState<this>
   ) => string | string[] | XMLElement | XMLElement[] | (string | XMLElement)[];
 
-  model?: LanguageModelV1;
+  model?: LanguageModel;
 
   modelSettings?: {
     temperature?: number;
@@ -1230,7 +1228,7 @@ export interface Context<
  */
 export type ContextSettings = {
   /** Language model to use for this context */
-  model?: LanguageModelV1;
+  model?: LanguageModel;
   /** Maximum number of execution steps */
   maxSteps?: number;
   /** Maximum size of working memory */
