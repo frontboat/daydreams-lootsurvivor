@@ -21,6 +21,22 @@ import { generateText } from "ai";
 import { type RequestContext } from "../tracking";
 import { getRequestTracker } from "../tracking/tracker";
 import { LogEventType, StructuredLogger } from "../logging-events";
+
+/**
+ * Helper to extract model properties safely from LanguageModel union type
+ */
+function getModelInfo(model: LanguageModel): {
+  modelId: string;
+  provider: string;
+} {
+  if (typeof model === "string") {
+    return { modelId: model, provider: "unknown" };
+  }
+  return {
+    modelId: model.modelId || "unknown",
+    provider: model.provider || "unknown",
+  };
+}
 /**
  * Prepares a stream response by handling the stream result and parsing it.
  *
@@ -41,10 +57,11 @@ function prepareStreamResponse({
   stream: StreamTextResult<ToolSet, never>;
   isReasoningModel: boolean;
 }) {
+  const { modelId } = getModelInfo(model);
   const prefix =
-    modelsResponseConfig[model.modelId]?.prefix ??
+    modelsResponseConfig[modelId]?.prefix ??
     (isReasoningModel
-      ? modelsResponseConfig[model.modelId]?.thinkTag ?? "<think>"
+      ? modelsResponseConfig[modelId]?.thinkTag ?? "<think>"
       : "<response>");
   const suffix = "</response>";
   return {
@@ -94,7 +111,8 @@ export const runGenerate = task({
     }: GenerateOptions,
     { abortSignal }
   ) => {
-    const isReasoningModel = reasoningModels.includes(model.modelId);
+    const { modelId, provider } = getModelInfo(model);
+    const isReasoningModel = reasoningModels.includes(modelId);
     const modelSettings = contextSettings?.modelSettings || {};
 
     const messages: CoreMessage[] = [
@@ -109,11 +127,11 @@ export const runGenerate = task({
       },
     ];
 
-    if (modelsResponseConfig[model.modelId]?.assist !== false)
+    if (modelsResponseConfig[modelId]?.assist !== false)
       messages.push({
         role: "assistant",
         content: isReasoningModel
-          ? modelsResponseConfig[model.modelId]?.thinkTag ?? "<think>"
+          ? modelsResponseConfig[modelId]?.thinkTag ?? "<think>"
           : "<response>\n<reasoning>",
       });
 
@@ -157,8 +175,8 @@ export const runGenerate = task({
           eventType: LogEventType.MODEL_CALL_START,
           timestamp: startTime,
           requestContext: actionTrackingContext,
-          provider: model.provider || "unknown",
-          modelId: model.modelId,
+          provider: provider,
+          modelId: modelId,
           callType: streaming ? "stream" : "generate",
           inputTokens: undefined, // Not available before the call
         });
@@ -184,8 +202,8 @@ export const runGenerate = task({
           modelCallId = await tracker.trackModelCall(
             actionTrackingContext,
             "generate",
-            model.modelId,
-            model.provider || "unknown",
+            modelId,
+            provider,
             {
               tokenUsage: response.usage
                 ? {
@@ -196,8 +214,8 @@ export const runGenerate = task({
                   }
                 : undefined,
               metrics: {
-                modelId: model.modelId,
-                provider: model.provider || "unknown",
+                modelId: modelId,
+                provider: provider,
                 totalTime: endTime - startTime,
                 tokensPerSecond: response.usage
                   ? (response.usage.outputTokens ?? 0) /
@@ -224,9 +242,9 @@ export const runGenerate = task({
             const { estimateCost } = await import("../tracking");
             // Try multiple provider key combinations for better matching
             const providerKeys = [
-              `${model.provider}/${model.modelId}`, // e.g., "openrouter.chat/google/gemini-2.5-pro"
-              model.provider || "unknown", // e.g., "openrouter.chat"
-              model.modelId.split("/")[0], // e.g., "google"
+              `${provider}/${modelId}`, // e.g., "openrouter.chat/google/gemini-2.5-pro"
+              provider, // e.g., "openrouter.chat"
+              modelId.split("/")[0], // e.g., "google"
             ];
 
             let cost = 0;
@@ -245,13 +263,13 @@ export const runGenerate = task({
             eventType: LogEventType.MODEL_CALL_COMPLETE,
             timestamp: endTime,
             requestContext: actionTrackingContext,
-            provider: model.provider || "unknown",
-            modelId: model.modelId,
+            provider: provider,
+            modelId: modelId,
             callType: "generate",
             tokenUsage,
             metrics: {
-              modelId: model.modelId,
-              provider: model.provider || "unknown",
+              modelId: modelId,
+              provider: provider,
               totalTime: endTime - startTime,
               tokensPerSecond:
                 (response.usage.outputTokens ?? 0) /
@@ -300,8 +318,8 @@ export const runGenerate = task({
               await tracker.trackModelCall(
                 actionTrackingContext,
                 "stream",
-                model.modelId,
-                model.provider || "unknown",
+                modelId,
+                provider,
                 {
                   tokenUsage: usage
                     ? {
@@ -312,8 +330,8 @@ export const runGenerate = task({
                       }
                     : undefined,
                   metrics: {
-                    modelId: model.modelId,
-                    provider: model.provider || "unknown",
+                    modelId: modelId,
+                    provider: provider,
                     totalTime: endTime - startTime,
                     tokensPerSecond: usage
                       ? (usage.outputTokens ?? 0) /
@@ -339,9 +357,9 @@ export const runGenerate = task({
                   const { estimateCost } = await import("../tracking");
                   // Try multiple provider key combinations for better matching
                   const providerKeys = [
-                    `${model.provider}/${model.modelId}`, // e.g., "openrouter.chat/google/gemini-2.5-pro"
-                    model.provider || "unknown", // e.g., "openrouter.chat"
-                    model.modelId.split("/")[0], // e.g., "google"
+                    `${provider}/${modelId}`, // e.g., "openrouter.chat/google/gemini-2.5-pro"
+                    provider, // e.g., "openrouter.chat"
+                    modelId.split("/")[0], // e.g., "google"
                   ];
 
                   let cost = 0;
@@ -360,13 +378,13 @@ export const runGenerate = task({
                   eventType: LogEventType.MODEL_CALL_COMPLETE,
                   timestamp: endTime,
                   requestContext: actionTrackingContext,
-                  provider: model.provider || "unknown",
-                  modelId: model.modelId,
+                  provider: provider,
+                  modelId: modelId,
                   callType: "stream",
                   tokenUsage,
                   metrics: {
-                    modelId: model.modelId,
-                    provider: model.provider || "unknown",
+                    modelId: modelId,
+                    provider: provider,
                     totalTime: endTime - startTime,
                     tokensPerSecond:
                       (usage.outputTokens ?? 0) /
@@ -396,16 +414,16 @@ export const runGenerate = task({
                 await tracker.trackModelCall(
                   actionTrackingContext,
                   "stream",
-                  model.modelId,
-                  model.provider || "unknown",
+                  modelId,
+                  provider,
                   {
                     error: {
                       message: error.message || "Stream failed",
                       cause: error,
                     },
                     metrics: {
-                      modelId: model.modelId,
-                      provider: model.provider || "unknown",
+                      modelId: modelId,
+                      provider: provider,
                       totalTime: Date.now() - startTime,
                     },
                   }
@@ -443,8 +461,8 @@ export const runGenerate = task({
         await tracker.trackModelCall(
           actionTrackingContext,
           streaming ? "stream" : "generate",
-          model.modelId,
-          model.provider || "unknown",
+          modelId,
+          provider,
           {
             error: {
               message:
@@ -452,8 +470,8 @@ export const runGenerate = task({
               cause: error,
             },
             metrics: {
-              modelId: model.modelId,
-              provider: model.provider || "unknown",
+              modelId: modelId,
+              provider: provider,
               totalTime: endTime - startTime,
             },
           }
@@ -466,8 +484,8 @@ export const runGenerate = task({
           eventType: LogEventType.MODEL_CALL_ERROR,
           timestamp: Date.now(),
           requestContext: actionTrackingContext,
-          provider: model.provider || "unknown",
-          modelId: model.modelId,
+          provider: provider,
+          modelId: modelId,
           callType: streaming ? "stream" : "generate",
           error: {
             message:
