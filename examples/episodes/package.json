@@ -1,5 +1,5 @@
 {
-  "name": "twitter",
+  "name": "episodes",
   "module": "index.ts",
   "type": "module",
   "private": true,
