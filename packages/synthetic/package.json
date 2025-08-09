@@ -1,6 +1,6 @@
 {
   "name": "@daydreamsai/synthetic",
-  "version": "0.3.7-alpha.7",
+  "version": "0.3.9-alpha.0",
   "description": "Synthetic data generation for AI agent training",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -12,7 +12,8 @@
     "dev": "tsup --watch",
     "test": "vitest",
     "test:watch": "vitest --watch",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "prepublishOnly": "pnpm run build"
   },
   "keywords": [
     "ai",
@@ -30,9 +31,9 @@
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^3.2.0",
-    "vitest": "catalog:",
     "tsup": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "peerDependencies": {
     "@daydreamsai/core": "workspace:*"
