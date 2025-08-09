@@ -26,10 +26,7 @@ const DEFAULT_RETRY_OPTIONS: Required<RetryOptions> = {
 };
 
 class RequestError extends Error {
-  constructor(
-    message: string,
-    public response?: Response
-  ) {
+  constructor(message: string, public response?: Response) {
     super(message);
     this.name = "RequestError";
   }

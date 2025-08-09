@@ -19,7 +19,7 @@ export class FactualMemoryImpl implements FactualMemory {
       if (!fact.timestamp) fact.timestamp = Date.now();
 
       // Generate context-aware storage key
-      const storageKey = fact.contextId 
+      const storageKey = fact.contextId
         ? `fact:${fact.contextId}:${fact.id}`
         : `fact:global:${fact.id}`;
 
@@ -66,25 +66,30 @@ export class FactualMemoryImpl implements FactualMemory {
   async get(id: string, contextId?: string): Promise<Fact | null> {
     // Try context-specific first if contextId provided
     if (contextId) {
-      const contextSpecific = await this.memory.kv.get<Fact>(`fact:${contextId}:${id}`);
+      const contextSpecific = await this.memory.kv.get<Fact>(
+        `fact:${contextId}:${id}`
+      );
       if (contextSpecific) return contextSpecific;
     }
-    
+
     // Try global
     const global = await this.memory.kv.get<Fact>(`fact:global:${id}`);
     if (global) return global;
-    
+
     // Fallback to old format for backward compatibility
     return this.memory.kv.get<Fact>(`fact:${id}`);
   }
 
-  async search(query: string, options?: SearchOptions & { contextId?: string }): Promise<Fact[]> {
+  async search(
+    query: string,
+    options?: SearchOptions & { contextId?: string }
+  ): Promise<Fact[]> {
     // Build filter with context support
-    const filter: Record<string, any> = { 
-      type: "fact", 
-      ...options?.filter 
+    const filter: Record<string, any> = {
+      type: "fact",
+      ...options?.filter,
     };
-    
+
     // Add context filter if specified
     if (options?.contextId) {
       filter.contextId = options.contextId;
@@ -96,11 +101,14 @@ export class FactualMemoryImpl implements FactualMemory {
       limit: options?.limit || 20,
     });
 
-    const facts: Fact[] = [];
-    for (const result of vectorResults) {
-      const fact = await this.get(result.id, options?.contextId);
-      if (fact) facts.push(fact);
-    }
+    // Parallelize fact fetching for better performance
+    const factPromises = vectorResults.map((result) =>
+      this.get(result.id, options?.contextId)
+    );
+    const factResults = await Promise.all(factPromises);
+
+    // Filter out null results
+    const facts = factResults.filter((fact): fact is Fact => fact !== null);
 
     // Sort by confidence if requested
     if (options?.sort === "confidence") {
@@ -115,11 +123,13 @@ export class FactualMemoryImpl implements FactualMemory {
     if (!fact) throw new Error(`Fact ${factId} not found`);
 
     // Find related facts - prioritize same context
-    const contextRelated = fact.contextId ? await this.memory.vector.search({
-      query: fact.statement,
-      filter: { type: "fact", contextId: fact.contextId },
-      limit: 10,
-    }) : [];
+    const contextRelated = fact.contextId
+      ? await this.memory.vector.search({
+          query: fact.statement,
+          filter: { type: "fact", contextId: fact.contextId },
+          limit: 10,
+        })
+      : [];
 
     const globalRelated = await this.memory.vector.search({
       query: fact.statement,
@@ -129,11 +139,12 @@ export class FactualMemoryImpl implements FactualMemory {
 
     // Combine with context-specific facts having higher priority
     const allRelated = [...contextRelated, ...globalRelated];
-    
+
     // Remove duplicates and self-reference
-    const uniqueRelated = allRelated.filter((result, index, array) => 
-      result.id !== factId && 
-      array.findIndex(r => r.id === result.id) === index
+    const uniqueRelated = allRelated.filter(
+      (result, index, array) =>
+        result.id !== factId &&
+        array.findIndex((r) => r.id === result.id) === index
     );
 
     // Separate supporting and conflicting facts
@@ -142,7 +153,9 @@ export class FactualMemoryImpl implements FactualMemory {
 
     for (const result of uniqueRelated) {
       // Give context-specific facts more weight in scoring
-      const isContextSpecific = contextRelated.some(cr => cr.id === result.id);
+      const isContextSpecific = contextRelated.some(
+        (cr) => cr.id === result.id
+      );
       const scoreThreshold = isContextSpecific ? 0.7 : 0.8;
       const conflictThreshold = isContextSpecific ? 0.4 : 0.3;
 
@@ -169,7 +182,7 @@ export class FactualMemoryImpl implements FactualMemory {
 
     // Update fact with verification using context-aware key
     fact.verification = verification;
-    const storageKey = fact.contextId 
+    const storageKey = fact.contextId
       ? `fact:${fact.contextId}:${factId}`
       : `fact:global:${factId}`;
     await this.memory.kv.set(storageKey, fact);
@@ -177,7 +190,11 @@ export class FactualMemoryImpl implements FactualMemory {
     return verification;
   }
 
-  async update(id: string, updates: Partial<Fact>, contextId?: string): Promise<void> {
+  async update(
+    id: string,
+    updates: Partial<Fact>,
+    contextId?: string
+  ): Promise<void> {
     const fact = await this.get(id, contextId);
     if (!fact) throw new Error(`Fact ${id} not found`);
 
@@ -188,7 +205,7 @@ export class FactualMemoryImpl implements FactualMemory {
   async delete(id: string, contextId?: string): Promise<boolean> {
     // Try to find and delete the fact using context-aware lookup
     let deleted = false;
-    
+
     // Try context-specific first if contextId provided
     if (contextId) {
       const contextKey = `fact:${contextId}:${id}`;
@@ -197,7 +214,7 @@ export class FactualMemoryImpl implements FactualMemory {
         deleted = true;
       }
     }
-    
+
     // Try global if not found in context
     if (!deleted) {
       const globalKey = `fact:global:${id}`;
@@ -206,7 +223,7 @@ export class FactualMemoryImpl implements FactualMemory {
         deleted = true;
       }
     }
-    
+
     // Try legacy format for backward compatibility
     if (!deleted) {
       const legacyKey = `fact:${id}`;
@@ -215,7 +232,7 @@ export class FactualMemoryImpl implements FactualMemory {
         deleted = true;
       }
     }
-    
+
     // Delete from vector index if found
     if (deleted) {
       await this.memory.vector.delete([id]);
@@ -224,7 +241,11 @@ export class FactualMemoryImpl implements FactualMemory {
     return deleted;
   }
 
-  async getByTag(tag: string, value: string, contextId?: string): Promise<Fact[]> {
+  async getByTag(
+    tag: string,
+    value: string,
+    contextId?: string
+  ): Promise<Fact[]> {
     const contextFacts: Fact[] = [];
     const globalFacts: Fact[] = [];
 
@@ -258,8 +279,12 @@ export class FactualMemoryImpl implements FactualMemory {
     while (!legacyResult.done) {
       const [key, fact] = legacyResult.value;
       // Skip context-specific and global facts we already processed
-      if (!key.includes("fact:global:") && !key.includes(":fact:") && 
-          fact.tags && fact.tags[tag] === value) {
+      if (
+        !key.includes("fact:global:") &&
+        !key.includes(":fact:") &&
+        fact.tags &&
+        fact.tags[tag] === value
+      ) {
         globalFacts.push(fact);
       }
       legacyResult = await legacyIterator.next();

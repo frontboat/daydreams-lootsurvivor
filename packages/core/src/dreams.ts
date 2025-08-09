@@ -140,13 +140,13 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
 
   const container = config.container ?? createContainer();
 
-  const taskRunner = config.taskRunner ?? new TaskRunner(3);
-
   const logger =
     config.logger ??
     new Logger({
       level: config.logLevel ?? LogLevel.INFO,
     });
+
+  const taskRunner = config.taskRunner ?? new TaskRunner(3, logger);
 
   if (config.logger && config.logLevel !== undefined) {
     logger.configure({ level: config.logLevel });

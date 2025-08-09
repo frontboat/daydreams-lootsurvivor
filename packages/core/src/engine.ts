@@ -156,12 +156,32 @@ export function createEngine({
   function pushLogToSubscribers(log: AnyRef, done: boolean) {
     try {
       handlers?.onLogStream?.(structuredClone(log), done);
-    } catch (error) {}
+    } catch (error) {
+      agent.logger.error("engine:handler", "onLogStream handler error", {
+        error: error instanceof Error ? error.message : String(error),
+        errorType:
+          error instanceof Error ? error.constructor.name : typeof error,
+        logRef: log.ref,
+        logId: log.id,
+        done,
+        contextId: ctxState.id,
+      });
+    }
 
     for (const subscriber of subscriptions) {
       try {
         subscriber(structuredClone(log), done);
-      } catch (error) {}
+      } catch (error) {
+        agent.logger.error("engine:subscriber", "Log subscriber error", {
+          error: error instanceof Error ? error.message : String(error),
+          errorType:
+            error instanceof Error ? error.constructor.name : typeof error,
+          logRef: log.ref,
+          logId: log.id,
+          done,
+          contextId: ctxState.id,
+        });
+      }
     }
   }
 
@@ -170,7 +190,15 @@ export function createEngine({
       for (const subscriber of __chunkSubscriptions) {
         try {
           subscriber(structuredClone(log));
-        } catch (error) {}
+        } catch (error) {
+          agent.logger.error("engine:chunk", "Chunk subscriber error", {
+            error: error instanceof Error ? error.message : String(error),
+            errorType:
+              error instanceof Error ? error.constructor.name : typeof error,
+            chunkType: log.type,
+            contextId: ctxState.id,
+          });
+        }
       }
     }
   }
@@ -180,7 +208,14 @@ export function createEngine({
     options?: any
   ): Promise<any> {
     // throw?
-    if (!state.running) throw new Error("not running!");
+    if (!state.running) {
+      agent.logger.error("engine:state", "Engine not running", {
+        contextId: ctxState.id,
+        logRef: log.ref,
+        logId: log.id,
+      });
+      throw new Error("not running!");
+    }
 
     // todo: still push?
     controller.signal.throwIfAborted();
@@ -220,6 +255,17 @@ export function createEngine({
 
       return res;
     } catch (error) {
+      agent.logger.error("engine:push", "Error processing log", {
+        error: error instanceof Error ? error.message : String(error),
+        errorType:
+          error instanceof Error ? error.constructor.name : typeof error,
+        errorStack: error instanceof Error ? error.stack : undefined,
+        logRef: log.ref,
+        logId: log.id,
+        contextId: ctxState.id,
+        options,
+      });
+
       if (log.ref === "output") {
         state.chain.push(log);
       }
@@ -468,6 +514,12 @@ export function createEngine({
       timestamp: Date.now(),
     };
 
+    agent.logger.trace("engine:step", "Creating new step", {
+      stepId: newStep.id,
+      stepNumber: state.step,
+      contextId: ctxState.id,
+    });
+
     await __push(newStep, true, true);
 
     return newStep;
@@ -494,6 +546,12 @@ export function createEngine({
     },
 
     async stop() {
+      agent.logger.info("engine:lifecycle", "Stopping engine", {
+        contextId: ctxState.id,
+        step: state.step,
+        pendingPromises: state.promises.length,
+        errors: state.errors.length,
+      });
       controller.abort("stop");
     },
 
@@ -512,7 +570,18 @@ export function createEngine({
     },
 
     async start() {
-      if (state.running) throw new Error("alredy running");
+      if (state.running) {
+        agent.logger.error("engine:lifecycle", "Engine already running", {
+          contextId: ctxState.id,
+        });
+        throw new Error("alredy running");
+      }
+
+      agent.logger.info("engine:lifecycle", "Starting engine", {
+        contextId: ctxState.id,
+        contextType: ctxState.context.type,
+        hasAgentContext: !!agentCtxState,
+      });
 
       state.running = true;
 
@@ -521,6 +590,15 @@ export function createEngine({
       await __push(runRef, true, true);
 
       state.step = 1;
+
+      agent.logger.debug("engine:lifecycle", "Engine started successfully", {
+        contextId: ctxState.id,
+        step: state.step,
+        actions: state.actions.length,
+        inputs: state.inputs.length,
+        outputs: state.outputs.length,
+      });
+
       return createStep();
     },
 
@@ -530,7 +608,14 @@ export function createEngine({
     },
 
     shouldContinue() {
-      if (controller.signal.aborted) return false;
+      if (controller.signal.aborted) {
+        agent.logger.debug("engine:control", "Engine aborted", {
+          contextId: ctxState.id,
+          step: state.step,
+          reason: controller.signal.reason,
+        });
+        return false;
+      }
 
       if (state.errors.length > 0) {
         agent.logger.warn("agent:run", "Continuing despite error", {

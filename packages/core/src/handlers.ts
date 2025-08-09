@@ -369,11 +369,23 @@ export function resolveActionCall({
   );
 
   if (!action) {
-    logger.error("agent:action", "ACTION_MISMATCH", {
-      name: call.name,
-      data: call.content,
+    const availableActions = actions.map((a) => a.name);
+    const errorDetails = {
+      error: "ACTION_MISMATCH",
+      requestedAction: call.name,
+      availableActions,
       contextKey,
-    });
+      callContent: call.content,
+      callId: call.id,
+    };
+
+    logger.error(
+      "agent:action",
+      `Action '${
+        call.name
+      }' not found. Available actions: ${availableActions.join(", ")}`,
+      errorDetails
+    );
 
     throw new NotFoundError(call);
   }
@@ -549,6 +561,23 @@ export function prepareOutputRef({
   const output = outputs.find((output) => output.type === outputRef.type);
 
   if (!output) {
+    const availableOutputs = outputs.map((o) => o.type);
+    const errorDetails = {
+      error: "OUTPUT_TYPE_MISMATCH",
+      requestedType: outputRef.type,
+      availableTypes: availableOutputs,
+      outputData: outputRef.data,
+      outputId: outputRef.id,
+    };
+
+    logger.error(
+      "agent:output",
+      `Output type '${
+        outputRef.type
+      }' not found. Available types: ${availableOutputs.join(", ")}`,
+      errorDetails
+    );
+
     throw new NotFoundError(outputRef);
   }
 
@@ -838,15 +867,21 @@ export async function prepareContext(
     }
   }
 
-  for (const { context, args } of ctxRefs) {
-    await prepareContext(
-      {
-        agent,
-        ctxState: await agent.getContext({ context, args }),
-        workingMemory,
-        agentCtxState,
-      },
-      state
+  // Parallelize context preparation for composed contexts
+  if (ctxRefs.length > 0) {
+    await Promise.all(
+      ctxRefs.map(async ({ context, args }) => {
+        const composedCtxState = await agent.getContext({ context, args });
+        return prepareContext(
+          {
+            agent,
+            ctxState: composedCtxState,
+            workingMemory,
+            agentCtxState,
+          },
+          state
+        );
+      })
     );
   }
 
@@ -928,17 +963,21 @@ export async function prepareContexts({
   );
 
   if (params?.contexts) {
-    for (const ctxRef of params?.contexts) {
-      await prepareContext(
-        {
-          agent,
-          ctxState: await agent.getContext(ctxRef),
-          workingMemory,
-          agentCtxState,
-        },
-        state
-      );
-    }
+    // Parallelize context preparation for better performance
+    await Promise.all(
+      params.contexts.map(async (ctxRef) => {
+        const ctxState = await agent.getContext(ctxRef);
+        return prepareContext(
+          {
+            agent,
+            ctxState,
+            workingMemory,
+            agentCtxState,
+          },
+          state
+        );
+      })
+    );
   }
 
   return state;
@@ -962,6 +1001,23 @@ export async function handleInput({
   const input = inputs.find((input) => input.type === inputRef.type);
 
   if (!input) {
+    const availableInputs = inputs.map((i) => i.type);
+    const errorDetails = {
+      error: "INPUT_TYPE_MISMATCH",
+      requestedType: inputRef.type,
+      availableTypes: availableInputs,
+      inputContent: inputRef.content,
+      inputId: inputRef.id,
+    };
+
+    logger.error(
+      "agent:input",
+      `Input type '${
+        inputRef.type
+      }' not found. Available types: ${availableInputs.join(", ")}`,
+      errorDetails
+    );
+
     throw new NotFoundError(inputRef);
   }
 

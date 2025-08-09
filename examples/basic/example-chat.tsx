@@ -6,9 +6,10 @@ import { createAnthropic } from "@ai-sdk/anthropic";
 import {
   createDreams,
   context,
-  LogLevel,
   validateEnv,
+  LogLevel,
 } from "@daydreamsai/core";
+import { cliExtension } from "@daydreamsai/cli";
 import * as z from "zod";
 
 const env = validateEnv(
@@ -53,19 +54,12 @@ Current ISO time is: ${date.toISOString()}, timestamp: ${date.getTime()}`;
 });
 
 const agent = await createDreams({
+  logLevel: LogLevel.DEBUG,
   debugger: async (contextId, keys, data) => {
     const [type, id] = keys;
     await Bun.write(`./logs/chat/${contextId}/${id}-${type}.md`, data);
   },
   model: anthropic("claude-sonnet-4-20250514"),
   contexts: [thread],
+  extensions: [cliExtension],
 }).start();
-
-const res = await agent.send({
-  context: thread,
-  args: { threadId: "test", user: "dreamer" },
-  input: {
-    type: "message",
-    data: "fetch the weather for lisbon, porto, and faro and make me a report in markdown format!",
-  },
-});
