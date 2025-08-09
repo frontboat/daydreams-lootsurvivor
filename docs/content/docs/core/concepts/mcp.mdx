@@ -657,7 +657,7 @@ You can create custom MCP servers for your specific needs:
 // Simple MCP server example
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import * as z from "zod/v4";
+import * as z from "zod";
 
 const server = new McpServer({
   name: "Custom Business Server",

@@ -12,7 +12,7 @@ import {
 } from "@daydreamsai/core";
 import { cliExtension } from "@daydreamsai/cli";
 import { openrouter } from "@openrouter/ai-sdk-provider";
-import * as z from "zod/v4";
+import * as z from "zod";
 import fs from "node:fs/promises";
 import path from "node:path";
 

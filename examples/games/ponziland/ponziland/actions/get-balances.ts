@@ -1,7 +1,7 @@
 import { action } from "@daydreamsai/core";
 import { StarknetChain } from "@daydreamsai/defai";
 import type { Agent } from "@daydreamsai/core";
-import * as z from "zod/v4";
+import * as z from "zod";
 import { get_balances_str } from "../utils/querys";
 
 export const get_balances = (chain: StarknetChain) =>

@@ -5,7 +5,7 @@ import {
   type Profile,
 } from "agent-twitter-client";
 import { Logger } from "@daydreamsai/core";
-import * as z from "zod/v4";
+import * as z from "zod";
 
 export interface SearchOptions {
   maxResults?: number;

@@ -1,5 +1,5 @@
 import { type LanguageModel, type Schema } from "ai";
-import { z, ZodObject, ZodType, type ZodRawShape } from "zod/v4";
+import { z, ZodObject, ZodType, type ZodRawShape } from "zod";
 import type { Container } from "./container";
 import type { ServiceProvider } from "./serviceProvider";
 import type { TaskRunner } from "./task";

@@ -11,7 +11,7 @@ import {
   extension,
   input,
 } from "@daydreamsai/core";
-import * as z from "zod/v4";
+import * as z from "zod";
 import chalk from "chalk";
 import { SolanaChain } from "@daydreamsai/defai";
 import {

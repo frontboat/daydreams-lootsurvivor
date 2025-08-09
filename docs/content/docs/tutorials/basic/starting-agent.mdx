@@ -9,7 +9,7 @@ description: Agent that manages goals and tasks with simple memory and actions.
 import { createDreams, context, action, validateEnv } from "@daydreamsai/core";
 import { cliExtension } from "@daydreamsai/cli";
 import { anthropic } from "@ai-sdk/anthropic";
-import * as z from "zod/v4";
+import * as z from "zod";
 
 validateEnv(
   z.object({

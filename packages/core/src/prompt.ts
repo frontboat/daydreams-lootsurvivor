@@ -1,4 +1,4 @@
-import z, { ZodType } from "zod/v4";
+import z, { ZodType } from "zod";
 import type { Node, ElementNode } from "./xml";
 import { parse as parseXML } from "./xml";
 import type { TemplateVariables } from "./types";
@@ -78,10 +78,6 @@ export type InferGeneratePromptConfig<TPrompt extends AnyPrompt | string> =
 
 export type InferPromptComponents<TPrompt extends AnyPrompt | string> =
   TPrompt extends Prompt<any, infer Components> ? Components : never;
-
-export function getZodJsonSchema(schema: ZodType<any>) {
-  return z.toJSONSchema(schema).definitions!.schema;
-}
 
 export function createPrompt<
   Template extends string = string,

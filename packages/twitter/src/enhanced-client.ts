@@ -5,7 +5,7 @@ import {
   type Profile,
 } from "agent-twitter-client";
 import { Logger, LogLevel } from "@daydreamsai/core";
-import * as z from "zod/v4";
+import * as z from "zod";
 import { TwitterClient, type TwitterCredentials, type TweetData } from "./io";
 import {
   TwitterSearchService,

@@ -1,7 +1,7 @@
 import { createGroq } from "@ai-sdk/groq";
 import { createDreams, LogLevel, action, validateEnv } from "@daydreamsai/core";
 import { cli } from "@daydreamsai/core/extensions";
-import * as z from "zod/v4";
+import * as z from "zod";
 import { ethers } from "ethers";
 import { Account, Provider, num } from "starknet";
 

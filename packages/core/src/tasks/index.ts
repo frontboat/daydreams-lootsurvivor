@@ -577,8 +577,11 @@ export const runAction = task({
     try {
       const result =
         action.schema === undefined
-          ? await Promise.try((action as Action<undefined>).handler, ctx, agent)
-          : await Promise.try(action.handler as any, ctx.call.data, ctx, agent);
+          ? await (action as Action<undefined>).handler(
+              ctx as unknown as ActionCallContext<undefined, AnyContext>,
+              agent
+            )
+          : await (action.handler as any)(ctx.call.data, ctx, agent);
 
       logger.debug("agent:action_result:" + ctx.call.id, ctx.call.name, result);
 
@@ -587,7 +590,7 @@ export const runAction = task({
       logger.error("agent:action", "ACTION_FAILED", { error });
 
       if (action.onError) {
-        return await Promise.try(action.onError, error, ctx, agent);
+        return await action.onError(error, ctx as any, agent);
       } else {
         throw error;
       }

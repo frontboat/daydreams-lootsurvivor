@@ -1,6 +1,6 @@
 import { input, context } from "@daydreamsai/core";
 import { StarknetChain } from "@daydreamsai/defai";
-import * as z from "zod/v4";
+import * as z from "zod";
 import { CallData } from "starknet";
 import type { Call } from "starknet";
 import { decodeTokenTransferEvents } from "../../utils/utils";

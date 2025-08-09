@@ -11,7 +11,7 @@ import {
     validateEnv,
 } from "@daydreamsai/core";
 import { cliExtension } from "@daydreamsai/cli";
-import { string, z } from "zod/v4";
+import { string, z } from "zod";
 
 // Initialize {{MODEL_NAME}} client
 const env = validateEnv(

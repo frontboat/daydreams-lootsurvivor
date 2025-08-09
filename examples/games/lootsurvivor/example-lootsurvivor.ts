@@ -9,7 +9,7 @@ import {
 import { StarknetChain } from "@daydreamsai/defai";
 import { cliExtension } from "@daydreamsai/cli";
 import { openrouter } from "@openrouter/ai-sdk-provider";
-import * as z from "zod/v4";
+import * as z from "zod";
 
 // Import Loot Survivor core types and utilities
 import {

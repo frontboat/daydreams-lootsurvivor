@@ -1,4 +1,4 @@
-import * as z from "zod/v4";
+import * as z from "zod";
 import { context } from "@daydreamsai/core";
 import { service } from "@daydreamsai/core";
 import { TwitterClient } from "./io";

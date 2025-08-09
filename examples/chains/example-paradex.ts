@@ -6,7 +6,7 @@ import {
 } from "starknet";
 import { groq } from "@ai-sdk/groq";
 import { cli } from "@daydreamsai/core/extensions";
-import * as z from "zod/v4";
+import * as z from "zod";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";

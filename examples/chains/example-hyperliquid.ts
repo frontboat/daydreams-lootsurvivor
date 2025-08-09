@@ -20,7 +20,7 @@ import {
   validateEnv,
 } from "@daydreamsai/core";
 import { cliExtension } from "@daydreamsai/cli";
-import * as z from "zod/v4";
+import * as z from "zod";
 import chalk from "chalk";
 import { HyperliquidClient } from "@daydreamsai/hyperliquid";
 

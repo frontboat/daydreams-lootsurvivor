@@ -1,7 +1,7 @@
 import OpenAI from "openai/index.mjs";
 import { OpenAIToolSet } from "composio-core";
 import { action, extension } from "@daydreamsai/core";
-import * as z from "zod/v4";
+import * as z from "zod";
 
 const openai_client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const composio_toolset = new OpenAIToolSet({

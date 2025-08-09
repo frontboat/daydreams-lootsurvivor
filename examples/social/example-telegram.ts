@@ -2,7 +2,7 @@ import { createGroq } from "@ai-sdk/groq";
 import { createDreams, LogLevel, validateEnv } from "@daydreamsai/core";
 import { telegram } from "@daydreamsai/telegram";
 import { deepResearch } from "../deep-research/research";
-import * as z from "zod/v4";
+import * as z from "zod";
 import { searchWebAction } from "../actions";
 
 const env = validateEnv(

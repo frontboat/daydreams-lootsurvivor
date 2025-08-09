@@ -9,7 +9,7 @@ import {
   type ActionSchema,
 } from "@daydreamsai/core";
 import { StarknetChain } from "@daydreamsai/defai";
-import * as z from "zod/v4";
+import * as z from "zod";
 
 // Import the Game ABI
 import Game from "./contracts/Game.json";

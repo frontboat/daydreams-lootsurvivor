@@ -1,5 +1,5 @@
 import { type CoreMessage } from "ai";
-import { z } from "zod/v4";
+import { z } from "zod";
 import { randomUUIDv7, type RouterTypes } from "bun";
 import { api, type ToolSet } from "../utils";
 

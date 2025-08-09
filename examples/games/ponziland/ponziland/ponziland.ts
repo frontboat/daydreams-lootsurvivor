@@ -1,5 +1,5 @@
 import { context, extension, input } from "@daydreamsai/core";
-import * as z from "zod/v4";
+import * as z from "zod";
 import { render } from "@daydreamsai/core";
 import { StarknetChain } from "@daydreamsai/defai";
 

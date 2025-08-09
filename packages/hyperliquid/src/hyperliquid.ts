@@ -1,7 +1,7 @@
 import { Hyperliquid } from "hyperliquid";
 import { Logger } from "@daydreamsai/core";
 import { LogLevel } from "@daydreamsai/core";
-import * as z from "zod/v4";
+import * as z from "zod";
 
 const envSchema = z.object({
   HYPERLIQUID_MAIN_ADDRESS: z.string(),

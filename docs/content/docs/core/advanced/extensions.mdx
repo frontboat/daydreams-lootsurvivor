@@ -183,7 +183,7 @@ const weatherService = service({
 
 ```typescript title="weather-context.ts"
 import { context } from "@daydreamsai/core";
-import * as z from "zod/v4";
+import * as z from "zod";
 
 const weatherContext = context({
   type: "weather-preferences",
@@ -210,7 +210,7 @@ User Weather Preferences:
 
 ```typescript title="weather-actions.ts"
 import { action } from "@daydreamsai/core";
-import * as z from "zod/v4";
+import * as z from "zod";
 
 const getCurrentWeatherAction = action({
   name: "get-current-weather",

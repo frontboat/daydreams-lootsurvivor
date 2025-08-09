@@ -9,7 +9,7 @@ description: Agent that uses a custom task context and exposes three actions.
 import { createDreams, context, action, validateEnv } from "@daydreamsai/core";
 import { cliExtension } from "@daydreamsai/cli";
 import { openrouter } from "@openrouter/ai-sdk-provider";
-import * as z from "zod/v4";
+import * as z from "zod";
 
 validateEnv(
   z.object({

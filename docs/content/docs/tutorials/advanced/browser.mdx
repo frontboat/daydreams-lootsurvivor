@@ -63,7 +63,7 @@ For production applications, consider IndexedDB for larger data storage.
 
 ```typescript title="browser.ts"
 import { extension, context, input, output } from "@daydreamsai/core";
-import * as z from "zod/v4";
+import * as z from "zod";
 
 const chatContext = context({
   type: "web-chat",
@@ -272,7 +272,7 @@ export function Chat() {
 
 ```typescript title="actions.ts"
 import { action } from "@daydreamsai/core";
-import * as z from "zod/v4";
+import * as z from "zod";
 
 export const webActions = [
   action({

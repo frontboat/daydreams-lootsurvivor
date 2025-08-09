@@ -1,7 +1,7 @@
 import { action, type ActionSchema } from "@daydreamsai/core";
 import { StarknetChain } from "@daydreamsai/defai";
 import type { Agent } from "@daydreamsai/core";
-import * as z from "zod/v4";
+import * as z from "zod";
 import { executeSwap as executeAvnuSwap, fetchQuotes } from "@avnu/avnu-sdk";
 
 import { env } from "../../env";

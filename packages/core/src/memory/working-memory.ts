@@ -1,4 +1,10 @@
-import type { AnyRef, AgentContext, AnyContext, AnyAgent, WorkingMemory } from "../types";
+import type {
+  AnyRef,
+  AgentContext,
+  AnyContext,
+  AnyAgent,
+  WorkingMemory,
+} from "../types";
 import type {
   IWorkingMemory,
   WorkingMemoryData,
@@ -86,14 +92,20 @@ export class WorkingMemoryImpl implements IWorkingMemory {
     // Check memory pressure if manager provided AFTER adding the entry
     if (options?.memoryManager) {
       const shouldPrune = await this.shouldPrune(
-        ctx,
+        ctx as unknown as AgentContext<AnyContext>,
         data,
         entry,
         agent,
-        options.memoryManager
+        options.memoryManager as any
       );
       if (shouldPrune) {
-        data = await this.handleMemoryPressure(contextId, ctx, data, agent, options.memoryManager);
+        data = await this.handleMemoryPressure(
+          contextId,
+          ctx as unknown as AgentContext<AnyContext>,
+          data,
+          agent,
+          options.memoryManager as any
+        );
       }
     }
 
@@ -154,7 +166,11 @@ export class WorkingMemoryImpl implements IWorkingMemory {
     manager: MemoryManager<TContext>
   ): Promise<WorkingMemoryData> {
     if (manager.onMemoryPressure) {
-      const pruned = await manager.onMemoryPressure(ctx, data as WorkingMemory, agent);
+      const pruned = await manager.onMemoryPressure(
+        ctx,
+        data as WorkingMemory,
+        agent
+      );
       return pruned as WorkingMemoryData;
     }
 

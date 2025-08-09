@@ -13,7 +13,7 @@
  * @module context
  */
 
-import { z, type ZodRawShape } from "zod/v4";
+import { z, type ZodRawShape } from "zod";
 import type {
   AnyAction,
   AnyAgent,

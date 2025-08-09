@@ -1,4 +1,4 @@
-import { z } from "zod/v4";
+import { z } from "zod";
 import type { Logger } from "./logger";
 import type { TaskRunner } from "./task";
 import { runAction } from "./tasks";

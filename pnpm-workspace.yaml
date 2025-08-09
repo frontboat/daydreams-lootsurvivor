@@ -6,7 +6,7 @@ packages:
   - bot
 
 catalog:
-  zod: 3.25.23
+  zod: 4.0.16
   typescript: 5.8.3
   ai: 5.0.0
   tsup: 8.3.6

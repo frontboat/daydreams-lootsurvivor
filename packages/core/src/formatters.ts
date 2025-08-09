@@ -8,7 +8,7 @@ import type {
   TemplateVariables,
   XMLElement,
 } from "./types";
-import * as z from "zod/v4";
+import * as z from "zod";
 import { type Schema } from "@ai-sdk/ui-utils";
 
 export function xml(

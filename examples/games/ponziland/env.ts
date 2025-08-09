@@ -1,4 +1,4 @@
-import * as z from "zod/v4";
+import * as z from "zod";
 import ponziland_manifest from "./contracts/ponziland_manifest_mainnet.json";
 import view_manifest from "./contracts/ponziland_manifest_mainnet.json";
 

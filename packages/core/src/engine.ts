@@ -44,7 +44,7 @@ import {
   pushToWorkingMemoryWithManagement,
 } from "./context";
 import { createEventRef, randomUUIDv7 } from "./utils";
-import { ZodError, type ZodIssue } from "zod/v4";
+import { ZodError, type ZodIssue } from "zod";
 
 type CallOptions = Partial<{
   templateResolvers: Record<string, TemplateResolver>;

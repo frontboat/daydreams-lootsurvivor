@@ -1,4 +1,4 @@
-import * as z from "zod/v4";
+import * as z from "zod";
 import type {
   Agent,
   AnyContext,
@@ -324,7 +324,8 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
     async getContextById<TContext extends AnyContext>(
       id: string
     ): Promise<ContextState<TContext> | null> {
-      if (contexts.has(id)) return contexts.get(id)! as ContextState<TContext>;
+      if (contexts.has(id))
+        return contexts.get(id)! as unknown as ContextState<TContext>;
 
       const [type] = id.split(":");
 
@@ -342,7 +343,7 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
             contexts: stateSnapshot.contexts,
           });
 
-          await this.saveContext(state);
+          await this.saveContext(state as unknown as ContextState);
 
           return state;
         }
@@ -375,28 +376,30 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
 
         if (stateSnapshot) {
           await this.saveContext(
-            await createContextState({
+            (await createContextState({
               agent,
               context: params.context,
               args: params.args,
               settings: stateSnapshot.settings,
               contexts: stateSnapshot.contexts,
-            })
+            })) as unknown as ContextState
           );
         }
       }
 
       if (!contexts.has(id)) {
         await this.saveContext(
-          await createContextState({
+          (await createContextState({
             agent,
             context: params.context,
             args: params.args,
-          })
+          })) as unknown as ContextState
         );
       }
 
-      return contexts.get(id)! as ContextState<typeof params.context>;
+      return contexts.get(id)! as unknown as ContextState<
+        typeof params.context
+      >;
     },
 
     /**
@@ -421,18 +424,21 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
 
         if (stateSnapshot) {
           await this.saveContext(
-            await createContextState({
+            (await createContextState({
               agent,
               context: params.context,
               args: params.args,
               settings: stateSnapshot.settings,
               contexts: stateSnapshot.contexts,
-            })
+            })) as unknown as ContextState
           );
         }
       }
 
-      return (contexts.get(id) as ContextState<typeof params.context>) ?? null;
+      return (
+        (contexts.get(id) as unknown as ContextState<typeof params.context>) ??
+        null
+      );
     },
 
     /**
@@ -463,7 +469,7 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
      * @returns Unique context identifier string
      */
     getContextId(params) {
-      return getContextId(params.context, params.args);
+      return getContextId(params.context, params.args as any);
     },
 
     /**
@@ -629,7 +635,7 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
           args: args!,
         });
 
-        contexts.set("agent:context", agentState);
+        contexts.set("agent:context", agentState as unknown as ContextState);
       }
 
       logger.info("agent:start", "Agent started successfully");
@@ -781,10 +787,10 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
 
         const engine = createEngine({
           agent,
-          ctxState,
+          ctxState: ctxState as unknown as ContextState,
           workingMemory,
           handlers,
-          agentCtxState,
+          agentCtxState: agentCtxState as unknown as ContextState | undefined,
           subscriptions: ctxSubscriptions.get(ctxId)!,
           __chunkSubscriptions: __ctxChunkSubscriptions.get(ctxId)!,
         });
