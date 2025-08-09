@@ -1,6 +1,6 @@
 {
   "name": "@daydreamsai/synthetic",
-  "version": "0.3.9-alpha.0",
+  "version": "0.3.9-alpha.1",
   "description": "Synthetic data generation for AI agent training",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
