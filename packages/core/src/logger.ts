@@ -70,11 +70,11 @@ export class DefaultFormatter implements LogFormatter {
     }
 
     parts.push(`[${LogLevel[entry.level]}]`);
-    
+
     if (entry.correlationIds) {
       parts.push(`[${formatCorrelationIdsUtil(entry.correlationIds)}]`);
     }
-    
+
     parts.push(`[${entry.context}]`);
     parts.push(entry.message);
 
@@ -88,12 +88,14 @@ export class EnhancedFormatter implements LogFormatter {
   private enableStructuredData: boolean;
   private compactMode: boolean;
 
-  constructor(options: { 
-    enableTimestamp?: boolean; 
-    enableColors?: boolean;
-    enableStructuredData?: boolean;
-    compactMode?: boolean;
-  } = {}) {
+  constructor(
+    options: {
+      enableTimestamp?: boolean;
+      enableColors?: boolean;
+      enableStructuredData?: boolean;
+      compactMode?: boolean;
+    } = {}
+  ) {
     this.enableTimestamp = options.enableTimestamp ?? true;
     this.enableColors = options.enableColors ?? true;
     this.enableStructuredData = options.enableStructuredData ?? true;
@@ -104,10 +106,10 @@ export class EnhancedFormatter implements LogFormatter {
     const { level, timestamp, context, message, correlationIds, data } = entry;
     const style = logLevelStyles[level];
     const lines: string[] = [];
-    
+
     // Main log line
     const mainParts: string[] = [];
-    
+
     // Timestamp
     if (this.enableTimestamp) {
       if (this.enableColors) {
@@ -116,7 +118,7 @@ export class EnhancedFormatter implements LogFormatter {
         mainParts.push(`[${timestamp.toLocaleTimeString()}]`);
       }
     }
-    
+
     // Level badge/icon
     if (this.enableColors) {
       if (this.compactMode) {
@@ -127,40 +129,49 @@ export class EnhancedFormatter implements LogFormatter {
     } else {
       mainParts.push(`[${LogLevel[level].padEnd(5)}]`);
     }
-    
-    // Correlation IDs
+
+    // Correlation IDs - subtle
     if (correlationIds) {
       if (this.enableColors) {
-        mainParts.push(`[${formatCorrelationIds(correlationIds)}]`);
+        mainParts.push(
+          `${colorize("⟨", colors.darkGray)}${formatCorrelationIds(
+            correlationIds
+          )}${colorize("⟩", colors.darkGray)}`
+        );
       } else {
         mainParts.push(`[${formatCorrelationIdsUtil(correlationIds)}]`);
       }
     }
-    
-    // Context
+
+    // Context - with subtle brackets
     if (this.enableColors) {
       const contextColor = getContextColor(context);
-      mainParts.push(`[${colorize(context, contextColor)}]`);
+      mainParts.push(
+        `${colorize("[", colors.darkGray)}${colorize(
+          context,
+          contextColor
+        )}${colorize("]", colors.darkGray)}`
+      );
     } else {
       mainParts.push(`[${context}]`);
     }
-    
-    // Message
+
+    // Message - clean display
     if (this.enableColors) {
-      mainParts.push(colorize(message, style.color));
+      mainParts.push(colorize(message, colors.lightGray));
     } else {
       mainParts.push(message);
     }
-    
-    lines.push(mainParts.join(' '));
-    
+
+    lines.push(mainParts.join(" "));
+
     // Structured data on additional lines
     if (this.enableStructuredData && data && this.enableColors) {
       const dataLines = formatStructuredData(data, level);
       lines.push(...dataLines);
     }
-    
-    return lines.join('\n');
+
+    return lines.join("\n");
   }
 }
 
@@ -175,30 +186,44 @@ export class CompactFormatter implements LogFormatter {
   format(entry: LogEntry): string {
     const { level, timestamp, context, message, correlationIds } = entry;
     const style = logLevelStyles[level];
-    
-    const time = timestamp.toLocaleTimeString('en-US', { 
-      hour12: false, 
-      timeStyle: 'medium' 
+
+    const time = timestamp.toLocaleTimeString("en-US", {
+      hour12: false,
+      timeStyle: "medium",
     });
-    
+
     const parts = [
-      this.enableColors ? colorize(time.slice(-8), colors.gray) : time.slice(-8),
-      this.enableColors ? style.icon : LogLevel[level][0],
+      this.enableColors
+        ? colorize(time.slice(-8), colors.darkGray)
+        : time.slice(-8),
+      this.enableColors
+        ? colorize(style.icon, style.color)
+        : LogLevel[level][0],
     ];
-    
+
     if (correlationIds) {
-      const reqId = correlationIds.requestId?.slice(-4) || '----';
-      parts.push(this.enableColors ? colorize(reqId, colors.cyan + colors.dim) : reqId);
+      const reqId = correlationIds.requestId?.slice(-6) || "------";
+      parts.push(this.enableColors ? colorize(reqId, colors.darkGray) : reqId);
     }
-    
-    const contextColor = this.enableColors ? getContextColor(context) : '';
-    const shortContext = context.split(':')[0];
-    parts.push(this.enableColors ? colorize(shortContext.slice(0, 6), contextColor) : shortContext.slice(0, 6));
-    
-    const messageColor = this.enableColors ? style.color : '';
-    parts.push(this.enableColors ? colorize(message, messageColor) : message);
-    
-    return parts.join(' ');
+
+    const contextColor = this.enableColors ? getContextColor(context) : "";
+    const shortContext = context.split(":")[0];
+    parts.push(
+      this.enableColors
+        ? colorize(
+            shortContext.slice(0, 8).padEnd(8),
+            contextColor + colors.dim
+          )
+        : shortContext.slice(0, 8)
+    );
+
+    parts.push(
+      this.enableColors ? colorize(message, colors.lightGray) : message
+    );
+
+    return parts.join(
+      this.enableColors ? colorize(" │ ", colors.darkGray) : " | "
+    );
   }
 }
 
@@ -213,120 +238,153 @@ export class VerboseFormatter implements LogFormatter {
     const { level, timestamp, context, message, correlationIds, data } = entry;
     const style = logLevelStyles[level];
     const lines: string[] = [];
-    
-    // Header line with full timestamp
-    const header = this.enableColors 
-      ? `${colorize('═'.repeat(80), colors.gray + colors.dim)}`
-      : '='.repeat(80);
-    lines.push(header);
-    
-    // Main info line
+
+    // Minimalist header with timestamp
     const timeStr = timestamp.toISOString();
+    const header = this.enableColors
+      ? `${colorize("━".repeat(60), colors.darkGray)}`
+      : "-".repeat(60);
+    lines.push(header);
+
+    // Status line
     const levelStr = this.enableColors ? style.badge : `[${LogLevel[level]}]`;
-    const contextStr = this.enableColors ? colorize(context, getContextColor(context)) : context;
-    
-    lines.push(`${levelStr} ${timeStr} ${contextStr}`);
-    
-    // Message
-    const msgLine = this.enableColors ? colorize(message, style.color + colors.bright) : message;
-    lines.push(`${style.icon} ${msgLine}`);
-    
-    // Correlation info
+    const contextStr = this.enableColors
+      ? colorize(context, getContextColor(context))
+      : context;
+
+    lines.push(
+      `${levelStr} ${
+        this.enableColors ? colorize(timeStr, colors.gray) : timeStr
+      }`
+    );
+    lines.push(
+      `${
+        this.enableColors ? colorize("▪", colors.darkGray) : "•"
+      } ${contextStr}`
+    );
+
+    // Message with icon
+    const msgLine = this.enableColors
+      ? colorize(message, colors.white)
+      : message;
+    lines.push(
+      `${
+        this.enableColors ? colorize(style.icon, style.color) : style.icon
+      } ${msgLine}`
+    );
+
+    // Correlation info - subtle
     if (correlationIds) {
-      const corrLine = this.enableColors 
-        ? `🔗 ${formatCorrelationIds(correlationIds)}`
-        : `Correlation: ${correlationIds.requestId}`;
+      const corrLine = this.enableColors
+        ? `${colorize("└─", colors.darkGray)} ${formatCorrelationIds(
+            correlationIds
+          )}`
+        : `   Correlation: ${correlationIds.requestId}`;
       lines.push(corrLine);
     }
-    
+
     // Structured data
     if (data) {
       if (this.enableColors) {
-        lines.push(...formatStructuredData(data, level));
+        const dataLines = formatStructuredData(data, level);
+        if (dataLines.length > 0) {
+          lines.push(colorize("   ╱", colors.darkGray));
+          lines.push(...dataLines);
+        }
       } else {
         lines.push(`Data: ${JSON.stringify(data, null, 2)}`);
       }
     }
-    
-    return lines.join('\n');
+
+    return lines.join("\n");
   }
 }
 
-// Enhanced color palette with more sophisticated styling
+// 2047 Terminal Theme - Cyberpunk-inspired color palette
 const colors = {
   // Base colors
   reset: "\x1b[0m",
   bright: "\x1b[1m",
   dim: "\x1b[2m",
-  
-  // Foreground colors
-  black: "\x1b[30m",
-  red: "\x1b[31m",
-  green: "\x1b[32m",
-  yellow: "\x1b[33m",
-  blue: "\x1b[34m",
-  magenta: "\x1b[35m",
-  cyan: "\x1b[36m",
-  white: "\x1b[37m",
-  gray: "\x1b[90m",
-  
-  // Background colors
-  bgRed: "\x1b[41m",
-  bgGreen: "\x1b[42m",
-  bgYellow: "\x1b[43m",
-  bgBlue: "\x1b[44m",
-  bgMagenta: "\x1b[45m",
-  bgCyan: "\x1b[46m",
-  
-  // RGB colors for better aesthetics
-  orange: "\x1b[38;5;208m",
-  purple: "\x1b[38;5;135m",
-  pink: "\x1b[38;5;213m",
-  teal: "\x1b[38;5;51m",
-  lime: "\x1b[38;5;154m",
+  italic: "\x1b[3m",
+  underline: "\x1b[4m",
+
+  // Primary palette - muted cyberpunk aesthetic
+  darkGray: "\x1b[38;5;236m", // #303030 - background elements
+  gray: "\x1b[38;5;244m", // #808080 - secondary text
+  lightGray: "\x1b[38;5;250m", // #bcbcbc - primary text
+  white: "\x1b[38;5;255m", // #eeeeee - emphasis
+
+  // Accent colors - neon-inspired but muted
+  cyan: "\x1b[38;5;51m", // #00ffff - primary accent
+  darkCyan: "\x1b[38;5;44m", // #00d7d7 - secondary accent
+  purple: "\x1b[38;5;99m", // #875fff - tertiary accent
+  darkPurple: "\x1b[38;5;60m", // #5f5f87 - muted purple
+
+  // Semantic colors - minimal use
+  red: "\x1b[38;5;197m", // #ff005f - errors only
+  darkRed: "\x1b[38;5;88m", // #870000 - error backgrounds
+  yellow: "\x1b[38;5;220m", // #ffd700 - warnings only
+  darkYellow: "\x1b[38;5;136m", // #af8700 - warning backgrounds
+  green: "\x1b[38;5;84m", // #5fff87 - success
+  darkGreen: "\x1b[38;5;22m", // #005f00 - success backgrounds
+
+  // Background colors - subtle and dark
+  bgDarkGray: "\x1b[48;5;235m", // #262626
+  bgGray: "\x1b[48;5;237m", // #3a3a3a
+  bgCyan: "\x1b[48;5;23m", // #005f5f
+  bgPurple: "\x1b[48;5;54m", // #5f0087
+  bgRed: "\x1b[48;5;52m", // #5f0000
+  bgYellow: "\x1b[48;5;58m", // #5f5f00
 };
 
-const logLevelStyles: { [key in LogLevel]: { color: string; icon: string; badge: string } } = {
-  [LogLevel.ERROR]: { 
-    color: colors.red + colors.bright, 
-    icon: "❌", 
-    badge: colors.bgRed + colors.white + " ERROR " + colors.reset 
+const logLevelStyles: {
+  [key in LogLevel]: { color: string; icon: string; badge: string };
+} = {
+  [LogLevel.ERROR]: {
+    color: colors.red,
+    icon: "◉",
+    badge: colors.bgRed + colors.white + colors.bright + " ERR " + colors.reset,
   },
-  [LogLevel.WARN]: { 
-    color: colors.orange + colors.bright, 
-    icon: "⚠️ ", 
-    badge: colors.bgYellow + colors.black + " WARN  " + colors.reset 
+  [LogLevel.WARN]: {
+    color: colors.yellow,
+    icon: "◈",
+    badge: colors.bgYellow + colors.darkGray + " WRN " + colors.reset,
   },
-  [LogLevel.INFO]: { 
-    color: colors.cyan + colors.bright, 
-    icon: "ℹ️ ", 
-    badge: colors.bgCyan + colors.black + " INFO  " + colors.reset 
+  [LogLevel.INFO]: {
+    color: colors.cyan,
+    icon: "◇",
+    badge: colors.darkCyan + colors.dim + " INF " + colors.reset,
   },
-  [LogLevel.DEBUG]: { 
-    color: colors.green, 
-    icon: "🔍", 
-    badge: colors.bgGreen + colors.black + " DEBUG " + colors.reset 
+  [LogLevel.DEBUG]: {
+    color: colors.purple,
+    icon: "◦",
+    badge: colors.darkPurple + colors.dim + " DBG " + colors.reset,
   },
-  [LogLevel.TRACE]: { 
-    color: colors.gray, 
-    icon: "📍", 
-    badge: colors.gray + " TRACE " + colors.reset 
+  [LogLevel.TRACE]: {
+    color: colors.gray + colors.dim,
+    icon: "·",
+    badge: colors.darkGray + " TRC " + colors.reset,
   },
 };
 
 const contextColors = {
-  agent: colors.purple + colors.bright,
-  model: colors.teal + colors.bright,
-  action: colors.lime + colors.bright,
-  context: colors.yellow + colors.bright,
-  memory: colors.magenta + colors.bright,
-  request: colors.cyan + colors.bright,
-  engine: colors.orange + colors.bright,
+  agent: colors.cyan,
+  model: colors.darkCyan,
+  action: colors.purple,
+  context: colors.darkPurple,
+  memory: colors.darkCyan + colors.dim,
+  request: colors.gray,
+  engine: colors.purple + colors.dim,
+  task: colors.darkPurple,
+  tracking: colors.gray + colors.dim,
 };
 
 function getContextColor(context: string): string {
-  const baseContext = context.split(':')[0].split('[')[0];
-  return contextColors[baseContext as keyof typeof contextColors] || colors.white;
+  const baseContext = context.split(":")[0].split("[")[0];
+  return (
+    contextColors[baseContext as keyof typeof contextColors] || colors.darkCyan
+  );
 }
 
 function colorize(message: string, color: string): string {
@@ -334,94 +392,133 @@ function colorize(message: string, color: string): string {
 }
 
 function formatTimestamp(date: Date): string {
-  const time = date.toLocaleTimeString('en-US', { 
-    hour12: false, 
-    hour: '2-digit', 
-    minute: '2-digit', 
-    second: '2-digit',
-    fractionalSecondDigits: 3
+  const time = date.toLocaleTimeString("en-US", {
+    hour12: false,
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    fractionalSecondDigits: 3,
   });
-  return colorize(time, colors.gray + colors.dim);
+  return colorize(time, colors.darkGray);
 }
 
 function formatCorrelationIds(correlationIds: CorrelationIds): string {
   const formatted = formatCorrelationIdsUtil(correlationIds);
-  
-  // Color different parts of correlation chain
-  const parts = formatted.split('|');
+
+  // Use subtle gradient from cyan to purple for correlation chain
+  const parts = formatted.split("|");
   const coloredParts = parts.map((part: string, index: number) => {
-    const partColors = [colors.cyan, colors.blue, colors.magenta, colors.green];
+    const partColors = [
+      colors.cyan,
+      colors.darkCyan,
+      colors.purple,
+      colors.darkPurple,
+    ];
     const color = partColors[index % partColors.length];
     return colorize(part, color + colors.dim);
   });
-  
-  return coloredParts.join(colorize('│', colors.gray + colors.dim));
+
+  return coloredParts.join(colorize("│", colors.darkGray));
 }
 
 function formatStructuredData(data: any, level: LogLevel): string[] {
   const lines: string[] = [];
-  
-  if (!data || typeof data !== 'object') return lines;
-  
-  // Handle token usage
+
+  if (!data || typeof data !== "object") return lines;
+
+  // Handle token usage - minimalist display
   if (data.tokenUsage) {
     const usage = data.tokenUsage;
     const tokenStr = `${usage.inputTokens}→${usage.outputTokens}`;
-    const parts = [colorize(tokenStr, colors.cyan)];
-    
+    const parts = [colorize(tokenStr, colors.darkCyan)];
+
     if (usage.reasoningTokens) {
-      parts.push(colorize(`think:${usage.reasoningTokens}`, colors.purple));
+      parts.push(colorize(`⟨${usage.reasoningTokens}⟩`, colors.darkPurple));
     }
-    
+
     if (usage.estimatedCost) {
-      const cost = usage.estimatedCost < 0.001 
-        ? `$${(usage.estimatedCost * 1000000).toFixed(0)}µ`
-        : `$${usage.estimatedCost.toFixed(4)}`;
-      parts.push(colorize(cost, colors.green));
+      const cost =
+        usage.estimatedCost < 0.001
+          ? `${(usage.estimatedCost * 1000000).toFixed(0)}µ`
+          : `${usage.estimatedCost.toFixed(4)}`;
+      parts.push(colorize(`$${cost}`, colors.gray));
     }
-    
-    lines.push(`    💰 ${parts.join(' • ')}`);
+
+    lines.push(
+      `    ${colorize("▸", colors.darkGray)} ${parts.join(
+        colorize(" • ", colors.darkGray)
+      )}`
+    );
   }
-  
-  // Handle metrics
+
+  // Handle metrics - clean display
   if (data.metrics) {
     const metrics = data.metrics;
     const parts: string[] = [];
-    
+
     if (metrics.totalTime) {
-      const time = metrics.totalTime < 1000 
-        ? `${metrics.totalTime}ms`
-        : `${(metrics.totalTime / 1000).toFixed(1)}s`;
-      parts.push(colorize(time, colors.yellow));
+      const time =
+        metrics.totalTime < 1000
+          ? `${metrics.totalTime}ms`
+          : `${(metrics.totalTime / 1000).toFixed(1)}s`;
+      parts.push(colorize(time, colors.purple + colors.dim));
     }
-    
+
     if (metrics.tokensPerSecond) {
-      parts.push(colorize(`${metrics.tokensPerSecond.toFixed(1)} tok/s`, colors.lime));
+      parts.push(
+        colorize(
+          `${metrics.tokensPerSecond.toFixed(1)}t/s`,
+          colors.darkCyan + colors.dim
+        )
+      );
     }
-    
+
     if (parts.length > 0) {
-      lines.push(`    ⚡ ${parts.join(' • ')}`);
+      lines.push(
+        `    ${colorize("▸", colors.darkGray)} ${parts.join(
+          colorize(" • ", colors.darkGray)
+        )}`
+      );
     }
   }
-  
-  // Handle model info
+
+  // Handle model info - subtle display
   if (data.modelInfo) {
     const model = `${data.modelInfo.provider}/${data.modelInfo.modelId}`;
-    lines.push(`    🤖 ${colorize(model, colors.teal)}`);
+    lines.push(
+      `    ${colorize("▸", colors.darkGray)} ${colorize(model, colors.gray)}`
+    );
   }
-  
-  // Handle action info
+
+  // Handle action info - minimal icons
   if (data.actionInfo) {
     const status = data.actionInfo.status;
-    const statusIcon = status === 'complete' ? '✅' : status === 'error' ? '❌' : '🔄';
-    lines.push(`    ${statusIcon} ${colorize(data.actionInfo.actionName, colors.lime)}`);
+    const statusIcon =
+      status === "complete" ? "◉" : status === "error" ? "◉" : "◐";
+    const statusColor =
+      status === "complete"
+        ? colors.green
+        : status === "error"
+        ? colors.red
+        : colors.cyan;
+    lines.push(
+      `    ${colorize(statusIcon, statusColor)} ${colorize(
+        data.actionInfo.actionName,
+        colors.purple + colors.dim
+      )}`
+    );
   }
-  
-  // Handle errors
+
+  // Handle errors - prominent but not overwhelming
   if (data.error) {
-    lines.push(`    💥 ${colorize(data.error.message, colors.red)}`);
+    lines.push(
+      `    ${colorize("▸", colors.red)} ${colorize(
+        data.error.message,
+        colors.red + colors.dim
+      )}`
+    );
   }
-  
+
   return lines;
 }
 
@@ -459,11 +556,13 @@ export class ConsoleTransport implements Transport {
 export class Logger {
   private config: LoggerConfig;
 
-  constructor(config: Partial<LoggerConfig> & { 
-    style?: 'default' | 'enhanced' | 'compact' | 'verbose';
-    enableColors?: boolean;
-    enableStructuredData?: boolean;
-  } = {}) {
+  constructor(
+    config: Partial<LoggerConfig> & {
+      style?: "default" | "enhanced" | "compact" | "verbose";
+      enableColors?: boolean;
+      enableStructuredData?: boolean;
+    } = {}
+  ) {
     // Provide defaults if necessary
     const transports =
       !config.transports || config.transports.length === 0
@@ -475,25 +574,25 @@ export class Logger {
     if (config.formatter) {
       formatter = config.formatter;
     } else {
-      const style = config.style || 'enhanced';
+      const style = config.style || "enhanced";
       const enableColors = config.enableColors ?? true;
       const enableStructuredData = config.enableStructuredData ?? true;
-      
+
       switch (style) {
-        case 'compact':
+        case "compact":
           formatter = new CompactFormatter({ enableColors });
           break;
-        case 'verbose':
+        case "verbose":
           formatter = new VerboseFormatter({ enableColors });
           break;
-        case 'enhanced':
-          formatter = new EnhancedFormatter({ 
-            enableColors, 
+        case "enhanced":
+          formatter = new EnhancedFormatter({
+            enableColors,
             enableStructuredData,
-            compactMode: false 
+            compactMode: false,
           });
           break;
-        case 'default':
+        case "default":
         default:
           formatter = new DefaultFormatter();
           break;
@@ -543,7 +642,12 @@ export class Logger {
   /**
    * Structured logging method with correlation IDs and rich metadata
    */
-  structured(level: LogLevel, context: string, message: string, data: StructuredLogData) {
+  structured(
+    level: LogLevel,
+    context: string,
+    message: string,
+    data: StructuredLogData
+  ) {
     if (level > this.config.level) return;
 
     const entry: LogEntry = {

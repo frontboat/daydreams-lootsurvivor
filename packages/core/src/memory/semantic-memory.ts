@@ -15,7 +15,7 @@ export class SemanticMemoryImpl implements SemanticMemory {
     }
 
     // Generate context-aware storage key
-    const storageKey = concept.contextId 
+    const storageKey = concept.contextId
       ? `semantic:${concept.contextId}:${concept.id}`
       : `semantic:global:${concept.id}`;
 
@@ -44,14 +44,18 @@ export class SemanticMemoryImpl implements SemanticMemory {
   async get(id: string, contextId?: string): Promise<SemanticConcept | null> {
     // Try context-specific first if contextId provided
     if (contextId) {
-      const contextSpecific = await this.memory.kv.get<SemanticConcept>(`semantic:${contextId}:${id}`);
+      const contextSpecific = await this.memory.kv.get<SemanticConcept>(
+        `semantic:${contextId}:${id}`
+      );
       if (contextSpecific) return contextSpecific;
     }
-    
+
     // Try global
-    const global = await this.memory.kv.get<SemanticConcept>(`semantic:global:${id}`);
+    const global = await this.memory.kv.get<SemanticConcept>(
+      `semantic:global:${id}`
+    );
     if (global) return global;
-    
+
     // Fallback to old format for backward compatibility
     return this.memory.kv.get<SemanticConcept>(`semantic:${id}`);
   }
@@ -61,11 +65,11 @@ export class SemanticMemoryImpl implements SemanticMemory {
     options?: SearchOptions & { contextId?: string }
   ): Promise<SemanticConcept[]> {
     // Build filter with context support
-    const filter: Record<string, any> = { 
-      type: "semantic", 
-      ...options?.filter 
+    const filter: Record<string, any> = {
+      type: "semantic",
+      ...options?.filter,
     };
-    
+
     // Add context filter if specified
     if (options?.contextId) {
       filter.contextId = options.contextId;
@@ -77,11 +81,16 @@ export class SemanticMemoryImpl implements SemanticMemory {
       limit: options?.limit || 10,
     });
 
-    const concepts: SemanticConcept[] = [];
-    for (const result of results) {
-      const concept = await this.get(result.id, options?.contextId);
-      if (concept) concepts.push(concept);
-    }
+    // Parallelize concept fetching for better performance
+    const conceptPromises = results.map((result) =>
+      this.get(result.id, options?.contextId)
+    );
+    const conceptResults = await Promise.all(conceptPromises);
+
+    // Filter out null results
+    const concepts = conceptResults.filter(
+      (concept): concept is SemanticConcept => concept !== null
+    );
 
     // Sort by confidence if requested
     if (options?.sort === "confidence") {
@@ -129,7 +138,7 @@ export class SemanticMemoryImpl implements SemanticMemory {
     }
 
     // Sort each group by success rate and occurrences
-    const sortPatterns = (patterns: Pattern[]) => 
+    const sortPatterns = (patterns: Pattern[]) =>
       patterns.sort((a, b) => {
         const scoreA = a.successRate * a.occurrences;
         const scoreB = b.successRate * b.occurrences;
@@ -141,11 +150,15 @@ export class SemanticMemoryImpl implements SemanticMemory {
 
     // Prioritize context-specific patterns, then add global patterns
     const allPatterns = [...contextPatterns, ...globalPatterns];
-    
+
     return allPatterns.slice(0, 10);
   }
 
-  async learnFromAction(action: any, result: any, contextId?: string): Promise<void> {
+  async learnFromAction(
+    action: any,
+    result: any,
+    contextId?: string
+  ): Promise<void> {
     // Extract pattern from action-result pair
     const patternId = `pattern:${action.name}:${Date.now()}`;
 
@@ -189,7 +202,11 @@ export class SemanticMemoryImpl implements SemanticMemory {
     }
   }
 
-  async updateConfidence(id: string, delta: number, contextId?: string): Promise<void> {
+  async updateConfidence(
+    id: string,
+    delta: number,
+    contextId?: string
+  ): Promise<void> {
     const concept = await this.get(id, contextId);
     if (!concept) throw new Error(`Concept ${id} not found`);
 
@@ -197,9 +214,12 @@ export class SemanticMemoryImpl implements SemanticMemory {
     await this.store(concept);
   }
 
-  private async findSimilarPattern(pattern: Pattern, contextId?: string): Promise<Pattern | null> {
+  private async findSimilarPattern(
+    pattern: Pattern,
+    contextId?: string
+  ): Promise<Pattern | null> {
     const allPatterns: Pattern[] = [];
-    
+
     // Priority 1: Look for context-specific patterns first if contextId provided
     if (contextId) {
       const contextIterator = this.memory.kv.scan(`semantic:${contextId}:*`);
@@ -219,10 +239,10 @@ export class SemanticMemoryImpl implements SemanticMemory {
         }
       }
     }
-    
+
     // Priority 2: Look in global patterns
     const globalPatterns: Pattern[] = [];
-    
+
     const globalIterator = this.memory.kv.scan("semantic:global:*");
     let globalResult = await globalIterator.next();
     while (!globalResult.done) {

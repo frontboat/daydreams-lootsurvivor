@@ -61,11 +61,14 @@ export class EpisodicMemoryImpl implements EpisodicMemory {
       limit,
     });
 
-    const episodes: Episode[] = [];
-    for (const result of results) {
-      const episode = await this.get(result.id);
-      if (episode) episodes.push(episode);
-    }
+    // Parallelize episode fetching for better performance
+    const episodePromises = results.map((result) => this.get(result.id));
+    const episodeResults = await Promise.all(episodePromises);
+
+    // Filter out null results
+    const episodes = episodeResults.filter(
+      (episode): episode is Episode => episode !== null
+    );
 
     return episodes;
   }
@@ -98,11 +101,14 @@ export class EpisodicMemoryImpl implements EpisodicMemory {
       limit: 1000,
     });
 
-    const episodes: Episode[] = [];
-    for (const result of results) {
-      const episode = await this.get(result.id);
-      if (episode) episodes.push(episode);
-    }
+    // Parallelize episode fetching for better performance
+    const episodePromises = results.map((result) => this.get(result.id));
+    const episodeResults = await Promise.all(episodePromises);
+
+    // Filter out null results
+    const episodes = episodeResults.filter(
+      (episode): episode is Episode => episode !== null
+    );
 
     // Sort by timestamp
     episodes.sort((a, b) => a.timestamp - b.timestamp);

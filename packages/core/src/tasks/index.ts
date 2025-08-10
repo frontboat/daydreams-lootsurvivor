@@ -587,7 +587,21 @@ export const runAction = task({
 
       return result;
     } catch (error) {
-      logger.error("agent:action", "ACTION_FAILED", { error });
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      const errorDetails = {
+        actionName: ctx.call.name,
+        callId: ctx.call.id,
+        error: errorMessage,
+        errorStack: error instanceof Error ? error.stack : undefined,
+        callData: ctx.call.data,
+      };
+
+      logger.error(
+        "agent:action",
+        `Action '${ctx.call.name}' failed: ${errorMessage}`,
+        errorDetails
+      );
 
       if (action.onError) {
         return await action.onError(error, ctx as any, agent);
