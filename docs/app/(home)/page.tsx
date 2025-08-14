@@ -64,8 +64,23 @@ function Terminal() {
   return (
     <div className="mb-16">
       <div className="border border-border rounded-sm bg-card/50 backdrop-blur-sm p-8">
+        <div className="mb-4 pb-4 border-b border-border">
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-primary">NEW:</span>
+            <span className="text-muted-foreground">
+              x402 nanoservice enabled
+            </span>
+            <span className="text-muted-foreground">|</span>
+            <Link
+              href="/docs/tutorials/x402/server"
+              className="text-primary hover:underline"
+            >
+              [view examples]
+            </Link>
+          </div>
+        </div>
         <div className="space-y-4">
-          <div className="text-2xl md:text-3xl font-bold text-foreground mt-6">
+          <div className="text-2xl md:text-3xl font-bold text-foreground">
             {subtitle}
           </div>
 
@@ -141,7 +156,7 @@ function Features() {
     {
       label: "PLATFORMS",
       value: "Multi-channel support",
-      desc: "Discord, Twitter, Telegram, CLI, and web interfaces",
+      desc: "Discord, Twitter, Telegram, CLI, web, and x402 nanoservices",
     },
   ];
 
@@ -235,8 +250,8 @@ function QuickStart() {
 function Examples() {
   const examples = [
     { name: "discord-bot", desc: "Stateful Discord agent with memory" },
+    { name: "x402-nanoservice", desc: "Autonomous nanoservice agents" },
     { name: "trading-agent", desc: "Portfolio tracking and execution" },
-    { name: "customer-support", desc: "Knowledge base integration" },
     { name: "multi-platform", desc: "Cross-platform deployment" },
   ];
 
@@ -285,7 +300,7 @@ function Footer() {
       <div className="text-xs text-muted-foreground mb-6">
         $ echo "Supported providers:"
       </div>
-      <div className="flex flex-wrap gap-3 mb-8">
+      <div className="flex flex-wrap gap-3 mb-4">
         {providers.map((provider) => (
           <span
             key={provider}
@@ -294,6 +309,17 @@ function Footer() {
             {provider}
           </span>
         ))}
+      </div>
+      <div className="text-xs text-muted-foreground mb-8">
+        + all{" "}
+        <Link
+          href="https://sdk.vercel.ai/providers"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary hover:underline"
+        >
+          AI SDK providers
+        </Link>
       </div>
 
       <div className="flex items-center justify-between pt-8 border-t border-border">
