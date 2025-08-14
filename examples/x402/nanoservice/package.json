@@ -6,11 +6,8 @@
   "scripts": {
     "dev": "bun run server.ts",
     "start": "bun run server.ts",
-    "dev:advanced": "bun run advanced-server.ts",
     "client": "bun run client.ts",
-    "client:examples": "bun run client.ts examples",
-    "client:interactive": "bun run client.ts interactive",
-    "test:payment": "bun run test-payment.ts"
+    "client:examples": "bun run client.ts examples"
   },
   "dependencies": {
     "@ai-sdk/openai": "catalog:",
