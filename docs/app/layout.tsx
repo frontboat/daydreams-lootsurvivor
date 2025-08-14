@@ -20,7 +20,7 @@ const space_grotesk = Space_Grotesk({
 export const metadata: Metadata = {
   description:
     "Daydreams is a powerful framework for building generative agents that can execute tasks across any blockchain or API.",
-  metadataBase: new URL("https://dreams.fun"),
+  metadataBase: new URL("https://daydreams.systems"),
   keywords: ["Daydreams", "agents"],
   generator: "Next.js",
   applicationName: "Daydreams",
@@ -29,8 +29,6 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [{ url: "/favicon.ico", sizes: "16x16" }],
-    shortcut: "/favicon-16x16.png",
-    apple: { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
   },
   title: {
     default: "Daydreams | Generative Agents",
