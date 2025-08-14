@@ -28,10 +28,7 @@ export const metadata: Metadata = {
     title: "Daydreams",
   },
   icons: {
-    icon: [
-      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
-      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
-    ],
+    icon: [{ url: "/favicon.ico", sizes: "16x16" }],
     shortcut: "/favicon-16x16.png",
     apple: { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
   },
@@ -49,7 +46,7 @@ export const metadata: Metadata = {
     "msapplication-TileColor": "#fff",
   },
   twitter: {
-    site: "https://dreams.fun",
+    site: "https://daydreams.systems",
   },
   alternates: {
     canonical: "./",
