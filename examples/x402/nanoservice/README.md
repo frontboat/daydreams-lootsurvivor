@@ -1,12 +1,12 @@
 # AI Assistant Nano Service
 
 This example demonstrates how to create a paid AI assistant service using
-Daydreams and x402 payment middleware. Users pay $0.01 per request to interact
+Daydreams and x402 payment middleware. Users pay $0.1 per request to interact
 with the AI assistant.
 
 ## Features
 
-- 💰 **Micropayments**: $0.01 per AI request using x402
+- 💰 **Micropayments**: $0.1 per AI request using x402
 - 🧠 **Stateful Sessions**: Maintains conversation history per session
 - 🔧 **Context-Aware**: Remembers previous queries and interactions
 - 🚀 **Production Ready**: Built with Hono for high performance
@@ -23,7 +23,7 @@ bun install
 
 ```env
 # x402 Payment Configuration
-FACILITATOR_URL=https://facilitator.daydreams.ai
+FACILITATOR_URL=
 ADDRESS=0xYourWalletAddressHere
 NETWORK=base-sepolia
 
@@ -73,21 +73,6 @@ Send a query to the AI assistant.
 ```
 
 ## Example Usage
-
-### Using curl (manual payment required)
-
-```bash
-# First, get service info
-curl http://localhost:4021/
-
-# Then make a paid request to the assistant
-curl -X POST http://localhost:4021/assistant \
-  -H "Content-Type: application/json" \
-  -d '{
-    "query": "What is the capital of France?",
-    "sessionId": "user-123"
-  }'
-```
 
 ### Using the x402 Client
 
@@ -143,21 +128,6 @@ You can customize:
 - **Context**: Modify the assistant's behavior and memory structure
 - **Actions**: Add custom actions for specific functionality
 
-## Advanced Example
-
-The `advanced-server.ts` file demonstrates:
-
-- Multiple service types with different pricing
-- Custom actions for analysis and content generation
-- User preferences and tier management
-- Dynamic pricing based on service complexity
-
-Run with:
-
-```bash
-bun run dev:advanced
-```
-
 ## Client Examples
 
 The `client.ts` file shows how to interact with the nano service:
@@ -166,8 +136,6 @@ The `client.ts` file shows how to interact with the nano service:
 # Run example requests
 bun run client:examples
 
-# Interactive mode
-bun run client:interactive
 ```
 
 ## Production Considerations
