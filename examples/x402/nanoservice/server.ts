@@ -5,8 +5,21 @@ import { paymentMiddleware, type Network, type Resource } from "x402-hono";
 import { createDreams, context, action, LogLevel } from "@daydreamsai/core";
 import { openai } from "@ai-sdk/openai";
 import * as z from "zod";
+import { privateKeyToAccount } from "viem/accounts";
+import { createDreamsRouterAuth } from "@daydreamsai/ai-sdk-provider";
 
 config();
+
+const { dreamsRouter, user } = await createDreamsRouterAuth(
+  privateKeyToAccount(Bun.env.PRIVATE_KEY as `0x${string}`),
+  {
+    baseURL: "http://localhost:8080" + "/v1",
+    payments: {
+      amount: "100000", // $0.10 USDC
+      network: "base-sepolia",
+    },
+  }
+);
 
 const facilitatorUrl = "https://facilitator.x402.rs";
 const payTo =
@@ -61,7 +74,7 @@ Remember the conversation history and context.`,
 // Create the agent
 const agent = createDreams({
   logLevel: LogLevel.INFO,
-  model: openai("gpt-5"),
+  model: dreamsRouter("google-vertex/gemini-2.5-flash"),
   contexts: [assistantContext],
   inputs: {
     text: {

@@ -27,8 +27,8 @@ FACILITATOR_URL=https://facilitator.daydreams.ai
 ADDRESS=0xYourWalletAddressHere
 NETWORK=base-sepolia
 
-# OpenAI API Key
-OPENAI_API_KEY=sk-...
+// For payments
+PRIVATE_KEY=
 ```
 
 3. Run the server:

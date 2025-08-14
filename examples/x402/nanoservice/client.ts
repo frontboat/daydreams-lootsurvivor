@@ -116,46 +116,6 @@ async function askAssistant(
   return result;
 }
 
-// Example: Text analysis
-async function analyzeText(
-  text: string,
-  analysisType: "sentiment" | "keywords" | "summary"
-) {
-  console.log(
-    `\n📤 Analyzing text (${analysisType}):`,
-    text.slice(0, 50) + "..."
-  );
-
-  const result = await callService("/service/analyzer", {
-    command: {
-      action: "analyze-text",
-      params: { text, analysisType },
-    },
-    userId: "demo-user",
-  });
-
-  console.log("📥 Analysis result:", result.response);
-
-  return result;
-}
-
-// Example: Content generation
-async function generateContent(template: string, prompt: string) {
-  console.log(`\n📤 Generating ${template}:`, prompt);
-
-  const result = await callService("/service/generator", {
-    command: {
-      action: "generate-content",
-      params: { template, prompt },
-    },
-    userId: "demo-user",
-  });
-
-  console.log("📥 Generated content:", result.response);
-
-  return result;
-}
-
 // Example: Update preferences
 async function updatePreferences(
   userId: string,
@@ -231,33 +191,6 @@ async function runExamples() {
 
     // Example 3: Demonstrate payment details
     await demoPayment();
-
-    // Example 4: Advanced features (only available on advanced server)
-    if (isAdvancedServer) {
-      const sampleText =
-        "I absolutely love this new AI service! It's fast, accurate, and very affordable. The nano payment system is brilliant.";
-      await analyzeText(sampleText, "sentiment");
-      await analyzeText(sampleText, "keywords");
-
-      // Example 5: Update preferences and ask again
-      await updatePreferences("demo-user", "technical");
-      await askAssistant("Explain how neural networks work", "demo-user");
-
-      // Example 6: Content generation
-      await generateContent("email", "Thank a customer for their feedback");
-
-      // Example 7: Check usage stats
-      console.log("\n📊 Checking usage stats...");
-      const stats = await fetch(`${SERVICE_URL}/stats/demo-user`).then((r) =>
-        r.json()
-      );
-      console.log("📈 Stats:", JSON.stringify(stats, null, 2));
-    } else {
-      console.log(
-        "\nℹ️  Advanced features (analyze, generate) require the advanced server"
-      );
-      console.log("   Run 'bun run dev:advanced' to start the advanced server");
-    }
   } catch (error) {
     console.error("❌ Example failed:", error);
   }
@@ -310,32 +243,6 @@ async function interactiveMode() {
 
           case "ask!":
             await askAssistant(args.join(" "), "demo-user", true);
-            break;
-
-          case "analyze":
-            if (serverType === "basic") {
-              console.log("❌ Analysis features require the advanced server");
-              break;
-            }
-            const [type, ...textParts] = args;
-            await analyzeText(textParts.join(" "), type as any);
-            break;
-
-          case "generate":
-            if (serverType === "basic") {
-              console.log("❌ Generation features require the advanced server");
-              break;
-            }
-            const [template, ...promptParts] = args;
-            await generateContent(template, promptParts.join(" "));
-            break;
-
-          case "style":
-            if (serverType === "basic") {
-              console.log("❌ Style preferences require the advanced server");
-              break;
-            }
-            await updatePreferences("demo-user", args[0] as any);
             break;
 
           case "payment":
