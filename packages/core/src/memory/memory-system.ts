@@ -47,11 +47,13 @@ export class MemorySystem implements Memory {
   private extractor: MemoryExtractor;
   private evolution: MemoryEvolution;
   private initialized = false;
+  private logger: any;
 
   constructor(private config: MemoryConfig) {
     this.providers = config.providers;
     this.middleware = config.middleware || [];
     this.options = config.options || {};
+    this.logger = config.logger;
 
     // Initialize lifecycle
     this.lifecycle = new MemoryLifecycleImpl();
@@ -75,34 +77,106 @@ export class MemorySystem implements Memory {
   async initialize(): Promise<void> {
     if (this.initialized) return;
 
+    if (this.logger) {
+      this.logger.info("memory:init", "Starting memory system initialization", {
+        providers: {
+          kv: this.providers.kv.constructor.name,
+          vector: this.providers.vector.constructor.name,
+          graph: this.providers.graph.constructor.name,
+        },
+        middlewareCount: this.middleware.length,
+        evolutionEnabled: this.options?.evolution?.enabled ?? false,
+      });
+    }
+
     // Initialize providers with proper error handling and fallback strategies
     const initializationErrors: Error[] = [];
-    
+
     // Initialize KV provider (critical - must succeed)
     try {
+      if (this.logger) {
+        this.logger.debug(
+          "memory:init",
+          `Initializing KV provider: ${this.providers.kv.constructor.name}`
+        );
+      }
       await this.providers.kv.initialize();
+      const kvHealth = await this.providers.kv.health();
+      if (this.logger) {
+        this.logger.debug("memory:init", "KV provider initialized", {
+          status: kvHealth.status,
+        });
+      }
     } catch (error) {
-      const kvError = new Error(`Failed to initialize KV provider: ${error instanceof Error ? error.message : error}`);
+      const kvError = new Error(
+        `Failed to initialize KV provider: ${
+          error instanceof Error ? error.message : error
+        }`
+      );
       initializationErrors.push(kvError);
       throw kvError; // KV is critical, fail fast
     }
 
     // Initialize vector provider (non-critical - can fallback to in-memory)
     try {
+      if (this.logger) {
+        this.logger.debug(
+          "memory:init",
+          `Initializing vector provider: ${this.providers.vector.constructor.name}`
+        );
+      }
       await this.providers.vector.initialize();
+      const vectorHealth = await this.providers.vector.health();
+      if (this.logger) {
+        this.logger.debug("memory:init", "Vector provider initialized", {
+          status: vectorHealth.status,
+        });
+      }
     } catch (error) {
-      const vectorError = new Error(`Failed to initialize vector provider: ${error instanceof Error ? error.message : error}`);
+      const vectorError = new Error(
+        `Failed to initialize vector provider: ${
+          error instanceof Error ? error.message : error
+        }`
+      );
       initializationErrors.push(vectorError);
-      console.warn("Memory system: Vector provider initialization failed, continuing with limited functionality", vectorError.message);
+      if (this.logger) {
+        this.logger.warn(
+          "memory:init",
+          "Vector provider initialization failed, continuing with limited functionality",
+          { error: vectorError.message }
+        );
+      }
     }
 
     // Initialize graph provider (non-critical - can fallback to in-memory)
     try {
+      if (this.logger) {
+        this.logger.debug(
+          "memory:init",
+          `Initializing graph provider: ${this.providers.graph.constructor.name}`
+        );
+      }
       await this.providers.graph.initialize();
+      const graphHealth = await this.providers.graph.health();
+      if (this.logger) {
+        this.logger.debug("memory:init", "Graph provider initialized", {
+          status: graphHealth.status,
+        });
+      }
     } catch (error) {
-      const graphError = new Error(`Failed to initialize graph provider: ${error instanceof Error ? error.message : error}`);
+      const graphError = new Error(
+        `Failed to initialize graph provider: ${
+          error instanceof Error ? error.message : error
+        }`
+      );
       initializationErrors.push(graphError);
-      console.warn("Memory system: Graph provider initialization failed, continuing with limited functionality", graphError.message);
+      if (this.logger) {
+        this.logger.warn(
+          "memory:init",
+          "Graph provider initialization failed, continuing with limited functionality",
+          { error: graphError.message }
+        );
+      }
     }
 
     // Initialize middleware with individual error handling
@@ -111,9 +185,22 @@ export class MemorySystem implements Memory {
         try {
           await mw.initialize(this);
         } catch (error) {
-          const middlewareError = new Error(`Failed to initialize middleware: ${error instanceof Error ? error.message : error}`);
+          const middlewareError = new Error(
+            `Failed to initialize middleware: ${
+              error instanceof Error ? error.message : error
+            }`
+          );
           initializationErrors.push(middlewareError);
-          console.warn("Memory system: Middleware initialization failed", middlewareError.message);
+          if (this.logger) {
+            this.logger.warn(
+              "memory:init",
+              "Middleware initialization failed",
+              {
+                middleware: mw.name,
+                error: middlewareError.message,
+              }
+            );
+          }
           // Continue with other middleware - don't fail the whole system
         }
       }
@@ -125,6 +212,15 @@ export class MemorySystem implements Memory {
     }
 
     this.initialized = true;
+
+    if (this.logger) {
+      this.logger.info("memory:init", "Memory system initialization complete", {
+        errors: initializationErrors.length,
+        evolutionStarted: this.options?.evolution?.enabled ?? false,
+        middlewareInitialized: this.middleware.length,
+      });
+    }
+
     await this.lifecycle.emit("initialized");
   }
 
@@ -177,7 +273,10 @@ export class MemorySystem implements Memory {
     context.data = transformedContent;
 
     // Classify and route content using final options
-    const classified = await this.classifyContent(transformedContent, finalOptions);
+    const classified = await this.classifyContent(
+      transformedContent,
+      finalOptions
+    );
 
     // Store in appropriate memory types
     const promises: Promise<void>[] = [];
@@ -213,7 +312,10 @@ export class MemorySystem implements Memory {
     }
 
     // Index for vector search if requested
-    if (finalOptions?.index !== false && typeof transformedContent === "string") {
+    if (
+      finalOptions?.index !== false &&
+      typeof transformedContent === "string"
+    ) {
       promises.push(
         this.vector.index([
           {

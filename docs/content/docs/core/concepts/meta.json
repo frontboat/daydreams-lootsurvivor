@@ -4,6 +4,7 @@
     "agent-lifecycle",
     "building-blocks",
     "contexts",
+    "composing-contexts",
     "inputs",
     "outputs",
     "actions",

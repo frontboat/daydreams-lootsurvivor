@@ -6,8 +6,6 @@
     "extensions-vs-services",
     "extensions",
     "services",
-    "supabase",
-    "grpo-training-export",
-    "deep"
+    "supabase"
   ]
 }

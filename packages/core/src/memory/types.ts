@@ -56,6 +56,7 @@ export interface MemoryConfig {
   };
   middleware?: MemoryMiddleware[];
   options?: MemoryOptions;
+  logger?: any; // TODO: Import proper Logger type
 }
 
 export interface MemoryOptions {

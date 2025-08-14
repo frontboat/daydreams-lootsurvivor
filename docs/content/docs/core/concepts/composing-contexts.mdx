@@ -1,0 +1,564 @@
+---
+title: Composing Contexts
+description: Combine multiple contexts to build complex agent behaviors.
+---
+
+## What is Context Composition?
+
+Context composition is how you **combine multiple contexts together** so they
+can work as a unified system. Think of it like building with LEGO blocks - each
+context is a specialized piece that can connect with others to create more
+complex behaviors.
+
+## The Problem: Isolated Contexts
+
+Without composition, contexts are completely isolated:
+
+```text title="isolated-contexts.txt"
+Chat Context:
+- Knows about conversations
+- ❌ Can't access user profile data
+- ❌ Can't check user permissions
+
+Profile Context:
+- Knows about user preferences
+- ❌ Can't see chat history
+- ❌ Works in isolation
+
+Permission Context:
+- Knows about access rights
+- ❌ Can't personalize responses
+- ❌ Disconnected from other contexts
+```
+
+## The Solution: Context Composition
+
+With composition, contexts can work together:
+
+```text title="composed-contexts.txt"
+Chat + Profile + Permissions:
+- ✅ Personalized conversations based on user preferences
+- ✅ Permission-aware responses
+- ✅ Shared data and capabilities
+- ✅ Unified behavior
+```
+
+## Methods of Composition
+
+### 1. Dynamic Composition with `.use()`
+
+The `.use()` method allows a context to include other contexts based on its
+current state:
+
+```typescript title="dynamic-composition.ts"
+import { context, createDreams } from "@daydreamsai/core";
+import * as z from "zod";
+
+// Base analytics context
+const analyticsContext = context({
+  type: "analytics",
+  schema: z.object({ userId: z.string() }),
+  create: () => ({ events: [] }),
+  actions: {
+    trackEvent: action({
+      schema: z.object({
+        event: z.string(),
+        data: z.any(),
+      }),
+      handler: async ({ event, data }, ctx) => {
+        ctx.memory.events.push({ event, data, timestamp: Date.now() });
+        return { tracked: true };
+      },
+    }),
+  },
+});
+
+// User profile context
+const profileContext = context({
+  type: "profile",
+  schema: z.object({ userId: z.string() }),
+  create: () => ({
+    preferences: {},
+    tier: "free",
+  }),
+});
+
+// Main chat context that composes others
+const chatContext = context({
+  type: "chat",
+  schema: z.object({ userId: z.string() }),
+  create: () => ({ messages: [] }),
+
+  // Dynamically include other contexts
+  use: (state) =>
+    [
+      // Always include analytics
+      { context: analyticsContext, args: { userId: state.args.userId } },
+
+      // Include profile for registered users
+      state.args.userId !== "guest"
+        ? { context: profileContext, args: { userId: state.args.userId } }
+        : null,
+    ].filter(Boolean),
+
+  render: (state) => `
+    Chat with ${state.args.userId}
+    Messages: ${state.memory.messages.length}
+  `,
+});
+
+// Now when chat context is active, it has access to:
+// - Its own actions and memory
+// - Analytics context's trackEvent action
+// - Profile context's data (if not guest)
+```
+
+### 2. Static Composition with Context Arrays
+
+You can compose contexts when sending data to the agent:
+
+```typescript title="static-composition.ts"
+// Send to multiple contexts at once
+await agent.send(
+  [chatContext, analyticsContext],
+  { userId: "user123" },
+  { message: "Hello!" }
+);
+
+// Or use a composer function
+const userContexts = (userId: string) => [
+  { context: chatContext, args: { userId } },
+  { context: profileContext, args: { userId } },
+  { context: analyticsContext, args: { userId } },
+];
+
+await agent.send(
+  userContexts("user123"),
+  {},
+  { message: "Track this across all contexts" }
+);
+```
+
+### 3. Cross-Context References
+
+Contexts can reference each other within their handlers:
+
+```typescript title="cross-context-references.ts"
+const orderContext = context({
+  type: "order",
+  schema: z.object({ orderId: z.string() }),
+  actions: {
+    processOrder: action({
+      schema: z.object({ items: z.array(z.string()) }),
+      handler: async ({ items }, ctx) => {
+        // Get user profile from another context
+        const profileCtx = await ctx.agent.getContext(profileContext, {
+          userId: ctx.args.userId,
+        });
+
+        const discount = profileCtx.state.memory.tier === "premium" ? 0.1 : 0;
+
+        // Track event in analytics context
+        await ctx.callAction("analytics.trackEvent", {
+          event: "order_processed",
+          data: { items, discount },
+        });
+
+        return {
+          processed: true,
+          discount,
+          message: `Order processed with ${discount * 100}% discount`,
+        };
+      },
+    }),
+  },
+});
+```
+
+## Real-World Examples
+
+### E-commerce Agent with Composed Contexts
+
+```typescript title="ecommerce-agent.ts"
+// Product catalog context
+const catalogContext = context({
+  type: "catalog",
+  schema: z.object({ category: z.string().optional() }),
+  create: () => ({ products: [] }),
+  actions: {
+    searchProducts: action({
+      schema: z.object({ query: z.string() }),
+      handler: async ({ query }) => {
+        // Search product database
+        return await productDB.search(query);
+      },
+    }),
+  },
+});
+
+// Shopping cart context
+const cartContext = context({
+  type: "cart",
+  schema: z.object({ sessionId: z.string() }),
+  create: () => ({ items: [], total: 0 }),
+  actions: {
+    addToCart: action({
+      schema: z.object({
+        productId: z.string(),
+        quantity: z.number(),
+      }),
+      handler: async ({ productId, quantity }, ctx) => {
+        const product = await productDB.get(productId);
+        ctx.memory.items.push({ product, quantity });
+        ctx.memory.total += product.price * quantity;
+        return { added: true, total: ctx.memory.total };
+      },
+    }),
+  },
+});
+
+// Main shopping context that composes everything
+const shoppingContext = context({
+  type: "shopping",
+  schema: z.object({
+    userId: z.string(),
+    sessionId: z.string(),
+  }),
+
+  // Compose all shopping-related contexts
+  use: (state) => [
+    { context: catalogContext, args: {} },
+    { context: cartContext, args: { sessionId: state.args.sessionId } },
+    { context: profileContext, args: { userId: state.args.userId } },
+    { context: analyticsContext, args: { userId: state.args.userId } },
+  ],
+
+  render: (state, agent) => {
+    // Access composed context states
+    const cart = agent.getContextState(cartContext, {
+      sessionId: state.args.sessionId,
+    });
+    const profile = agent.getContextState(profileContext, {
+      userId: state.args.userId,
+    });
+
+    return `
+      Shopping session for ${profile?.memory.name || state.args.userId}
+      Cart items: ${cart?.memory.items.length || 0}
+      Total: $${cart?.memory.total || 0}
+    `;
+  },
+});
+
+// Agent can now:
+// - Search products (from catalog)
+// - Add to cart (from cart)
+// - Apply user discounts (from profile)
+// - Track shopping behavior (from analytics)
+// All through one unified context!
+```
+
+### Multi-Modal Assistant
+
+```typescript title="multimodal-assistant.ts"
+// Voice interaction context
+const voiceContext = context({
+  type: "voice",
+  schema: z.object({ sessionId: z.string() }),
+  create: () => ({ transcripts: [] }),
+  actions: {
+    transcribe: action({
+      schema: z.object({ audioUrl: z.string() }),
+      handler: async ({ audioUrl }) => {
+        const text = await speechToText(audioUrl);
+        return { text };
+      },
+    }),
+    synthesize: action({
+      schema: z.object({ text: z.string() }),
+      handler: async ({ text }) => {
+        const audioUrl = await textToSpeech(text);
+        return { audioUrl };
+      },
+    }),
+  },
+});
+
+// Visual analysis context
+const visionContext = context({
+  type: "vision",
+  schema: z.object({ sessionId: z.string() }),
+  create: () => ({ images: [] }),
+  actions: {
+    analyzeImage: action({
+      schema: z.object({ imageUrl: z.string() }),
+      handler: async ({ imageUrl }) => {
+        const analysis = await imageAI.analyze(imageUrl);
+        return analysis;
+      },
+    }),
+  },
+});
+
+// Unified assistant context
+const assistantContext = context({
+  type: "assistant",
+  schema: z.object({
+    userId: z.string(),
+    mode: z.enum(["text", "voice", "multimodal"]),
+  }),
+
+  use: (state) => {
+    const contexts = [
+      { context: chatContext, args: { userId: state.args.userId } },
+    ];
+
+    // Add contexts based on mode
+    if (state.args.mode === "voice" || state.args.mode === "multimodal") {
+      contexts.push({
+        context: voiceContext,
+        args: { sessionId: `${state.args.userId}-voice` },
+      });
+    }
+
+    if (state.args.mode === "multimodal") {
+      contexts.push({
+        context: visionContext,
+        args: { sessionId: `${state.args.userId}-vision` },
+      });
+    }
+
+    return contexts;
+  },
+});
+```
+
+## Composition Patterns
+
+### 1. Hierarchical Composition
+
+Build complex behaviors from simple contexts:
+
+```typescript title="hierarchical-pattern.ts"
+// Level 1: Basic contexts
+const authContext = context({
+  /* ... */
+});
+const dataContext = context({
+  /* ... */
+});
+
+// Level 2: Feature contexts that use basic ones
+const featureContext = context({
+  use: () => [
+    { context: authContext, args: {} },
+    { context: dataContext, args: {} },
+  ],
+});
+
+// Level 3: Application context that uses features
+const appContext = context({
+  use: () => [
+    { context: featureContext, args: {} },
+    // ... other feature contexts
+  ],
+});
+```
+
+### 2. Conditional Composition
+
+Include contexts based on runtime conditions:
+
+```typescript title="conditional-pattern.ts"
+const mainContext = context({
+  use: (state) => {
+    const contexts = [];
+
+    // Always include core context
+    contexts.push({ context: coreContext, args: {} });
+
+    // Add premium features for premium users
+    if (state.memory.userTier === "premium") {
+      contexts.push({ context: premiumContext, args: {} });
+    }
+
+    // Add admin tools for admins
+    if (state.memory.isAdmin) {
+      contexts.push({ context: adminContext, args: {} });
+    }
+
+    // Add debug context in development
+    if (process.env.NODE_ENV === "development") {
+      contexts.push({ context: debugContext, args: {} });
+    }
+
+    return contexts;
+  },
+});
+```
+
+### 3. Event-Driven Composition
+
+Contexts that react to each other's events:
+
+```typescript title="event-driven-pattern.ts"
+const eventBus = new EventEmitter();
+
+const notificationContext = context({
+  type: "notifications",
+  create: () => ({ queue: [] }),
+  onStep: async (ctx) => {
+    // Listen for events from other contexts
+    eventBus.on("user:purchase", async (data) => {
+      ctx.memory.queue.push({
+        type: "purchase_confirmation",
+        data,
+      });
+    });
+  },
+});
+
+const purchaseContext = context({
+  type: "purchase",
+  actions: {
+    completePurchase: action({
+      handler: async (data, ctx) => {
+        // Process purchase...
+
+        // Emit event for other contexts
+        eventBus.emit("user:purchase", {
+          userId: ctx.args.userId,
+          amount: data.amount,
+          items: data.items,
+        });
+
+        return { success: true };
+      },
+    }),
+  },
+});
+```
+
+## Best Practices
+
+### 1. Keep Contexts Focused
+
+```typescript title="focused-contexts.ts"
+// ✅ Good - each context has a clear purpose
+const userContext = context({
+  /* user management */
+});
+const billingContext = context({
+  /* billing logic */
+});
+const notificationContext = context({
+  /* notifications */
+});
+
+// ❌ Bad - mixing concerns
+const everythingContext = context({
+  /* user + billing + notifications + kitchen sink */
+});
+```
+
+### 2. Use Composition for Complex Behaviors
+
+```typescript title="composition-for-complexity.ts"
+// ✅ Good - compose simple contexts
+const checkoutContext = context({
+  use: () => [
+    { context: cartContext, args: {} },
+    { context: paymentContext, args: {} },
+    { context: shippingContext, args: {} },
+    { context: inventoryContext, args: {} },
+  ],
+});
+
+// ❌ Bad - one giant context
+const megaCheckoutContext = context({
+  // 1000+ lines of mixed logic
+});
+```
+
+### 3. Document Context Dependencies
+
+```typescript title="documented-dependencies.ts"
+/**
+ * Customer service context
+ * Requires: profileContext, orderContext, ticketContext
+ * Provides: unified customer support interface
+ */
+const customerServiceContext = context({
+  type: "customer-service",
+  use: (state) => [
+    { context: profileContext, args: { userId: state.args.userId } },
+    { context: orderContext, args: { userId: state.args.userId } },
+    { context: ticketContext, args: { userId: state.args.userId } },
+  ],
+});
+```
+
+### 4. Handle Missing Dependencies Gracefully
+
+```typescript title="graceful-dependencies.ts"
+const enhancedContext = context({
+  actions: {
+    getRecommendations: action({
+      handler: async (args, ctx) => {
+        try {
+          // Try to use ML context if available
+          const mlResult = await ctx.callAction("ml.predict", {
+            userId: ctx.args.userId,
+          });
+          return mlResult.recommendations;
+        } catch (error) {
+          // Fallback to simple recommendations
+          return getSimpleRecommendations(ctx.args.userId);
+        }
+      },
+    }),
+  },
+});
+```
+
+## Debugging Composed Contexts
+
+Use the agent's logger to trace context interactions:
+
+```typescript title="debugging-composition.ts"
+const debuggableContext = context({
+  type: "debuggable",
+  use: (state, agent) => {
+    agent.logger.info("context:compose", "Composing contexts", {
+      contextType: "debuggable",
+      args: state.args,
+      composing: ["analytics", "profile"],
+    });
+
+    return [
+      { context: analyticsContext, args: state.args },
+      { context: profileContext, args: state.args },
+    ];
+  },
+
+  onStep: async (ctx, agent) => {
+    agent.logger.debug("context:step", "Context step", {
+      availableActions: Object.keys(ctx.actions),
+      memoryKeys: Object.keys(ctx.memory),
+    });
+  },
+});
+```
+
+## Key Takeaways
+
+- **Contexts are composable** - Build complex behaviors from simple pieces
+- **Three composition methods** - `.use()`, arrays, and cross-references
+- **Isolation by default** - Contexts only share what you explicitly compose
+- **Dynamic composition** - Include contexts based on runtime conditions
+- **Unified interfaces** - Composed contexts appear as one to the LLM
+- **Maintainable architecture** - Small, focused contexts are easier to manage
+
+Context composition is what enables you to build sophisticated agents while
+keeping your code organized and maintainable. Start with simple, focused
+contexts and compose them together to create powerful behaviors.

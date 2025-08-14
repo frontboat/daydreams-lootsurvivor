@@ -158,6 +158,19 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
   const structuredLogger = new StructuredLogger(logger);
   container.instance("structuredLogger", structuredLogger);
 
+  // Log agent creation
+  logger.info("agent:create", "Creating Daydreams agent", {
+    model: model,
+    reasoningModel: reasoningModel,
+    logLevel: config.logLevel ?? LogLevel.INFO,
+    streaming,
+    extensionsCount: extensions.length,
+    contextsCount: config.contexts?.length ?? 0,
+    actionsCount: actions.length,
+    servicesCount: services.length,
+    exportTrainingData,
+  });
+
   // Configure request tracking with logger integration
   if (config.requestTrackingConfig) {
     // Pass the complete config including cost estimation to the global tracker
@@ -182,12 +195,27 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
 
   // Register contexts and process extensions
   if (config.contexts) {
+    logger.debug("agent:create", "Registering contexts", {
+      count: config.contexts.length,
+      types: config.contexts.map((ctx) => ctx.type),
+    });
     for (const ctx of config.contexts) {
       registry.contexts.set(ctx.type, ctx);
     }
   }
 
   for (const extension of extensions) {
+    logger.debug("agent:create", `Processing extension: ${extension.name}`, {
+      hasInputs: !!extension.inputs,
+      hasOutputs: !!extension.outputs,
+      hasEvents: !!extension.events,
+      actionsCount: extension.actions?.length ?? 0,
+      servicesCount: extension.services?.length ?? 0,
+      contextsCount: extension.contexts
+        ? Object.keys(extension.contexts).length
+        : 0,
+    });
+
     if (extension.inputs) Object.assign(inputs, extension.inputs);
     if (extension.outputs) Object.assign(outputs, extension.outputs);
     if (extension.events) Object.assign(events, extension.events);
@@ -214,6 +242,7 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
         vector: new InMemoryVectorProvider(),
         graph: new InMemoryGraphProvider(),
       },
+      logger,
     });
 
   // Initialize export manager
@@ -529,22 +558,64 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
      */
     async start(args) {
       if (booted) return agent;
-      logger.info("agent:start", "Starting agent", { args, booted });
+
+      logger.info("agent:start", "Starting Daydreams agent", {
+        args,
+        booted,
+        agentContext: agent.context?.type,
+      });
+
+      // Log configuration summary
+      logger.info("agent:start", "Configuration summary", {
+        memory: {
+          providers: {
+            kv: agent.memory.kv.constructor.name,
+            vector: agent.memory.vector.constructor.name,
+            graph: agent.memory.graph.constructor.name,
+          },
+        },
+        model: {
+          primary: model,
+          reasoning: reasoningModel,
+          settings: modelSettings,
+        },
+        registry: {
+          contexts: Array.from(registry.contexts.keys()),
+          actions: Array.from(registry.actions.keys()),
+          inputs: Array.from(registry.inputs.keys()),
+          outputs: Array.from(registry.outputs.keys()),
+          extensions: Array.from(registry.extensions.keys()),
+        },
+        tracking: {
+          enabled: !!config.requestTrackingConfig?.enabled,
+          exportTrainingData,
+        },
+      });
 
       booted = true;
 
       logger.debug("agent:start", "Initializing memory system");
       await agent.memory.initialize();
+      logger.debug("agent:start", "Memory system initialized successfully");
 
-      logger.debug("agent:start", "Booting services");
+      logger.debug("agent:start", "Booting services", {
+        count: services.length,
+      });
       await serviceManager.bootAll();
 
       logger.debug("agent:start", "Installing extensions", {
         count: extensions.length,
+        names: extensions.map((ext) => ext.name),
       });
 
       for (const extension of extensions) {
-        if (extension.install) await tryAsync(extension.install, agent);
+        if (extension.install) {
+          logger.trace(
+            "agent:start",
+            `Installing extension: ${extension.name}`
+          );
+          await tryAsync(extension.install, agent);
+        }
       }
 
       logger.debug("agent:start", "Setting up inputs", {
@@ -638,7 +709,24 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
         contexts.set("agent:context", agentState as unknown as ContextState);
       }
 
-      logger.info("agent:start", "Agent started successfully");
+      logger.info("agent:start", "Agent started successfully", {
+        registeredComponents: {
+          contexts: registry.contexts.size,
+          actions: registry.actions.size,
+          inputs: Object.keys(inputs).length,
+          outputs: Object.keys(outputs).length,
+          extensions: extensions.length,
+        },
+        activeSubscriptions: inputSubscriptions.size,
+        savedContexts: savedContexts?.length ?? 0,
+        agentContext: agent.context
+          ? {
+              type: agent.context.type,
+              id: contexts.get("agent:context")?.id,
+            }
+          : undefined,
+      });
+
       return agent;
     },
 
@@ -1117,6 +1205,17 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
   };
 
   container.instance("agent", agent);
+
+  logger.debug("agent:create", "Agent created successfully", {
+    hasContext: !!agent.context,
+    registrySize: {
+      contexts: registry.contexts.size,
+      actions: registry.actions.size,
+      inputs: registry.inputs.size,
+      outputs: registry.outputs.size,
+      extensions: registry.extensions.size,
+    },
+  });
 
   return agent;
 }
