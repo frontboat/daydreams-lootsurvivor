@@ -116,26 +116,6 @@ async function askAssistant(
   return result;
 }
 
-// Example: Update preferences
-async function updatePreferences(
-  userId: string,
-  style: "concise" | "detailed" | "technical"
-) {
-  console.log(`\n📤 Updating preferences for ${userId} to ${style}`);
-
-  const result = await callService("/service/assistant", {
-    command: {
-      action: "update-preferences",
-      params: { style },
-    },
-    userId,
-  });
-
-  console.log("📥 Preferences updated:", result.response);
-
-  return result;
-}
-
 // Example: Make a request and show payment details
 async function demoPayment() {
   console.log("\n💳 Demonstrating payment flow...");
