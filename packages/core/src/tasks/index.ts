@@ -186,7 +186,7 @@ export const runGenerate = task({
         const response = await generateText({
           model,
           messages,
-          temperature: modelSettings.temperature ?? 0.2,
+          temperature: modelSettings.temperature ?? undefined,
           maxTokens: modelSettings.maxTokens,
           topP: modelSettings.topP,
           topK: modelSettings.topK,
@@ -287,7 +287,7 @@ export const runGenerate = task({
           model,
           messages,
           stopSequences: modelSettings.stopSequences ?? ["\n</response>"],
-          temperature: modelSettings.temperature ?? 0.5,
+          temperature: modelSettings.temperature ?? undefined,
           maxTokens: modelSettings.maxTokens,
           topP: modelSettings.topP,
           topK: modelSettings.topK,

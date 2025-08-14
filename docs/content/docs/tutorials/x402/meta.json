@@ -2,5 +2,5 @@
   "title": "X402",
   "description": "Tutorials for integrating Daydreams agents with X402.",
   "icon": "Users",
-  "pages": ["---", "x402"]
+  "pages": ["server", "nanoservice"]
 }
