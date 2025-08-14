@@ -11,7 +11,7 @@ import {
   context,
 } from "@daydreamsai/core";
 import { cliExtension } from "@daydreamsai/cli";
-import { openrouter } from "@openrouter/ai-sdk-provider";
+import { anthropic } from "@ai-sdk/anthropic";
 import * as z from "zod";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -101,7 +101,7 @@ const fileAgentContext = context({
 
 // 4. Create the agent
 const agent = createDreams({
-  model: openrouter("google/gemini-2.0-flash-001"),
+  model: anthropic("claude-4-sonnet"),
   logger: new Logger({ level: LogLevel.DEBUG }),
   extensions: [cliExtension],
   actions: [listFilesAction, readFileAction, writeFileAction],
