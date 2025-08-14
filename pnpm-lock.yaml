@@ -492,7 +492,7 @@ importers:
         specifier: 2.33.3
         version: 2.33.3(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@4.0.16)
       x402-fetch:
-        specifier: 0.5.1
+        specifier: ^0.5.1
         version: 0.5.1(@types/react@18.3.22)(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)
       x402-hono:
         specifier: ^0.5.2

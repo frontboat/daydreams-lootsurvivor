@@ -20,7 +20,7 @@
     "dotenv": "catalog:",
     "hono": "^4.9.1",
     "viem": "2.33.3",
-    "x402-fetch": "^0.5.2",
+    "x402-fetch": "^0.5.1",
     "x402-hono": "^0.5.2",
     "zod": "catalog:"
   }
