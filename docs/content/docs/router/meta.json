@@ -1,5 +1,5 @@
 {
   "title": "Router",
   "root": true,
-  "pages": ["index"]
+  "pages": ["index", "quickstart", "dreams-sdk"]
 }

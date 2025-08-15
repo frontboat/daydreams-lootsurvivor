@@ -1,0 +1,208 @@
+---
+title: Dreams SDK Integration
+description: Use the Dreams Router with Vercel AI SDK and Daydreams framework
+---
+
+# Dreams SDK Integration
+
+Integrate the Dreams Router with [Vercel AI SDK](https://sdk.vercel.ai/docs) and the Daydreams framework for TypeScript/JavaScript applications.
+
+## Installation
+
+Install the router SDK alongside the AI SDK:
+
+```bash
+npm install @daydreamsai/ai-sdk-provider ai
+```
+
+## Using with Vercel AI SDK
+
+### Quick Start
+
+Set your API key:
+
+```bash
+DREAMSROUTER_API_KEY=your_api_key_here
+```
+
+Generate text:
+
+```typescript
+import { generateText } from "ai";
+import { dreamsRouter } from "@daydreamsai/ai-sdk-provider";
+
+const { text } = await generateText({
+  model: dreamsRouter("google-vertex/gemini-2.5-flash"),
+  prompt: "What is love?",
+});
+```
+
+## Using with Daydreams Framework
+
+### Basic Agent Setup
+
+```typescript
+import { dreamsRouter } from "@daydreamsai/ai-sdk-provider";
+import { createDreams } from "@daydreamsai/core";
+
+const agent = createDreams({
+  model: dreamsRouter("google-vertex/gemini-2.5-flash"),
+  systemPrompt: "You are a helpful AI assistant",
+});
+```
+
+### With x402 Payments
+
+The SDK automatically handles X-Payment header generation for x402-compliant payments:
+
+```typescript
+import { createDreamsRouterAuth } from "@daydreamsai/ai-sdk-provider";
+import { privateKeyToAccount } from "viem/accounts";
+
+const { dreamsRouter, user } = await createDreamsRouterAuth(
+  privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`),
+  {
+    payments: {
+      amount: "100000", // $0.10 USDC
+      network: "base-sepolia",
+    },
+  }
+);
+
+// The dreamsRouter automatically adds X-Payment header to requests
+const agent = createDreams({
+  model: dreamsRouter("google-vertex/gemini-2.5-flash"),
+  systemPrompt: "You are a helpful AI assistant",
+});
+```
+
+#### Manual X-Payment Header
+
+For direct API calls without the SDK:
+
+```typescript
+import { generateX402Payment } from "@daydreamsai/ai-sdk-provider";
+import { privateKeyToAccount } from "viem/accounts";
+
+const account = privateKeyToAccount("0x...your-private-key");
+
+// Generate the payment header
+const paymentHeader = await generateX402Payment(account, {
+  amount: "100000",
+  network: "base-sepolia",
+});
+
+// Include in your request
+fetch("https://router.daydreams.systems/v1/chat/completions", {
+  headers: {
+    "X-Payment": paymentHeader, // Required for x402 payments
+    "Content-Type": "application/json",
+  },
+  // ... rest of request
+});
+```
+
+See the [Daydreams core documentation](/docs/core) for complete agent configuration options.
+
+### Streaming
+
+```typescript
+import { streamText } from "ai";
+import { dreamsRouter } from "@daydreamsai/ai-sdk-provider";
+
+const { textStream } = await streamText({
+  model: dreamsRouter("anthropic/claude-3-5-sonnet-20241022"),
+  prompt: "Write a short story",
+});
+
+for await (const chunk of textStream) {
+  process.stdout.write(chunk);
+}
+```
+
+### Tool Calling
+
+```typescript
+import { generateText } from "ai";
+import { dreamsRouter } from "@daydreamsai/ai-sdk-provider";
+import { z } from "zod";
+
+const { text, toolCalls } = await generateText({
+  model: dreamsRouter("openai/gpt-4-turbo"),
+  prompt: "What's the weather?",
+  tools: {
+    getWeather: {
+      description: "Get weather information",
+      parameters: z.object({
+        location: z.string(),
+      }),
+      execute: async ({ location }) => {
+        return `72°F and sunny in ${location}`;
+      },
+    },
+  },
+});
+```
+
+### Structured Output
+
+```typescript
+import { generateObject } from "ai";
+import { dreamsRouter } from "@daydreamsai/ai-sdk-provider";
+import { z } from "zod";
+
+const { object } = await generateObject({
+  model: dreamsRouter("google-vertex/gemini-2.5-flash"),
+  schema: z.object({
+    name: z.string(),
+    ingredients: z.array(z.string()),
+  }),
+  prompt: "Generate a pasta recipe",
+});
+```
+
+## Complete Example: Paid AI Service
+
+```typescript
+import { createDreamsRouterAuth } from "@daydreamsai/ai-sdk-provider";
+import { createDreams, context } from "@daydreamsai/core";
+import { privateKeyToAccount } from "viem/accounts";
+
+// Define context for conversation
+const assistantContext = context({
+  type: "assistant",
+  create: () => ({ conversationHistory: [] }),
+});
+
+// Setup payment-enabled router
+const { dreamsRouter } = await createDreamsRouterAuth(
+  privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`),
+  {
+    payments: {
+      amount: "100000", // $0.10 per request
+      network: "base-sepolia",
+    },
+  }
+);
+
+// Create agent
+const agent = createDreams({
+  model: dreamsRouter("google-vertex/gemini-2.5-flash"),
+  contexts: [assistantContext],
+});
+
+// Handle requests
+app.post("/chat", async (req, res) => {
+  const result = await agent.send({
+    input: { type: "text", data: req.body.message },
+  });
+  res.json(result);
+});
+```
+
+## Resources
+
+- [Vercel AI SDK Documentation](https://sdk.vercel.ai/docs)
+- [Daydreams Core Documentation](/docs/core)
+- [Complete Examples](https://github.com/daydreamsai/daydreams/tree/main/examples)
+- [x402 Payment Protocol](https://x402.dev)
