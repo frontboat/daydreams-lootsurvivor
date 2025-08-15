@@ -138,6 +138,90 @@ bun run client:examples
 
 ```
 
+## Deployment to Google Cloud Run
+
+### Quick Deploy
+
+1. Set up your environment:
+
+```bash
+# Create production environment file
+cp .env .env.production
+
+# Edit .env.production with your production keys
+vim .env.production
+```
+
+2. Deploy to Cloud Run:
+
+```bash
+# Deploy with default settings (daydreams-labs-staging project)
+bun run deploy
+
+# Or deploy to your own GCP project
+GCP_PROJECT_ID=your-project-id ./deploy.sh
+```
+
+3. Your service will be available at:
+   - `https://ai-assistant.agent.daydreams.systems`
+
+### Manual Deployment Steps
+
+If you prefer to deploy manually:
+
+```bash
+# Install the Daydreams deploy CLI
+pnpm add -g @daydreamsai/deploy
+
+# Deploy the service
+daydreams-deploy deploy \
+  --name ai-assistant \
+  --project your-gcp-project \
+  --region us-central1 \
+  --file server.ts \
+  --env .env.production \
+  --memory 512Mi \
+  --max-instances 10
+```
+
+### Testing Your Deployment
+
+```bash
+# Health check (free)
+curl https://ai-assistant.agent.daydreams.systems/health
+
+# Service info (free)
+curl https://ai-assistant.agent.daydreams.systems/
+
+# AI request with payment (using the client)
+bun run client.ts --url https://ai-assistant.agent.daydreams.systems
+```
+
+### Monitoring
+
+View logs and metrics:
+
+```bash
+# View logs
+daydreams-deploy logs ai-assistant --project your-project
+
+# Follow logs in real-time
+daydreams-deploy logs ai-assistant --project your-project --follow
+
+# List all deployments
+daydreams-deploy list --project your-project
+```
+
+### Update or Remove
+
+```bash
+# Update deployment (redeploy)
+bun run deploy
+
+# Remove deployment
+daydreams-deploy delete ai-assistant --project your-project
+```
+
 ## Production Considerations
 
 - Use environment variables for all sensitive data
@@ -147,3 +231,6 @@ bun run client:examples
 - Consider using a database for persistent storage
 - Add authentication for user-specific data
 - Implement proper CORS handling for web clients
+- Set up alerts for service health and usage
+- Configure auto-scaling based on traffic patterns
+- Use Cloud Secret Manager for sensitive keys

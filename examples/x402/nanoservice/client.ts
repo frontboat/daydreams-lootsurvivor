@@ -18,8 +18,14 @@ config();
  * handle micropayments when accessing paid endpoints.
  */
 
+// Parse command line arguments
+const args = process.argv.slice(2);
+const urlFlagIndex = args.indexOf('--url');
+const SERVICE_URL = urlFlagIndex !== -1 && args[urlFlagIndex + 1] 
+  ? args[urlFlagIndex + 1] 
+  : process.env.SERVICE_URL || "http://localhost:4021";
+
 const PRIVATE_KEY = process.env.PRIVATE_KEY as Hex;
-const SERVICE_URL = process.env.SERVICE_URL || "http://localhost:4021";
 
 if (!PRIVATE_KEY) {
   console.error("Missing PRIVATE_KEY environment variable");

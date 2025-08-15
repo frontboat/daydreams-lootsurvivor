@@ -7,7 +7,10 @@
     "dev": "bun run server.ts",
     "start": "bun run server.ts",
     "client": "bun run client.ts",
-    "client:examples": "bun run client.ts examples"
+    "client:examples": "bun run client.ts examples",
+    "deploy": "./deploy.sh",
+    "deploy:prod": "GCP_PROJECT_ID=your-prod-project ./deploy.sh",
+    "test:deployed": "curl https://ai-assistant.agent.daydreams.systems/health"
   },
   "dependencies": {
     "@ai-sdk/openai": "catalog:",

@@ -1,0 +1,146 @@
+---
+title: Daydreams Router
+description: AI model routing with authentication and payments
+---
+
+# Router
+
+The Daydreams Router provides intelligent routing for AI models with built-in
+authentication and payment capabilities.
+
+## What is the Router?
+
+The Router acts as an intelligent gateway between your application and AI
+models, providing:
+
+- **Model Selection**: Route requests to different AI providers (OpenAI,
+  Anthropic, Google, etc.)
+- **Authentication**: Built-in auth handling for API keys and credentials
+- **Payment Integration**: Optional micropayment support via x402
+- **Load Balancing**: Distribute requests across multiple model providers
+- **Request Tracking**: Monitor usage and costs across different models
+
+## Installation
+
+```bash
+npm install @daydreamsai/ai-sdk-provider
+```
+
+## Example: AI Service with Payments
+
+Here's a complete example from our nanoservice implementation that shows how to
+use the router with x402 payments:
+
+```typescript
+import { createDreamsRouterAuth } from "@daydreamsai/ai-sdk-provider";
+import { privateKeyToAccount } from "viem/accounts";
+
+// Create a payment-enabled router
+const { dreamsRouter, user } = await createDreamsRouterAuth(
+  privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`),
+  {
+    baseURL: "http://localhost:8080/v1",
+    payments: {
+      amount: "100000", // $0.10 USDC
+      network: "base-sepolia",
+    },
+  }
+);
+
+// Use the router to select models
+const agent = createDreams({
+  model: dreamsRouter("google-vertex/gemini-2.5-flash"),
+  // ... rest of agent configuration
+});
+```
+
+## Router Configuration
+
+### Basic Setup (No Payments)
+
+```typescript
+import { dreamsRouter } from "@daydreamsai/ai-sdk-provider";
+
+// Simple router without payments
+const model = dreamsRouter("openai/gpt-4");
+```
+
+### With Payments
+
+```typescript
+const { dreamsRouter, user } = await createDreamsRouterAuth(
+  privateKeyToAccount(privateKey),
+  {
+    baseURL: "https://router.daydreams.ai/v1",
+    payments: {
+      amount: "100000", // Amount in smallest unit (e.g., $0.10 USDC)
+      network: "base-sepolia", // or "base" for mainnet
+    },
+  }
+);
+```
+
+## Complete Example: Paid AI Assistant
+
+See the [nanoservice example](/examples/x402/nanoservice) for a complete
+implementation of a paid AI assistant service using the router:
+
+```typescript
+// From examples/x402/nanoservice/server.ts
+import { createDreamsRouterAuth } from "@daydreamsai/ai-sdk-provider";
+import { createDreams, context } from "@daydreamsai/core";
+
+// Setup payment-enabled router
+const { dreamsRouter } = await createDreamsRouterAuth(account, {
+  baseURL: "http://localhost:8080/v1",
+  payments: {
+    amount: "100000", // $0.10 per request
+    network: "base-sepolia",
+  },
+});
+
+// Create AI agent with routed model
+const agent = createDreams({
+  model: dreamsRouter("google-vertex/gemini-2.5-flash"),
+  contexts: [assistantContext],
+  // ... configuration
+});
+
+// Use in your API endpoint
+app.post("/assistant", async (c) => {
+  const result = await agent.send({
+    input: { type: "text", data: query },
+  });
+  // Router handles model selection and payments automatically
+});
+```
+
+## Advanced Features
+
+### Usage Tracking
+
+```typescript
+const { dreamsRouter, user } = await createDreamsRouterAuth(account, config);
+
+// Track usage
+console.log("User ID:", user.id);
+console.log("Balance:", user.balance);
+console.log("Usage:", user.usage);
+```
+
+## Integration with x402
+
+The router seamlessly integrates with x402 for micropayments:
+
+1. **Automatic Payment**: Payments are handled transparently
+2. **Balance Management**: Track user balances and usage
+3. **Network Support**: Works on Base and Base Sepolia
+4. **No Lock-in**: Use the router with or without payments
+
+## Next Steps
+
+- Explore the
+  [complete nanoservice example](https://github.com/daydreamsai/daydreams/tree/main/examples/x402/nanoservice)
+- Learn about [x402 payments](https://www.x402.org/)
+- Check out the [AI SDK documentation](https://sdk.vercel.ai/docs)
+- Deploy your own paid AI service using the router
