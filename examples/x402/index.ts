@@ -6,7 +6,6 @@ import { privateKeyToAccount } from "viem/accounts";
 const { dreamsRouter, user } = await createDreamsRouterAuth(
   privateKeyToAccount(Bun.env.PRIVATE_KEY as `0x${string}`),
   {
-    baseURL: "http://localhost:8080" + "/v1",
     payments: {
       amount: "100000", // $0.10 USDC
       network: "base-sepolia",
