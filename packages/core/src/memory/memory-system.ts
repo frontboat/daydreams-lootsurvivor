@@ -1,4 +1,28 @@
-import { EventEmitter } from "events";
+// Use a simple EventEmitter implementation for browser compatibility
+class EventEmitter {
+  private events: Map<string, Array<(...args: any[]) => void>> = new Map();
+
+  on(event: string, handler: (...args: any[]) => void): void {
+    const handlers = this.events.get(event) || [];
+    handlers.push(handler);
+    this.events.set(event, handlers);
+  }
+
+  off(event: string, handler: (...args: any[]) => void): void {
+    const handlers = this.events.get(event) || [];
+    const index = handlers.indexOf(handler);
+    if (index !== -1) {
+      handlers.splice(index, 1);
+    }
+  }
+
+  emit(event: string, ...args: any[]): void {
+    const handlers = this.events.get(event) || [];
+    for (const handler of handlers) {
+      handler(...args);
+    }
+  }
+}
 import type {
   Memory,
   MemoryConfig,
