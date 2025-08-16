@@ -642,8 +642,8 @@ class MemoryLifecycleImpl implements MemoryLifecycle {
   async emit(event: string, data?: any): Promise<void> {
     return new Promise((resolve) => {
       this.emitter.emit(event, data);
-      // Use setImmediate to ensure all synchronous handlers complete
-      setImmediate(resolve);
+      // Use setTimeout to ensure all synchronous handlers complete
+      setTimeout(resolve, 0);
     });
   }
 }
