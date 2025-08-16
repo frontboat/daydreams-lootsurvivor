@@ -1,5 +1,5 @@
 import { createDreamsRouterAuth } from "@daydreamsai/ai-sdk-provider";
-import { createDreams, LogLevel } from "@daydreamsai/core";
+import { context, createDreams, LogLevel } from "@daydreamsai/core";
 import { cliExtension } from "@daydreamsai/cli";
 import { privateKeyToAccount } from "viem/accounts";
 
@@ -12,6 +12,18 @@ const { dreamsRouter, user } = await createDreamsRouterAuth(
     },
   }
 );
+
+export const chatContext = context({
+  type: "chat",
+  maxSteps: 100,
+  // schema: z.object({ chatId: z.string() }),
+  key: (args) => args.chatId,
+  render() {
+    const date = new Date();
+    return `\
+Current ISO time is: ${date.toISOString()}, timestamp: ${date.getTime()}`;
+  },
+});
 
 console.log("user", user.balance);
 
