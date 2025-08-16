@@ -1,6 +1,6 @@
 {
   "name": "@daydreamsai/hyperliquid",
-  "version": "0.3.11",
+  "version": "0.3.12",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
