@@ -9,7 +9,11 @@ export { WorkingMemoryImpl } from "./working-memory";
 export { KeyValueMemoryImpl } from "./kv-memory";
 export { VectorMemoryImpl } from "./vector-memory";
 export { GraphMemoryImpl } from "./graph-memory";
-export { EpisodicMemoryImpl, type EpisodicMemory, type Episode } from "./episodic-memory";
+export {
+  EpisodicMemoryImpl,
+  type EpisodicMemory,
+  type Episode,
+} from "./episodic-memory";
 
 // Providers
 export {
@@ -27,9 +31,6 @@ export { ContextLockManager, contextLockManager } from "./context-lock-manager";
 // Knowledge extraction system
 export { KnowledgeExtractor } from "./knowledge-extractor";
 export * from "./knowledge-schema";
-
-// Built-in schemas
-export * from "./schemas";
 
 // Services
 export * from "./services";

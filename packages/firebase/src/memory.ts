@@ -35,8 +35,6 @@ export interface FirebaseMemoryConfig {
    * @default 1000
    */
   retryDelay?: number;
-  /** Optional configuration for memory system behavior */
-  options?: MemoryConfig["options"];
 }
 
 /**
@@ -48,13 +46,14 @@ export interface FirebaseMemoryConfig {
  * @param config - Configuration for the Firebase memory system
  * @returns A MemorySystem implementation using Firebase for KV storage
  */
-export function createFirebaseMemory(config: FirebaseMemoryConfig): MemorySystem {
+export function createFirebaseMemory(
+  config: FirebaseMemoryConfig
+): MemorySystem {
   const {
     serviceAccount,
     collectionName = "kv_store",
     maxRetries = 3,
     retryDelay = 1000,
-    options,
   } = config;
 
   // Create the Firebase KV provider
@@ -77,7 +76,6 @@ export function createFirebaseMemory(config: FirebaseMemoryConfig): MemorySystem
       vector: vectorProvider,
       graph: graphProvider,
     },
-    options,
   };
 
   // Return the complete memory system
