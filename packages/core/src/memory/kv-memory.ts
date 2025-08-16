@@ -27,12 +27,24 @@ export class KeyValueMemoryImpl implements KeyValueMemory {
     return this.provider.count(pattern);
   }
 
-  async *scan(pattern?: string): AsyncIterator<[string, any]> {
+  async *scan(pattern?: string): AsyncIterator<[string, unknown]> {
     const iterator = this.provider.scan(pattern);
     let result = await iterator.next();
     while (!result.done) {
       yield result.value;
       result = await iterator.next();
     }
+  }
+
+  async getBatch<T>(keys: string[]): Promise<Map<string, T>> {
+    return this.provider.getBatch<T>(keys);
+  }
+
+  async setBatch<T>(entries: Map<string, T>, options?: SetOptions): Promise<void> {
+    return this.provider.setBatch(entries, options);
+  }
+
+  async deleteBatch(keys: string[]): Promise<number> {
+    return this.provider.deleteBatch(keys);
   }
 }

@@ -4,18 +4,12 @@ export * from "./types";
 // Main memory system
 export { MemorySystem } from "./memory-system";
 
-// Memory type implementations
+// Core memory implementations
 export { WorkingMemoryImpl } from "./working-memory";
 export { KeyValueMemoryImpl } from "./kv-memory";
 export { VectorMemoryImpl } from "./vector-memory";
 export { GraphMemoryImpl } from "./graph-memory";
-export { FactualMemoryImpl } from "./factual-memory";
-export { EpisodicMemoryImpl } from "./episodic-memory";
-export { SemanticMemoryImpl } from "./semantic-memory";
-
-// Services
-export { MemoryExtractor } from "./extractor";
-export { MemoryEvolution } from "./evolution";
+export { EpisodicMemoryImpl, type EpisodicMemory, type Episode } from "./episodic-memory";
 
 // Providers
 export {
@@ -24,4 +18,18 @@ export {
   InMemoryGraphProvider,
 } from "./providers/in-memory";
 
+// Export utilities
 export { ExportManager, JSONExporter, MarkdownExporter } from "./exporters";
+
+// Context lock manager
+export { ContextLockManager, contextLockManager } from "./context-lock-manager";
+
+// Knowledge extraction system
+export { KnowledgeExtractor } from "./knowledge-extractor";
+export * from "./knowledge-schema";
+
+// Built-in schemas
+export * from "./schemas";
+
+// Services
+export * from "./services";

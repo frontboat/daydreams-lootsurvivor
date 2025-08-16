@@ -902,10 +902,6 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
 
         let maxSteps = 0;
 
-        /**
-         * Calculates the maximum steps allowed across all contexts
-         * @returns The highest maxSteps value from all active contexts, with a minimum of 5
-         */
         function getMaxSteps() {
           return engine.state.contexts.reduce(
             (maxSteps, ctxState) =>

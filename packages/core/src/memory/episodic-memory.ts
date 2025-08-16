@@ -1,146 +1,388 @@
-import type {
-  EpisodicMemory,
-  Episode,
-  CompressedEpisode,
-  Memory,
-} from "./types";
+import type { AnyRef, AnyAgent, ContextState } from "../types";
+import type { Memory, EpisodeHooks } from "./types";
+
+export interface Episode {
+  id: string;
+  contextId: string;
+  type: string;
+  summary: string;
+  logs: AnyRef[];
+  metadata: Record<string, any>;
+  timestamp: number;
+  startTime: number;
+  endTime: number;
+  duration?: number;
+  input?: any;
+  output?: any;
+  context?: string;
+}
+
+export interface EpisodicMemoryOptions {
+  /** Maximum number of episodes to keep per context */
+  maxEpisodesPerContext?: number;
+  /** Minimum time between episodes (ms) */
+  minEpisodeGap?: number;
+  /** Custom episode detection hooks */
+  hooks?: EpisodeHooks;
+}
+
+/**
+ * Episodic Memory - manages conversational episodes and experiences
+ */
+export interface EpisodicMemory {
+  /** Store an episode */
+  store(episode: Episode): Promise<string>;
+
+  /** Find episodes similar to a query */
+  findSimilar(
+    contextId: string,
+    query: string,
+    limit?: number
+  ): Promise<Episode[]>;
+
+  /** Get episode by ID */
+  get(episodeId: string): Promise<Episode | null>;
+
+  /** Get all episodes for a context */
+  getByContext(contextId: string, limit?: number): Promise<Episode[]>;
+
+  /** Create episode from logs */
+  createFromLogs(
+    contextId: string,
+    logs: AnyRef[],
+    contextState: ContextState,
+    agent: AnyAgent
+  ): Promise<Episode>;
+
+  /** Delete episode */
+  delete(episodeId: string): Promise<boolean>;
+
+  /** Clear all episodes for a context */
+  clearContext(contextId: string): Promise<void>;
+}
 
 export class EpisodicMemoryImpl implements EpisodicMemory {
-  constructor(private memory: Memory) {}
+  private currentEpisodeLogs: Map<string, AnyRef[]> = new Map();
+  private lastEpisodeTime: Map<string, number> = new Map();
 
-  async store(episode: Episode): Promise<void> {
-    if (!episode.id) {
-      episode.id = `episode:${Date.now()}:${Math.random()}`;
-    }
-    if (!episode.timestamp) {
-      episode.timestamp = Date.now();
-    }
+  constructor(
+    private memory: Memory,
+    private options: EpisodicMemoryOptions = {}
+  ) {}
 
-    // Store in KV
-    await this.memory.kv.set(`episode:${episode.id}`, episode);
+  async store(episode: Episode): Promise<string> {
+    // Store episode data in KV store
+    const episodeKey = `episode:${episode.id}`;
+    await this.memory.kv.set(episodeKey, episode);
 
-    // Index for vector search if there's content to index
-    const content =
-      episode.summary ||
-      (episode.input && episode.output
-        ? `Input: ${JSON.stringify(episode.input)} Output: ${JSON.stringify(
-            episode.output
-          )}`
-        : JSON.stringify(episode));
-
-    await this.memory.vector.index([
-      {
-        id: episode.id,
-        content,
-        metadata: {
-          type: "episode",
-          episodeType: episode.type,
-          context: episode.context,
-          timestamp: episode.timestamp,
-          duration: episode.duration,
-          ...episode.metadata,
+    // Index episode summary for vector search
+    if (episode.summary) {
+      await this.memory.vector.index([
+        {
+          id: episode.id,
+          content: episode.summary,
+          metadata: {
+            contextId: episode.contextId,
+            type: "episode",
+            timestamp: episode.timestamp,
+            startTime: episode.startTime,
+            endTime: episode.endTime,
+            ...episode.metadata,
+          },
+          namespace: `episodes:${episode.contextId}`,
         },
-      },
-    ]);
+      ]);
+    }
 
-    await this.memory.lifecycle.emit("episode.stored", episode);
-  }
+    // Maintain context episode list
+    const contextEpisodesKey = `episodes:context:${episode.contextId}`;
+    const existingEpisodes =
+      (await this.memory.kv.get<string[]>(contextEpisodesKey)) || [];
+    existingEpisodes.push(episode.id);
 
-  async get(id: string): Promise<Episode | null> {
-    return this.memory.kv.get<Episode>(`episode:${id}`);
+    // Limit episodes per context
+    const maxEpisodes = this.options.maxEpisodesPerContext || 100;
+    if (existingEpisodes.length > maxEpisodes) {
+      // Remove oldest episodes
+      const toRemove = existingEpisodes.splice(
+        0,
+        existingEpisodes.length - maxEpisodes
+      );
+      for (const episodeId of toRemove) {
+        await this.delete(episodeId);
+      }
+    }
+
+    await this.memory.kv.set(contextEpisodesKey, existingEpisodes);
+    return episode.id;
   }
 
   async findSimilar(
     contextId: string,
-    content: string,
+    query: string,
     limit: number = 5
   ): Promise<Episode[]> {
+    // Search episodes using vector similarity
     const results = await this.memory.vector.search({
-      query: content,
-      filter: { type: "episode", context: contextId },
+      query,
+      namespace: `episodes:${contextId}`,
       limit,
+      includeContent: true,
+      includeMetadata: true,
     });
 
-    // Parallelize episode fetching for better performance
-    const episodePromises = results.map((result) => this.get(result.id));
-    const episodeResults = await Promise.all(episodePromises);
-
-    // Filter out null results
-    const episodes = episodeResults.filter(
-      (episode): episode is Episode => episode !== null
-    );
-
-    return episodes;
-  }
-
-  async getTimeline(start: Date, end: Date): Promise<Episode[]> {
-    const startTime = start.getTime();
-    const endTime = end.getTime();
+    // Fetch full episode data
     const episodes: Episode[] = [];
-
-    // This would be more efficient with a time-based index
-    const iterator = this.memory.kv.scan("episode:*");
-    let result = await iterator.next();
-    while (!result.done) {
-      const [key, episode] = result.value;
-      if (episode.timestamp >= startTime && episode.timestamp <= endTime) {
+    for (const result of results) {
+      const episode = await this.get(result.id);
+      if (episode) {
         episodes.push(episode);
       }
-      result = await iterator.next();
     }
 
-    // Sort by timestamp
-    episodes.sort((a, b) => a.timestamp - b.timestamp);
-
     return episodes;
   }
 
-  async getByContext(contextId: string): Promise<Episode[]> {
-    const results = await this.memory.vector.search({
-      filter: { type: "episode", context: contextId },
-      limit: 1000,
-    });
-
-    // Parallelize episode fetching for better performance
-    const episodePromises = results.map((result) => this.get(result.id));
-    const episodeResults = await Promise.all(episodePromises);
-
-    // Filter out null results
-    const episodes = episodeResults.filter(
-      (episode): episode is Episode => episode !== null
-    );
-
-    // Sort by timestamp
-    episodes.sort((a, b) => a.timestamp - b.timestamp);
-
-    return episodes;
+  async get(episodeId: string): Promise<Episode | null> {
+    const episodeKey = `episode:${episodeId}`;
+    return await this.memory.kv.get<Episode>(episodeKey);
   }
 
-  async compress(episodes: Episode[]): Promise<CompressedEpisode> {
-    // This would use LLM to create a summary
-    // For now, just create a simple compression
-    const summary = `Compressed ${episodes.length} episodes from ${new Date(
-      episodes[0].timestamp
-    ).toISOString()} to ${new Date(
-      episodes[episodes.length - 1].timestamp
-    ).toISOString()}`;
+  async getByContext(
+    contextId: string,
+    limit: number = 20
+  ): Promise<Episode[]> {
+    const contextEpisodesKey = `episodes:context:${contextId}`;
+    const episodeIds =
+      (await this.memory.kv.get<string[]>(contextEpisodesKey)) || [];
 
-    const compressed: CompressedEpisode = {
-      id: `compression:${Date.now()}`,
-      type: "compression",
+    // Get most recent episodes
+    const recentIds = episodeIds.slice(-limit);
+    const episodes: Episode[] = [];
+
+    for (const episodeId of recentIds) {
+      const episode = await this.get(episodeId);
+      if (episode) {
+        episodes.push(episode);
+      }
+    }
+
+    return episodes.sort((a, b) => b.timestamp - a.timestamp);
+  }
+
+  async createFromLogs(
+    contextId: string,
+    logs: AnyRef[],
+    contextState: ContextState,
+    agent: AnyAgent
+  ): Promise<Episode> {
+    const now = Date.now();
+    const episodeId = `${contextId}-${now}-${Math.random()
+      .toString(36)
+      .slice(2)}`;
+
+    // Use hooks for custom episode creation if provided
+    let episodeData: any = logs;
+    let episodeType = "conversation";
+    let metadata: Record<string, any> = {};
+
+    if (this.options.hooks?.createEpisode) {
+      episodeData = await this.options.hooks.createEpisode(
+        logs,
+        contextState,
+        agent
+      );
+    }
+
+    if (this.options.hooks?.classifyEpisode) {
+      episodeType = this.options.hooks.classifyEpisode(
+        episodeData,
+        contextState
+      );
+    }
+
+    if (this.options.hooks?.extractMetadata) {
+      metadata = this.options.hooks.extractMetadata(
+        episodeData,
+        logs,
+        contextState
+      );
+    }
+
+    // Generate episode summary
+    const summary = this.generateSummary(logs);
+
+    const episode: Episode = {
+      id: episodeId,
+      contextId,
+      type: episodeType,
       summary,
-      context: episodes[0].context,
-      timestamp: Date.now(),
-      originalEpisodes: episodes.map((e) => e.id),
-      compressionRatio: episodes.length,
-      metadata: {
-        originalCount: episodes.length,
-        types: Array.from(new Set(episodes.map((e) => e.type))),
-      },
+      logs: logs,
+      metadata,
+      timestamp: now,
+      startTime: logs[0]?.timestamp || now,
+      endTime: logs[logs.length - 1]?.timestamp || now,
     };
 
-    await this.store(compressed);
+    await this.store(episode);
+    return episode;
+  }
 
-    return compressed;
+  async delete(episodeId: string): Promise<boolean> {
+    const episode = await this.get(episodeId);
+    if (!episode) return false;
+
+    // Delete from KV store
+    const episodeKey = `episode:${episodeId}`;
+    await this.memory.kv.delete(episodeKey);
+
+    // Delete from vector index
+    await this.memory.vector.delete([episodeId]);
+
+    // Remove from context episode list
+    const contextEpisodesKey = `episodes:context:${episode.contextId}`;
+    const episodeIds =
+      (await this.memory.kv.get<string[]>(contextEpisodesKey)) || [];
+    const updatedIds = episodeIds.filter((id) => id !== episodeId);
+    await this.memory.kv.set(contextEpisodesKey, updatedIds);
+
+    return true;
+  }
+
+  async clearContext(contextId: string): Promise<void> {
+    const contextEpisodesKey = `episodes:context:${contextId}`;
+    const episodeIds =
+      (await this.memory.kv.get<string[]>(contextEpisodesKey)) || [];
+
+    // Delete all episodes for this context
+    await Promise.all(episodeIds.map((id) => this.delete(id)));
+
+    // Clear the context episode list
+    await this.memory.kv.delete(contextEpisodesKey);
+  }
+
+  /**
+   * Check if a new episode should be started
+   */
+  async shouldStartEpisode(
+    ref: AnyRef,
+    contextId: string,
+    contextState: ContextState,
+    agent: AnyAgent
+  ): Promise<boolean> {
+    if (this.options.hooks?.shouldStartEpisode) {
+      const workingMemory = await this.memory.working.get(contextId);
+      return this.options.hooks.shouldStartEpisode(
+        ref,
+        workingMemory,
+        contextState,
+        agent
+      );
+    }
+
+    // Default: Start episode on first input or after gap
+    const lastTime = this.lastEpisodeTime.get(contextId) || 0;
+    const minGap = this.options.minEpisodeGap || 300000; // 5 minutes default
+
+    return ref.ref === "input" && Date.now() - lastTime > minGap;
+  }
+
+  /**
+   * Check if the current episode should be ended
+   */
+  async shouldEndEpisode(
+    ref: AnyRef,
+    contextId: string,
+    contextState: ContextState,
+    agent: AnyAgent
+  ): Promise<boolean> {
+    if (this.options.hooks?.shouldEndEpisode) {
+      const workingMemory = await this.memory.working.get(contextId);
+      return this.options.hooks.shouldEndEpisode(
+        ref,
+        workingMemory,
+        contextState,
+        agent
+      );
+    }
+
+    // Default: End episode when significant interaction occurs
+    const logs = this.currentEpisodeLogs.get(contextId) || [];
+    return (
+      logs.length > 0 && (ref.ref === "output" || ref.ref === "action_result")
+    );
+  }
+
+  /**
+   * Add log to current episode
+   */
+  addToCurrentEpisode(contextId: string, ref: AnyRef): void {
+    if (!this.currentEpisodeLogs.has(contextId)) {
+      this.currentEpisodeLogs.set(contextId, []);
+    }
+    this.currentEpisodeLogs.get(contextId)!.push(ref);
+  }
+
+  /**
+   * Finalize current episode
+   */
+  async finalizeCurrentEpisode(
+    contextId: string,
+    contextState: ContextState,
+    agent: AnyAgent
+  ): Promise<Episode | null> {
+    const logs = this.currentEpisodeLogs.get(contextId);
+    if (!logs || logs.length === 0) return null;
+
+    const episode = await this.createFromLogs(
+      contextId,
+      logs,
+      contextState,
+      agent
+    );
+
+    // Clear current episode logs
+    this.currentEpisodeLogs.set(contextId, []);
+    this.lastEpisodeTime.set(contextId, Date.now());
+
+    return episode;
+  }
+
+  private generateSummary(logs: AnyRef[]): string {
+    // Simple summary generation - can be enhanced with LLM later
+    const inputs = logs.filter((log) => log.ref === "input");
+    const outputs = logs.filter((log) => log.ref === "output");
+    const actions = logs.filter((log) => log.ref === "action_call");
+
+    const parts: string[] = [];
+
+    if (inputs.length > 0) {
+      const firstInput = inputs[0] as any;
+      parts.push(
+        `User: ${
+          typeof firstInput.content === "string"
+            ? firstInput.content
+            : JSON.stringify(firstInput.content)
+        }`
+      );
+    }
+
+    if (actions.length > 0) {
+      const actionNames = actions.map((a: any) => a.name).join(", ");
+      parts.push(`Actions: ${actionNames}`);
+    }
+
+    if (outputs.length > 0) {
+      const lastOutput = outputs[outputs.length - 1] as any;
+      parts.push(
+        `Assistant: ${
+          typeof lastOutput.content === "string"
+            ? lastOutput.content
+            : JSON.stringify(lastOutput.content)
+        }`
+      );
+    }
+
+    return parts.join(" | ");
   }
 }

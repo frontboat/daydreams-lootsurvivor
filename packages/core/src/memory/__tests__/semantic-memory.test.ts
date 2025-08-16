@@ -251,7 +251,7 @@ describe("SemanticMemory", () => {
 
       const result = {
         data: { results: ["Article 1", "Article 2"] },
-        error: null,
+        error: false,
       };
 
       await memory.semantic.learnFromAction(action, result);
@@ -275,7 +275,7 @@ describe("SemanticMemory", () => {
 
       const result = {
         data: null,
-        error: "Action failed",
+        error: true,
       };
 
       await memory.semantic.learnFromAction(action, result);
@@ -298,7 +298,7 @@ describe("SemanticMemory", () => {
 
       const result = {
         data: { result: 4 },
-        error: null,
+        error: false,
       };
 
       // Learn the same pattern twice

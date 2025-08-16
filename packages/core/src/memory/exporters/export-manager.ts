@@ -1,10 +1,10 @@
-import type { Episode } from '../types';
+import type { Episode } from "../../types";
 import type {
   EpisodeExporter,
   ExportParams,
   ExportResult,
   ExportTransform,
-} from './types';
+} from "./types";
 
 /**
  * Manages episode export operations
@@ -29,8 +29,12 @@ export class ExportManager {
   /**
    * Get list of available exporters
    */
-  listExporters(): Array<{ name: string; formats: string[]; description?: string }> {
-    return Array.from(this.exporters.values()).map(exporter => ({
+  listExporters(): Array<{
+    name: string;
+    formats: string[];
+    description?: string;
+  }> {
+    return Array.from(this.exporters.values()).map((exporter) => ({
       name: exporter.name,
       formats: exporter.formats,
       description: exporter.description,
@@ -45,7 +49,7 @@ export class ExportManager {
     if (!exporter) {
       return {
         success: false,
-        format: '',
+        format: "",
         error: new Error(`Exporter '${params.exporter}' not found`),
       };
     }
@@ -68,7 +72,7 @@ export class ExportManager {
         return {
           success: false,
           format: params.format || exporter.formats[0],
-          error: new Error('Invalid exporter options'),
+          error: new Error("Invalid exporter options"),
         };
       }
     }
@@ -117,7 +121,7 @@ export class ExportManager {
 
     // Apply field filtering
     if (transform.fields) {
-      transformed = transformed.map(episode =>
+      transformed = transformed.map((episode) =>
         this.filterFields(episode, transform.fields!)
       );
     }
@@ -127,7 +131,7 @@ export class ExportManager {
       transformed.sort((a, b) => {
         const aVal = a[transform.sortBy as keyof Episode] as any;
         const bVal = b[transform.sortBy as keyof Episode] as any;
-        const order = transform.sortOrder === 'desc' ? -1 : 1;
+        const order = transform.sortOrder === "desc" ? -1 : 1;
 
         if (aVal < bVal) return -order;
         if (aVal > bVal) return order;
@@ -147,7 +151,7 @@ export class ExportManager {
   ): any {
     if (fields.include) {
       const filtered: any = {};
-      fields.include.forEach(field => {
+      fields.include.forEach((field) => {
         if (field in obj) {
           filtered[field] = obj[field];
         }
@@ -157,7 +161,7 @@ export class ExportManager {
 
     if (fields.exclude) {
       const filtered = { ...obj };
-      fields.exclude.forEach(field => {
+      fields.exclude.forEach((field) => {
         delete filtered[field];
       });
       return filtered;
@@ -171,8 +175,8 @@ export class ExportManager {
    */
   async cleanup(): Promise<void> {
     const cleanupPromises = Array.from(this.exporters.values())
-      .filter(exporter => exporter.cleanup)
-      .map(exporter => exporter.cleanup!());
+      .filter((exporter) => exporter.cleanup)
+      .map((exporter) => exporter.cleanup!());
 
     await Promise.all(cleanupPromises);
   }

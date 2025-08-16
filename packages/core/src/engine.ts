@@ -39,10 +39,7 @@ import type {
   ActionCallContext,
 } from "./types";
 import pDefer, { type DeferredPromise } from "p-defer";
-import {
-  pushToWorkingMemory,
-  pushToWorkingMemoryWithManagement,
-} from "./context";
+import { pushToWorkingMemory } from "./context";
 import { createEventRef, randomUUIDv7 } from "./utils";
 import { ZodError, type ZodIssue } from "zod";
 
@@ -50,19 +47,6 @@ type CallOptions = Partial<{
   templateResolvers: Record<string, TemplateResolver>;
   queueKey: string;
 }>;
-
-// type Router<TLog extends AnyRef = AnyRef> = {
-//   [K in TLog["ref"]]: K extends "action_call"
-//     ? (
-//         log: ActionCall,
-//         options?: Partial<{
-//           templateResolvers: Record<string, TemplateResolver>;
-//         }>
-//       ) => MaybePromise<ActionResult>
-//     : TLog extends { ref: K }
-//       ? (log: TLog) => MaybePromise<void>
-//       : never;
-// };
 
 interface Router {
   input(ref: InputRef): Promise<void>;
@@ -101,8 +85,6 @@ type State = {
 
   defer: DeferredPromise<AnyRef[]>;
 };
-
-type Engine = ReturnType<typeof createEngine>;
 
 export function createEngine({
   agent,
@@ -240,17 +222,7 @@ export function createEngine({
       }
 
       if (log.ref !== "output") {
-        if (agent.memory) {
-          const updatedMemory = await pushToWorkingMemoryWithManagement(
-            workingMemory,
-            log,
-            ctxState,
-            agent
-          );
-          Object.assign(workingMemory, updatedMemory);
-        } else {
-          pushToWorkingMemory(workingMemory, log);
-        }
+        pushToWorkingMemory(workingMemory, log);
       }
 
       return res;
@@ -276,17 +248,7 @@ export function createEngine({
 
       __push(createErrorEvent(errorRef), true, true);
 
-      if (agent.memory) {
-        const updatedMemory = await pushToWorkingMemoryWithManagement(
-          workingMemory,
-          log,
-          ctxState,
-          agent
-        );
-        Object.assign(workingMemory, updatedMemory);
-      } else {
-        pushToWorkingMemory(workingMemory, log);
-      }
+      pushToWorkingMemory(workingMemory, log);
     } finally {
       pushLogToSubscribers(log, true);
     }
@@ -477,17 +439,7 @@ export function createEngine({
 
         state.chain.push(ref);
 
-        if (agent.memory) {
-          const updatedMemory = await pushToWorkingMemoryWithManagement(
-            workingMemory,
-            ref,
-            ctxState,
-            agent
-          );
-          Object.assign(workingMemory, updatedMemory);
-        } else {
-          pushToWorkingMemory(workingMemory, ref);
-        }
+        pushToWorkingMemory(workingMemory, ref);
       }
 
       return refs;
