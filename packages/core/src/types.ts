@@ -743,6 +743,30 @@ export interface Agent<TContext extends AnyContext = AnyContext>
   isBooted(): boolean;
 
   /**
+   * Gets the configured task priority levels
+   */
+  getPriorityLevels(): {
+    default: number;
+    high: number;
+    low: number;
+  };
+
+  /**
+   * Gets the current task configuration
+   */
+  getTaskConfig(): {
+    concurrency: {
+      default: number;
+      llm: number;
+    };
+    priority: {
+      default: number;
+      high?: number;
+      low?: number;
+    };
+  };
+
+  /**
    * Emits an event with the provided arguments.
    * @param args - Arguments to pass to the event handler.
    */
@@ -781,6 +805,8 @@ export interface Agent<TContext extends AnyContext = AnyContext>
     abortSignal?: AbortSignal;
     chain?: Log[];
     requestContext?: RequestContext;
+    /** Task priority for execution ordering (higher = more priority) */
+    priority?: number;
   }) => Promise<AnyRef[]>;
 
   /**
@@ -898,6 +924,26 @@ export interface Agent<TContext extends AnyContext = AnyContext>
  */
 export type Debugger = (contextId: string, keys: string[], data: any) => void;
 
+/**
+ * Configuration for task execution behavior
+ */
+export type TaskConfiguration = {
+  concurrency?: {
+    /** Default concurrency for TaskRunner main queue (default: 3) */
+    default?: number;
+    /** Max concurrent LLM calls across all contexts (default: 3) */
+    llm?: number;
+  };
+  priority?: {
+    /** Default priority for agent runs (default: 10) */
+    default?: number;
+    /** High priority for urgent operations */
+    high?: number;
+    /** Low priority for background tasks */
+    low?: number;
+  };
+};
+
 export type Config<TContext extends AnyContext = AnyContext> = Partial<
   AgentDef<TContext>
 > & {
@@ -921,6 +967,8 @@ export type Config<TContext extends AnyContext = AnyContext> = Partial<
   /** Path to save training data */
   trainingDataPath?: string;
   streaming?: boolean;
+  /** Task execution configuration */
+  tasks?: TaskConfiguration;
 };
 
 /** Configuration type for inputs without type field */

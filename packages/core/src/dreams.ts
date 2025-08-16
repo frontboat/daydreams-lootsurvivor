@@ -12,6 +12,7 @@ import type {
   Log,
   AnyRef,
   LogChunk,
+  Output,
 } from "./types";
 import { Logger } from "./logger";
 import { createContainer } from "./container";
@@ -37,19 +38,13 @@ import {
   JSONExporter,
   MarkdownExporter,
 } from "./memory";
-import { runGenerate } from "./tasks";
 import { LogLevel } from "./types";
 import { randomUUIDv7, tryAsync } from "./utils";
-import { createContextStreamHandler, handleStream } from "./streaming";
-import { mainPrompt, promptTemplate } from "./prompts/main";
-import { createEngine } from "./engine";
+import { promptTemplate } from "./prompts/main";
 import type { DeferredPromise } from "p-defer";
-import {
-  configureRequestTracking,
-  getRequestTracker,
-} from "./tracking/tracker";
-import { StructuredLogger, LogEventType } from "./logging-events";
-import { createRequestContext } from "./tracking";
+import { configureRequestTracking } from "./tracking/tracker";
+import { StructuredLogger } from "./logging-events";
+import { runAgentContext } from "./tasks";
 
 /**
  * Creates and configures a new Dreams AI agent instance
@@ -146,7 +141,25 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
       level: config.logLevel ?? LogLevel.INFO,
     });
 
-  const taskRunner = config.taskRunner ?? new TaskRunner(3, logger);
+  // Extract task configuration with defaults
+  const taskConfig = {
+    concurrency: {
+      default: config.tasks?.concurrency?.default ?? 3,
+      llm: config.tasks?.concurrency?.llm ?? 3,
+    },
+    priority: {
+      default: config.tasks?.priority?.default ?? 10,
+      high: config.tasks?.priority?.high,
+      low: config.tasks?.priority?.low,
+    },
+  };
+
+  const taskRunner = config.taskRunner ?? new TaskRunner(taskConfig.concurrency.default, logger);
+
+  // Setup shared resource queues
+  if (!taskRunner.queues.has("llm")) {
+    taskRunner.setQueue("llm", taskConfig.concurrency.llm); // Max concurrent LLM calls
+  }
 
   if (config.logger && config.logLevel !== undefined) {
     logger.configure({ level: config.logLevel });
@@ -169,6 +182,10 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
     actionsCount: actions.length,
     servicesCount: services.length,
     exportTrainingData,
+    taskConfig: {
+      concurrency: taskConfig.concurrency,
+      priority: taskConfig.priority,
+    },
   });
 
   // Configure request tracking with logger integration
@@ -271,6 +288,26 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
     exports: exportManager,
     emit: (event: string, data: any) => {
       logger.debug("agent:event", event, data);
+    },
+
+    /**
+     * Gets the configured task priority levels
+     * @returns Object with priority levels
+     */
+    getPriorityLevels() {
+      return {
+        default: taskConfig.priority.default,
+        high: taskConfig.priority.high ?? taskConfig.priority.default * 2,
+        low: taskConfig.priority.low ?? Math.floor(taskConfig.priority.default / 2),
+      };
+    },
+
+    /**
+     * Gets the task configuration
+     * @returns Current task configuration
+     */
+    getTaskConfig() {
+      return { ...taskConfig };
     },
 
     /**
@@ -787,375 +824,51 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
      * @throws Error if agent is not booted or if no model is available
      */
     async run(params) {
-      const { context, args, outputs, handlers, abortSignal, requestContext } =
-        params;
       if (!booted) {
         logger.error("agent:run", "Agent not booted");
         throw new Error("Not booted");
       }
 
-      const model =
-        params.model ?? context.model ?? config.reasoningModel ?? config.model;
+      const { context, args } = params;
+      const ctxId = agent.getContextId({ context, args });
+      const queueKey = `context:${ctxId}`;
 
-      if (!model) throw new Error("no model");
-
-      // Create request context if not provided
-      let effectiveRequestContext = requestContext;
-      if (!effectiveRequestContext) {
-        effectiveRequestContext = createRequestContext("agent:run", {
-          trackingEnabled: config.requestTrackingConfig?.enabled ?? false,
+      // Create context-specific queue with concurrency = 1
+      if (!taskRunner.queues.has(queueKey)) {
+        taskRunner.setQueue(queueKey, 1);
+        logger.debug("agent:run", "Created context queue", {
+          contextId: ctxId,
+          queueKey,
         });
       }
 
-      // Start agent run tracking if requestContext is provided
-      let agentRunContext = effectiveRequestContext;
-      const tracker = getRequestTracker();
-      const startTime = Date.now();
+      // Use provided priority or configured default
+      const priority = params.priority ?? taskConfig.priority.default;
 
-      if (effectiveRequestContext && effectiveRequestContext.trackingEnabled) {
-        agentRunContext = await tracker.startAgentRun(
-          effectiveRequestContext,
-          "agent"
-        );
-      }
-
-      // Log structured agent start event
-      structuredLogger.logEvent({
-        eventType: LogEventType.AGENT_START,
-        timestamp: startTime,
-        requestContext: agentRunContext,
-        agentName: "agent",
-        configuration: {
-          contextType: context.type,
-          hasArgs: !!args,
-          hasCustomOutputs: !!outputs,
-          hasHandlers: !!handlers,
-          model: model,
-        },
-      });
-
-      logger.info("agent:run", "Running context", {
-        contextType: context.type,
-        hasArgs: !!args,
-        hasCustomOutputs: !!outputs,
-        hasHandlers: !!handlers,
-      });
-
-      try {
-        const ctxId = agent.getContextId({ context, args });
-
-        // Get context state and working memory - needed for engine creation
-        const ctxState = await agent.getContext({ context, args });
-        const workingMemory = await agent.getWorkingMemory(ctxId);
-        const agentCtxState = await agent.getAgentContext();
-
-        // Handle concurrent runs for the same context
-        // TODO: Add configuration for concurrent execution behavior (abort, queue, or merge)
-        if (contextsRunning.has(ctxId)) {
-          logger.debug("agent:run", "Context already running", {
-            id: ctxId,
-          });
-
-          const { defer, push } = contextsRunning.get(ctxId)!;
-          params.chain?.forEach((el) => push(el));
-          return defer.promise;
-        }
-
-        logger.debug("agent:run", "Added context to running set", {
-          id: ctxId,
-        });
-
-        if (!ctxSubscriptions.has(ctxId)) {
-          ctxSubscriptions.set(ctxId, new Set());
-        }
-
-        if (!__ctxChunkSubscriptions.has(ctxId)) {
-          __ctxChunkSubscriptions.set(ctxId, new Set());
-        }
-
-        const engine = createEngine({
+      // Enqueue the entire context run as a task
+      return await taskRunner.enqueueTask(
+        runAgentContext,
+        {
           agent,
-          ctxState: ctxState as unknown as ContextState,
-          workingMemory,
-          handlers,
-          agentCtxState: agentCtxState as unknown as ContextState | undefined,
-          subscriptions: ctxSubscriptions.get(ctxId)!,
-          __chunkSubscriptions: __ctxChunkSubscriptions.get(ctxId)!,
-        });
-
-        contextsRunning.set(ctxId, {
-          controller: engine.controller,
-          push: engine.push,
-          defer: engine.state.defer,
-        });
-
-        const { streamState, streamHandler, tags, __streamChunkHandler } =
-          createContextStreamHandler({
-            abortSignal,
-            pushLog(log, done) {
-              engine.push(log, done, false);
-            },
-            __pushLogChunk(chunk) {
-              engine.pushChunk(chunk);
-            },
-          });
-
-        let maxSteps = 0;
-
-        function getMaxSteps() {
-          return engine.state.contexts.reduce(
-            (maxSteps, ctxState) =>
-              Math.max(
-                maxSteps,
-                ctxState.settings.maxSteps ?? ctxState.context.maxSteps ?? 0
-              ),
-            5
-          );
+          context: params.context,
+          args: params.args,
+          // TODO: Fix type
+          outputs: params.outputs as Record<
+            string,
+            Omit<Output<any, any, AnyContext, any>, "type">
+          >,
+          handlers: params.handlers,
+          requestContext: params.requestContext,
+          chain: params.chain,
+          model: params.model,
+        },
+        {
+          queueKey,
+          priority,
+          abortSignal: params.abortSignal,
+          retry: false,
         }
-
-        await engine.setParams({
-          actions: params.actions,
-          outputs: params.outputs,
-          contexts: params.contexts,
-        });
-
-        let stepRef = await engine.start();
-
-        // TODO: Implement recovery for unprocessed/unfinished steps from previous runs
-
-        if (params.chain) {
-          for (const log of params.chain) {
-            await engine.push(log);
-          }
-        }
-
-        await engine.settled();
-
-        const { state } = engine;
-
-        while ((maxSteps = getMaxSteps()) >= state.step) {
-          logger.info("agent:run", `Starting step ${state.step}/${maxSteps}`, {
-            contextId: ctxState.id,
-          });
-
-          try {
-            if (state.step > 1) {
-              stepRef = await engine.nextStep();
-              streamState.index++;
-            }
-
-            const promptData = mainPrompt.formatter({
-              contexts: state.contexts,
-              actions: state.actions,
-              outputs: state.outputs,
-              workingMemory,
-              chainOfThoughtSize: 0,
-              maxWorkingMemorySize: ctxState.settings.maxWorkingMemorySize,
-            });
-
-            const prompt = mainPrompt.render(promptData);
-
-            stepRef.data.prompt = prompt;
-
-            let streamError: any = null;
-
-            const unprocessed = [
-              ...workingMemory.inputs.filter((i) => i.processed === false),
-              ...state.chain.filter((i) => i.processed === false),
-            ];
-
-            const { stream, getTextResponse } = await taskRunner.enqueueTask(
-              runGenerate,
-              {
-                model,
-                prompt,
-                workingMemory,
-                logger,
-                structuredLogger,
-                streaming,
-                contextSettings: ctxState.settings,
-                requestContext: agentRunContext,
-                onError: (error) => {
-                  streamError = error;
-                  // state.errors.push(error);
-                },
-              },
-              {
-                abortSignal,
-              }
-            );
-            logger.debug("agent:run", "Processing stream", {
-              step: state.step,
-            });
-
-            await handleStream(
-              stream,
-              streamState.index,
-              tags,
-              streamHandler,
-              __streamChunkHandler
-            );
-
-            if (streamError) {
-              throw streamError;
-            }
-
-            const response = await getTextResponse();
-            stepRef.data.response = response;
-
-            unprocessed.forEach((i) => {
-              i.processed = true;
-            });
-
-            logger.debug("agent:run", "Waiting for action calls to complete", {
-              pendingCalls: state.promises.length,
-            });
-
-            await engine.settled();
-
-            stepRef.processed = true;
-
-            await saveContextWorkingMemory(agent, ctxState.id, workingMemory);
-
-            await Promise.all(
-              state.contexts.map((state) =>
-                state.context.onStep?.(
-                  {
-                    ...state,
-                    workingMemory,
-                  },
-                  agent
-                )
-              )
-            );
-
-            await Promise.all(
-              state.contexts.map((state) => agent.saveContext(state))
-            );
-
-            if (!engine.shouldContinue()) break;
-
-            state.step++;
-          } catch (error) {
-            logger.error("agent:run", "Step execution failed", {
-              error,
-              step: state.step,
-              contextId: ctxState.id,
-            });
-
-            await Promise.allSettled(
-              [
-                saveContextWorkingMemory(agent, ctxState.id, workingMemory),
-                state.contexts.map((state) => agent.saveContext(state)),
-              ].flat()
-            );
-
-            if (context.onError) {
-              try {
-                await context.onError(
-                  error,
-                  {
-                    ...ctxState,
-                    workingMemory,
-                  },
-                  agent
-                );
-              } catch (error) {
-                break;
-              }
-            } else {
-              break;
-            }
-          }
-        }
-
-        await Promise.all(
-          state.contexts.map((state) =>
-            state.context.onRun?.(
-              {
-                ...state,
-                workingMemory,
-              },
-              agent
-            )
-          )
-        );
-
-        await Promise.all(
-          state.contexts.map((state) => agent.saveContext(state))
-        );
-
-        logger.debug("agent:run", "Removing context from running set", {
-          id: ctxState.id,
-        });
-
-        contextsRunning.delete(ctxState.id);
-
-        // Complete agent run tracking
-        if (
-          agentRunContext &&
-          agentRunContext.agentRunId &&
-          agentRunContext.trackingEnabled
-        ) {
-          await tracker.completeAgentRun(
-            agentRunContext.agentRunId,
-            "completed"
-          );
-        }
-
-        const executionTime = Date.now() - startTime;
-
-        // Log structured agent complete event
-        structuredLogger.logEvent({
-          eventType: LogEventType.AGENT_COMPLETE,
-          timestamp: Date.now(),
-          requestContext: agentRunContext,
-          agentName: "agent",
-          executionTime,
-          // Note: Token usage and cost will be available from tracking if enabled
-        });
-
-        logger.info("agent:run", "Run completed", {
-          contextId: ctxState.id,
-          chainLength: state.chain.length,
-          executionTime,
-        });
-
-        state.defer.resolve(state.chain);
-
-        return state.chain;
-      } catch (error) {
-        // Complete agent run tracking with error
-        if (
-          agentRunContext &&
-          agentRunContext.agentRunId &&
-          agentRunContext.trackingEnabled
-        ) {
-          await tracker.completeAgentRun(agentRunContext.agentRunId, "failed", {
-            message: error instanceof Error ? error.message : "Unknown error",
-            cause: error,
-          });
-        }
-
-        // Log structured agent error event
-        structuredLogger.logEvent({
-          eventType: LogEventType.AGENT_ERROR,
-          timestamp: Date.now(),
-          requestContext: agentRunContext,
-          agentName: "agent",
-          error: {
-            message: error instanceof Error ? error.message : "Unknown error",
-            cause: error,
-          },
-        });
-
-        logger.error("agent:run", "Agent run failed", {
-          error,
-          contextType: context.type,
-        });
-
-        throw error;
-      }
+      );
     },
 
     /**

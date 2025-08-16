@@ -13,6 +13,11 @@ import type {
   AnyAgent,
   AnyContext,
   WorkingMemory,
+  ContextState,
+  Log,
+  LogChunk,
+  AnyRef,
+  Output,
 } from "../types";
 import type { Logger } from "../logger";
 import { wrapStream } from "../streaming";
@@ -21,6 +26,11 @@ import { generateText } from "ai";
 import { type RequestContext } from "../tracking";
 import { getRequestTracker } from "../tracking/tracker";
 import { LogEventType, StructuredLogger } from "../logging-events";
+import { createRequestContext } from "../tracking";
+import { createEngine } from "../engine";
+import { createContextStreamHandler, handleStream } from "../streaming";
+import { mainPrompt } from "../prompts/main";
+import { saveContextWorkingMemory } from "../context";
 
 /**
  * Helper to extract model properties safely from LanguageModel union type
@@ -542,6 +552,309 @@ async function* textToStream(
     // await new Promise(resolve => setTimeout(resolve, 10));
   }
 }
+
+/**
+ * Task that executes a complete agent context run
+ * This replaces the direct agent.run() to provide proper concurrency control
+ */
+export const runAgentContext = task({
+  key: "agent:run:context",
+  concurrency: 1, // Only 1 execution per queue (per context)
+  retry: false, // Context runs shouldn't retry
+  handler: async (
+    params: {
+      agent: AnyAgent;
+      context: AnyContext;
+      args: unknown;
+      outputs?: Record<string, Omit<Output<any, any, AnyContext, any>, "type">>;
+      handlers?: Record<string, unknown>;
+      requestContext?: RequestContext;
+      chain?: Log[];
+      model?: LanguageModel;
+    },
+    { abortSignal }
+  ) => {
+    const { agent, context, args, outputs, handlers, requestContext, chain } =
+      params;
+
+    const model =
+      params.model ?? context.model ?? agent.reasoningModel ?? agent.model;
+    if (!model) throw new Error("no model");
+
+    // Create request context if not provided
+    let effectiveRequestContext = requestContext;
+    if (!effectiveRequestContext) {
+      effectiveRequestContext = createRequestContext("agent:run", {
+        trackingEnabled: false,
+      });
+    }
+
+    // Start agent run tracking
+    let agentRunContext = effectiveRequestContext;
+    const tracker = getRequestTracker();
+    const startTime = Date.now();
+
+    if (effectiveRequestContext && effectiveRequestContext.trackingEnabled) {
+      agentRunContext = await tracker.startAgentRun(
+        effectiveRequestContext,
+        "agent"
+      );
+    }
+
+    // Log structured agent start event
+    const structuredLogger = agent.container?.resolve?.("structuredLogger") as
+      | StructuredLogger
+      | undefined;
+    if (structuredLogger) {
+      structuredLogger.logEvent({
+        eventType: LogEventType.AGENT_START,
+        timestamp: startTime,
+        requestContext: agentRunContext,
+        agentName: "agent",
+        configuration: {
+          contextType: context.type,
+          hasArgs: !!args,
+          hasCustomOutputs: !!outputs,
+          hasHandlers: !!handlers,
+          model: model,
+        },
+      });
+    }
+
+    const ctxId = agent.getContextId({ context, args });
+
+    // Get context state and working memory
+    const ctxState = await agent.getContext({ context, args });
+    const workingMemory = await agent.getWorkingMemory(ctxId);
+    const agentCtxState = await agent.getAgentContext();
+
+    // Create engine and streaming components
+
+    // Create empty subscriptions for this execution
+    const subscriptions = new Set<(ref: AnyRef, done: boolean) => void>();
+    const chunkSubscriptions = new Set<(chunk: LogChunk) => void>();
+
+    const engine = createEngine({
+      agent,
+      ctxState: ctxState,
+      workingMemory,
+      handlers,
+      agentCtxState: agentCtxState,
+      subscriptions,
+      __chunkSubscriptions: chunkSubscriptions,
+    });
+
+    const { streamState, streamHandler, tags, __streamChunkHandler } =
+      createContextStreamHandler({
+        abortSignal,
+        pushLog(log: Log, done: boolean) {
+          engine.push(log, done, false);
+        },
+        __pushLogChunk(chunk: LogChunk) {
+          engine.pushChunk(chunk);
+        },
+      });
+
+    await engine.setParams({
+      actions: undefined,
+      outputs: outputs,
+      contexts: undefined,
+    });
+
+    let stepRef = await engine.start();
+
+    if (chain) {
+      for (const log of chain) {
+        await engine.push(log);
+      }
+    }
+
+    await engine.settled();
+
+    const { state } = engine;
+    let maxSteps = 0;
+
+    function getMaxSteps() {
+      return state.contexts.reduce(
+        (maxSteps, ctxState) =>
+          Math.max(
+            maxSteps,
+            ctxState.settings.maxSteps ?? ctxState.context.maxSteps ?? 0
+          ),
+        5
+      );
+    }
+
+    while ((maxSteps = getMaxSteps()) >= state.step) {
+      try {
+        if (state.step > 1) {
+          stepRef = await engine.nextStep();
+          streamState.index++;
+        }
+
+        const promptData = mainPrompt.formatter({
+          contexts: state.contexts,
+          actions: state.actions,
+          outputs: state.outputs,
+          workingMemory,
+          chainOfThoughtSize: 0,
+          maxWorkingMemorySize: ctxState.settings.maxWorkingMemorySize,
+        });
+
+        const prompt = mainPrompt.render(promptData);
+        stepRef.data.prompt = prompt;
+
+        let streamError: unknown = null;
+
+        const unprocessed = [
+          ...workingMemory.inputs.filter((i) => i.processed === false),
+          ...state.chain.filter((i) => i.processed === false),
+        ];
+
+        // Use runGenerate task with shared LLM queue
+        const { stream, getTextResponse } = await agent.taskRunner.enqueueTask(
+          runGenerate,
+          {
+            model,
+            prompt,
+            workingMemory,
+            logger: agent.logger,
+            structuredLogger: agent.container?.resolve?.("structuredLogger") as
+              | StructuredLogger
+              | undefined,
+            streaming: true,
+            contextSettings: ctxState.settings,
+            requestContext: agentRunContext,
+            onError: (error: unknown) => {
+              streamError = error;
+            },
+          },
+          {
+            abortSignal,
+            queueKey: "llm", // Shared LLM queue
+          }
+        );
+
+        await handleStream(
+          stream,
+          streamState.index,
+          tags,
+          streamHandler,
+          __streamChunkHandler
+        );
+
+        if (streamError) {
+          throw streamError;
+        }
+
+        const response = await getTextResponse();
+        stepRef.data.response = response;
+
+        unprocessed.forEach((i) => {
+          (i as { processed: boolean }).processed = true;
+        });
+
+        await engine.settled();
+        stepRef.processed = true;
+
+        // Save working memory
+        await saveContextWorkingMemory(agent, ctxState.id, workingMemory);
+
+        await Promise.all(
+          state.contexts.map((state) =>
+            state.context.onStep?.(
+              {
+                ...state,
+                workingMemory,
+              },
+              agent
+            )
+          )
+        );
+
+        await Promise.all(
+          state.contexts.map((state) => agent.saveContext(state))
+        );
+
+        if (!engine.shouldContinue()) break;
+
+        state.step++;
+      } catch (error) {
+        agent.logger.error("agent:run", "Step execution failed", {
+          error,
+          step: state.step,
+          contextId: ctxState.id,
+        });
+
+        await Promise.allSettled([
+          saveContextWorkingMemory(agent, ctxState.id, workingMemory),
+          ...state.contexts.map((state) => agent.saveContext(state)),
+        ]);
+
+        if (context.onError) {
+          try {
+            await context.onError(
+              error,
+              {
+                ...ctxState,
+                workingMemory,
+              },
+              agent
+            );
+          } catch (error) {
+            break;
+          }
+        } else {
+          break;
+        }
+      }
+    }
+
+    await Promise.all(
+      state.contexts.map((state) =>
+        state.context.onRun?.(
+          {
+            ...state,
+            workingMemory,
+          },
+          agent
+        )
+      )
+    );
+
+    await Promise.all(state.contexts.map((state) => agent.saveContext(state)));
+
+    // Complete agent run tracking
+    if (
+      agentRunContext &&
+      agentRunContext.agentRunId &&
+      agentRunContext.trackingEnabled
+    ) {
+      await tracker.completeAgentRun(agentRunContext.agentRunId, "completed");
+    }
+
+    const executionTime = Date.now() - startTime;
+
+    // Log structured agent complete event
+    if (structuredLogger) {
+      structuredLogger.logEvent({
+        eventType: LogEventType.AGENT_COMPLETE,
+        timestamp: Date.now(),
+        requestContext: agentRunContext,
+        agentName: "agent",
+        executionTime,
+      });
+    }
+
+    agent.logger.info("agent:run", "Run completed", {
+      contextId: ctxState.id,
+      chainLength: state.chain.length,
+      executionTime,
+    });
+
+    return state.chain;
+  },
+});
 
 /**
  * Task that executes an action with the given context and parameters.
