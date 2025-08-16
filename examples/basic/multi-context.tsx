@@ -130,7 +130,7 @@ const textOutput = output({
 
 // Create the agent
 const agent = createDreams({
-  logLevel: LogLevel.DEBUG,
+  logLevel: LogLevel.TRACE,
   model: openai("gpt-4o"),
   contexts: [assistantContext],
   inputs: {

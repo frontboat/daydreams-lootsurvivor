@@ -602,24 +602,29 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
       });
 
       // Count context-specific components
-      const contextCounts = Array.from(registry.contexts.values()).reduce((counts, ctx) => {
-        // Count actions
-        if (ctx.actions) {
-          counts.actions += Array.isArray(ctx.actions) ? ctx.actions.length : 1;
-        }
-        
-        // Count inputs
-        if (ctx.inputs) {
-          counts.inputs += Object.keys(ctx.inputs).length;
-        }
-        
-        // Count outputs  
-        if (ctx.outputs) {
-          counts.outputs += Object.keys(ctx.outputs).length;
-        }
-        
-        return counts;
-      }, { actions: 0, inputs: 0, outputs: 0 });
+      const contextCounts = Array.from(registry.contexts.values()).reduce(
+        (counts, ctx) => {
+          // Count actions
+          if (ctx.actions) {
+            counts.actions += Array.isArray(ctx.actions)
+              ? ctx.actions.length
+              : 1;
+          }
+
+          // Count inputs
+          if (ctx.inputs) {
+            counts.inputs += Object.keys(ctx.inputs).length;
+          }
+
+          // Count outputs
+          if (ctx.outputs) {
+            counts.outputs += Object.keys(ctx.outputs).length;
+          }
+
+          return counts;
+        },
+        { actions: 0, inputs: 0, outputs: 0 }
+      );
 
       // Log configuration summary
       logger.info("agent:start", "Configuration summary", {

@@ -580,20 +580,16 @@ export const runAgentContext = task({
       );
     }
 
-    // Log agent start event
-    const logger = agent.container?.resolve?.("logger") as Logger | undefined;
-    if (logger) {
-      logger.event("AGENT_START", {
-        agentName: "agent",
-        configuration: {
-          contextType: context.type,
-          hasArgs: !!args,
-          hasCustomOutputs: !!outputs,
-          hasHandlers: !!handlers,
-          model: model,
-        },
-      });
-    }
+    agent.logger.event("AGENT_START", {
+      agentName: "agent",
+      configuration: {
+        contextType: context.type,
+        hasArgs: !!args,
+        hasCustomOutputs: !!outputs,
+        hasHandlers: !!handlers,
+        model: model,
+      },
+    });
 
     const ctxId = agent.getContextId({ context, args });
 
@@ -676,6 +672,11 @@ export const runAgentContext = task({
         });
 
         const prompt = mainPrompt.render(promptData);
+
+        agent.logger.trace("agent:run", "Prompt", {
+          prompt: JSON.stringify(prompt),
+        });
+
         stepRef.data.prompt = prompt;
 
         let streamError: unknown = null;
@@ -692,7 +693,9 @@ export const runAgentContext = task({
             model,
             prompt,
             workingMemory,
-            logger: (agent.container?.resolve?.("logger") as Logger | undefined) || agent.logger,
+            logger:
+              (agent.container?.resolve?.("logger") as Logger | undefined) ||
+              agent.logger,
             streaming: true,
             contextSettings: ctxState.settings,
             requestContext: agentRunContext,
@@ -807,12 +810,10 @@ export const runAgentContext = task({
     const executionTime = Date.now() - startTime;
 
     // Log agent complete event
-    if (logger) {
-      logger.event("AGENT_COMPLETE", {
-        agentName: "agent",
-        executionTime,
-      });
-    }
+    agent.logger.event("AGENT_COMPLETE", {
+      agentName: "agent",
+      executionTime,
+    });
 
     agent.logger.info("agent:run", "Run completed", {
       contextId: ctxState.id,
