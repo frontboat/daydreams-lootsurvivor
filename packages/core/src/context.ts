@@ -13,7 +13,7 @@ import type {
   WorkingMemory,
 } from "./types";
 import { formatContextLog } from "./formatters";
-import { LogEventType, StructuredLogger } from "./logging-events";
+import type { Logger } from "./logger";
 
 // =============================================================================
 // CONTEXT CREATION AND CONFIGURATION
@@ -255,20 +255,12 @@ export async function createContextState<TContext extends AnyContext>({
   const key = context.key ? context.key(args) : undefined;
   const id = key ? [context.type, key].join(":") : context.type;
 
-  // Log structured context create event if structured logger is available
-  const structuredLogger =
-    agent.container?.resolve<StructuredLogger>("structuredLogger");
-  if (structuredLogger) {
-    structuredLogger.logEvent({
-      eventType: LogEventType.CONTEXT_CREATE,
-      timestamp: Date.now(),
-      requestContext: {
-        requestId: "context-create", // Default since we may not have request context
-        trackingEnabled: false,
-      },
+  // Log context create event
+  const logger = agent.container?.resolve<Logger>("logger");
+  if (logger) {
+    logger.event("CONTEXT_CREATE", {
       contextType: context.type,
       contextId: id,
-      argsHash: key,
     });
   }
 
@@ -385,25 +377,13 @@ type ContextStateSnapshot = {
 export async function saveContextState(agent: AnyAgent, state: ContextState) {
   const { id, context, key, args, settings, contexts } = state;
 
-  // Log structured context update event
-  const structuredLogger =
-    agent.container?.resolve<StructuredLogger>("structuredLogger");
-  if (structuredLogger) {
-    structuredLogger.logEvent({
-      eventType: LogEventType.CONTEXT_UPDATE,
-      timestamp: Date.now(),
-      requestContext: {
-        requestId: "context-save", // Default since we may not have request context
-        trackingEnabled: false,
-      },
+  // Log context update event
+  const logger = agent.container?.resolve<Logger>("logger");
+  if (logger) {
+    logger.event("CONTEXT_UPDATE", {
       contextType: context.type,
       contextId: id,
       updateType: "state",
-      details: {
-        hasMemory: !!state.memory,
-        contextCount: contexts.length,
-        hasCustomSave: !!state.context.save,
-      },
     });
   }
 

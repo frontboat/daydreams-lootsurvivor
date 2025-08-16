@@ -25,7 +25,6 @@ import { modelsResponseConfig, reasoningModels } from "../configs";
 import { generateText } from "ai";
 import { type RequestContext } from "../tracking";
 import { getRequestTracker } from "../tracking/tracker";
-import { LogEventType, StructuredLogger } from "../logging-events";
 import { createRequestContext } from "../tracking";
 import { createEngine } from "../engine";
 import { createContextStreamHandler, handleStream } from "../streaming";
@@ -88,7 +87,6 @@ type GenerateOptions = {
   prompt: string;
   workingMemory: WorkingMemory;
   logger: Logger;
-  structuredLogger?: StructuredLogger;
   model: LanguageModel;
   streaming: boolean;
   onError: (error: unknown) => void;
@@ -117,7 +115,7 @@ export const runGenerate = task({
       onError,
       requestContext,
       contextSettings,
-      structuredLogger,
+      logger,
     }: GenerateOptions,
     { abortSignal }
   ) => {
@@ -180,15 +178,11 @@ export const runGenerate = task({
 
     try {
       // Log model call start event
-      if (structuredLogger && actionTrackingContext) {
-        structuredLogger.logEvent({
-          eventType: LogEventType.MODEL_CALL_START,
-          timestamp: startTime,
-          requestContext: actionTrackingContext,
+      if (actionTrackingContext) {
+        logger.event("MODEL_CALL_START", {
           provider: provider,
           modelId: modelId,
           callType: streaming ? "stream" : "generate",
-          inputTokens: undefined, // Not available before the call
         });
       }
 
@@ -236,55 +230,49 @@ export const runGenerate = task({
           );
         }
 
-        // Log structured model call complete event
-        if (structuredLogger && actionTrackingContext && response.usage) {
+        // Log model call complete event
+        if (actionTrackingContext && response.usage) {
           const tokenUsage = {
-            inputTokens: response.usage.inputTokens ?? 0,
-            outputTokens: response.usage.outputTokens ?? 0,
-            totalTokens: response.usage.totalTokens ?? 0,
-            reasoningTokens: (response.usage as any).reasoningTokens,
+            input: response.usage.inputTokens ?? 0,
+            output: response.usage.outputTokens ?? 0,
+            total: response.usage.totalTokens ?? 0,
+            reasoning: (response.usage as any).reasoningTokens,
           };
 
+          let cost = 0;
           // Add cost estimation if tracking is enabled
           const tracker = getRequestTracker();
           const config = tracker.getConfig();
           if (config.trackCosts && config.costEstimation) {
             const { estimateCost } = await import("../tracking");
-            // Try multiple provider key combinations for better matching
             const providerKeys = [
-              `${provider}/${modelId}`, // e.g., "openrouter.chat/google/gemini-2.5-pro"
-              provider, // e.g., "openrouter.chat"
-              modelId.split("/")[0], // e.g., "google"
+              `${provider}/${modelId}`,
+              provider,
+              modelId.split("/")[0],
             ];
 
-            let cost = 0;
             for (const providerKey of providerKeys) {
               cost = estimateCost(
-                tokenUsage,
+                {
+                  inputTokens: tokenUsage.input,
+                  outputTokens: tokenUsage.output,
+                  totalTokens: tokenUsage.total,
+                  reasoningTokens: tokenUsage.reasoning,
+                },
                 providerKey,
                 config.costEstimation
               );
-              if (cost > 0) break; // Found a matching cost configuration
+              if (cost > 0) break;
             }
-            (tokenUsage as any).estimatedCost = cost;
           }
 
-          structuredLogger.logEvent({
-            eventType: LogEventType.MODEL_CALL_COMPLETE,
-            timestamp: endTime,
-            requestContext: actionTrackingContext,
+          logger.event("MODEL_CALL_COMPLETE", {
             provider: provider,
             modelId: modelId,
             callType: "generate",
-            tokenUsage,
-            metrics: {
-              modelId: modelId,
-              provider: provider,
-              totalTime: endTime - startTime,
-              tokensPerSecond:
-                (response.usage.outputTokens ?? 0) /
-                ((endTime - startTime) / 1000),
-            },
+            tokens: tokenUsage,
+            duration: endTime - startTime,
+            cost: cost > 0 ? cost : undefined,
           });
         }
 
@@ -351,55 +339,49 @@ export const runGenerate = task({
                 }
               );
 
-              // Log structured model call complete event for streaming
-              if (structuredLogger && actionTrackingContext && usage) {
+              // Log model call complete event for streaming
+              if (actionTrackingContext && usage) {
                 const tokenUsage = {
-                  inputTokens: usage.inputTokens ?? 0,
-                  outputTokens: usage.outputTokens ?? 0,
-                  totalTokens: usage.totalTokens ?? 0,
-                  reasoningTokens: (usage as any).reasoningTokens,
+                  input: usage.inputTokens ?? 0,
+                  output: usage.outputTokens ?? 0,
+                  total: usage.totalTokens ?? 0,
+                  reasoning: (usage as any).reasoningTokens,
                 };
 
+                let cost = 0;
                 // Add cost estimation if tracking is enabled
                 const tracker = getRequestTracker();
                 const config = tracker.getConfig();
                 if (config.trackCosts && config.costEstimation) {
                   const { estimateCost } = await import("../tracking");
-                  // Try multiple provider key combinations for better matching
                   const providerKeys = [
-                    `${provider}/${modelId}`, // e.g., "openrouter.chat/google/gemini-2.5-pro"
-                    provider, // e.g., "openrouter.chat"
-                    modelId.split("/")[0], // e.g., "google"
+                    `${provider}/${modelId}`,
+                    provider,
+                    modelId.split("/")[0],
                   ];
 
-                  let cost = 0;
                   for (const providerKey of providerKeys) {
                     cost = estimateCost(
-                      tokenUsage,
+                      {
+                        inputTokens: tokenUsage.input,
+                        outputTokens: tokenUsage.output,
+                        totalTokens: tokenUsage.total,
+                        reasoningTokens: tokenUsage.reasoning,
+                      },
                       providerKey,
                       config.costEstimation
                     );
-                    if (cost > 0) break; // Found a matching cost configuration
+                    if (cost > 0) break;
                   }
-                  (tokenUsage as any).estimatedCost = cost;
                 }
 
-                structuredLogger.logEvent({
-                  eventType: LogEventType.MODEL_CALL_COMPLETE,
-                  timestamp: endTime,
-                  requestContext: actionTrackingContext,
+                logger.event("MODEL_CALL_COMPLETE", {
                   provider: provider,
                   modelId: modelId,
                   callType: "stream",
-                  tokenUsage,
-                  metrics: {
-                    modelId: modelId,
-                    provider: provider,
-                    totalTime: endTime - startTime,
-                    tokensPerSecond:
-                      (usage.outputTokens ?? 0) /
-                      ((endTime - startTime) / 1000),
-                  },
+                  tokens: tokenUsage,
+                  duration: endTime - startTime,
+                  cost: cost > 0 ? cost : undefined,
                 });
               }
 
@@ -488,12 +470,9 @@ export const runGenerate = task({
         );
       }
 
-      // Log structured model call error event
-      if (structuredLogger && actionTrackingContext) {
-        structuredLogger.logEvent({
-          eventType: LogEventType.MODEL_CALL_ERROR,
-          timestamp: Date.now(),
-          requestContext: actionTrackingContext,
+      // Log model call error event
+      if (actionTrackingContext) {
+        logger.event("MODEL_CALL_ERROR", {
           provider: provider,
           modelId: modelId,
           callType: streaming ? "stream" : "generate",
@@ -601,15 +580,10 @@ export const runAgentContext = task({
       );
     }
 
-    // Log structured agent start event
-    const structuredLogger = agent.container?.resolve?.("structuredLogger") as
-      | StructuredLogger
-      | undefined;
-    if (structuredLogger) {
-      structuredLogger.logEvent({
-        eventType: LogEventType.AGENT_START,
-        timestamp: startTime,
-        requestContext: agentRunContext,
+    // Log agent start event
+    const logger = agent.container?.resolve?.("logger") as Logger | undefined;
+    if (logger) {
+      logger.event("AGENT_START", {
         agentName: "agent",
         configuration: {
           contextType: context.type,
@@ -718,10 +692,7 @@ export const runAgentContext = task({
             model,
             prompt,
             workingMemory,
-            logger: agent.logger,
-            structuredLogger: agent.container?.resolve?.("structuredLogger") as
-              | StructuredLogger
-              | undefined,
+            logger: (agent.container?.resolve?.("logger") as Logger | undefined) || agent.logger,
             streaming: true,
             contextSettings: ctxState.settings,
             requestContext: agentRunContext,
@@ -835,12 +806,9 @@ export const runAgentContext = task({
 
     const executionTime = Date.now() - startTime;
 
-    // Log structured agent complete event
-    if (structuredLogger) {
-      structuredLogger.logEvent({
-        eventType: LogEventType.AGENT_COMPLETE,
-        timestamp: Date.now(),
-        requestContext: agentRunContext,
+    // Log agent complete event
+    if (logger) {
+      logger.event("AGENT_COMPLETE", {
         agentName: "agent",
         executionTime,
       });

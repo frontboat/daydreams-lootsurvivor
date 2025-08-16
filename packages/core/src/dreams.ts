@@ -43,7 +43,6 @@ import { randomUUIDv7, tryAsync } from "./utils";
 import { promptTemplate } from "./prompts/main";
 import type { DeferredPromise } from "p-defer";
 import { configureRequestTracking } from "./tracking/tracker";
-import { StructuredLogger } from "./logging-events";
 import { runAgentContext } from "./tasks";
 
 /**
@@ -154,7 +153,8 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
     },
   };
 
-  const taskRunner = config.taskRunner ?? new TaskRunner(taskConfig.concurrency.default, logger);
+  const taskRunner =
+    config.taskRunner ?? new TaskRunner(taskConfig.concurrency.default, logger);
 
   // Setup shared resource queues
   if (!taskRunner.queues.has("llm")) {
@@ -165,11 +165,8 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
     logger.configure({ level: config.logLevel });
   }
 
+  // Register logger in container for access by other components
   container.instance("logger", logger);
-
-  // Create structured logger
-  const structuredLogger = new StructuredLogger(logger);
-  container.instance("structuredLogger", structuredLogger);
 
   // Log agent creation
   logger.info("agent:create", "Creating Daydreams agent", {
@@ -298,7 +295,9 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
       return {
         default: taskConfig.priority.default,
         high: taskConfig.priority.high ?? taskConfig.priority.default * 2,
-        low: taskConfig.priority.low ?? Math.floor(taskConfig.priority.default / 2),
+        low:
+          taskConfig.priority.low ??
+          Math.floor(taskConfig.priority.default / 2),
       };
     },
 
@@ -602,6 +601,26 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
         agentContext: agent.context?.type,
       });
 
+      // Count context-specific components
+      const contextCounts = Array.from(registry.contexts.values()).reduce((counts, ctx) => {
+        // Count actions
+        if (ctx.actions) {
+          counts.actions += Array.isArray(ctx.actions) ? ctx.actions.length : 1;
+        }
+        
+        // Count inputs
+        if (ctx.inputs) {
+          counts.inputs += Object.keys(ctx.inputs).length;
+        }
+        
+        // Count outputs  
+        if (ctx.outputs) {
+          counts.outputs += Object.keys(ctx.outputs).length;
+        }
+        
+        return counts;
+      }, { actions: 0, inputs: 0, outputs: 0 });
+
       // Log configuration summary
       logger.info("agent:start", "Configuration summary", {
         memory: {
@@ -619,8 +638,14 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
         registry: {
           contexts: Array.from(registry.contexts.keys()),
           actions: Array.from(registry.actions.keys()),
+          contextActions: contextCounts.actions,
+          totalActions: registry.actions.size + contextCounts.actions,
           inputs: Array.from(registry.inputs.keys()),
+          contextInputs: contextCounts.inputs,
+          totalInputs: registry.inputs.size + contextCounts.inputs,
           outputs: Array.from(registry.outputs.keys()),
+          contextOutputs: contextCounts.outputs,
+          totalOutputs: registry.outputs.size + contextCounts.outputs,
           extensions: Array.from(registry.extensions.keys()),
         },
         tracking: {
@@ -750,8 +775,14 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
         registeredComponents: {
           contexts: registry.contexts.size,
           actions: registry.actions.size,
+          contextActions: contextCounts.actions,
+          totalActions: registry.actions.size + contextCounts.actions,
           inputs: Object.keys(inputs).length,
+          contextInputs: contextCounts.inputs,
+          totalInputs: registry.inputs.size + contextCounts.inputs,
           outputs: Object.keys(outputs).length,
+          contextOutputs: contextCounts.outputs,
+          totalOutputs: registry.outputs.size + contextCounts.outputs,
           extensions: extensions.length,
         },
         activeSubscriptions: inputSubscriptions.size,

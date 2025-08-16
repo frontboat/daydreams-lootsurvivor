@@ -1,717 +1,968 @@
-import { LogLevel } from "./types"; // Assuming LogLevel is defined elsewhere
-import type { CorrelationIds, TokenUsage, ModelCallMetrics } from "./tracking";
-import { formatCorrelationIds as formatCorrelationIdsUtil } from "./tracking";
+import { LogLevel } from "./types";
 
-// --- Interfaces ---
+// --- Color Theme ---
+
+export interface ColorTheme {
+  // Primary colors
+  orange: string;
+  blue: string;
+  darkBlue: string;
+  cyan: string;
+
+  // Status colors
+  success: string;
+  warning: string;
+  error: string;
+
+  // Text colors
+  primary: string;
+  secondary: string;
+  muted: string;
+
+  // Accents
+  bright: string;
+  dim: string;
+
+  // Reset
+  reset: string;
+}
+
+// Blade Runner 2049 inspired color theme
+export const BladeRunnerTheme: ColorTheme = {
+  // Signature orange from the film
+  orange: "\x1b[38;2;255;165;0m", // Bright orange
+  blue: "\x1b[38;2;0;191;255m", // Electric blue
+  darkBlue: "\x1b[38;2;0;100;139m", // Dark teal blue
+  cyan: "\x1b[38;2;0;255;255m", // Bright cyan
+
+  // Status colors
+  success: "\x1b[38;2;0;255;127m", // Neo green
+  warning: "\x1b[38;2;255;165;0m", // Orange warning
+  error: "\x1b[38;2;255;69;58m", // Red alert
+
+  // Text hierarchy
+  primary: "\x1b[38;2;255;255;255m", // Pure white
+  secondary: "\x1b[38;2;176;196;222m", // Light steel blue
+  muted: "\x1b[38;2;119;136;153m", // Slate gray
+
+  // Accent elements
+  bright: "\x1b[38;2;255;255;255;1m", // Bright white + bold
+  dim: "\x1b[38;2;105;105;105m", // Dim gray
+
+  // Control
+  reset: "\x1b[0m",
+};
+
+// Easy theme customization - export for users to modify
+export let currentTheme: ColorTheme = BladeRunnerTheme;
+
+export function setLoggerTheme(theme: ColorTheme): void {
+  currentTheme = theme;
+}
+
+// --- Core Types ---
 
 export interface LogEntry {
   level: LogLevel;
-  timestamp: Date;
-  context: string;
+  timestamp: number;
+  context?: string;
   message: string;
   data?: any;
-  correlationIds?: CorrelationIds;
+  eventType?: string;
 }
 
-export interface StructuredLogData {
-  correlationIds?: CorrelationIds;
-  tokenUsage?: TokenUsage;
-  metrics?: ModelCallMetrics;
-  modelInfo?: {
-    provider: string;
-    modelId: string;
+export type EventType =
+  | "AGENT_START"
+  | "AGENT_COMPLETE"
+  | "AGENT_ERROR"
+  | "MODEL_CALL_START"
+  | "MODEL_CALL_COMPLETE"
+  | "MODEL_CALL_ERROR"
+  | "ACTION_START"
+  | "ACTION_COMPLETE"
+  | "ACTION_ERROR"
+  | "CONTEXT_CREATE"
+  | "CONTEXT_ACTIVATE"
+  | "CONTEXT_UPDATE"
+  | "MEMORY_READ"
+  | "MEMORY_WRITE"
+  | "REQUEST_START"
+  | "REQUEST_COMPLETE"
+  | "REQUEST_ERROR";
+
+export interface EventData {
+  // Agent events
+  agentName?: string;
+  executionTime?: number;
+  configuration?: Record<string, unknown>;
+
+  // Model events
+  provider?: string;
+  modelId?: string;
+  callType?: "generate" | "stream" | "embed" | "reasoning";
+  tokens?: {
+    input?: number;
+    output?: number;
+    reasoning?: number;
+    total?: number;
   };
-  actionInfo?: {
-    actionName: string;
-    status: "start" | "complete" | "error";
-  };
-  contextInfo?: {
-    contextType: string;
-    memoryOperations?: number;
-  };
+  cost?: number;
+  duration?: number;
+
+  // Action events
+  actionName?: string;
+  parameters?: Record<string, unknown>;
+  result?: unknown;
+
+  // Context events
+  contextType?: string;
+  contextId?: string;
+  memoryOperations?: number;
+  updateType?: "memory" | "state" | "config";
+
+  // Memory events
+  keys?: string[];
+  cacheHit?: boolean;
+  size?: number;
+
+  // Request events
+  source?: string;
+  userId?: string;
+  sessionId?: string;
+
+  // Error events
   error?: {
     message: string;
     code?: string;
     cause?: unknown;
+    stack?: string;
   };
+
+  // Status for start/complete/error events
+  status?: "start" | "complete" | "error";
+
+  // Generic additional data
   [key: string]: unknown;
 }
 
-export interface LogFormatter {
-  format(entry: LogEntry): string;
-}
+// --- Transport System ---
 
 export interface Transport {
-  log(formattedMessage: string, entry: LogEntry): void;
-  init?(): Promise<void> | void; // Optional initialization (e.g., open file stream)
-  close?(): Promise<void> | void; // Optional cleanup
+  name: string;
+  log(entry: LogEntry): void | Promise<void>;
+  init?(): Promise<void> | void;
+  close?(): Promise<void> | void;
 }
 
-export interface LoggerConfig {
-  level: LogLevel;
-  transports: Transport[];
-  formatter: LogFormatter;
-}
-
-// --- Default Implementations ---
-
-export class DefaultFormatter implements LogFormatter {
-  private enableTimestamp: boolean;
-
-  constructor(options: { enableTimestamp?: boolean } = {}) {
-    this.enableTimestamp = options.enableTimestamp ?? true;
-  }
-
-  format(entry: LogEntry): string {
-    const parts: string[] = [];
-
-    if (this.enableTimestamp) {
-      parts.push(`[${entry.timestamp.toISOString()}]`);
-    }
-
-    parts.push(`[${LogLevel[entry.level]}]`);
-
-    if (entry.correlationIds) {
-      parts.push(`[${formatCorrelationIdsUtil(entry.correlationIds)}]`);
-    }
-
-    parts.push(`[${entry.context}]`);
-    parts.push(entry.message);
-
-    return parts.join(" ");
-  }
-}
-
-export class EnhancedFormatter implements LogFormatter {
-  private enableTimestamp: boolean;
-  private enableColors: boolean;
-  private enableStructuredData: boolean;
-  private compactMode: boolean;
-
-  constructor(
-    options: {
-      enableTimestamp?: boolean;
-      enableColors?: boolean;
-      enableStructuredData?: boolean;
-      compactMode?: boolean;
-    } = {}
-  ) {
-    this.enableTimestamp = options.enableTimestamp ?? true;
-    this.enableColors = options.enableColors ?? true;
-    this.enableStructuredData = options.enableStructuredData ?? true;
-    this.compactMode = options.compactMode ?? false;
-  }
-
-  format(entry: LogEntry): string {
-    const { level, timestamp, context, message, correlationIds, data } = entry;
-    const style = logLevelStyles[level];
-    const lines: string[] = [];
-
-    // Main log line
-    const mainParts: string[] = [];
-
-    // Timestamp
-    if (this.enableTimestamp) {
-      if (this.enableColors) {
-        mainParts.push(formatTimestamp(timestamp));
-      } else {
-        mainParts.push(`[${timestamp.toLocaleTimeString()}]`);
-      }
-    }
-
-    // Level badge/icon
-    if (this.enableColors) {
-      if (this.compactMode) {
-        mainParts.push(colorize(style.icon, style.color));
-      } else {
-        mainParts.push(style.badge);
-      }
-    } else {
-      mainParts.push(`[${LogLevel[level].padEnd(5)}]`);
-    }
-
-    // Correlation IDs - subtle
-    if (correlationIds) {
-      if (this.enableColors) {
-        mainParts.push(
-          `${colorize("⟨", colors.darkGray)}${formatCorrelationIds(
-            correlationIds
-          )}${colorize("⟩", colors.darkGray)}`
-        );
-      } else {
-        mainParts.push(`[${formatCorrelationIdsUtil(correlationIds)}]`);
-      }
-    }
-
-    // Context - with subtle brackets
-    if (this.enableColors) {
-      const contextColor = getContextColor(context);
-      mainParts.push(
-        `${colorize("[", colors.darkGray)}${colorize(
-          context,
-          contextColor
-        )}${colorize("]", colors.darkGray)}`
-      );
-    } else {
-      mainParts.push(`[${context}]`);
-    }
-
-    // Message - clean display
-    if (this.enableColors) {
-      mainParts.push(colorize(message, colors.lightGray));
-    } else {
-      mainParts.push(message);
-    }
-
-    lines.push(mainParts.join(" "));
-
-    // Structured data on additional lines
-    if (this.enableStructuredData && data && this.enableColors) {
-      const dataLines = formatStructuredData(data, level);
-      lines.push(...dataLines);
-    }
-
-    return lines.join("\n");
-  }
-}
-
-// Specialized formatters for different use cases
-export class CompactFormatter implements LogFormatter {
-  private enableColors: boolean;
-
-  constructor(options: { enableColors?: boolean } = {}) {
-    this.enableColors = options.enableColors ?? true;
-  }
-
-  format(entry: LogEntry): string {
-    const { level, timestamp, context, message, correlationIds } = entry;
-    const style = logLevelStyles[level];
-
-    const time = timestamp.toLocaleTimeString("en-US", {
-      hour12: false,
-      timeStyle: "medium",
-    });
-
-    const parts = [
-      this.enableColors
-        ? colorize(time.slice(-8), colors.darkGray)
-        : time.slice(-8),
-      this.enableColors
-        ? colorize(style.icon, style.color)
-        : LogLevel[level][0],
-    ];
-
-    if (correlationIds) {
-      const reqId = correlationIds.requestId?.slice(-6) || "------";
-      parts.push(this.enableColors ? colorize(reqId, colors.darkGray) : reqId);
-    }
-
-    const contextColor = this.enableColors ? getContextColor(context) : "";
-    const shortContext = context.split(":")[0];
-    parts.push(
-      this.enableColors
-        ? colorize(
-            shortContext.slice(0, 8).padEnd(8),
-            contextColor + colors.dim
-          )
-        : shortContext.slice(0, 8)
-    );
-
-    parts.push(
-      this.enableColors ? colorize(message, colors.lightGray) : message
-    );
-
-    return parts.join(
-      this.enableColors ? colorize(" │ ", colors.darkGray) : " | "
-    );
-  }
-}
-
-export class VerboseFormatter implements LogFormatter {
-  private enableColors: boolean;
-
-  constructor(options: { enableColors?: boolean } = {}) {
-    this.enableColors = options.enableColors ?? true;
-  }
-
-  format(entry: LogEntry): string {
-    const { level, timestamp, context, message, correlationIds, data } = entry;
-    const style = logLevelStyles[level];
-    const lines: string[] = [];
-
-    // Minimalist header with timestamp
-    const timeStr = timestamp.toISOString();
-    const header = this.enableColors
-      ? `${colorize("━".repeat(60), colors.darkGray)}`
-      : "-".repeat(60);
-    lines.push(header);
-
-    // Status line
-    const levelStr = this.enableColors ? style.badge : `[${LogLevel[level]}]`;
-    const contextStr = this.enableColors
-      ? colorize(context, getContextColor(context))
-      : context;
-
-    lines.push(
-      `${levelStr} ${
-        this.enableColors ? colorize(timeStr, colors.gray) : timeStr
-      }`
-    );
-    lines.push(
-      `${
-        this.enableColors ? colorize("▪", colors.darkGray) : "•"
-      } ${contextStr}`
-    );
-
-    // Message with icon
-    const msgLine = this.enableColors
-      ? colorize(message, colors.white)
-      : message;
-    lines.push(
-      `${
-        this.enableColors ? colorize(style.icon, style.color) : style.icon
-      } ${msgLine}`
-    );
-
-    // Correlation info - subtle
-    if (correlationIds) {
-      const corrLine = this.enableColors
-        ? `${colorize("└─", colors.darkGray)} ${formatCorrelationIds(
-            correlationIds
-          )}`
-        : `   Correlation: ${correlationIds.requestId}`;
-      lines.push(corrLine);
-    }
-
-    // Structured data
-    if (data) {
-      if (this.enableColors) {
-        const dataLines = formatStructuredData(data, level);
-        if (dataLines.length > 0) {
-          lines.push(colorize("   ╱", colors.darkGray));
-          lines.push(...dataLines);
-        }
-      } else {
-        lines.push(`Data: ${JSON.stringify(data, null, 2)}`);
-      }
-    }
-
-    return lines.join("\n");
-  }
-}
-
-// 2047 Terminal Theme - Cyberpunk-inspired color palette
-const colors = {
-  // Base colors
-  reset: "\x1b[0m",
-  bright: "\x1b[1m",
-  dim: "\x1b[2m",
-  italic: "\x1b[3m",
-  underline: "\x1b[4m",
-
-  // Primary palette - muted cyberpunk aesthetic
-  darkGray: "\x1b[38;5;236m", // #303030 - background elements
-  gray: "\x1b[38;5;244m", // #808080 - secondary text
-  lightGray: "\x1b[38;5;250m", // #bcbcbc - primary text
-  white: "\x1b[38;5;255m", // #eeeeee - emphasis
-
-  // Accent colors - neon-inspired but muted
-  cyan: "\x1b[38;5;51m", // #00ffff - primary accent
-  darkCyan: "\x1b[38;5;44m", // #00d7d7 - secondary accent
-  purple: "\x1b[38;5;99m", // #875fff - tertiary accent
-  darkPurple: "\x1b[38;5;60m", // #5f5f87 - muted purple
-
-  // Semantic colors - minimal use
-  red: "\x1b[38;5;197m", // #ff005f - errors only
-  darkRed: "\x1b[38;5;88m", // #870000 - error backgrounds
-  yellow: "\x1b[38;5;220m", // #ffd700 - warnings only
-  darkYellow: "\x1b[38;5;136m", // #af8700 - warning backgrounds
-  green: "\x1b[38;5;84m", // #5fff87 - success
-  darkGreen: "\x1b[38;5;22m", // #005f00 - success backgrounds
-
-  // Background colors - subtle and dark
-  bgDarkGray: "\x1b[48;5;235m", // #262626
-  bgGray: "\x1b[48;5;237m", // #3a3a3a
-  bgCyan: "\x1b[48;5;23m", // #005f5f
-  bgPurple: "\x1b[48;5;54m", // #5f0087
-  bgRed: "\x1b[48;5;52m", // #5f0000
-  bgYellow: "\x1b[48;5;58m", // #5f5f00
-};
-
-const logLevelStyles: {
-  [key in LogLevel]: { color: string; icon: string; badge: string };
-} = {
-  [LogLevel.ERROR]: {
-    color: colors.red,
-    icon: "◉",
-    badge: colors.bgRed + colors.white + colors.bright + " ERR " + colors.reset,
-  },
-  [LogLevel.WARN]: {
-    color: colors.yellow,
-    icon: "◈",
-    badge: colors.bgYellow + colors.darkGray + " WRN " + colors.reset,
-  },
-  [LogLevel.INFO]: {
-    color: colors.cyan,
-    icon: "◇",
-    badge: colors.darkCyan + colors.dim + " INF " + colors.reset,
-  },
-  [LogLevel.DEBUG]: {
-    color: colors.purple,
-    icon: "◦",
-    badge: colors.darkPurple + colors.dim + " DBG " + colors.reset,
-  },
-  [LogLevel.TRACE]: {
-    color: colors.gray + colors.dim,
-    icon: "·",
-    badge: colors.darkGray + " TRC " + colors.reset,
-  },
-};
-
-const contextColors = {
-  agent: colors.cyan,
-  model: colors.darkCyan,
-  action: colors.purple,
-  context: colors.darkPurple,
-  memory: colors.darkCyan + colors.dim,
-  request: colors.gray,
-  engine: colors.purple + colors.dim,
-  task: colors.darkPurple,
-  tracking: colors.gray + colors.dim,
-};
-
-function getContextColor(context: string): string {
-  const baseContext = context.split(":")[0].split("[")[0];
-  return (
-    contextColors[baseContext as keyof typeof contextColors] || colors.darkCyan
-  );
-}
-
-function colorize(message: string, color: string): string {
-  return `${color}${message}${colors.reset}`;
-}
-
-function formatTimestamp(date: Date): string {
-  const time = date.toLocaleTimeString("en-US", {
-    hour12: false,
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    fractionalSecondDigits: 3,
-  });
-  return colorize(time, colors.darkGray);
-}
-
-function formatCorrelationIds(correlationIds: CorrelationIds): string {
-  const formatted = formatCorrelationIdsUtil(correlationIds);
-
-  // Use subtle gradient from cyan to purple for correlation chain
-  const parts = formatted.split("|");
-  const coloredParts = parts.map((part: string, index: number) => {
-    const partColors = [
-      colors.cyan,
-      colors.darkCyan,
-      colors.purple,
-      colors.darkPurple,
-    ];
-    const color = partColors[index % partColors.length];
-    return colorize(part, color + colors.dim);
-  });
-
-  return coloredParts.join(colorize("│", colors.darkGray));
-}
-
-function formatStructuredData(data: any, level: LogLevel): string[] {
-  const lines: string[] = [];
-
-  if (!data || typeof data !== "object") return lines;
-
-  // Handle token usage - minimalist display
-  if (data.tokenUsage) {
-    const usage = data.tokenUsage;
-    const tokenStr = `${usage.inputTokens}→${usage.outputTokens}`;
-    const parts = [colorize(tokenStr, colors.darkCyan)];
-
-    if (usage.reasoningTokens) {
-      parts.push(colorize(`⟨${usage.reasoningTokens}⟩`, colors.darkPurple));
-    }
-
-    if (usage.estimatedCost) {
-      const cost =
-        usage.estimatedCost < 0.001
-          ? `${(usage.estimatedCost * 1000000).toFixed(0)}µ`
-          : `${usage.estimatedCost.toFixed(4)}`;
-      parts.push(colorize(`$${cost}`, colors.gray));
-    }
-
-    lines.push(
-      `    ${colorize("▸", colors.darkGray)} ${parts.join(
-        colorize(" • ", colors.darkGray)
-      )}`
-    );
-  }
-
-  // Handle metrics - clean display
-  if (data.metrics) {
-    const metrics = data.metrics;
-    const parts: string[] = [];
-
-    if (metrics.totalTime) {
-      const time =
-        metrics.totalTime < 1000
-          ? `${metrics.totalTime}ms`
-          : `${(metrics.totalTime / 1000).toFixed(1)}s`;
-      parts.push(colorize(time, colors.purple + colors.dim));
-    }
-
-    if (metrics.tokensPerSecond) {
-      parts.push(
-        colorize(
-          `${metrics.tokensPerSecond.toFixed(1)}t/s`,
-          colors.darkCyan + colors.dim
-        )
-      );
-    }
-
-    if (parts.length > 0) {
-      lines.push(
-        `    ${colorize("▸", colors.darkGray)} ${parts.join(
-          colorize(" • ", colors.darkGray)
-        )}`
-      );
-    }
-  }
-
-  // Handle model info - subtle display
-  if (data.modelInfo) {
-    const model = `${data.modelInfo.provider}/${data.modelInfo.modelId}`;
-    lines.push(
-      `    ${colorize("▸", colors.darkGray)} ${colorize(model, colors.gray)}`
-    );
-  }
-
-  // Handle action info - minimal icons
-  if (data.actionInfo) {
-    const status = data.actionInfo.status;
-    const statusIcon =
-      status === "complete" ? "◉" : status === "error" ? "◉" : "◐";
-    const statusColor =
-      status === "complete"
-        ? colors.green
-        : status === "error"
-        ? colors.red
-        : colors.cyan;
-    lines.push(
-      `    ${colorize(statusIcon, statusColor)} ${colorize(
-        data.actionInfo.actionName,
-        colors.purple + colors.dim
-      )}`
-    );
-  }
-
-  // Handle errors - prominent but not overwhelming
-  if (data.error) {
-    lines.push(
-      `    ${colorize("▸", colors.red)} ${colorize(
-        data.error.message,
-        colors.red + colors.dim
-      )}`
-    );
-  }
-
-  return lines;
-}
-
-// --- Enhanced Console Transport ---
 export class ConsoleTransport implements Transport {
-  private enableColors: boolean;
+  name = "console";
+  private styled: boolean = true;
 
-  constructor(options: { enableColors?: boolean } = {}) {
-    this.enableColors = options.enableColors ?? true;
+  constructor(options: { styled?: boolean } = {}) {
+    this.styled = options.styled ?? true;
   }
 
-  log(formattedMessage: string, entry: LogEntry): void {
-    // The formatted message already includes colors and styling
-    // Use appropriate console method based on level
+  log(entry: LogEntry): void {
+    const formatted = this.format(entry);
+
     switch (entry.level) {
       case LogLevel.ERROR:
-        console.error(formattedMessage);
+        console.error(formatted);
         break;
       case LogLevel.WARN:
-        console.warn(formattedMessage);
+        console.warn(formatted);
         break;
       case LogLevel.INFO:
-        console.info(formattedMessage);
+        console.info(formatted);
         break;
       case LogLevel.DEBUG:
       case LogLevel.TRACE:
-        console.debug(formattedMessage);
+        console.debug(formatted);
         break;
       default:
-        console.log(formattedMessage);
+        console.log(formatted);
     }
+  }
+
+  private format(entry: LogEntry): string {
+    if (!this.styled) {
+      return this.formatPlain(entry);
+    }
+
+    const theme = currentTheme;
+    const timestamp = this.formatTimestamp(entry.timestamp);
+    const level = this.formatLevel(entry.level);
+    const context = this.formatContext(entry.context, entry.eventType);
+    const message = this.formatMessage(
+      entry.message,
+      entry.level,
+      entry.eventType
+    );
+
+    let formatted = `${timestamp} ${level} ${context}${message}`;
+
+    // Add structured data with syntax highlighting
+    if (entry.data && Object.keys(entry.data).length > 0) {
+      const dataStr = this.formatData(entry.data);
+      formatted += `\n${dataStr}`;
+    }
+
+    return formatted + theme.reset;
+  }
+
+  private formatPlain(entry: LogEntry): string {
+    const timestamp = new Date(entry.timestamp).toISOString();
+    const level = LogLevel[entry.level].padEnd(5);
+    const context = entry.context ? `[${entry.context}]` : "";
+    const message = entry.message;
+
+    let formatted = `${timestamp} [${level}] ${context} ${message}`;
+
+    if (entry.data && Object.keys(entry.data).length > 0) {
+      const dataStr = JSON.stringify(entry.data, null, 2);
+      formatted += `\n${dataStr}`;
+    }
+
+    return formatted;
+  }
+
+  private formatTimestamp(timestamp: number): string {
+    const theme = currentTheme;
+    const date = new Date(timestamp);
+    const timeStr = date.toISOString().replace("T", " ").slice(0, -1);
+    return `${theme.dim}${timeStr}${theme.reset}`;
+  }
+
+  private formatLevel(level: LogLevel): string {
+    const theme = currentTheme;
+    const levelStr = LogLevel[level].padEnd(5);
+
+    switch (level) {
+      case LogLevel.ERROR:
+        return `${theme.error}[${levelStr}]${theme.reset}`;
+      case LogLevel.WARN:
+        return `${theme.warning}[${levelStr}]${theme.reset}`;
+      case LogLevel.INFO:
+        return `${theme.blue}[${levelStr}]${theme.reset}`;
+      case LogLevel.DEBUG:
+        return `${theme.cyan}[${levelStr}]${theme.reset}`;
+      case LogLevel.TRACE:
+        return `${theme.muted}[${levelStr}]${theme.reset}`;
+      default:
+        return `${theme.secondary}[${levelStr}]${theme.reset}`;
+    }
+  }
+
+  private formatContext(context?: string, eventType?: string): string {
+    if (!context && !eventType) return "";
+
+    const theme = currentTheme;
+
+    if (eventType) {
+      // Color contexts based on event type categories
+      if (eventType.startsWith("AGENT_")) {
+        return `${theme.orange}[${context || "agent"}]${theme.reset} `;
+      } else if (eventType.startsWith("MODEL_")) {
+        return `${theme.blue}[${context || "model"}]${theme.reset} `;
+      } else if (eventType.startsWith("ACTION_")) {
+        return `${theme.cyan}[${context || "action"}]${theme.reset} `;
+      } else if (eventType.startsWith("CONTEXT_")) {
+        return `${theme.darkBlue}[${context || "context"}]${theme.reset} `;
+      } else if (eventType.startsWith("MEMORY_")) {
+        return `${theme.success}[${context || "memory"}]${theme.reset} `;
+      }
+    }
+
+    return context ? `${theme.secondary}[${context}]${theme.reset} ` : "";
+  }
+
+  private formatMessage(
+    message: string,
+    level: LogLevel,
+    eventType?: string
+  ): string {
+    const theme = currentTheme;
+
+    // Style message based on level and event type
+    if (level === LogLevel.ERROR) {
+      return `${theme.error}${message}${theme.reset}`;
+    } else if (eventType) {
+      if (eventType.endsWith("_START")) {
+        return `${theme.cyan}▶ ${theme.primary}${message}${theme.reset}`;
+      } else if (eventType.endsWith("_COMPLETE")) {
+        return `${theme.success}✓ ${theme.primary}${message}${theme.reset}`;
+      } else if (eventType.endsWith("_ERROR")) {
+        return `${theme.error}✗ ${theme.primary}${message}${theme.reset}`;
+      } else {
+        return `${theme.orange}◆ ${theme.primary}${message}${theme.reset}`;
+      }
+    }
+
+    return `${theme.primary}${message}${theme.reset}`;
+  }
+
+  private formatData(data: any, indent: number = 2): string {
+    const theme = currentTheme;
+
+    try {
+      const jsonStr = JSON.stringify(data, null, indent);
+      return this.syntaxHighlight(jsonStr);
+    } catch (error) {
+      return `${theme.muted}${String(data)}${theme.reset}`;
+    }
+  }
+
+  private syntaxHighlight(json: string): string {
+    const theme = currentTheme;
+
+    return json
+      .replace(/(".*?"):/g, `${theme.orange}$1${theme.reset}:`) // Keys in orange
+      .split("\n")
+      .map((line) => `${theme.dim}│${theme.reset} ${line}`) // Left border
+      .join("\n");
   }
 }
 
-export class Logger {
-  private config: LoggerConfig;
+export class FileTransport implements Transport {
+  name = "file";
+  private writeStream?: any; // fs.WriteStream
 
-  constructor(
-    config: Partial<LoggerConfig> & {
-      style?: "default" | "enhanced" | "compact" | "verbose";
-      enableColors?: boolean;
-      enableStructuredData?: boolean;
-    } = {}
-  ) {
-    // Provide defaults if necessary
-    const transports =
-      !config.transports || config.transports.length === 0
-        ? [new ConsoleTransport({ enableColors: config.enableColors })]
-        : config.transports;
+  constructor(private filePath: string) {}
 
-    // Choose formatter based on style preference
-    let formatter: LogFormatter;
-    if (config.formatter) {
-      formatter = config.formatter;
-    } else {
-      const style = config.style || "enhanced";
-      const enableColors = config.enableColors ?? true;
-      const enableStructuredData = config.enableStructuredData ?? true;
+  async init(): Promise<void> {
+    const fs = await import("fs");
+    this.writeStream = fs.createWriteStream(this.filePath, { flags: "a" });
+  }
 
-      switch (style) {
-        case "compact":
-          formatter = new CompactFormatter({ enableColors });
-          break;
-        case "verbose":
-          formatter = new VerboseFormatter({ enableColors });
-          break;
-        case "enhanced":
-          formatter = new EnhancedFormatter({
-            enableColors,
-            enableStructuredData,
-            compactMode: false,
-          });
-          break;
-        case "default":
-        default:
-          formatter = new DefaultFormatter();
-          break;
-      }
+  log(entry: LogEntry): void {
+    if (!this.writeStream) {
+      console.error("FileTransport not initialized");
+      return;
     }
 
-    this.config = {
-      level: config.level ?? LogLevel.INFO,
-      transports: transports,
-      formatter: formatter,
-    };
+    const formatted = this.format(entry);
+    this.writeStream.write(formatted + "\n");
+  }
+
+  async close(): Promise<void> {
+    if (this.writeStream) {
+      return new Promise((resolve) => {
+        this.writeStream.end(resolve);
+      });
+    }
+  }
+
+  private format(entry: LogEntry): string {
+    // JSON format for file logging - easier to parse
+    return JSON.stringify({
+      timestamp: entry.timestamp,
+      level: LogLevel[entry.level],
+      context: entry.context,
+      message: entry.message,
+      eventType: entry.eventType,
+      data: entry.data,
+    });
+  }
+}
+
+export class StreamTransport implements Transport {
+  name = "stream";
+
+  constructor(private stream: NodeJS.WritableStream) {}
+
+  log(entry: LogEntry): void {
+    const formatted = JSON.stringify(entry) + "\n";
+    this.stream.write(formatted);
+  }
+}
+
+export class HttpTransport implements Transport {
+  name = "http";
+  private buffer: LogEntry[] = [];
+  private flushTimer?: NodeJS.Timeout;
+
+  constructor(
+    private endpoint: string,
+    private options: {
+      batchSize?: number;
+      flushInterval?: number;
+      headers?: Record<string, string>;
+    } = {}
+  ) {
+    this.options.batchSize = options.batchSize ?? 100;
+    this.options.flushInterval = options.flushInterval ?? 5000;
+  }
+
+  log(entry: LogEntry): void {
+    this.buffer.push(entry);
+
+    if (this.buffer.length >= this.options.batchSize!) {
+      this.flush();
+    } else if (!this.flushTimer) {
+      this.flushTimer = setTimeout(
+        () => this.flush(),
+        this.options.flushInterval
+      );
+    }
+  }
+
+  private async flush(): Promise<void> {
+    if (this.buffer.length === 0) return;
+
+    const batch = [...this.buffer];
+    this.buffer = [];
+
+    if (this.flushTimer) {
+      clearTimeout(this.flushTimer);
+      this.flushTimer = undefined;
+    }
+
+    try {
+      await fetch(this.endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...this.options.headers,
+        },
+        body: JSON.stringify({ logs: batch }),
+      });
+    } catch (error) {
+      console.error("HttpTransport flush failed:", error);
+      // Could implement retry logic here
+    }
+  }
+
+  async close(): Promise<void> {
+    await this.flush();
+  }
+}
+
+// --- Logger Implementation ---
+
+export class Logger {
+  private transports: Transport[] = [];
+  private level: LogLevel = LogLevel.INFO;
+  private eventListeners: Map<
+    EventType | "*",
+    Array<(entry: LogEntry) => void>
+  > = new Map();
+
+  constructor(
+    options: {
+      level?: LogLevel;
+      transports?: Transport[];
+    } = {}
+  ) {
+    this.level = options.level ?? LogLevel.INFO;
+    this.transports = options.transports ?? [new ConsoleTransport()];
 
     // Initialize transports
-    this.config.transports.forEach((transport) => {
-      if (typeof transport.init === "function") {
-        Promise.try(transport.init).catch((err) =>
-          console.error("Error initializing transport:", err)
-        );
-      }
-    });
+    this.init();
   }
 
-  configure(config: Pick<LoggerConfig, "level">) {
-    this.config.level = config.level;
-  }
-
-  error(context: string, message: string, data?: any) {
-    this.log(LogLevel.ERROR, context, message, data);
-  }
-
-  warn(context: string, message: string, data?: any) {
-    this.log(LogLevel.WARN, context, message, data);
-  }
-
-  info(context: string, message: string, data?: any) {
-    this.log(LogLevel.INFO, context, message, data);
-  }
-
-  debug(context: string, message: string, data?: any) {
-    this.log(LogLevel.DEBUG, context, message, data);
-  }
-
-  trace(context: string, message: string, data?: any) {
-    this.log(LogLevel.TRACE, context, message, data);
-  }
-
-  /**
-   * Structured logging method with correlation IDs and rich metadata
-   */
-  structured(
-    level: LogLevel,
-    context: string,
-    message: string,
-    data: StructuredLogData
-  ) {
-    if (level > this.config.level) return;
-
-    const entry: LogEntry = {
-      level,
-      timestamp: new Date(),
-      context,
-      message,
-      data,
-      correlationIds: data.correlationIds,
-    };
-
-    const formattedMessage = this.config.formatter.format(entry);
-
-    this.config.transports.forEach((transport) => {
-      try {
-        transport.log(formattedMessage, entry);
-      } catch (error) {
-        console.error(
-          `Error logging to transport ${transport.constructor.name}:`,
-          error
-        );
-      }
-    });
-  }
-
-  private log(level: LogLevel, context: string, message: string, data?: any) {
-    if (level > this.config.level) return;
-
-    const entry: LogEntry = {
-      level,
-      timestamp: new Date(),
-      context,
-      message,
-      data,
-    };
-
-    const formattedMessage = this.config.formatter.format(entry); // Format the core message
-
-    // Send to all transports (passing both formatted string and raw entry)
-    this.config.transports.forEach((transport) => {
-      try {
-        transport.log(formattedMessage, entry);
-      } catch (error) {
-        console.error(
-          `Error logging to transport ${transport.constructor.name}:`,
-          error
-        );
-      }
-    });
-  }
-
-  // Method to gracefully close transports
-  async close(): Promise<void> {
-    for (const transport of this.config.transports) {
-      if (typeof transport.close === "function") {
+  private async init(): Promise<void> {
+    for (const transport of this.transports) {
+      if (transport.init) {
         try {
-          await Promise.try(transport.close);
-        } catch (err) {
+          await transport.init();
+        } catch (error) {
           console.error(
-            `Error closing transport ${transport.constructor.name}:`,
-            err
+            `Failed to initialize transport ${transport.name}:`,
+            error
           );
         }
       }
     }
   }
+
+  // --- Configuration ---
+
+  configure(options: { level?: LogLevel }): void {
+    if (options.level !== undefined) {
+      this.level = options.level;
+    }
+  }
+
+  addTransport(transport: Transport): void {
+    this.transports.push(transport);
+    if (transport.init) {
+      const result = transport.init();
+      if (result instanceof Promise) {
+        result.catch((error: any) =>
+          console.error(
+            `Failed to initialize transport ${transport.name}:`,
+            error
+          )
+        );
+      }
+    }
+  }
+
+  removeTransport(name: string): void {
+    const index = this.transports.findIndex((t) => t.name === name);
+    if (index >= 0) {
+      const transport = this.transports[index];
+      this.transports.splice(index, 1);
+
+      if (transport.close) {
+        const result = transport.close();
+        if (result instanceof Promise) {
+          result.catch((error: any) =>
+            console.error(`Failed to close transport ${transport.name}:`, error)
+          );
+        }
+      }
+    }
+  }
+
+  // --- Simple Logging API ---
+
+  error(message: string, context?: string, data?: any): void {
+    this.log(LogLevel.ERROR, message, context, data);
+  }
+
+  warn(message: string, context?: string, data?: any): void {
+    this.log(LogLevel.WARN, message, context, data);
+  }
+
+  info(message: string, context?: string, data?: any): void {
+    this.log(LogLevel.INFO, message, context, data);
+  }
+
+  debug(message: string, context?: string, data?: any): void {
+    this.log(LogLevel.DEBUG, message, context, data);
+  }
+
+  trace(message: string, context?: string, data?: any): void {
+    this.log(LogLevel.TRACE, message, context, data);
+  }
+
+  // --- Backward Compatibility ---
+
+  /**
+   * Legacy structured logging method - now delegates to regular log
+   * @deprecated Use event() for structured logging or regular log methods
+   */
+  structured(
+    level: LogLevel,
+    context: string,
+    message: string,
+    data?: any
+  ): void {
+    this.log(level, message, context, data);
+  }
+
+  // --- Event-Based Structured Logging ---
+
+  event(type: EventType, data: EventData = {}): void {
+    const level = this.getEventLevel(type);
+    const message = this.formatEventMessage(type, data);
+    const context = this.getEventContext(type);
+
+    this.log(level, message, context, data, type);
+  }
+
+  // --- Event Streaming for External Consumption ---
+
+  on(
+    eventType: EventType | "*",
+    listener: (entry: LogEntry) => void
+  ): () => void {
+    if (!this.eventListeners.has(eventType)) {
+      this.eventListeners.set(eventType, []);
+    }
+    this.eventListeners.get(eventType)!.push(listener);
+
+    // Return unsubscribe function
+    return () => {
+      const listeners = this.eventListeners.get(eventType);
+      if (listeners) {
+        const index = listeners.indexOf(listener);
+        if (index >= 0) {
+          listeners.splice(index, 1);
+        }
+      }
+    };
+  }
+
+  createStream(): ReadableStream<LogEntry> {
+    let unsubscribeFn: (() => void) | undefined;
+
+    return new ReadableStream({
+      start: (controller) => {
+        unsubscribeFn = this.on("*", (entry) => {
+          controller.enqueue(entry);
+        });
+      },
+      cancel: () => {
+        if (unsubscribeFn) {
+          unsubscribeFn();
+        }
+      },
+    });
+  }
+
+  // --- Core Logging Implementation ---
+
+  private log(
+    level: LogLevel,
+    message: string,
+    context?: string,
+    data?: any,
+    eventType?: string
+  ): void {
+    if (level > this.level) return;
+
+    const entry: LogEntry = {
+      level,
+      timestamp: Date.now(),
+      context,
+      message,
+      data,
+      eventType,
+    };
+
+    // Send to transports
+    this.transports.forEach((transport) => {
+      try {
+        transport.log(entry);
+      } catch (error) {
+        console.error(`Transport ${transport.name} failed:`, error);
+      }
+    });
+
+    // Emit to event listeners
+    this.emitToListeners(entry);
+  }
+
+  private emitToListeners(entry: LogEntry): void {
+    // Emit to specific event type listeners
+    if (entry.eventType) {
+      const listeners = this.eventListeners.get(entry.eventType as EventType);
+      listeners?.forEach((listener) => {
+        try {
+          listener(entry);
+        } catch (error) {
+          console.error("Event listener error:", error);
+        }
+      });
+    }
+
+    // Emit to wildcard listeners
+    const wildcardListeners = this.eventListeners.get("*");
+    wildcardListeners?.forEach((listener) => {
+      try {
+        listener(entry);
+      } catch (error) {
+        console.error("Wildcard event listener error:", error);
+      }
+    });
+  }
+
+  private getEventLevel(type: EventType): LogLevel {
+    if (type.endsWith("_ERROR")) return LogLevel.ERROR;
+    if (type.endsWith("_START") || type.endsWith("_COMPLETE")) {
+      if (type.startsWith("AGENT_") || type.startsWith("REQUEST_")) {
+        return LogLevel.INFO;
+      }
+      return LogLevel.DEBUG;
+    }
+    return LogLevel.TRACE;
+  }
+
+  private formatEventMessage(type: EventType, data: EventData): string {
+    switch (type) {
+      case "AGENT_START":
+        return `Starting agent: ${data.agentName || "unknown"}`;
+      case "AGENT_COMPLETE":
+        return `Agent completed: ${data.agentName || "unknown"} (${
+          data.executionTime || 0
+        }ms)`;
+      case "AGENT_ERROR":
+        return `Agent failed: ${data.agentName || "unknown"} - ${
+          data.error?.message || "Unknown error"
+        }`;
+
+      case "MODEL_CALL_START":
+        return `Model call started: ${data.provider}/${data.modelId} (${
+          data.callType || "unknown"
+        })`;
+      case "MODEL_CALL_COMPLETE":
+        const tokens = data.tokens
+          ? `${data.tokens.input || 0}→${data.tokens.output || 0}`
+          : "unknown tokens";
+        return `Model call completed: ${data.provider}/${data.modelId} (${
+          data.duration || 0
+        }ms, ${tokens})`;
+      case "MODEL_CALL_ERROR":
+        return `Model call failed: ${data.provider}/${data.modelId} - ${
+          data.error?.message || "Unknown error"
+        }`;
+
+      case "ACTION_START":
+        return `Action started: ${data.actionName}`;
+      case "ACTION_COMPLETE":
+        return `Action completed: ${data.actionName} (${
+          data.executionTime || 0
+        }ms)`;
+      case "ACTION_ERROR":
+        return `Action failed: ${data.actionName} - ${
+          data.error?.message || "Unknown error"
+        }`;
+
+      case "CONTEXT_CREATE":
+        return `Context created: ${data.contextType}`;
+      case "CONTEXT_ACTIVATE":
+        return `Context activated: ${data.contextType}`;
+      case "CONTEXT_UPDATE":
+        return `Context updated: ${data.contextType} (${
+          data.updateType || "unknown"
+        })`;
+
+      case "MEMORY_READ":
+        return `Memory read: ${data.keys?.length || 0} keys (${
+          data.cacheHit ? "hit" : "miss"
+        })`;
+      case "MEMORY_WRITE":
+        return `Memory write: ${data.keys?.length || 0} keys`;
+
+      case "REQUEST_START":
+        return `Request started: ${data.source}`;
+      case "REQUEST_COMPLETE":
+        return `Request completed: ${data.source} (${
+          data.executionTime || 0
+        }ms)`;
+      case "REQUEST_ERROR":
+        return `Request failed: ${data.source} - ${
+          data.error?.message || "Unknown error"
+        }`;
+
+      default:
+        return `Event: ${type}`;
+    }
+  }
+
+  private getEventContext(type: EventType): string {
+    if (type.startsWith("AGENT_")) return "agent";
+    if (type.startsWith("MODEL_")) return "model";
+    if (type.startsWith("ACTION_")) return "action";
+    if (type.startsWith("CONTEXT_")) return "context";
+    if (type.startsWith("MEMORY_")) return "memory";
+    if (type.startsWith("REQUEST_")) return "request";
+    return "event";
+  }
+
+  // --- Cleanup ---
+
+  async close(): Promise<void> {
+    for (const transport of this.transports) {
+      if (transport.close) {
+        try {
+          await transport.close();
+        } catch (error) {
+          console.error(`Failed to close transport ${transport.name}:`, error);
+        }
+      }
+    }
+
+    // Clear event listeners
+    this.eventListeners.clear();
+  }
 }
+
+// --- Additional Themes ---
+
+export const ClassicTheme: ColorTheme = {
+  orange: "\x1b[33m", // Yellow (classic)
+  blue: "\x1b[34m", // Blue
+  darkBlue: "\x1b[36m", // Cyan
+  cyan: "\x1b[96m", // Bright cyan
+
+  success: "\x1b[32m", // Green
+  warning: "\x1b[33m", // Yellow
+  error: "\x1b[31m", // Red
+
+  primary: "\x1b[37m", // White
+  secondary: "\x1b[90m", // Bright black
+  muted: "\x1b[2m", // Dim
+
+  bright: "\x1b[1m", // Bold
+  dim: "\x1b[2m", // Dim
+
+  reset: "\x1b[0m",
+};
+
+export const MonochromeTheme: ColorTheme = {
+  orange: "\x1b[37m", // White
+  blue: "\x1b[37m", // White
+  darkBlue: "\x1b[90m", // Bright black
+  cyan: "\x1b[37m", // White
+
+  success: "\x1b[37m", // White
+  warning: "\x1b[37m", // White
+  error: "\x1b[37m", // White
+
+  primary: "\x1b[37m", // White
+  secondary: "\x1b[90m", // Bright black
+  muted: "\x1b[2m", // Dim
+
+  bright: "\x1b[1m", // Bold
+  dim: "\x1b[2m", // Dim
+
+  reset: "\x1b[0m",
+};
+
+// --- Convenience Factory Functions ---
+
+export function createLogger(options?: {
+  level?: LogLevel;
+  style?: "console" | "file" | "json";
+  theme?: ColorTheme | "bladerunner" | "classic" | "monochrome";
+  styled?: boolean;
+  filePath?: string;
+  transports?: Transport[];
+}): Logger {
+  // Set theme if provided
+  if (options?.theme) {
+    if (typeof options.theme === "string") {
+      switch (options.theme) {
+        case "bladerunner":
+          setLoggerTheme(BladeRunnerTheme);
+          break;
+        case "classic":
+          setLoggerTheme(ClassicTheme);
+          break;
+        case "monochrome":
+          setLoggerTheme(MonochromeTheme);
+          break;
+      }
+    } else {
+      setLoggerTheme(options.theme);
+    }
+  }
+
+  let transports: Transport[];
+
+  if (options?.transports) {
+    transports = options.transports;
+  } else {
+    switch (options?.style) {
+      case "file":
+        if (!options.filePath) {
+          throw new Error("filePath required for file transport");
+        }
+        transports = [new FileTransport(options.filePath)];
+        break;
+      case "json":
+        transports = [new StreamTransport(process.stdout)];
+        break;
+      case "console":
+      default:
+        transports = [
+          new ConsoleTransport({
+            styled: options?.styled !== false,
+          }),
+        ];
+        break;
+    }
+  }
+
+  return new Logger({
+    level: options?.level,
+    transports,
+  });
+}
+
+// --- Usage Examples ---
+
+/*
+// Simple usage with Blade Runner 2049 theme (default)
+const logger = createLogger({ 
+  level: LogLevel.DEBUG,
+  theme: 'bladerunner'
+});
+
+logger.info("Agent starting", "agent:run", { contextId: "ctx-123" });
+logger.error("Model call failed", "model:openai", { error: "Rate limited" });
+
+// Custom theme colors (easy to tweak!)
+const customTheme: ColorTheme = {
+  ...BladeRunnerTheme,
+  orange: '\x1b[38;2;255;100;50m',  // Custom orange-red
+  blue: '\x1b[38;2;50;150;255m',    // Custom bright blue
+  // ... modify any colors you want
+};
+
+const styledLogger = createLogger({ 
+  theme: customTheme,
+  level: LogLevel.DEBUG
+});
+
+// Different theme styles
+const classicLogger = createLogger({ theme: 'classic' });
+const monoLogger = createLogger({ theme: 'monochrome' });
+const unstyledLogger = createLogger({ styled: false });
+
+// Event-based structured logging with beautiful styling
+logger.event("MODEL_CALL_START", {
+  provider: "openai",
+  modelId: "gpt-4",
+  callType: "generate"
+});
+
+logger.event("MODEL_CALL_COMPLETE", {
+  provider: "openai",
+  modelId: "gpt-4", 
+  callType: "generate",
+  tokens: { input: 100, output: 50, total: 150 },
+  duration: 1200,
+  cost: 0.003
+});
+
+logger.event("AGENT_START", {
+  agentName: "discord-bot",
+  configuration: { maxSteps: 5, temperature: 0.7 }
+});
+
+// Multiple transports with styling
+const logger = new Logger({
+  transports: [
+    new ConsoleTransport({ styled: true }),      // Styled console output
+    new FileTransport('/var/log/agent.log'),    // Plain JSON for files
+    new HttpTransport('https://logs.mycompany.com/ingest')
+  ]
+});
+
+// Switch themes at runtime
+setLoggerTheme(ClassicTheme);  // Switch to classic colors
+logger.info("Now using classic theme");
+
+setLoggerTheme(BladeRunnerTheme);  // Back to Blade Runner
+logger.info("Back to cyberpunk styling");
+
+// Event streaming and listeners work the same
+const logStream = logger.createStream();
+logger.on('MODEL_CALL_COMPLETE', (entry) => {
+  console.log('Model call completed:', entry.data);
+});
+
+logger.on('*', (entry) => {
+  if (entry.level === LogLevel.ERROR) {
+    // Send alert to monitoring system
+    alerting.send(entry);
+  }
+});
+
+// Example output with Blade Runner theme:
+// 2024-01-15 14:30:22.123 [INFO ] [agent] ▶ Starting agent: discord-bot
+// │ {
+// │   "agentName": "discord-bot",
+// │   "configuration": {
+// │     "maxSteps": 5,
+// │     "temperature": 0.7
+// │   }
+// │ }
+//
+// 2024-01-15 14:30:22.456 [DEBUG] [model] ▶ Model call started: openai/gpt-4 (generate)
+// 2024-01-15 14:30:23.789 [DEBUG] [model] ✓ Model call completed: openai/gpt-4 (1200ms, 100→50)
+*/
