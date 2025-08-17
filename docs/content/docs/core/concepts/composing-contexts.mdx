@@ -88,24 +88,26 @@ const chatContext = context({
   type: "chat",
   schema: z.object({ userId: z.string() }),
   create: () => ({ messages: [] }),
-
+})
   // Dynamically include other contexts
-  use: (state) =>
+  .use((ctx) =>
     [
       // Always include analytics
-      { context: analyticsContext, args: { userId: state.args.userId } },
+      { context: analyticsContext, args: { userId: ctx.args.userId } },
 
       // Include profile for registered users
-      state.args.userId !== "guest"
-        ? { context: profileContext, args: { userId: state.args.userId } }
+      ctx.args.userId !== "guest"
+        ? { context: profileContext, args: { userId: ctx.args.userId } }
         : null,
-    ].filter(Boolean),
+    ].filter(Boolean)
+  )
 
-  render: (state) => `
+  .render(
+    (state) => `
     Chat with ${state.args.userId}
     Messages: ${state.memory.messages.length}
-  `,
-});
+  `
+  );
 
 // Now when chat context is active, it has access to:
 // - Its own actions and memory
@@ -224,16 +226,16 @@ const shoppingContext = context({
     userId: z.string(),
     sessionId: z.string(),
   }),
-
+})
   // Compose all shopping-related contexts
-  use: (state) => [
+  .use((ctx) => [
     { context: catalogContext, args: {} },
-    { context: cartContext, args: { sessionId: state.args.sessionId } },
-    { context: profileContext, args: { userId: state.args.userId } },
-    { context: analyticsContext, args: { userId: state.args.userId } },
-  ],
+    { context: cartContext, args: { sessionId: ctx.args.sessionId } },
+    { context: profileContext, args: { userId: ctx.args.userId } },
+    { context: analyticsContext, args: { userId: ctx.args.userId } },
+  ])
 
-  render: (state, agent) => {
+  .render((state, agent) => {
     // Access composed context states
     const cart = agent.getContextState(cartContext, {
       sessionId: state.args.sessionId,
@@ -247,8 +249,7 @@ const shoppingContext = context({
       Cart items: ${cart?.memory.items.length || 0}
       Total: $${cart?.memory.total || 0}
     `;
-  },
-});
+  });
 
 // Agent can now:
 // - Search products (from catalog)
@@ -307,29 +308,27 @@ const assistantContext = context({
     userId: z.string(),
     mode: z.enum(["text", "voice", "multimodal"]),
   }),
+}).use((ctx) => {
+  const contexts = [
+    { context: chatContext, args: { userId: ctx.args.userId } },
+  ];
 
-  use: (state) => {
-    const contexts = [
-      { context: chatContext, args: { userId: state.args.userId } },
-    ];
+  // Add contexts based on mode
+  if (ctx.args.mode === "voice" || ctx.args.mode === "multimodal") {
+    contexts.push({
+      context: voiceContext,
+      args: { sessionId: `${ctx.args.userId}-voice` },
+    });
+  }
 
-    // Add contexts based on mode
-    if (state.args.mode === "voice" || state.args.mode === "multimodal") {
-      contexts.push({
-        context: voiceContext,
-        args: { sessionId: `${state.args.userId}-voice` },
-      });
-    }
+  if (ctx.args.mode === "multimodal") {
+    contexts.push({
+      context: visionContext,
+      args: { sessionId: `${ctx.args.userId}-vision` },
+    });
+  }
 
-    if (state.args.mode === "multimodal") {
-      contexts.push({
-        context: visionContext,
-        args: { sessionId: `${state.args.userId}-vision` },
-      });
-    }
-
-    return contexts;
-  },
+  return contexts;
 });
 ```
 
@@ -349,52 +348,16 @@ const dataContext = context({
 });
 
 // Level 2: Feature contexts that use basic ones
-const featureContext = context({
-  use: () => [
-    { context: authContext, args: {} },
-    { context: dataContext, args: {} },
-  ],
-});
+const featureContext = context({}).use(() => [
+  { context: authContext, args: {} },
+  { context: dataContext, args: {} },
+]);
 
 // Level 3: Application context that uses features
-const appContext = context({
-  use: () => [
-    { context: featureContext, args: {} },
-    // ... other feature contexts
-  ],
-});
-```
-
-### 2. Conditional Composition
-
-Include contexts based on runtime conditions:
-
-```typescript title="conditional-pattern.ts"
-const mainContext = context({
-  use: (state) => {
-    const contexts = [];
-
-    // Always include core context
-    contexts.push({ context: coreContext, args: {} });
-
-    // Add premium features for premium users
-    if (state.memory.userTier === "premium") {
-      contexts.push({ context: premiumContext, args: {} });
-    }
-
-    // Add admin tools for admins
-    if (state.memory.isAdmin) {
-      contexts.push({ context: adminContext, args: {} });
-    }
-
-    // Add debug context in development
-    if (process.env.NODE_ENV === "development") {
-      contexts.push({ context: debugContext, args: {} });
-    }
-
-    return contexts;
-  },
-});
+const appContext = context({}).use(() => [
+  { context: featureContext, args: {} },
+  // ... other feature contexts
+]);
 ```
 
 ### 3. Event-Driven Composition
@@ -465,14 +428,12 @@ const everythingContext = context({
 
 ```typescript title="composition-for-complexity.ts"
 // ✅ Good - compose simple contexts
-const checkoutContext = context({
-  use: () => [
-    { context: cartContext, args: {} },
-    { context: paymentContext, args: {} },
-    { context: shippingContext, args: {} },
-    { context: inventoryContext, args: {} },
-  ],
-});
+const checkoutContext = context({}).use(() => [
+  { context: cartContext, args: {} },
+  { context: paymentContext, args: {} },
+  { context: shippingContext, args: {} },
+  { context: inventoryContext, args: {} },
+]);
 
 // ❌ Bad - one giant context
 const megaCheckoutContext = context({
@@ -490,64 +451,11 @@ const megaCheckoutContext = context({
  */
 const customerServiceContext = context({
   type: "customer-service",
-  use: (state) => [
-    { context: profileContext, args: { userId: state.args.userId } },
-    { context: orderContext, args: { userId: state.args.userId } },
-    { context: ticketContext, args: { userId: state.args.userId } },
-  ],
-});
-```
-
-### 4. Handle Missing Dependencies Gracefully
-
-```typescript title="graceful-dependencies.ts"
-const enhancedContext = context({
-  actions: {
-    getRecommendations: action({
-      handler: async (args, ctx) => {
-        try {
-          // Try to use ML context if available
-          const mlResult = await ctx.callAction("ml.predict", {
-            userId: ctx.args.userId,
-          });
-          return mlResult.recommendations;
-        } catch (error) {
-          // Fallback to simple recommendations
-          return getSimpleRecommendations(ctx.args.userId);
-        }
-      },
-    }),
-  },
-});
-```
-
-## Debugging Composed Contexts
-
-Use the agent's logger to trace context interactions:
-
-```typescript title="debugging-composition.ts"
-const debuggableContext = context({
-  type: "debuggable",
-  use: (state, agent) => {
-    agent.logger.info("context:compose", "Composing contexts", {
-      contextType: "debuggable",
-      args: state.args,
-      composing: ["analytics", "profile"],
-    });
-
-    return [
-      { context: analyticsContext, args: state.args },
-      { context: profileContext, args: state.args },
-    ];
-  },
-
-  onStep: async (ctx, agent) => {
-    agent.logger.debug("context:step", "Context step", {
-      availableActions: Object.keys(ctx.actions),
-      memoryKeys: Object.keys(ctx.memory),
-    });
-  },
-});
+}).use((ctx) => [
+  { context: profileContext, args: { userId: ctx.args.userId } },
+  { context: orderContext, args: { userId: ctx.args.userId } },
+  { context: ticketContext, args: { userId: ctx.args.userId } },
+]);
 ```
 
 ## Key Takeaways

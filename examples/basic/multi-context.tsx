@@ -116,7 +116,7 @@ interface AssistantMemory {
 }
 
 // Create a context - this is where the magic happens!
-const assistantContext = context<AssistantMemory>({
+const assistantContext = context({
   type: "personal-assistant",
 
   episodeHooks: personalAssistantHooks,
@@ -126,7 +126,7 @@ const assistantContext = context<AssistantMemory>({
   }),
 
   // Initialize memory for new users
-  create: () => ({
+  create: (): AssistantMemory => ({
     preferences: {},
     conversationCount: 0,
   }),
@@ -179,7 +179,6 @@ always end the conversation with a goodbye
       };
     },
   }),
-
   action({
     name: "save-preference",
     description: "Save a user preference",
@@ -195,7 +194,6 @@ always end the conversation with a goodbye
       };
     },
   }),
-
   action({
     name: "update-topic",
     description: "Remember what we're discussing",
