@@ -11,11 +11,6 @@ import { openai } from "@ai-sdk/openai";
 import * as z from "zod";
 import * as readline from "readline";
 
-// CONTEXT ACTION PATTERN:
-// Option 1: Define actions directly in context config (recommended)
-// Option 2: Use .setActions() BEFORE creating the agent (shown here)
-// Option 3: Don't pre-register contexts in createDreams()
-
 const personalAssistantHooks: EpisodeHooks = {
   // Start episode when user begins a new conversation
   shouldStartEpisode: (ref) => {
@@ -24,11 +19,6 @@ const personalAssistantHooks: EpisodeHooks = {
 
   // End episode when conversation naturally concludes or user says goodbye
   shouldEndEpisode: (ref) => {
-    console.log("=== EPISODE END CHECK ===");
-    console.log("Ref type:", ref.ref);
-    console.log("Ref processed:", ref.processed);
-    console.log("Full ref:", JSON.stringify(ref, null, 2));
-
     if (ref.ref !== "output") {
       console.log("Early return: not output or not processed");
       return false;
@@ -47,14 +37,6 @@ const personalAssistantHooks: EpisodeHooks = {
       content.includes("anything else") ||
       content.includes("help you with") ||
       content.includes("thank you");
-
-    console.log("Episode end analysis:", {
-      content: content.slice(0, 100),
-      fullContent: content,
-      isGoodbye,
-      isTaskComplete,
-      shouldEnd: isGoodbye || isTaskComplete,
-    });
 
     return isGoodbye || isTaskComplete;
   },
