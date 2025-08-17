@@ -1,11 +1,11 @@
 import { type LanguageModel, type Schema } from "ai";
 import { z, ZodObject, ZodType, type ZodRawShape } from "zod";
 import type { Container } from "./container";
-import type { ServiceProvider } from "./serviceProvider";
+import type { ServiceProvider } from "./service-provider";
 import type { TaskRunner } from "./task";
 import type { Logger } from "./logger";
-import type { RequestContext, RequestTrackingConfig } from "./tracking";
-import type { RequestTracker } from "./tracking/tracker";
+import type { SimpleTracker } from "./simple-tracker";
+
 import type {
   EpisodeHooks,
   ActionState,
@@ -575,7 +575,6 @@ export interface AgentContext<TContext extends AnyContext = AnyContext> {
   settings: ContextSettings;
   memory: InferContextMemory<TContext>;
   workingMemory: WorkingMemory;
-  requestContext?: RequestContext;
 }
 
 /**
@@ -617,6 +616,11 @@ interface AgentDef<TContext extends AnyContext = AnyContext> {
   logger: Logger;
 
   /**
+   * Analytics tracker automatically extracts metrics from logger events
+   */
+  tracker: SimpleTracker;
+
+  /**
    * The memory store and vector store used by the agent.
    */
   memory: MemorySystem;
@@ -640,16 +644,6 @@ interface AgentDef<TContext extends AnyContext = AnyContext> {
    * The task runner used by the agent.
    */
   taskRunner: TaskRunner;
-
-  /**
-   * Request tracker for monitoring model usage and performance.
-   */
-  requestTracker?: RequestTracker;
-
-  /**
-   * Configuration for request tracking.
-   */
-  requestTrackingConfig?: Partial<RequestTrackingConfig>;
 
   /**
    * The primary language model used by the agent.
@@ -804,7 +798,6 @@ export interface Agent<TContext extends AnyContext = AnyContext>
     handlers?: Partial<Handlers>;
     abortSignal?: AbortSignal;
     chain?: Log[];
-    requestContext?: RequestContext;
     /** Task priority for execution ordering (higher = more priority) */
     priority?: number;
   }) => Promise<AnyRef[]>;

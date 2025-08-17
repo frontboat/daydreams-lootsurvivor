@@ -23,9 +23,6 @@ import type { Logger } from "../logger";
 import { wrapStream } from "../streaming";
 import { modelsResponseConfig, reasoningModels } from "../configs";
 import { generateText } from "ai";
-import { type RequestContext } from "../tracking";
-import { getRequestTracker } from "../tracking/tracker";
-import { createRequestContext } from "../tracking";
 import { createEngine } from "../engine";
 import { createContextStreamHandler, handleStream } from "../streaming";
 import { mainPrompt } from "../prompts/main";
@@ -90,7 +87,9 @@ type GenerateOptions = {
   model: LanguageModel;
   streaming: boolean;
   onError: (error: unknown) => void;
-  requestContext?: RequestContext;
+  requestId?: string;
+  userId?: string;
+  sessionId?: string;
   contextSettings?: {
     modelSettings?: {
       temperature?: number;
@@ -113,7 +112,9 @@ export const runGenerate = task({
       model,
       streaming,
       onError,
-      requestContext,
+      requestId,
+      userId,
+      sessionId,
       contextSettings,
       logger,
     }: GenerateOptions,
@@ -153,38 +154,26 @@ export const runGenerate = task({
       ] as CoreMessage["content"];
     }
 
-    const tracker = getRequestTracker();
     const startTime = Date.now();
-    let modelCallId: string | undefined;
-
-    // Start context and action tracking if requestContext is provided
-    let contextTrackingContext = requestContext;
-    let actionTrackingContext = requestContext;
-
-    if (requestContext && requestContext.trackingEnabled) {
-      // Start context tracking for the "generate" context
-      contextTrackingContext = await tracker.startContextTracking(
-        requestContext,
-        `generate-${Date.now()}`, // Unique context ID
-        "generate"
-      );
-
-      // Start action tracking for the "generate" action
-      actionTrackingContext = await tracker.startActionCall(
-        contextTrackingContext,
-        "generate_text"
-      );
-    }
 
     try {
-      // Log model call start event
-      if (actionTrackingContext) {
-        logger.event("MODEL_CALL_START", {
-          provider: provider,
-          modelId: modelId,
-          callType: streaming ? "stream" : "generate",
-        });
-      }
+      // Log action and model call start events
+      logger.event("ACTION_START", {
+        requestId,
+        userId,
+        sessionId,
+        actionName: "generate_text",
+      });
+
+      logger.event("MODEL_CALL_START", {
+        requestId,
+        userId,
+        sessionId,
+        provider: provider,
+        modelId: modelId,
+        callType: streaming ? "stream" : "generate",
+        actionName: "generate_text",
+      });
 
       if (!streaming) {
         const response = await generateText({
@@ -201,37 +190,8 @@ export const runGenerate = task({
 
         const endTime = Date.now();
 
-        // Track the model call
-        if (actionTrackingContext && actionTrackingContext.trackingEnabled) {
-          modelCallId = await tracker.trackModelCall(
-            actionTrackingContext,
-            "generate",
-            modelId,
-            provider,
-            {
-              tokenUsage: response.usage
-                ? {
-                    inputTokens: response.usage.inputTokens ?? 0,
-                    outputTokens: response.usage.outputTokens ?? 0,
-                    totalTokens: response.usage.totalTokens ?? 0,
-                    reasoningTokens: (response.usage as any).reasoningTokens,
-                  }
-                : undefined,
-              metrics: {
-                modelId: modelId,
-                provider: provider,
-                totalTime: endTime - startTime,
-                tokensPerSecond: response.usage
-                  ? (response.usage.outputTokens ?? 0) /
-                    ((endTime - startTime) / 1000)
-                  : undefined,
-              },
-            }
-          );
-        }
-
         // Log model call complete event
-        if (actionTrackingContext && response.usage) {
+        if (response.usage) {
           const tokenUsage = {
             input: response.usage.inputTokens ?? 0,
             output: response.usage.outputTokens ?? 0,
@@ -239,42 +199,27 @@ export const runGenerate = task({
             reasoning: (response.usage as any).reasoningTokens,
           };
 
-          let cost = 0;
-          // Add cost estimation if tracking is enabled
-          const tracker = getRequestTracker();
-          const config = tracker.getConfig();
-          if (config.trackCosts && config.costEstimation) {
-            const { estimateCost } = await import("../tracking");
-            const providerKeys = [
-              `${provider}/${modelId}`,
-              provider,
-              modelId.split("/")[0],
-            ];
-
-            for (const providerKey of providerKeys) {
-              cost = estimateCost(
-                {
-                  inputTokens: tokenUsage.input,
-                  outputTokens: tokenUsage.output,
-                  totalTokens: tokenUsage.total,
-                  reasoningTokens: tokenUsage.reasoning,
-                },
-                providerKey,
-                config.costEstimation
-              );
-              if (cost > 0) break;
-            }
-          }
-
           logger.event("MODEL_CALL_COMPLETE", {
+            requestId,
+            userId,
+            sessionId,
             provider: provider,
             modelId: modelId,
             callType: "generate",
+            actionName: "generate_text",
             tokens: tokenUsage,
             duration: endTime - startTime,
-            cost: cost > 0 ? cost : undefined,
           });
         }
+
+        // Log action complete event
+        logger.event("ACTION_COMPLETE", {
+          requestId,
+          userId,
+          sessionId,
+          actionName: "generate_text",
+          duration: endTime - startTime,
+        });
 
         let getTextResponse = async () => response.text;
         let stream = textToStream(response.text);
@@ -307,138 +252,73 @@ export const runGenerate = task({
         });
 
         // Track streaming model call when it completes
-        if (actionTrackingContext && actionTrackingContext.trackingEnabled) {
-          // Track after stream finishes - we'll use a simpler approach
-          stream.usage
-            .then(async (usage) => {
-              const endTime = Date.now();
+        stream.usage
+          .then(async (usage) => {
+            const endTime = Date.now();
 
-              await tracker.trackModelCall(
-                actionTrackingContext,
-                "stream",
-                modelId,
-                provider,
-                {
-                  tokenUsage: usage
-                    ? {
-                        inputTokens: usage.inputTokens ?? 0,
-                        outputTokens: usage.outputTokens ?? 0,
-                        totalTokens: usage.totalTokens ?? 0,
-                        reasoningTokens: (usage as any).reasoningTokens,
-                      }
-                    : undefined,
-                  metrics: {
-                    modelId: modelId,
-                    provider: provider,
-                    totalTime: endTime - startTime,
-                    tokensPerSecond: usage
-                      ? (usage.outputTokens ?? 0) /
-                        ((endTime - startTime) / 1000)
-                      : undefined,
-                  },
-                }
-              );
+            // Log model call complete event for streaming
+            if (usage) {
+              const tokenUsage = {
+                input: usage.inputTokens ?? 0,
+                output: usage.outputTokens ?? 0,
+                total: usage.totalTokens ?? 0,
+                reasoning: (usage as any).reasoningTokens,
+              };
 
-              // Log model call complete event for streaming
-              if (actionTrackingContext && usage) {
-                const tokenUsage = {
-                  input: usage.inputTokens ?? 0,
-                  output: usage.outputTokens ?? 0,
-                  total: usage.totalTokens ?? 0,
-                  reasoning: (usage as any).reasoningTokens,
-                };
+              logger.event("MODEL_CALL_COMPLETE", {
+                requestId,
+                userId,
+                sessionId,
+                provider: provider,
+                modelId: modelId,
+                callType: "stream",
+                actionName: "generate_text",
+                tokens: tokenUsage,
+                duration: endTime - startTime,
+              });
+            }
 
-                let cost = 0;
-                // Add cost estimation if tracking is enabled
-                const tracker = getRequestTracker();
-                const config = tracker.getConfig();
-                if (config.trackCosts && config.costEstimation) {
-                  const { estimateCost } = await import("../tracking");
-                  const providerKeys = [
-                    `${provider}/${modelId}`,
-                    provider,
-                    modelId.split("/")[0],
-                  ];
-
-                  for (const providerKey of providerKeys) {
-                    cost = estimateCost(
-                      {
-                        inputTokens: tokenUsage.input,
-                        outputTokens: tokenUsage.output,
-                        totalTokens: tokenUsage.total,
-                        reasoningTokens: tokenUsage.reasoning,
-                      },
-                      providerKey,
-                      config.costEstimation
-                    );
-                    if (cost > 0) break;
-                  }
-                }
-
-                logger.event("MODEL_CALL_COMPLETE", {
-                  provider: provider,
-                  modelId: modelId,
-                  callType: "stream",
-                  tokens: tokenUsage,
-                  duration: endTime - startTime,
-                  cost: cost > 0 ? cost : undefined,
-                });
-              }
-
-              // Complete action tracking for successful streaming
-              if (
-                actionTrackingContext &&
-                actionTrackingContext.actionCallId &&
-                actionTrackingContext.trackingEnabled
-              ) {
-                await tracker.completeActionCall(
-                  actionTrackingContext.actionCallId,
-                  "completed"
-                );
-              }
-            })
-            .catch(async (error: any) => {
-              // Track failed streaming call
-              if (
-                actionTrackingContext &&
-                actionTrackingContext.trackingEnabled
-              ) {
-                await tracker.trackModelCall(
-                  actionTrackingContext,
-                  "stream",
-                  modelId,
-                  provider,
-                  {
-                    error: {
-                      message: error.message || "Stream failed",
-                      cause: error,
-                    },
-                    metrics: {
-                      modelId: modelId,
-                      provider: provider,
-                      totalTime: Date.now() - startTime,
-                    },
-                  }
-                );
-              }
-
-              // Complete action tracking for failed streaming
-              if (
-                actionTrackingContext &&
-                actionTrackingContext.actionCallId &&
-                actionTrackingContext.trackingEnabled
-              ) {
-                await tracker.completeActionCall(
-                  actionTrackingContext.actionCallId,
-                  "failed",
-                  {
-                    message: error.message || "Stream failed",
-                    cause: error,
-                  }
-                );
-              }
+            // Log action complete event
+            logger.event("ACTION_COMPLETE", {
+              requestId,
+              userId,
+              sessionId,
+              actionName: "generate_text",
+              duration: endTime - startTime,
             });
-        }
+          })
+          .catch(async (error: any) => {
+            const endTime = Date.now();
+            
+            // Log model call error event
+            logger.event("MODEL_CALL_ERROR", {
+              requestId,
+              userId,
+              sessionId,
+              provider: provider,
+              modelId: modelId,
+              callType: "stream",
+              actionName: "generate_text",
+              duration: endTime - startTime,
+              error: {
+                message: error.message || "Stream failed",
+                cause: error,
+              },
+            });
+
+            // Log action error event
+            logger.event("ACTION_ERROR", {
+              requestId,
+              userId,
+              sessionId,
+              actionName: "generate_text",
+              duration: endTime - startTime,
+              error: {
+                message: error.message || "Stream failed",
+                cause: error,
+              },
+            });
+          });
 
         return prepareStreamResponse({
           model,
@@ -447,75 +327,41 @@ export const runGenerate = task({
         });
       }
     } catch (error) {
-      // Track failed model call
-      if (actionTrackingContext && actionTrackingContext.trackingEnabled) {
-        const endTime = Date.now();
-        await tracker.trackModelCall(
-          actionTrackingContext,
-          streaming ? "stream" : "generate",
-          modelId,
-          provider,
-          {
-            error: {
-              message:
-                error instanceof Error ? error.message : "Model call failed",
-              cause: error,
-            },
-            metrics: {
-              modelId: modelId,
-              provider: provider,
-              totalTime: endTime - startTime,
-            },
-          }
-        );
-      }
-
+      const endTime = Date.now();
+      
       // Log model call error event
-      if (actionTrackingContext) {
-        logger.event("MODEL_CALL_ERROR", {
-          provider: provider,
-          modelId: modelId,
-          callType: streaming ? "stream" : "generate",
-          error: {
-            message:
-              error instanceof Error ? error.message : "Model call failed",
-            cause: error,
-          },
-        });
-      }
-
-      // Complete action and context tracking with error
-      if (
-        actionTrackingContext &&
-        actionTrackingContext.actionCallId &&
-        actionTrackingContext.trackingEnabled
-      ) {
-        await tracker.completeActionCall(
-          actionTrackingContext.actionCallId,
-          "failed",
-          {
-            message:
-              error instanceof Error ? error.message : "Generate action failed",
-            cause: error,
-          }
-        );
-      }
+      logger.event("MODEL_CALL_ERROR", {
+        requestId,
+        userId,
+        sessionId,
+        provider: provider,
+        modelId: modelId,
+        callType: streaming ? "stream" : "generate",
+        actionName: "generate_text",
+        duration: endTime - startTime,
+        error: {
+          message:
+            error instanceof Error ? error.message : "Model call failed",
+          cause: error,
+        },
+      });
+      
+      // Log action error event
+      logger.event("ACTION_ERROR", {
+        requestId,
+        userId,
+        sessionId,
+        actionName: "generate_text",
+        duration: endTime - startTime,
+        error: {
+          message:
+            error instanceof Error ? error.message : "Generate action failed",
+          cause: error,
+        },
+      });
 
       onError(error);
       throw error;
-    } finally {
-      // Complete action and context tracking for non-streaming calls
-      if (
-        !streaming &&
-        actionTrackingContext &&
-        actionTrackingContext.actionCallId &&
-        actionTrackingContext.trackingEnabled
-      ) {
-        await tracker.completeActionCall(
-          actionTrackingContext.actionCallId,
-          "completed"
-        );
-      }
     }
   },
 });
@@ -547,40 +393,27 @@ export const runAgentContext = task({
       args: unknown;
       outputs?: Record<string, Omit<Output<any, any, AnyContext, any>, "type">>;
       handlers?: Record<string, unknown>;
-      requestContext?: RequestContext;
+      requestId?: string;
+      userId?: string;
+      sessionId?: string;
       chain?: Log[];
       model?: LanguageModel;
     },
     { abortSignal }
   ) => {
-    const { agent, context, args, outputs, handlers, requestContext, chain } =
+    const { agent, context, args, outputs, handlers, requestId, userId, sessionId, chain } =
       params;
 
     const model =
       params.model ?? context.model ?? agent.reasoningModel ?? agent.model;
     if (!model) throw new Error("no model");
 
-    // Create request context if not provided
-    let effectiveRequestContext = requestContext;
-    if (!effectiveRequestContext) {
-      effectiveRequestContext = createRequestContext("agent:run", {
-        trackingEnabled: false,
-      });
-    }
-
-    // Start agent run tracking
-    let agentRunContext = effectiveRequestContext;
-    const tracker = getRequestTracker();
     const startTime = Date.now();
 
-    if (effectiveRequestContext && effectiveRequestContext.trackingEnabled) {
-      agentRunContext = await tracker.startAgentRun(
-        effectiveRequestContext,
-        "agent"
-      );
-    }
-
     agent.logger.event("AGENT_START", {
+      requestId,
+      userId,
+      sessionId,
       agentName: "agent",
       configuration: {
         contextType: context.type,
@@ -698,7 +531,9 @@ export const runAgentContext = task({
               agent.logger,
             streaming: true,
             contextSettings: ctxState.settings,
-            requestContext: agentRunContext,
+            requestId,
+            userId,
+            sessionId,
             onError: (error: unknown) => {
               streamError = error;
             },
@@ -798,19 +633,13 @@ export const runAgentContext = task({
 
     await Promise.all(state.contexts.map((state) => agent.saveContext(state)));
 
-    // Complete agent run tracking
-    if (
-      agentRunContext &&
-      agentRunContext.agentRunId &&
-      agentRunContext.trackingEnabled
-    ) {
-      await tracker.completeAgentRun(agentRunContext.agentRunId, "completed");
-    }
-
     const executionTime = Date.now() - startTime;
 
     // Log agent complete event
     agent.logger.event("AGENT_COMPLETE", {
+      requestId,
+      userId,
+      sessionId,
       agentName: "agent",
       executionTime,
     });
@@ -844,17 +673,33 @@ export const runAction = task({
     action,
     agent,
     logger,
+    requestId,
+    userId,
+    sessionId,
   }: {
     ctx: ActionCallContext<any, TContext>;
     action: AnyAction;
     agent: AnyAgent;
     logger: Logger;
+    requestId?: string;
+    userId?: string;
+    sessionId?: string;
   }) => {
     logger.info(
       "agent:action_call:" + ctx.call.id,
       ctx.call.name,
       JSON.stringify(ctx.call.data)
     );
+    
+    const startTime = Date.now();
+    
+    // Log action start event
+    logger.event("ACTION_START", {
+      requestId,
+      userId,
+      sessionId,
+      actionName: ctx.call.name,
+    });
 
     try {
       const result =
@@ -866,6 +711,15 @@ export const runAction = task({
           : await (action.handler as any)(ctx.call.data, ctx, agent);
 
       logger.debug("agent:action_result:" + ctx.call.id, ctx.call.name, result);
+      
+      // Log action complete event
+      logger.event("ACTION_COMPLETE", {
+        requestId,
+        userId,
+        sessionId,
+        actionName: ctx.call.name,
+        duration: Date.now() - startTime,
+      });
 
       return result;
     } catch (error) {
@@ -884,6 +738,19 @@ export const runAction = task({
         `Action '${ctx.call.name}' failed: ${errorMessage}`,
         errorDetails
       );
+      
+      // Log action error event
+      logger.event("ACTION_ERROR", {
+        requestId,
+        userId,
+        sessionId,
+        actionName: ctx.call.name,
+        duration: Date.now() - startTime,
+        error: {
+          message: errorMessage,
+          cause: error,
+        },
+      });
 
       if (action.onError) {
         return await action.onError(error, ctx as any, agent);

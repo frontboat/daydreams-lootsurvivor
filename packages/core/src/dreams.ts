@@ -16,7 +16,7 @@ import type {
 } from "./types";
 import { Logger } from "./logger";
 import { createContainer } from "./container";
-import { createServiceManager } from "./serviceProvider";
+import { createServiceManager } from "./service-provider";
 import { TaskRunner } from "./task";
 import {
   getContextId,
@@ -42,8 +42,8 @@ import { LogLevel } from "./types";
 import { randomUUIDv7, tryAsync } from "./utils";
 import { promptTemplate } from "./prompts/main";
 import type { DeferredPromise } from "p-defer";
-import { configureRequestTracking } from "./tracking/tracker";
 import { runAgentContext } from "./tasks";
+import { SimpleTracker } from "./simple-tracker";
 
 /**
  * Creates and configures a new Dreams AI agent instance
@@ -185,12 +185,6 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
     },
   });
 
-  // Configure request tracking with logger integration
-  if (config.requestTrackingConfig) {
-    // Pass the complete config including cost estimation to the global tracker
-    configureRequestTracking(config.requestTrackingConfig, logger);
-  }
-
   const debug: Debugger = (...args) => {
     if (!config.debugger) return;
     try {
@@ -264,8 +258,12 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
   exportManager.registerExporter(new JSONExporter());
   exportManager.registerExporter(new MarkdownExporter());
 
+  // Create SimpleTracker by default - automatically extracts analytics from logger events
+  const tracker = new SimpleTracker(logger);
+
   const agent: Agent<TContext> = {
     logger,
+    tracker,
     inputs,
     outputs,
     events,
@@ -653,10 +651,6 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
           totalOutputs: registry.outputs.size + contextCounts.outputs,
           extensions: Array.from(registry.extensions.keys()),
         },
-        tracking: {
-          enabled: !!config.requestTrackingConfig?.enabled,
-          exportTrainingData,
-        },
       });
 
       booted = true;
@@ -894,7 +888,6 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
             Omit<Output<any, any, AnyContext, any>, "type">
           >,
           handlers: params.handlers,
-          requestContext: params.requestContext,
           chain: params.chain,
           model: params.model,
         },

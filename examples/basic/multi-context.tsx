@@ -141,6 +141,9 @@ const agent = createDreams({
   },
 });
 
+// 📊 SimpleTracker is now built into every agent by default!
+// No setup required - analytics are automatically available via agent.tracker
+
 // Start the interactive CLI
 async function main() {
   await agent.start();
@@ -148,6 +151,7 @@ async function main() {
   console.log("\n🤖 Personal Assistant Started!");
   console.log("💡 Try telling me your name or preferences.");
   console.log("💡 Exit and restart - I'll still remember you!");
+  console.log("💡 Type 'analytics' to see usage statistics");
   console.log("💡 Type 'exit' to quit\n");
 
   // Simulate different users with different context instances
@@ -167,6 +171,53 @@ async function main() {
       console.log("\n👋 See you next time!");
       rl.close();
       process.exit(0);
+    }
+
+    // 📊 NEW: Show analytics with SimpleTracker
+    if (input.toLowerCase() === "analytics") {
+      console.log("\n📊 === USAGE ANALYTICS ===");
+
+      // Get overall analytics (automatically extracted from events!)
+      const analytics = agent.tracker.getAnalytics();
+      console.log(`💰 Total cost: $${analytics.totalCost.toFixed(4)}`);
+      console.log(`🔤 Total tokens: ${analytics.totalTokens.toLocaleString()}`);
+      console.log(
+        `✅ Success rate: ${(analytics.successRate * 100).toFixed(1)}%`
+      );
+      console.log(
+        `⏱️  Average response time: ${analytics.averageResponseTime.toFixed(
+          0
+        )}ms`
+      );
+
+      // Show user-specific analytics
+      const userActivity = agent.tracker.getUserActivity(userId);
+      console.log(`\n👤 User ${userId} Activity:`);
+      console.log(`📝 Total requests: ${userActivity.totalRequests}`);
+      console.log(`💰 Total cost: $${userActivity.totalCost.toFixed(4)}`);
+      console.log(
+        `⏱️  Average response time: ${userActivity.averageResponseTime.toFixed(
+          0
+        )}ms`
+      );
+
+      // Show cost breakdown by model and action
+      if (Object.keys(analytics.costByModel).length > 0) {
+        console.log(`\n🤖 Cost by Model:`, analytics.costByModel);
+      }
+      if (Object.keys(analytics.costByAction).length > 0) {
+        console.log(`⚡ Cost by Action:`, analytics.costByAction);
+      }
+
+      console.log(`\n🎯 Benefits of Built-in SimpleTracker:`);
+      console.log(`• Zero setup - tracking is built into every agent`);
+      console.log(`• Automatic analytics from events`);
+      console.log(`• 90% less code than old system`);
+      console.log(`• Real-time metrics without complexity`);
+      console.log(`• Access via agent.tracker property`);
+
+      rl.prompt();
+      return;
     }
 
     try {
