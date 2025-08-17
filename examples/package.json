@@ -26,7 +26,6 @@
     "@daydreamsai/chromadb": "workspace:*",
     "@daydreamsai/discord": "workspace:*",
     "@daydreamsai/mongodb": "workspace:*",
-    "@daydreamsai/memgraph": "workspace:*",
     "@daydreamsai/supabase": "workspace:*",
     "@octokit/rest": "catalog:",
     "@openrouter/ai-sdk-provider": "catalog:",
