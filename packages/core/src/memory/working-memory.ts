@@ -1,23 +1,13 @@
-import type {
-  AnyRef,
-  AgentContext,
-  AnyContext,
-  AnyAgent,
-  WorkingMemory,
-} from "../types";
+import type { AnyRef, AgentContext, AnyContext, AnyAgent } from "../types";
 import type {
   IWorkingMemory,
   WorkingMemoryData,
   PushOptions,
   Memory,
-  MemoryManager,
 } from "./types";
 import { contextLockManager } from "./context-lock-manager";
-import { KnowledgeService } from "./services";
 
 export class WorkingMemoryImpl implements IWorkingMemory {
-  private knowledgeService?: KnowledgeService;
-
   constructor(private memory: Memory) {}
 
   async create(contextId: string): Promise<WorkingMemoryData> {
@@ -143,6 +133,7 @@ export class WorkingMemoryImpl implements IWorkingMemory {
     });
   }
 
+  // TODO:
   async summarize(contextId: string): Promise<string> {
     const data = await this.get(contextId);
 
