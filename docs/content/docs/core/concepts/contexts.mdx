@@ -199,7 +199,7 @@ interface TodoMemory {
   createdAt: string;
 }
 
-export const todoContext = context<TodoMemory>({
+export const todoContext = context({
   // Type identifies this kind of context
   type: "todo",
 
@@ -209,7 +209,7 @@ export const todoContext = context<TodoMemory>({
   }),
 
   // Create initial memory when first accessed
-  create: () => ({
+  create: TodoMemory() => ({
     tasks: [],
     createdAt: new Date().toISOString(),
   }),
