@@ -10,6 +10,7 @@ import {
 import { openai } from "@ai-sdk/openai";
 import * as z from "zod";
 import * as readline from "readline";
+import { createChromaMemory } from "@daydreamsai/chroma";
 
 const personalAssistantHooks: EpisodeHooks = {
   // Start episode when user begins a new conversation
