@@ -154,32 +154,3 @@ export {
   simpleChatHooks,
   runSupportExample,
 };
-
-/*
-Usage in your agent:
-
-```typescript
-import { supportContext } from "./episode-hooks-simple";
-
-const agent = createDreams({ ... });
-await agent.start({});
-
-// Each customer conversation will automatically create episodes
-const conversation = await agent.getContext({
-  context: supportContext,
-  args: { customerId: "123", sessionId: "abc" }
-});
-
-// Send messages - episodes will be created automatically when conversations end
-await agent.send("Hello, I have a billing question", { 
-  context: conversation,
-  type: "customer_message" 
-});
-```
-
-The episode hooks will automatically:
-- Detect conversation boundaries
-- Structure the data for analytics
-- Store episodes in memory for later retrieval
-- Extract metadata for reporting dashboards
-*/

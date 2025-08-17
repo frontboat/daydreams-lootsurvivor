@@ -15,30 +15,25 @@ import type {
   AnyContext,
   AnyAgent,
   ContextState,
+  EpisodicMemory,
+  KnowledgeSchema,
 } from "../types";
 
 /**
- * Core Memory interface - the unified API for all memory operations
+ * Core Memory interface - simplified for basic storage
  */
 export interface Memory {
-  // Core memory types
+  // Core storage types
   working: IWorkingMemory;
   kv: KeyValueMemory;
   vector: VectorMemory;
-  facts: FactualMemory;
-  episodes: EpisodicMemory;
-  semantic: SemanticMemory;
   graph: GraphMemory;
+  episodes?: EpisodicMemory;
 
-  // Unified operations
-  remember(content: any, options?: RememberOptions): Promise<void>;
+  // Basic operations
+  remember(content: unknown, options?: RememberOptions): Promise<void>;
   recall(query: string, options?: RecallOptions): Promise<MemoryResult[]>;
   forget(criteria: ForgetCriteria): Promise<void>;
-  extract(content: any, context: any): Promise<ExtractedMemories>;
-  evolve(): Promise<void>;
-
-  // Lifecycle
-  lifecycle: MemoryLifecycle;
 
   // System
   initialize(): Promise<void>;
@@ -54,23 +49,17 @@ export interface MemoryConfig {
     vector: VectorProvider;
     graph: GraphProvider;
   };
-  middleware?: MemoryMiddleware[];
-  options?: MemoryOptions;
-  logger?: any; // TODO: Import proper Logger type
-}
-
-export interface MemoryOptions {
-  evolution?: {
-    enabled: boolean;
-    interval?: number;
-  };
-  learning?: {
-    enabled: boolean;
+  logger?: any;
+  knowledge?: {
+    enabled?: boolean;
     model?: LanguageModel;
-  };
-  compression?: {
-    enabled: boolean;
-    threshold?: number;
+    schema?: KnowledgeSchema;
+    extraction?: {
+      maxTokens?: number;
+      temperature?: number;
+      minConfidence?: number;
+      usePatternFallback?: boolean;
+    };
   };
 }
 
@@ -99,7 +88,7 @@ export interface KeyValueProvider extends MemoryProvider {
   exists(key: string): Promise<boolean>;
   keys(pattern?: string): Promise<string[]>;
   count(pattern?: string): Promise<number>;
-  scan(pattern?: string): AsyncIterator<[string, any]>;
+  scan(pattern?: string): AsyncIterator<[string, unknown]>;
 
   // Batch operations
   getBatch<T>(keys: string[]): Promise<Map<string, T>>;
@@ -128,7 +117,7 @@ export interface VectorDocument {
   id: string;
   content: string;
   embedding?: number[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   namespace?: string;
 }
 
@@ -136,7 +125,7 @@ export interface VectorQuery {
   query?: string;
   embedding?: number[];
   namespace?: string;
-  filter?: Record<string, any>;
+  filter?: Record<string, unknown>;
   limit?: number;
   includeMetadata?: boolean;
   includeContent?: boolean;
@@ -147,7 +136,7 @@ export interface VectorResult {
   id: string;
   score: number;
   content?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -177,7 +166,7 @@ export interface GraphProvider extends MemoryProvider {
 export interface GraphNode {
   id: string;
   type: string;
-  properties: Record<string, any>;
+  properties: Record<string, unknown>;
   labels?: string[];
 }
 
@@ -186,13 +175,13 @@ export interface GraphEdge {
   from: string;
   to: string;
   type: string;
-  properties?: Record<string, any>;
+  properties?: Record<string, unknown>;
 }
 
 export interface GraphFilter {
   type?: string;
   labels?: string[];
-  properties?: Record<string, any>;
+  properties?: Record<string, unknown>;
 }
 
 export interface GraphTraversal {
@@ -289,115 +278,6 @@ export interface MemoryManager<TContext extends AnyContext = AnyContext> {
 }
 
 /**
- * Factual Memory - stores verified facts
- */
-export interface FactualMemory {
-  store(facts: Fact | Fact[]): Promise<void>;
-  get(id: string, contextId?: string): Promise<Fact | null>;
-  search(
-    query: string,
-    options?: SearchOptions & { contextId?: string }
-  ): Promise<Fact[]>;
-  verify(factId: string, contextId?: string): Promise<FactVerification>;
-  update(id: string, updates: Partial<Fact>, contextId?: string): Promise<void>;
-  delete(id: string, contextId?: string): Promise<boolean>;
-  getByTag(tag: string, value: string, contextId?: string): Promise<Fact[]>;
-  getByContext(contextId: string): Promise<Fact[]>;
-}
-
-export interface Fact {
-  id: string;
-  statement: string;
-  confidence: number;
-  source: string;
-  entities?: string[];
-  tags?: Record<string, string>;
-  timestamp: number;
-  contextId?: string;
-  verification?: FactVerification;
-}
-
-export interface FactVerification {
-  factId: string;
-  verified: boolean;
-  confidence: number;
-  supportingFacts: string[];
-  conflictingFacts: string[];
-  lastVerified: number;
-}
-
-/**
- * Episodic Memory - stores past experiences
- */
-export interface EpisodicMemory {
-  store(episode: Episode): Promise<void>;
-  get(id: string): Promise<Episode | null>;
-  findSimilar(
-    contextId: string,
-    content: string,
-    limit?: number
-  ): Promise<Episode[]>;
-  getTimeline(start: Date, end: Date): Promise<Episode[]>;
-  getByContext(contextId: string): Promise<Episode[]>;
-  compress(episodes: Episode[]): Promise<CompressedEpisode>;
-}
-
-export interface Episode {
-  id: string;
-  type: "conversation" | "action" | "event" | "compression";
-  input?: any;
-  output?: any;
-  context: string;
-  timestamp: number;
-  duration?: number;
-  metadata?: Record<string, any>;
-  summary?: string;
-}
-
-export interface CompressedEpisode extends Episode {
-  type: "compression";
-  originalEpisodes: string[];
-  compressionRatio: number;
-}
-
-/**
- * Semantic Memory - stores learned concepts and patterns
- */
-export interface SemanticMemory {
-  store(concept: SemanticConcept): Promise<void>;
-  get(id: string, contextId?: string): Promise<SemanticConcept | null>;
-  search(
-    query: string,
-    options?: SearchOptions & { contextId?: string }
-  ): Promise<SemanticConcept[]>;
-  getRelevantPatterns(contextId: string): Promise<Pattern[]>;
-  learnFromAction(action: any, result: any, contextId?: string): Promise<void>;
-  updateConfidence(
-    id: string,
-    delta: number,
-    contextId?: string
-  ): Promise<void>;
-}
-
-export interface SemanticConcept {
-  id: string;
-  type: "pattern" | "concept" | "relationship" | "skill";
-  content: string;
-  confidence: number;
-  occurrences: number;
-  examples: string[];
-  contextId?: string; // Context-specific or global if undefined
-  metadata?: Record<string, any>;
-}
-
-export interface Pattern extends SemanticConcept {
-  type: "pattern";
-  trigger: string;
-  response: string;
-  successRate: number;
-}
-
-/**
  * Graph Memory - stores entity relationships
  */
 export interface GraphMemory {
@@ -414,7 +294,7 @@ export interface Entity {
   id: string;
   type: string;
   name: string;
-  properties: Record<string, any>;
+  properties: Record<string, unknown>;
   contextIds: string[];
 }
 
@@ -423,8 +303,29 @@ export interface Relationship {
   from: string;
   to: string;
   type: string;
-  properties?: Record<string, any>;
+  properties?: Record<string, unknown>;
   strength?: number;
+  /** Semantic metadata for this relationship */
+  semantics?: {
+    /** Human-readable verb describing the relationship */
+    verb: string;
+    /** Inverse verb (e.g., "works_for" inverse is "employs") */
+    inverseVerb?: string;
+    /** Relationship strength (0-1) - can override top-level strength */
+    strength?: number;
+    /** Context where this relationship applies */
+    context?: string;
+    /** Whether this relationship was inferred vs explicit */
+    inferred?: boolean;
+    /** Temporal information */
+    temporal?: {
+      start?: Date;
+      end?: Date;
+      duration?: number;
+    };
+    /** Confidence in this relationship (0-1) */
+    confidence?: number;
+  };
 }
 
 /**
@@ -437,7 +338,12 @@ export interface KeyValueMemory {
   exists(key: string): Promise<boolean>;
   keys(pattern?: string): Promise<string[]>;
   count(pattern?: string): Promise<number>;
-  scan(pattern?: string): AsyncIterator<[string, any]>;
+  scan(pattern?: string): AsyncIterator<[string, unknown]>;
+
+  // Batch operations
+  getBatch<T>(keys: string[]): Promise<Map<string, T>>;
+  setBatch<T>(entries: Map<string, T>, options?: SetOptions): Promise<void>;
+  deleteBatch(keys: string[]): Promise<number>;
 }
 
 /**
@@ -450,62 +356,25 @@ export interface VectorMemory {
 }
 
 /**
- * Memory lifecycle events
- */
-export interface MemoryLifecycle {
-  on(event: string, handler: LifecycleHandler): void;
-  off(event: string, handler: LifecycleHandler): void;
-  emit(event: string, data?: any): Promise<void>;
-}
-
-export type LifecycleHandler = (data: any) => void | Promise<void>;
-
-/**
- * Memory middleware for cross-cutting concerns
- */
-export interface MemoryMiddleware {
-  name: string;
-  initialize?(memory: Memory): Promise<void>;
-
-  // Lifecycle hooks
-  beforeRemember?(context: MemoryContext): Promise<void>;
-  afterRemember?(context: MemoryContext): Promise<void>;
-  beforeRecall?(context: MemoryContext): Promise<void>;
-  afterRecall?(context: MemoryContext): Promise<void>;
-  beforeForget?(context: MemoryContext): Promise<void>;
-  afterForget?(context: MemoryContext): Promise<void>;
-
-  // Transform hooks
-  transformStore?(data: any): Promise<any>;
-  transformRetrieve?(data: any): Promise<any>;
-}
-
-export interface MemoryContext {
-  operation: string;
-  data?: any;
-  options?: any;
-  memory: Memory;
-}
-
-/**
  * Memory operation options
  */
 export interface RememberOptions {
   key?: string;
   type?: string;
-  context?: string;
-  metadata?: Record<string, any>;
-  index?: boolean;
+  scope?: "context" | "user" | "global";
+  contextId?: string;
+  userId?: string;
+  metadata?: Record<string, unknown>;
   ttl?: number;
 }
 
 export interface RecallOptions {
-  context?: string;
-  types?: string[];
+  contextId?: string;
+  userId?: string;
+  scope?: "context" | "user" | "global" | "all";
   limit?: number;
   minRelevance?: number;
-  boost?: Record<string, number>;
-  filter?: Record<string, any>;
+  filter?: Record<string, unknown>;
 }
 
 export interface ForgetCriteria {
@@ -520,7 +389,7 @@ export interface SearchOptions {
   limit?: number;
   offset?: number;
   sort?: "relevance" | "timestamp" | "confidence";
-  filter?: Record<string, any>;
+  filter?: Record<string, unknown>;
 }
 
 /**
@@ -532,34 +401,10 @@ export interface MemoryResult {
   content: any;
   score?: number;
   confidence?: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   timestamp?: number;
 }
 
-export interface ExtractedMemories {
-  facts: Fact[];
-  preferences: Preference[];
-  entities: Entity[];
-  events: Event[];
-  relationships: Relationship[];
-}
-
-export interface Preference {
-  id: string;
-  subject: string;
-  preference: string;
-  strength: number;
-  contextId: string;
-}
-
-export interface Event {
-  id: string;
-  type: string;
-  description: string;
-  participants: string[];
-  timestamp: number;
-  contextId: string;
-}
 /**
  * Represents a memory configuration for storing data
  * @template Data - Type of data stored in memory

@@ -1,11 +1,11 @@
 import { type LanguageModel, type Schema } from "ai";
 import { z, ZodObject, ZodType, type ZodRawShape } from "zod";
 import type { Container } from "./container";
-import type { ServiceProvider } from "./serviceProvider";
+import type { ServiceProvider } from "./service-provider";
 import type { TaskRunner } from "./task";
 import type { Logger } from "./logger";
-import type { RequestContext, RequestTrackingConfig } from "./tracking";
-import type { RequestTracker } from "./tracking/tracker";
+import type { SimpleTracker } from "./simple-tracker";
+
 import type {
   EpisodeHooks,
   ActionState,
@@ -58,32 +58,6 @@ export type InferAgentContext<TAgent extends AnyAgent> = TAgent extends Agent<
 export type InferAgentMemory<TAgent extends AnyAgent> = InferContextMemory<
   InferAgentContext<TAgent>
 >;
-
-/**
- * Represents an evaluator that can validate action/output results
- * @template Data - Type of data being evaluated
- * @template Context - Context type for the evaluation
- */
-export type Evaluator<
-  Data = any,
-  Context extends AgentContext<any> = AgentContext<any>,
-  TAgent extends AnyAgent = AnyAgent
-> = {
-  name: string;
-  description?: string;
-  /** Schema for the evaluation result */
-  schema?: z.ZodType<any>;
-  /** Custom prompt template for LLM-based evaluation */
-  prompt?: string;
-  /** Custom handler for evaluation logic */
-  handler?: (
-    data: Data,
-    ctx: Context,
-    agent: TAgent
-  ) => Promise<boolean> | boolean;
-  /** Optional callback when evaluation fails */
-  onFailure?: (ctx: Context, agent: TAgent) => Promise<void> | void;
-};
 
 /**
  * Schema type for action parameters - can be Zod raw shape, ZodObject, or AI SDK Schema
@@ -193,8 +167,6 @@ export interface Action<
   returns?: ActionSchema;
 
   format?: (result: ActionResult<Result>) => string | string[];
-  /** Optional evaluator for this specific action */
-  evaluator?: Evaluator<Result, AgentContext<TContext>, TAgent>;
 
   context?: TContext;
 
@@ -320,8 +292,6 @@ export type Output<
     agent: TAgent
   ) => MaybePromise<Response | Response[]>;
   format?: (res: OutputRef<Response["data"]>) => string | string[] | XMLElement;
-  /** Optional evaluator for this specific output */
-  evaluator?: Evaluator<OutputResponse, AgentContext<Context>, TAgent>;
 
   examples?: string[];
 };
@@ -575,7 +545,6 @@ export interface AgentContext<TContext extends AnyContext = AnyContext> {
   settings: ContextSettings;
   memory: InferContextMemory<TContext>;
   workingMemory: WorkingMemory;
-  requestContext?: RequestContext;
 }
 
 /**
@@ -617,6 +586,11 @@ interface AgentDef<TContext extends AnyContext = AnyContext> {
   logger: Logger;
 
   /**
+   * Analytics tracker automatically extracts metrics from logger events
+   */
+  tracker: SimpleTracker;
+
+  /**
    * The memory store and vector store used by the agent.
    */
   memory: MemorySystem;
@@ -642,29 +616,9 @@ interface AgentDef<TContext extends AnyContext = AnyContext> {
   taskRunner: TaskRunner;
 
   /**
-   * Request tracker for monitoring model usage and performance.
-   */
-  requestTracker?: RequestTracker;
-
-  /**
-   * Configuration for request tracking.
-   */
-  requestTrackingConfig?: Partial<RequestTrackingConfig>;
-
-  /**
    * The primary language model used by the agent.
    */
   model?: LanguageModel;
-
-  /**
-   * The reasoning model used by the agent, if any.
-   */
-  reasoningModel?: LanguageModel;
-
-  /**
-   * The vector model used by the agent, if any.
-   */
-  vectorModel?: LanguageModel;
 
   /**
    * Model settings for the agent.
@@ -693,11 +647,6 @@ interface AgentDef<TContext extends AnyContext = AnyContext> {
    * A record of event schemas for the agent.
    */
   events: Record<string, z.ZodObject>;
-
-  /**
-   * A record of expert configurations for the agent.
-   */
-  experts: Record<string, ExpertConfig>;
 
   /**
    * An array of actions available to the agent.
@@ -743,6 +692,30 @@ export interface Agent<TContext extends AnyContext = AnyContext>
   isBooted(): boolean;
 
   /**
+   * Gets the configured task priority levels
+   */
+  getPriorityLevels(): {
+    default: number;
+    high: number;
+    low: number;
+  };
+
+  /**
+   * Gets the current task configuration
+   */
+  getTaskConfig(): {
+    concurrency: {
+      default: number;
+      llm: number;
+    };
+    priority: {
+      default: number;
+      high?: number;
+      low?: number;
+    };
+  };
+
+  /**
    * Emits an event with the provided arguments.
    * @param args - Arguments to pass to the event handler.
    */
@@ -780,7 +753,8 @@ export interface Agent<TContext extends AnyContext = AnyContext>
     handlers?: Partial<Handlers>;
     abortSignal?: AbortSignal;
     chain?: Log[];
-    requestContext?: RequestContext;
+    /** Task priority for execution ordering (higher = more priority) */
+    priority?: number;
   }) => Promise<AnyRef[]>;
 
   /**
@@ -803,15 +777,6 @@ export interface Agent<TContext extends AnyContext = AnyContext>
     abortSignal?: AbortSignal;
     chain?: Log[];
   }) => Promise<AnyRef[]>;
-
-  /**
-   * Evaluates the provided context.
-   * @param ctx - The context to evaluate.
-   * @returns A promise that resolves when evaluation is complete.
-   */
-  evaluator<SContext extends AnyContext>(
-    ctx: AgentContext<SContext>
-  ): Promise<void>;
 
   /**
    * Starts the agent with the provided arguments.
@@ -898,11 +863,30 @@ export interface Agent<TContext extends AnyContext = AnyContext>
  */
 export type Debugger = (contextId: string, keys: string[], data: any) => void;
 
+/**
+ * Configuration for task execution behavior
+ */
+export type TaskConfiguration = {
+  concurrency?: {
+    /** Default concurrency for TaskRunner main queue (default: 3) */
+    default?: number;
+    /** Max concurrent LLM calls across all contexts (default: 3) */
+    llm?: number;
+  };
+  priority?: {
+    /** Default priority for agent runs (default: 10) */
+    default?: number;
+    /** High priority for urgent operations */
+    high?: number;
+    /** Low priority for background tasks */
+    low?: number;
+  };
+};
+
 export type Config<TContext extends AnyContext = AnyContext> = Partial<
   AgentDef<TContext>
 > & {
   model?: Agent["model"];
-  reasoningModel?: Agent["reasoningModel"];
   modelSettings?: {
     temperature?: number;
     maxTokens?: number;
@@ -921,6 +905,8 @@ export type Config<TContext extends AnyContext = AnyContext> = Partial<
   /** Path to save training data */
   trainingDataPath?: string;
   streaming?: boolean;
+  /** Task execution configuration */
+  tasks?: TaskConfiguration;
 };
 
 /** Configuration type for inputs without type field */
@@ -940,9 +926,6 @@ export type OutputConfig<
   TContext extends AnyContext = AnyContext,
   TAgent extends AnyAgent = AnyAgent
 > = Omit<Output<Schema, Response, TContext, TAgent>, "type">;
-
-/** Configuration type for experts without type field */
-export type ExpertConfig = Omit<Expert, "type">;
 
 /** Function type for subscription cleanup */
 export type Subscription = () => void;

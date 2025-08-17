@@ -24,8 +24,6 @@ export interface ChromaMemoryConfig {
   };
   /** Additional metadata for the collection */
   metadata?: Record<string, any>;
-  /** Optional configuration for memory system behavior */
-  options?: MemoryConfig["options"];
 }
 
 /**
@@ -37,14 +35,15 @@ export interface ChromaMemoryConfig {
  * @param config - Configuration for the ChromaDB memory system
  * @returns A MemorySystem implementation using ChromaDB for vector storage
  */
-export function createChromaMemory(config: ChromaMemoryConfig = {}): MemorySystem {
+export function createChromaMemory(
+  config: ChromaMemoryConfig = {}
+): MemorySystem {
   const {
     path,
     collectionName = "daydreams_vectors",
     embeddingFunction,
     auth,
     metadata,
-    options,
   } = config;
 
   // Create the ChromaDB vector provider
@@ -68,21 +67,8 @@ export function createChromaMemory(config: ChromaMemoryConfig = {}): MemorySyste
       vector: vectorProvider,
       graph: graphProvider,
     },
-    options,
   };
 
   // Return the complete memory system
   return new MemorySystem(memoryConfig);
-}
-
-/**
- * Legacy compatibility function - creates a ChromaDB memory system
- * @deprecated Use createChromaMemory instead
- */
-export function createChromaMemoryStore(config: {
-  path?: string;
-  collectionName?: string;
-  embeddingFunction?: any;
-}): MemorySystem {
-  return createChromaMemory(config);
 }

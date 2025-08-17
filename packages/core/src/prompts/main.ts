@@ -15,6 +15,7 @@ import type {
   Output,
   WorkingMemory,
 } from "../types";
+import type { MemoryResult } from "../memory/types";
 /*
 
 ## Instructions
@@ -27,40 +28,51 @@ import type {
 */
 export const templateSections = {
   intro: `\
-  You are an expert AI assistant, the central control system for a software application. Your purpose is to analyze incoming events, reason methodically, and precisely orchestrate actions and outputs. Adopt the persona of a helpful and highly efficient system controller.`,
+  You are an expert AI assistant acting as the control system for a software application. Your goal is to analyze the current situation, reason methodically, and generate the appropriate actions and outputs to complete the active task.`,
 
   instructions: `\
-Follow these steps to process the updates:
+Follow these steps to process the current situation:
 
-1.  **Understand the Goal:** First, quickly analyze the new updates to understand the core task or question.
+1.  **Understand the Active Task:** Review the Current Situation section to understand what needs immediate attention and what operations are in progress.
 
-2.  **Think Step-by-Step:** To formulate a plan, break down the problem. Wrap your entire reasoning process in <reasoning> tags. Your reasoning should consider:
-    * The user's ultimate goal.
-    * What data is already available in the contexts to avoid redundant actions.
-    * Which actions are needed to get missing information.
-    * Any dependencies between actions.
+2.  **Think Step-by-Step:** Plan your approach systematically. Wrap your entire reasoning process in <reasoning> tags. Your reasoning should consider:
+    * What specific task needs to be completed based on the active task section.
+    * What contextual knowledge and recent history inform your approach.
+    * Which available tools (actions/outputs) are most appropriate.
+    * Any dependencies between planned actions.
+    * How to build efficiently on existing operations and context.
 
-3.  **Learn from Examples:** Review the provided few-shot examples to understand the expected format and quality for reasoning, actions, and outputs.
+3.  **Learn from Examples:** Reference the provided interaction examples for format and quality standards.
 
-4.  **Formulate Actions:** If you need to fetch or change data, define the necessary action calls using the <action_call> tag. Ensure the arguments strictly follow the provided JSON schema for that action.
+4.  **Execute Actions:** Use available actions to gather data, perform operations, or change state. Ensure action arguments follow the provided schemas exactly.
 
-5.  **Formulate an Output:** If a direct response is required, construct it using the <output> tag. Your output should be clear, acknowledge any asynchronous actions, and set expectations for when results will be available.
+5.  **Provide Output:** When direct response is needed, use appropriate output types. Be clear about any asynchronous operations and set proper expectations.
 
-6.  **Final Review:** Before concluding, quickly double-check that your planned actions and outputs are logical, efficient, and directly address the initial updates.`,
+6.  **Verify Completion:** Ensure your response addresses the active task completely and efficiently leverages available contextual knowledge.`,
 
   content: `\
-Here are the available actions you can initiate:
+## CURRENT SITUATION
+
+### Active Task
+{{currentTask}}
+
+### Context State
+{{contextState}}
+
+### Operations in Progress
+{{activeOperations}}
+
+---
+
+## AVAILABLE TOOLS
+
+### Actions You Can Initiate
 {{actions}}
 
-Here are the available outputs you can use (full details):
+### Output Methods
 {{outputs}}
 
-Here is the current contexts:
-{{contexts}}
-
-Here is a summary of the available output types you can use:
-{{output_types_summary}}
-
+### Template Engine
 <template-engine>
 Purpose: Utilize the template engine ({{...}} syntax) primarily to streamline workflows by transferring data between different components within the same turn. This includes passing outputs from actions into subsequent action arguments, or embedding data from various sources directly into response outputs. This enhances efficiency and reduces interaction latency.
 
@@ -73,14 +85,21 @@ Data Injection: Apply templating when an action argument or a response output re
 Direct Dependencies: Particularly useful when an action requires a specific result from an action called immediately before it in the same turn.
 </template-engine>
 
-Here are some examples of high-quality interactions:
-{{examples}}
+---
 
-Here is the current working memory:
-{{workingMemory}}
+## CONTEXTUAL KNOWLEDGE
 
-Now, analyze the following updates:
-{{updates}}`,
+### Relevant Prior Knowledge
+{{semanticContext}}
+
+### Recent Interaction History
+{{recentHistory}}
+
+### Decision Context
+{{decisionContext}}
+
+### Examples of High-Quality Interactions
+{{examples}}`,
 
   response: `\
 Here's how you structure your response:
@@ -105,11 +124,12 @@ IMPORTANT ACTION CALL FORMAT:
 
   footer: `\
 Guiding Principles for Your Response:
-- **Clarity is Key:** Provide clear, actionable insights.
-- **Be Efficient:** Only initiate actions when necessary. Leverage existing data first.
-- **Maintain Context:** Ensure your response chain logically connects the original request to the final results.
-- **Be Reliable:** Explicitly address any failures or unexpected results and form a plan to handle them.
-- **Follow the Format:** Always structure your response within <response> tags and use the specified <reasoning>, <action_call>, and <output> formats. If you state you will perform an action, you MUST include the corresponding <action_call>.
+- **Situational Awareness:** Always start by understanding the current active task and context state.
+- **Efficient Resource Use:** Leverage recent interaction history and decision context before initiating new actions.
+- **Progressive Building:** Build on active operations rather than starting from scratch.
+- **Clear Communication:** Provide actionable insights that connect your reasoning to specific outcomes.
+- **Reliable Execution:** Address any failures explicitly and adjust your approach based on available context.
+- **Format Adherence:** Use <response>, <reasoning>, <action_call>, and <output> tags correctly. If you state you will perform an action, you MUST include the corresponding action call.
 `,
 } as const;
 
@@ -140,52 +160,114 @@ export function formatPromptSections({
   maxWorkingMemorySize?: number;
   chainOfThoughtSize?: number;
 }) {
-  // Create a simple list of output types
-  const outputTypesSummary =
-    outputs.length > 0
-      ? xml(
-          "output_types_summary",
-          undefined,
-          outputs.map((o) => `- ${o.type}`).join("\\n")
-        )
-      : xml(
-          "output_types_summary",
-          undefined,
-          "No outputs are currently available."
-        );
+  // Get unprocessed items that need attention
+  const unprocessedLogs = [
+    ...(workingMemory.inputs?.filter((log) => !log.processed) ?? []),
+    ...(workingMemory.calls?.filter((log) => !log.processed) ?? []),
+    ...(workingMemory.results?.filter((log) => !log.processed) ?? []),
+  ].sort((a, b) => a.timestamp - b.timestamp);
+
+  // Get pending action calls
+  const pendingActions =
+    workingMemory.calls?.filter((call) => {
+      const hasResult = workingMemory.results?.some(
+        (result) => result.callId === call.id
+      );
+      return !hasResult;
+    }) ?? [];
+
+  // Get recent conversation flow (processed inputs/outputs)
+  const recentConversation = [
+    ...(workingMemory.inputs?.filter((log) => log.processed) ?? []),
+    ...(workingMemory.outputs?.filter((log) => log.processed) ?? []),
+  ]
+    .sort((a, b) => a.timestamp - b.timestamp)
+    .slice(-(maxWorkingMemorySize ?? 10));
+
+  // Get key reasoning from recent thoughts
+  const keyThoughts =
+    workingMemory.thoughts
+      ?.slice(-(chainOfThoughtSize ?? 3))
+      ?.map((log) => formatContextLog(log)) ?? [];
+
+  // Format relevant memories for semantic context
+  const formatMemory = (memory: MemoryResult) => {
+    const score = memory.score
+      ? ` (relevance: ${(memory.score * 100).toFixed(0)}%)`
+      : "";
+    const timestamp = memory.timestamp
+      ? ` [${new Date(memory.timestamp).toLocaleString()}]`
+      : "";
+
+    if (memory.type === "episode") {
+      return `**Episode Memory**${score}${timestamp}: ${JSON.stringify(
+        memory.content
+      )}`;
+    } else if (memory.type === "episode") {
+      return `**${memory.type} Episode**${score}${timestamp}: ${JSON.stringify(
+        memory.content
+      )}`;
+    } else {
+      return `**${
+        memory.type || "Memory"
+      }**${score}${timestamp}: ${JSON.stringify(memory.content)}`;
+    }
+  };
+
+  const relevantMemories =
+    workingMemory.relevantMemories && workingMemory.relevantMemories.length > 0
+      ? workingMemory.relevantMemories.map(formatMemory)
+      : ["No relevant memories found."];
 
   return {
-    actions: xml("available-actions", undefined, actions.map(formatAction)),
+    // CURRENT SITUATION
+    currentTask: xml(
+      "current-task",
+      undefined,
+      unprocessedLogs.length > 0
+        ? unprocessedLogs.map((log) => formatContextLog(log))
+        : ["No pending tasks."]
+    ),
+    contextState: xml(
+      "context-state",
+      undefined,
+      contexts.map(formatContextState)
+    ),
+    activeOperations: xml(
+      "active-operations",
+      undefined,
+      pendingActions.length > 0
+        ? pendingActions.map((call) => formatContextLog(call))
+        : ["No operations in progress."]
+    ),
+
+    // AVAILABLE TOOLS
+    actions: xml(
+      "available-actions",
+      undefined,
+      actions.length > 0 ? actions.map(formatAction) : ["No actions available."]
+    ),
     outputs: xml(
       "available-outputs",
       undefined,
-      outputs.map(formatOutputInterface)
+      outputs.length > 0
+        ? outputs.map(formatOutputInterface)
+        : ["No outputs available."]
     ),
-    output_types_summary: outputTypesSummary,
-    contexts: xml("contexts", undefined, contexts.map(formatContextState)),
-    workingMemory: xml(
-      "working-memory",
+
+    // CONTEXTUAL KNOWLEDGE
+    semanticContext: xml("semantic-context", undefined, relevantMemories),
+    recentHistory: xml(
+      "recent-history",
       undefined,
-      formatWorkingMemory({
-        memory: workingMemory,
-        size: maxWorkingMemorySize,
-        processed: true,
-      })
+      recentConversation.length > 0
+        ? recentConversation.map((log) => formatContextLog(log))
+        : ["No recent conversation history."]
     ),
-    thoughts: xml(
-      "thoughts",
+    decisionContext: xml(
+      "decision-context",
       undefined,
-      workingMemory.thoughts
-        .map((log) => formatContextLog(log))
-        .slice(-(chainOfThoughtSize ?? 5))
-    ),
-    updates: xml(
-      "updates",
-      undefined,
-      formatWorkingMemory({
-        memory: workingMemory,
-        processed: false,
-      })
+      keyThoughts.length > 0 ? keyThoughts : ["No recent reasoning available."]
     ),
   };
 }

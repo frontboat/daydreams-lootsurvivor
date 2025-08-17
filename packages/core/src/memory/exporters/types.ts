@@ -1,4 +1,4 @@
-import type { Episode } from '../types';
+import type { Episode } from "../../types";
 
 /**
  * Core interface for episode exporters
@@ -6,22 +6,22 @@ import type { Episode } from '../types';
 export interface EpisodeExporter<TOptions = any> {
   /** Unique name for this exporter */
   name: string;
-  
+
   /** Human-readable description */
   description?: string;
-  
+
   /** Supported export formats */
   formats: string[];
-  
+
   /** Export a single episode */
   exportEpisode(episode: Episode, options?: TOptions): Promise<ExportResult>;
-  
+
   /** Export multiple episodes */
   exportBatch(episodes: Episode[], options?: TOptions): Promise<ExportResult>;
-  
+
   /** Validate options before export */
   validate?(options: TOptions): Promise<boolean>;
-  
+
   /** Cleanup resources if needed */
   cleanup?(): Promise<void>;
 }
@@ -44,16 +44,16 @@ export interface ExportResult {
 export interface ExportParams {
   /** Episodes to export */
   episodes: Episode[];
-  
+
   /** Exporter name */
   exporter: string;
-  
+
   /** Export format (optional, uses default if not specified) */
   format?: string;
-  
+
   /** Exporter-specific options */
   options?: any;
-  
+
   /** Data transformation options */
   transform?: ExportTransform;
 }
@@ -67,13 +67,13 @@ export interface ExportTransform {
     include?: string[];
     exclude?: string[];
   };
-  
+
   /** Custom sanitization function */
   sanitize?: (episode: Episode) => Episode;
-  
+
   /** Sort episodes */
-  sortBy?: 'timestamp' | 'type' | 'duration';
-  sortOrder?: 'asc' | 'desc';
+  sortBy?: "timestamp" | "type" | "duration";
+  sortOrder?: "asc" | "desc";
 }
 
 /**
@@ -82,7 +82,7 @@ export interface ExportTransform {
 export interface EpisodeQuery {
   contextId?: string;
   timeRange?: { start: Date; end: Date };
-  types?: Episode['type'][];
+  types?: Episode["type"][];
   limit?: number;
   metadata?: Record<string, any>;
 }

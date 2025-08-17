@@ -1034,31 +1034,20 @@ export async function handleInput({
     throw new ParsingError(inputRef, error);
   }
 
-  logger.debug("agent:send", "Querying episodic memory");
+  logger.debug("agent:send", "Querying relevant memories");
 
-  const episodicMemory = await agent.memory.episodes.findSimilar(
-    ctxState.id,
+  const relevantMemories = await agent.memory.recall(
     typeof inputRef.data === "string"
       ? inputRef.data
       : JSON.stringify(inputRef.data),
-    5
+    { contextId: ctxState.id, limit: 5 }
   );
 
-  logger.trace("agent:send", "Episodic memory retrieved", {
-    episodesCount: episodicMemory.length,
+  logger.trace("agent:send", "Relevant memories retrieved", {
+    memoriesCount: relevantMemories.length,
   });
 
-  workingMemory.relevantMemories = episodicMemory.map((episode) => ({
-    id: episode.id,
-    type: "episode",
-    content: episode.input || episode.output,
-    metadata: {
-      context: episode.context,
-      timestamp: episode.timestamp,
-      duration: episode.duration,
-    },
-    timestamp: episode.timestamp,
-  }));
+  workingMemory.relevantMemories = relevantMemories;
 
   if (input.handler) {
     logger.debug("agent:send", "Using custom input handler", {
