@@ -5,6 +5,7 @@ import {
   LogLevel,
   input,
   output,
+  type EpisodeHooks,
 } from "@daydreamsai/core";
 import { openai } from "@ai-sdk/openai";
 import * as z from "zod";
@@ -14,6 +15,114 @@ import * as readline from "readline";
 // Option 1: Define actions directly in context config (recommended)
 // Option 2: Use .setActions() BEFORE creating the agent (shown here)
 // Option 3: Don't pre-register contexts in createDreams()
+
+const personalAssistantHooks: EpisodeHooks = {
+  // Start episode when user begins a new conversation
+  shouldStartEpisode: (ref) => {
+    return ref.ref === "input" && ref.type === "text";
+  },
+
+  // End episode when conversation naturally concludes or user says goodbye
+  shouldEndEpisode: (ref) => {
+    console.log("=== EPISODE END CHECK ===");
+    console.log("Ref type:", ref.ref);
+    console.log("Ref processed:", ref.processed);
+    console.log("Full ref:", JSON.stringify(ref, null, 2));
+
+    if (ref.ref !== "output") {
+      console.log("Early return: not output or not processed");
+      return false;
+    }
+
+    // Check both content and data fields for output text
+    const content = (ref.content || ref.data || "").toString().toLowerCase();
+
+    const isGoodbye =
+      content.includes("Goodbye") ||
+      content.includes("goodbye") ||
+      content.includes("Goodbye!") ||
+      content.includes("see you") ||
+      content.includes("bye");
+    const isTaskComplete =
+      content.includes("anything else") ||
+      content.includes("help you with") ||
+      content.includes("thank you");
+
+    console.log("Episode end analysis:", {
+      content: content.slice(0, 100),
+      fullContent: content,
+      isGoodbye,
+      isTaskComplete,
+      shouldEnd: isGoodbye || isTaskComplete,
+    });
+
+    return isGoodbye || isTaskComplete;
+  },
+
+  // Create structured episode data for personal assistant interactions
+  createEpisode: (logs, ctx) => {
+    const userInputs = logs.filter((l) => l.ref === "input");
+    const assistantOutputs = logs.filter((l) => l.ref === "output");
+    const actions = logs.filter((l) => l.ref === "action_call");
+
+    const nameActions = actions.filter((a) => a.name === "remember-name");
+    const preferenceActions = actions.filter(
+      (a) => a.name === "save-preference"
+    );
+    const topicActions = actions.filter((a) => a.name === "update-topic");
+
+    return {
+      type: "personal_assistant_session",
+      user: {
+        id: ctx.args?.userId,
+        messageCount: userInputs.length,
+        firstMessage: userInputs[0]?.content,
+        lastMessage: userInputs[userInputs.length - 1]?.content,
+        learnedName: nameActions.length > 0,
+        savedPreferences: preferenceActions.length,
+      },
+      assistant: {
+        messageCount: assistantOutputs.length,
+        actionsUsed: actions.map((a) => a.name),
+        personalizedResponses: nameActions.length + preferenceActions.length,
+      },
+      session: {
+        startTime: logs[0]?.timestamp,
+        endTime: logs[logs.length - 1]?.timestamp,
+        totalExchanges: Math.min(userInputs.length, assistantOutputs.length),
+        memoryUpdates:
+          nameActions.length + preferenceActions.length + topicActions.length,
+        duration: logs[logs.length - 1]?.timestamp - logs[0]?.timestamp,
+      },
+      summary: `Personal assistant session: ${
+        userInputs.length
+      } user messages, ${actions.length} memory actions, ${Math.round(
+        (logs[logs.length - 1]?.timestamp - logs[0]?.timestamp) / 1000
+      )}s duration`,
+    };
+  },
+
+  // Classify episodes based on personal assistant interactions
+  classifyEpisode: (episodeData) => {
+    if (episodeData.user?.learnedName || episodeData.user?.savedPreferences > 0)
+      return "learning";
+    if (episodeData.session?.totalExchanges > 5) return "extended";
+    if (episodeData.assistant?.personalizedResponses > 0) return "personalized";
+    return "standard";
+  },
+
+  // Extract metadata for personal assistant analytics
+  extractMetadata: (episodeData, logs, ctx) => ({
+    userId: ctx.args?.userId,
+    sessionType: episodeData.user?.learnedName ? "onboarding" : "regular",
+    interactionCount: episodeData.session?.totalExchanges || 0,
+    memoryActions: episodeData.session?.memoryUpdates || 0,
+    duration: episodeData.session?.duration || 0,
+    engagement: episodeData.session?.totalExchanges > 3 ? "high" : "low",
+    personalization:
+      episodeData.assistant?.personalizedResponses > 0 ? "yes" : "no",
+  }),
+};
 
 // Define what our assistant remembers about each user
 interface AssistantMemory {
@@ -27,6 +136,7 @@ interface AssistantMemory {
 const assistantContext = context<AssistantMemory>({
   type: "personal-assistant",
 
+  episodeHooks: personalAssistantHooks,
   // Each user gets their own context instance
   schema: z.object({
     userId: z.string().describe("Unique identifier for the user"),
@@ -62,7 +172,10 @@ ${
 - Ask for their name if you don't know it
 - Learn their preferences over time
 - Reference previous conversations when relevant
-- Be helpful and personalized based on what you know`,
+- Be helpful and personalized based on what you know
+
+always end the conversation with a goodbye
+`,
 
   // Track conversation count
   onRun: async (ctx) => {

@@ -381,7 +381,6 @@ export async function saveContextState(agent: AnyAgent, state: ContextState) {
     contextType: context.type,
     contextId: id,
     updateType: "state",
-    context: context,
   });
 
   await agent.memory.kv.set<ContextStateSnapshot>(`context:${id}`, {
