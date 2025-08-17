@@ -60,32 +60,6 @@ export type InferAgentMemory<TAgent extends AnyAgent> = InferContextMemory<
 >;
 
 /**
- * Represents an evaluator that can validate action/output results
- * @template Data - Type of data being evaluated
- * @template Context - Context type for the evaluation
- */
-export type Evaluator<
-  Data = any,
-  Context extends AgentContext<any> = AgentContext<any>,
-  TAgent extends AnyAgent = AnyAgent
-> = {
-  name: string;
-  description?: string;
-  /** Schema for the evaluation result */
-  schema?: z.ZodType<any>;
-  /** Custom prompt template for LLM-based evaluation */
-  prompt?: string;
-  /** Custom handler for evaluation logic */
-  handler?: (
-    data: Data,
-    ctx: Context,
-    agent: TAgent
-  ) => Promise<boolean> | boolean;
-  /** Optional callback when evaluation fails */
-  onFailure?: (ctx: Context, agent: TAgent) => Promise<void> | void;
-};
-
-/**
  * Schema type for action parameters - can be Zod raw shape, ZodObject, or AI SDK Schema
  */
 export type ActionSchema = ZodRawShape | z.ZodObject | Schema<any> | undefined;
@@ -193,8 +167,6 @@ export interface Action<
   returns?: ActionSchema;
 
   format?: (result: ActionResult<Result>) => string | string[];
-  /** Optional evaluator for this specific action */
-  evaluator?: Evaluator<Result, AgentContext<TContext>, TAgent>;
 
   context?: TContext;
 
@@ -320,8 +292,6 @@ export type Output<
     agent: TAgent
   ) => MaybePromise<Response | Response[]>;
   format?: (res: OutputRef<Response["data"]>) => string | string[] | XMLElement;
-  /** Optional evaluator for this specific output */
-  evaluator?: Evaluator<OutputResponse, AgentContext<Context>, TAgent>;
 
   examples?: string[];
 };
@@ -651,16 +621,6 @@ interface AgentDef<TContext extends AnyContext = AnyContext> {
   model?: LanguageModel;
 
   /**
-   * The reasoning model used by the agent, if any.
-   */
-  reasoningModel?: LanguageModel;
-
-  /**
-   * The vector model used by the agent, if any.
-   */
-  vectorModel?: LanguageModel;
-
-  /**
    * Model settings for the agent.
    */
   modelSettings?: {
@@ -687,11 +647,6 @@ interface AgentDef<TContext extends AnyContext = AnyContext> {
    * A record of event schemas for the agent.
    */
   events: Record<string, z.ZodObject>;
-
-  /**
-   * A record of expert configurations for the agent.
-   */
-  experts: Record<string, ExpertConfig>;
 
   /**
    * An array of actions available to the agent.
@@ -824,15 +779,6 @@ export interface Agent<TContext extends AnyContext = AnyContext>
   }) => Promise<AnyRef[]>;
 
   /**
-   * Evaluates the provided context.
-   * @param ctx - The context to evaluate.
-   * @returns A promise that resolves when evaluation is complete.
-   */
-  evaluator<SContext extends AnyContext>(
-    ctx: AgentContext<SContext>
-  ): Promise<void>;
-
-  /**
    * Starts the agent with the provided arguments.
    * @param args - Arguments to pass to the agent on start.
    * @returns A promise that resolves to the agent instance.
@@ -941,7 +887,6 @@ export type Config<TContext extends AnyContext = AnyContext> = Partial<
   AgentDef<TContext>
 > & {
   model?: Agent["model"];
-  reasoningModel?: Agent["reasoningModel"];
   modelSettings?: {
     temperature?: number;
     maxTokens?: number;
@@ -981,9 +926,6 @@ export type OutputConfig<
   TContext extends AnyContext = AnyContext,
   TAgent extends AnyAgent = AnyAgent
 > = Omit<Output<Schema, Response, TContext, TAgent>, "type">;
-
-/** Configuration type for experts without type field */
-export type ExpertConfig = Omit<Expert, "type">;
 
 /** Function type for subscription cleanup */
 export type Subscription = () => void;

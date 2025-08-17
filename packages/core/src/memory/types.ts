@@ -15,6 +15,8 @@ import type {
   AnyContext,
   AnyAgent,
   ContextState,
+  EpisodicMemory,
+  KnowledgeSchema,
 } from "../types";
 
 /**
@@ -26,7 +28,7 @@ export interface Memory {
   kv: KeyValueMemory;
   vector: VectorMemory;
   graph: GraphMemory;
-  episodes?: import("./episodic-memory").EpisodicMemory;
+  episodes?: EpisodicMemory;
 
   // Basic operations
   remember(content: unknown, options?: RememberOptions): Promise<void>;
@@ -50,8 +52,8 @@ export interface MemoryConfig {
   logger?: any;
   knowledge?: {
     enabled?: boolean;
-    model?: import("ai").LanguageModel;
-    schema?: import("./knowledge-schema").KnowledgeSchema;
+    model?: LanguageModel;
+    schema?: KnowledgeSchema;
     extraction?: {
       maxTokens?: number;
       temperature?: number;
@@ -60,7 +62,6 @@ export interface MemoryConfig {
     };
   };
 }
-
 
 /**
  * Base provider interface
@@ -276,12 +277,6 @@ export interface MemoryManager<TContext extends AnyContext = AnyContext> {
   };
 }
 
-
-
-
-
-
-
 /**
  * Graph Memory - stores entity relationships
  */
@@ -359,8 +354,6 @@ export interface VectorMemory {
   search(query: VectorQuery): Promise<VectorResult[]>;
   delete(ids: string[]): Promise<void>;
 }
-
-
 
 /**
  * Memory operation options

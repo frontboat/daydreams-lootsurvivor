@@ -121,14 +121,11 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
     outputs = {},
     events = {},
     actions = [],
-    experts = {},
     services = [],
     extensions = [],
     model,
-    reasoningModel,
+
     modelSettings,
-    exportTrainingData,
-    trainingDataPath,
     streaming = true,
   } = config;
 
@@ -171,14 +168,13 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
   // Log agent creation
   logger.info("agent:create", "Creating Daydreams agent", {
     model: model,
-    reasoningModel: reasoningModel,
+
     logLevel: config.logLevel ?? LogLevel.INFO,
     streaming,
     extensionsCount: extensions.length,
     contextsCount: config.contexts?.length ?? 0,
     actionsCount: actions.length,
     servicesCount: services.length,
-    exportTrainingData,
     taskConfig: {
       concurrency: taskConfig.concurrency,
       priority: taskConfig.priority,
@@ -268,17 +264,13 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
     outputs,
     events,
     actions,
-    experts,
     memory,
     container,
     model,
-    reasoningModel,
     modelSettings,
     taskRunner,
     debugger: debug,
     context: config.context ?? undefined,
-    exportTrainingData,
-    trainingDataPath,
     registry,
     exports: exportManager,
     emit: (event: string, data: any) => {
@@ -635,7 +627,6 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
         },
         model: {
           primary: model,
-          reasoning: reasoningModel,
           settings: modelSettings,
         },
         registry: {
@@ -929,16 +920,6 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
         ...params,
         chain: params.chain ? [...params.chain, inputRef] : [inputRef],
       });
-    },
-
-    /**
-     * Evaluates the provided context (placeholder implementation)
-     * @param ctx - The agent context to evaluate
-     * @deprecated This method is not fully implemented
-     */
-    async evaluator(ctx) {
-      const { id, memory } = ctx;
-      logger.debug("agent:evaluator", "memory", memory);
     },
   };
 

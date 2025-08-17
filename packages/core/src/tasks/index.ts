@@ -289,7 +289,7 @@ export const runGenerate = task({
           })
           .catch(async (error: any) => {
             const endTime = Date.now();
-            
+
             // Log model call error event
             logger.event("MODEL_CALL_ERROR", {
               requestId,
@@ -328,7 +328,7 @@ export const runGenerate = task({
       }
     } catch (error) {
       const endTime = Date.now();
-      
+
       // Log model call error event
       logger.event("MODEL_CALL_ERROR", {
         requestId,
@@ -340,12 +340,11 @@ export const runGenerate = task({
         actionName: "generate_text",
         duration: endTime - startTime,
         error: {
-          message:
-            error instanceof Error ? error.message : "Model call failed",
+          message: error instanceof Error ? error.message : "Model call failed",
           cause: error,
         },
       });
-      
+
       // Log action error event
       logger.event("ACTION_ERROR", {
         requestId,
@@ -401,11 +400,19 @@ export const runAgentContext = task({
     },
     { abortSignal }
   ) => {
-    const { agent, context, args, outputs, handlers, requestId, userId, sessionId, chain } =
-      params;
+    const {
+      agent,
+      context,
+      args,
+      outputs,
+      handlers,
+      requestId,
+      userId,
+      sessionId,
+      chain,
+    } = params;
 
-    const model =
-      params.model ?? context.model ?? agent.reasoningModel ?? agent.model;
+    const model = params.model ?? context.model ?? agent.model;
     if (!model) throw new Error("no model");
 
     const startTime = Date.now();
@@ -690,9 +697,9 @@ export const runAction = task({
       ctx.call.name,
       JSON.stringify(ctx.call.data)
     );
-    
+
     const startTime = Date.now();
-    
+
     // Log action start event
     logger.event("ACTION_START", {
       requestId,
@@ -711,7 +718,7 @@ export const runAction = task({
           : await (action.handler as any)(ctx.call.data, ctx, agent);
 
       logger.debug("agent:action_result:" + ctx.call.id, ctx.call.name, result);
-      
+
       // Log action complete event
       logger.event("ACTION_COMPLETE", {
         requestId,
@@ -738,7 +745,7 @@ export const runAction = task({
         `Action '${ctx.call.name}' failed: ${errorMessage}`,
         errorDetails
       );
-      
+
       // Log action error event
       logger.event("ACTION_ERROR", {
         requestId,

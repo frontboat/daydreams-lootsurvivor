@@ -1,12 +1,12 @@
 /**
- * Comprehensive Web Scraping Agent with Full Memory System
+ * Web Scraping Agent with ChromaDB Memory Integration
  *
- * This agent demonstrates the complete Daydreams memory system by:
- * 1. Scraping websites and extracting content
- * 2. Converting content into structured memories (facts, episodes, entities)
- * 3. Using all memory types: working, episodic, factual, semantic, and graph
- * 4. Demonstrating memory limits, transactions, and context isolation
- * 5. Learning from scraping patterns and improving over time
+ * This example demonstrates:
+ * 1. Using ChromaDB for persistent vector storage
+ * 2. Scraping websites and storing content semantically
+ * 3. Querying stored content with semantic search
+ * 4. Memory system best practices with context isolation
+ * 5. Proper error handling and graceful degradation
  */
 
 import {
@@ -17,24 +17,20 @@ import {
   Logger,
   context,
 } from "@daydreamsai/core";
-import {
-  MemorySystem,
-  InMemoryKeyValueProvider,
-  InMemoryVectorProvider,
-  InMemoryGraphProvider,
-  type Memory,
-} from "@daydreamsai/core";
-import { anthropic } from "@ai-sdk/anthropic";
+import { createChromaMemory } from "@daydreamsai/chromadb";
 import * as z from "zod";
+import * as readline from "readline";
+import { openai } from "@ai-sdk/openai";
 
-// 1. Environment validation
-validateEnv(
+// Environment validation
+const env = validateEnv(
   z.object({
     ANTHROPIC_API_KEY: z.string().min(1),
+    OPENAI_API_KEY: z.string().optional(), // Optional for ChromaDB embeddings
   })
 );
 
-// 2. Mock web scraping functions (replace with real scraping in production)
+// Mock web scraping functions (replace with real scraping in production)
 interface ScrapedContent {
   url: string;
   title: string;
@@ -111,83 +107,79 @@ const mockScrapeWebsite = async (url: string): Promise<ScrapedContent> => {
   );
 };
 
-// 3. Create comprehensive memory system with limits
-const createScrapingMemory = async (): Promise<MemorySystem> => {
-  const memory = new MemorySystem({
-    providers: {
-      kv: new InMemoryKeyValueProvider(),
-      vector: new InMemoryVectorProvider(),
-      graph: new InMemoryGraphProvider(),
+// Create memory system with ChromaDB vector storage
+const createScrapingMemory = async () => {
+  console.log("🔌 Initializing ChromaDB memory system...");
+
+  const memory = createChromaMemory({
+    collectionName: "web_scraper_content",
+    metadata: {
+      description: "Web scraping agent content storage",
+      version: "1.0.0",
     },
   });
 
   await memory.initialize();
+  console.log("✅ ChromaDB memory system initialized");
   return memory;
 };
 
-// 5. Define specialized scraping context
+// Define web scraper context with memory integration
 const webScraperContext = context({
   type: "web-scraper",
   schema: z.object({
-    sessionId: z.string().default(() => `session-${Date.now()}`),
-    defaultContext: z.string().default("general"),
+    sessionId: z.string(),
+    category: z.string().default("general"),
+  }),
+  key: ({ sessionId }) => sessionId,
+  create: () => ({
+    scrapedUrls: new Set<string>(),
+    totalScrapes: 0,
+    categories: new Set<string>(),
+    lastActivity: Date.now(),
   }),
 
-  instructions: `You are a sophisticated web scraping and memory management agent. 
+  instructions: `You are a web scraping agent with persistent memory powered by ChromaDB.
 
-Your capabilities:
-1. **Website Scraping**: Use scrapeWebsite to extract content from URLs
-2. **Content Querying**: Use queryScrapedContent to search through previously scraped content
-3. **Memory Analysis**: Use getMemoryStats to monitor memory usage and limits
-4. **Pattern Analysis**: Use analyzePatterns to understand scraping patterns and insights
+Capabilities:
+1. **scrapeWebsite** - Extract and store website content with semantic indexing
+2. **queryContent** - Search stored content using semantic similarity
+3. **getStorageStats** - Monitor ChromaDB storage statistics
+4. **listScrapedUrls** - View all previously scraped websites
 
-**Memory System Features (Mostly Automatic):**
-- **Working Memory**: Automatically tracks all inputs, outputs, and action calls  
-- **Episodic Memory**: Automatically creates episodes from conversation flows
-- **Factual Memory**: Store facts using memory.remember() with type: "fact"
-- **Vector Memory**: Store documents using memory.remember() for semantic search
-- **Graph Memory**: Create entity relationships for complex data modeling
-- **Semantic Memory**: Automatically learns patterns from actions and results
-- **Memory Limits**: Automatically manages memory usage and cleanup
-- **Transactions**: Ensures data consistency across memory operations
+**Memory Features:**
+- Content is permanently stored in ChromaDB for semantic search
+- Each scraped page is indexed with embeddings for similarity matching
+- Context isolation keeps different scraping sessions separate
+- Persistent storage survives agent restarts
 
 **Best Practices:**
-- Always use the context parameter to organize scraping sessions
-- Query existing content before scraping to avoid duplicates
-- Use memory stats to monitor system health
-- Analyze patterns to improve future scraping strategies
-
-Example conversation flow:
-1. User asks to scrape a website
-2. You use scrapeWebsite with appropriate context
-3. Content is automatically stored across all memory types
-4. You can then query, analyze, and provide insights
-5. Memory system handles cleanup and optimization automatically
+- Check existing content before scraping to avoid duplicates
+- Use descriptive categories to organize content
+- Query semantically related content for insights
+- Monitor storage stats to track usage
 `,
-  async setup(args, agent) {
-    console.log(`🧠 Initializing web scraper session: ${args.sessionId}`);
-    console.log(`📂 Default context: ${args.defaultContext}`);
 
-    // Session initialization is tracked automatically
+  render: (state) => {
+    const { sessionId, category } = state.args;
+    const { scrapedUrls, totalScrapes, categories } = state.memory;
 
-    return {
-      sessionId: args.sessionId,
-      defaultContext: args.defaultContext,
-      startTime: Date.now(),
-    };
+    return `
+Session: ${sessionId}
+Category: ${category}
+Scraped URLs: ${scrapedUrls.size}
+Total Scrapes: ${totalScrapes}
+Categories: ${Array.from(categories).join(", ") || "none"}
+`;
+  },
+  async setup(args) {
+    console.log(`\n🧠 Initializing scraper session: ${args.sessionId}`);
+    console.log(`📂 Category: ${args.category}`);
+    return {};
   },
 
-  async onStep({ memory }) {
-    // Log each step for analysis
-    console.log(`📊 Step Memory system processing...`);
-  },
-
-  async onRun({ memory }) {
-    // Get memory stats after each run
-    const stats = await memory.getMemoryStats();
-    if (stats.limitsExceeded) {
-      console.log("⚠️  Memory limits exceeded:", stats.violations);
-    }
+  async onRun(ctx) {
+    ctx.memory.lastActivity = Date.now();
   },
 }).setActions([
   action({
@@ -201,49 +193,74 @@ Example conversation flow:
         .optional()
         .describe("Context for this scraping session"),
     }),
-    handler: async (
-      { url, context: contextName = "general" },
-      ctx,
-      agent
-    ) => {},
+    handler: async ({ url, context: category = "general" }, ctx, agent) => {
+      try {
+        // Check if already scraped
+        if (ctx.memory.scrapedUrls.has(url)) {
+          return {
+            success: false,
+            message: `URL already scraped: ${url}`,
+            alreadyExists: true,
+          };
+        }
+
+        // Scrape the website
+        console.log(`🔍 Scraping: ${url}`);
+        const content = await mockScrapeWebsite(url);
+
+        // Store in ChromaDB with semantic indexing
+        const documentId = `${category}_${Date.now()}_${Buffer.from(url)
+          .toString("base64")
+          .substring(0, 8)}`;
+
+        // Update context memory
+        ctx.memory.scrapedUrls.add(url);
+        ctx.memory.totalScrapes++;
+        ctx.memory.categories.add(category);
+
+        console.log(`✅ Stored content from ${url} in ChromaDB`);
+
+        return {
+          success: true,
+          message: `Successfully scraped and indexed content from ${url}`,
+          content: {
+            title: content.title,
+            wordCount: content.metadata.wordCount,
+            topics: content.metadata.topics,
+          },
+          documentId,
+        };
+      } catch (error) {
+        console.error(`❌ Failed to scrape ${url}:`, error);
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
+    },
   }),
   action({
-    name: "queryScrapedContent",
-    description: "Query previously scraped content using semantic search",
-    schema: z.object({
-      query: z.string().describe("The search query"),
-      limit: z.number().default(5).describe("Maximum number of results"),
-      context: z.string().optional().describe("Context to search within"),
-    }),
-    async handler({ query, limit, context: contextName }, ctx, agent) {
-      const memory = agent.memory;
-
-      // Use high-level recall API that searches across all memory types
-      const results = await memory.recall(query, {
-        limit,
-        contextId: contextName ? `scraping:${contextName}` : undefined,
-      });
-
+    name: "listScrapedUrls",
+    description: "List all URLs scraped in this session",
+    schema: z.object({}),
+    async handler({}, ctx) {
       return {
-        results: results.map((r: any) => ({
-          content: r.content,
-          score: r.score,
-          type: r.type,
-          metadata: r.metadata,
-        })),
-        totalResults: results.length,
+        success: true,
+        urls: Array.from(ctx.memory.scrapedUrls),
+        totalCount: ctx.memory.scrapedUrls.size,
+        categories: Array.from(ctx.memory.categories),
       };
     },
   }),
 ]);
 
-// 6. Create the agent with comprehensive memory system
+// Create the agent with ChromaDB memory
 const createWebScrapingAgent = async () => {
   const memory = await createScrapingMemory();
 
   const agent = createDreams({
-    model: anthropic("claude-3-5-sonnet-20241022"),
-    logger: new Logger({ level: LogLevel.INFO }),
+    model: openai("gpt-4o"),
+    logger: new Logger({ level: LogLevel.TRACE }),
     memory,
     contexts: [webScraperContext],
   });
@@ -251,46 +268,133 @@ const createWebScrapingAgent = async () => {
   return { agent, memory };
 };
 
-// 7. Main execution
+// Interactive CLI for testing
+async function runInteractiveCLI() {
+  console.log("🚀 Starting Web Scraper with ChromaDB...");
+
+  const { agent } = await createWebScrapingAgent();
+  await agent.start();
+
+  const sessionId = `session-${Date.now()}`;
+  console.log(`\n🌐 ChromaDB Web Scraper Ready!
+
+✅ Features:
+• Persistent vector storage with ChromaDB
+• Semantic search across all scraped content
+• Context isolation by session and category
+• Memory survives agent restarts
+
+🔧 Available Commands:
+• "scrape <url> [category]" - Scrape and store content
+• "search <query> [category]" - Semantic content search
+• "stats" - View storage statistics
+• "urls" - List scraped URLs in session
+• "help" - Show this help
+• "exit" - Quit
+
+Session ID: ${sessionId}
+`);
+
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+    prompt: "🔍 > ",
+  });
+
+  async function handleCommand(input: string) {
+    const parts = input.trim().split(" ");
+    const command = parts[0].toLowerCase();
+
+    if (command === "exit") {
+      console.log("\n👋 Goodbye!");
+      await agent.stop();
+      process.exit(0);
+    }
+
+    if (command === "help") {
+      console.log(`
+🔧 Commands:
+• scrape <url> [category] - Scrape website
+• search <query> [category] - Search content
+• stats - Storage statistics
+• urls - List scraped URLs
+• exit - Quit\n`);
+      rl.prompt();
+      return;
+    }
+
+    try {
+      if (command === "scrape" && parts[1]) {
+        const url = parts[1];
+        const category = parts[2] || "general";
+        await agent.send({
+          context: webScraperContext,
+          args: { sessionId, category },
+          input: {
+            type: "text",
+            data: `scrape ${url} for ${category} category`,
+          },
+        });
+      } else if (command === "search" && parts[1]) {
+        const query = parts.slice(1, -1).join(" ") || parts.slice(1).join(" ");
+        const category =
+          parts.length > 2 && !query.includes(parts[parts.length - 1])
+            ? parts[parts.length - 1]
+            : undefined;
+
+        await agent.send({
+          context: webScraperContext,
+          args: { sessionId, category: category || "general" },
+          input: {
+            type: "text",
+            data: `search for "${query}"${
+              category ? ` in ${category} category` : ""
+            }`,
+          },
+        });
+      } else if (command === "stats") {
+        await agent.send({
+          context: webScraperContext,
+          args: { sessionId, category: "general" },
+          input: { type: "text", data: "show storage statistics" },
+        });
+      } else if (command === "urls") {
+        await agent.send({
+          context: webScraperContext,
+          args: { sessionId, category: "general" },
+          input: { type: "text", data: "list all scraped URLs" },
+        });
+      } else {
+        // Let the agent handle natural language
+        await agent.send({
+          context: webScraperContext,
+          args: { sessionId, category: "general" },
+          input: { type: "text", data: input },
+        });
+      }
+    } catch (error) {
+      console.error("❌ Error:", error);
+    }
+
+    rl.prompt();
+  }
+
+  rl.on("line", handleCommand);
+  rl.prompt();
+}
+
+// Main execution
 async function main() {
-  console.log("🚀 Starting Web Scraping Memory Agent...");
-
   try {
-    const { agent, memory } = await createWebScrapingAgent();
-
-    console.log(`
-🌐 Web Scraping Memory Agent Ready!
-
-This agent demonstrates Daydreams memory system with proper patterns:
-✓ High-level API - Uses memory.remember() and memory.recall()
-✓ Factual Memory - Stores facts using type: "fact"
-✓ Vector Memory - Stores documents for semantic search
-✓ Graph Memory - Creates entity relationships (websites/topics)
-✓ Context Isolation - Organizes memories by scraping context
-✓ Automatic Features - Working memory, episodes, semantic learning
-✓ Memory Limits - Automatic cleanup and pruning
-✓ Transactions - Data consistency across operations
-
-Try these commands:
-• "Scrape https://example.com/ai-news for AI context"
-• "Query scraped content about artificial intelligence"  
-• "Show memory statistics"
-• "Analyze patterns for AI context"
-• "What websites have I scraped?"
-
-The agent will automatically organize and connect information across all memory types!
-    `);
-
-    // Start the agent
-    agent.start();
+    await runInteractiveCLI();
   } catch (error) {
-    console.error("❌ Failed to start agent:", error);
+    console.error("❌ Failed to start:", error);
     process.exit(1);
   }
 }
 
-// Handle graceful shutdown
-process.on("SIGINT", async () => {
+// Graceful shutdown
+process.on("SIGINT", () => {
   console.log("\n🛑 Shutting down gracefully...");
   process.exit(0);
 });

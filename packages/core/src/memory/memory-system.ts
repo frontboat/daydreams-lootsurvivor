@@ -16,6 +16,7 @@ import { VectorMemoryImpl } from "./vector-memory";
 import { GraphMemoryImpl } from "./graph-memory";
 import { EpisodicMemoryImpl, type EpisodicMemory } from "./episodic-memory";
 import { KnowledgeService } from "./services/knowledge-service";
+import type { Logger } from "../logger";
 
 /**
  * Simplified Memory System - basic storage only
@@ -29,7 +30,7 @@ export class MemorySystem implements Memory {
 
   private providers: MemoryConfig["providers"];
   private initialized = false;
-  private logger: any;
+  private logger: Logger;
 
   constructor(private config: MemoryConfig) {
     this.providers = config.providers;
@@ -43,23 +44,6 @@ export class MemorySystem implements Memory {
     // Initialize episodic and working memory with intelligence
     this.episodes = new EpisodicMemoryImpl(this);
     this.working = new WorkingMemoryImpl(this);
-
-    // Initialize knowledge service if configured
-    if (config.knowledge?.enabled && config.knowledge.model) {
-      const knowledgeService = new KnowledgeService(
-        this,
-        {
-          enabled: config.knowledge.enabled,
-          model: config.knowledge.model,
-          schema: config.knowledge.schema,
-          extraction: config.knowledge.extraction,
-        },
-        this.logger
-      );
-
-      // Connect knowledge service to working memory
-      (this.working as WorkingMemoryImpl).setKnowledgeService(knowledgeService);
-    }
   }
 
   async initialize(): Promise<void> {
@@ -124,21 +108,6 @@ export class MemorySystem implements Memory {
         },
       ]);
     }
-
-    // Store entities and relationships in graph if present
-    // TODO: This does nothing...
-    // if (this.isStructuredContent(content)) {
-    //   if (content.entities) {
-    //     for (const entity of content.entities) {
-    //       await this.graph.addEntity(entity);
-    //     }
-    //   }
-    //   if (content.relationships) {
-    //     for (const relationship of content.relationships) {
-    //       await this.graph.addRelationship(relationship);
-    //     }
-    //   }
-    // }
   }
 
   async recall(
