@@ -3,20 +3,5 @@
   "description": "Examples and Guides",
   "icon": "User",
   "root": true,
-  "pages": [
-    "index",
-    "---Basic---",
-    "x402",
-    "basic",
-    "---Social---",
-    "social",
-    "---MCP---",
-    "mcp",
-    "---Gaming---",
-    "gaming",
-    "---Chains---",
-    "chains",
-    "---Advanced---",
-    "advanced"
-  ]
+  "pages": ["index", "---Basic---", "x402", "basic", "---MCP---", "mcp"]
 }

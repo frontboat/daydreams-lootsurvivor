@@ -515,3 +515,20 @@ export async function deleteContext(agent: AnyAgent, contextId: string) {
   await agent.memory.kv.delete(`memory:${contextId}`);
   await agent.memory.working.clear(contextId);
 }
+
+/**
+ * Creates an empty working memory structure for testing
+ * @returns Empty working memory with all arrays initialized
+ */
+export function createWorkingMemory(): WorkingMemory {
+  return {
+    inputs: [],
+    outputs: [],
+    thoughts: [],
+    calls: [],
+    results: [],
+    events: [],
+    steps: [],
+    runs: []
+  };
+}
