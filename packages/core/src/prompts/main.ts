@@ -15,6 +15,7 @@ import type {
   Output,
   WorkingMemory,
 } from "../types";
+import type { MemoryResult } from "../memory/types";
 /*
 
 ## Instructions
@@ -87,6 +88,9 @@ Direct Dependencies: Particularly useful when an action requires a specific resu
 ---
 
 ## CONTEXTUAL KNOWLEDGE
+
+### Relevant Prior Knowledge
+{{semanticContext}}
 
 ### Recent Interaction History
 {{recentHistory}}
@@ -186,6 +190,35 @@ export function formatPromptSections({
       ?.slice(-(chainOfThoughtSize ?? 3))
       ?.map((log) => formatContextLog(log)) ?? [];
 
+  // Format relevant memories for semantic context
+  const formatMemory = (memory: MemoryResult) => {
+    const score = memory.score
+      ? ` (relevance: ${(memory.score * 100).toFixed(0)}%)`
+      : "";
+    const timestamp = memory.timestamp
+      ? ` [${new Date(memory.timestamp).toLocaleString()}]`
+      : "";
+
+    if (memory.type === "episode") {
+      return `**Episode Memory**${score}${timestamp}: ${JSON.stringify(
+        memory.content
+      )}`;
+    } else if (memory.type === "episode") {
+      return `**${memory.type} Episode**${score}${timestamp}: ${JSON.stringify(
+        memory.content
+      )}`;
+    } else {
+      return `**${
+        memory.type || "Memory"
+      }**${score}${timestamp}: ${JSON.stringify(memory.content)}`;
+    }
+  };
+
+  const relevantMemories =
+    workingMemory.relevantMemories && workingMemory.relevantMemories.length > 0
+      ? workingMemory.relevantMemories.map(formatMemory)
+      : ["No relevant memories found."];
+
   return {
     // CURRENT SITUATION
     currentTask: xml(
@@ -223,6 +256,7 @@ export function formatPromptSections({
     ),
 
     // CONTEXTUAL KNOWLEDGE
+    semanticContext: xml("semantic-context", undefined, relevantMemories),
     recentHistory: xml(
       "recent-history",
       undefined,

@@ -67,6 +67,7 @@ export function createMockLanguageModel(
   return {
     provider: "mock",
     modelId: "mock-model",
+    specificationVersion: "v2",
     generateText: mockGenerateText,
     generateObject: vi.fn(),
     doGenerate: vi.fn(),
@@ -163,6 +164,24 @@ export function createTestAgent<TContext extends AnyContext = AnyContext>(
     memory: createTestMemory(),
     contexts: [],
     actions: [],
+    inputs: {
+      text: {
+        schema: z.string(),
+        handler: async (content: string) => ({
+          data: content,
+          params: {}
+        })
+      }
+    },
+    outputs: {
+      text: {
+        schema: z.string(), 
+        handler: async (data: string) => ({
+          data,
+          processed: true
+        })
+      }
+    },
     logLevel: LogLevel.ERROR, // Suppress logs during testing
     ...agentConfig,
   };

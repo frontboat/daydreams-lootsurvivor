@@ -42,6 +42,7 @@ import pDefer, { type DeferredPromise } from "p-defer";
 import { pushToWorkingMemory } from "./context";
 import { createEventRef, randomUUIDv7 } from "./utils";
 import { ZodError, type ZodIssue } from "zod";
+import { handleEpisodeHooks } from "./memory/episode-hooks";
 
 type CallOptions = Partial<{
   templateResolvers: Record<string, TemplateResolver>;
@@ -136,6 +137,15 @@ export function createEngine({
   }
 
   function pushLogToSubscribers(log: AnyRef, done: boolean) {
+    if (ctxState.context.episodeHooks && done) {
+      handleEpisodeHooks(workingMemory, log, ctxState, agent).catch((error) => {
+        agent.logger.warn("context:episode", "Episode processing failed", {
+          error: error instanceof Error ? error.message : error,
+          contextId: ctxState.id,
+          refId: log.id,
+        });
+      });
+    }
     try {
       handlers?.onLogStream?.(structuredClone(log), done);
     } catch (error) {

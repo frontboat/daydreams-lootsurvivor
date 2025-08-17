@@ -377,15 +377,12 @@ type ContextStateSnapshot = {
 export async function saveContextState(agent: AnyAgent, state: ContextState) {
   const { id, context, key, args, settings, contexts } = state;
 
-  // Log context update event
-  const logger = agent.container?.resolve<Logger>("logger");
-  if (logger) {
-    logger.event("CONTEXT_UPDATE", {
-      contextType: context.type,
-      contextId: id,
-      updateType: "state",
-    });
-  }
+  agent.logger.event("CONTEXT_UPDATE", {
+    contextType: context.type,
+    contextId: id,
+    updateType: "state",
+    context: context,
+  });
 
   await agent.memory.kv.set<ContextStateSnapshot>(`context:${id}`, {
     id,
@@ -529,6 +526,6 @@ export function createWorkingMemory(): WorkingMemory {
     results: [],
     events: [],
     steps: [],
-    runs: []
+    runs: [],
   };
 }
