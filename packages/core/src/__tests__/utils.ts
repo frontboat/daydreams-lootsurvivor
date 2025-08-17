@@ -1,5 +1,6 @@
 import { expect, vi, type MockedFunction } from "vitest";
 import { TaskRunner } from "../task";
+import { Logger } from "../logger";
 
 /**
  * Test utilities for the core package
@@ -15,7 +16,7 @@ export const delay = (ms: number): Promise<void> =>
  * Creates a mock task runner with controllable execution
  */
 export function createMockTaskRunner(concurrency = 2) {
-  const runner = new TaskRunner(concurrency);
+  const runner = new TaskRunner(concurrency, new Logger());
   const mockEnqueueTask = vi.spyOn(runner, "enqueueTask");
 
   return {
