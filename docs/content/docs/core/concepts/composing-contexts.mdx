@@ -115,68 +115,6 @@ const chatContext = context({
 // - Profile context's data (if not guest)
 ```
 
-### 2. Static Composition with Context Arrays
-
-You can compose contexts when sending data to the agent:
-
-```typescript title="static-composition.ts"
-// Send to multiple contexts at once
-await agent.send(
-  [chatContext, analyticsContext],
-  { userId: "user123" },
-  { message: "Hello!" }
-);
-
-// Or use a composer function
-const userContexts = (userId: string) => [
-  { context: chatContext, args: { userId } },
-  { context: profileContext, args: { userId } },
-  { context: analyticsContext, args: { userId } },
-];
-
-await agent.send(
-  userContexts("user123"),
-  {},
-  { message: "Track this across all contexts" }
-);
-```
-
-### 3. Cross-Context References
-
-Contexts can reference each other within their handlers:
-
-```typescript title="cross-context-references.ts"
-const orderContext = context({
-  type: "order",
-  schema: z.object({ orderId: z.string() }),
-  actions: {
-    processOrder: action({
-      schema: z.object({ items: z.array(z.string()) }),
-      handler: async ({ items }, ctx) => {
-        // Get user profile from another context
-        const profileCtx = await ctx.agent.getContext(profileContext, {
-          userId: ctx.args.userId,
-        });
-
-        const discount = profileCtx.state.memory.tier === "premium" ? 0.1 : 0;
-
-        // Track event in analytics context
-        await ctx.callAction("analytics.trackEvent", {
-          event: "order_processed",
-          data: { items, discount },
-        });
-
-        return {
-          processed: true,
-          discount,
-          message: `Order processed with ${discount * 100}% discount`,
-        };
-      },
-    }),
-  },
-});
-```
-
 ## Real-World Examples
 
 ### E-commerce Agent with Composed Contexts
