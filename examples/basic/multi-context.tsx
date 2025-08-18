@@ -283,6 +283,8 @@ const assistantContext = context({
   }),
   create: (): AssistantMemory => ({
     conversationCount: 0,
+    lastTopic: "No topic",
+    mood: "No mood",
   }),
   render: (state) => {
     const { conversationCount, lastTopic, mood } = state.memory;
