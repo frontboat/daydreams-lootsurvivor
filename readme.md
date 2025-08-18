@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./docs/public/Daydreams.png" alt="Daydreams" width="600">
+  <img src="./docs/public/new-logo.png" alt="Daydreams" width="600">
 </p>
 
 <p align="center">
@@ -13,240 +13,356 @@
   <a href="https://github.com/daydreamsai/daydreams/stargazers"><img src="https://img.shields.io/github/stars/daydreamsai/daydreams?style=flat-square" alt="GitHub stars"></a>
 </p>
 
-Daydreams enables you to build AI agents that remember, learn, and persist state
-across conversations. Define contexts with typed memory, create custom actions,
-and let your agents manage complex multi-step workflows.
+Daydreams is the **first AI framework with composable contexts** - isolated
+workspaces that combine for complex behaviors. Build agents that remember,
+learn, and scale with **true memory**, **MCP integration**, and
+**TypeScript-first** design.
 
-## Quick Example
+## 🌟 The Power of Context Composition
+
+Unlike other frameworks, Daydreams lets you compose contexts using `.use()` -
+creating powerful agents from modular components:
 
 ```typescript
 import { createDreams, context, action } from "@daydreamsai/core";
-import { anthropic } from "@ai-sdk/anthropic";
-import * as z from "zod";
+import { openai } from "@ai-sdk/openai";
 
-// Define memory structure for each user
-const userContext = context({
-  type: "user",
-  schema: z.object({ userId: z.string() }),
-  create: () => ({
-    preferences: {},
-    conversationCount: 0,
+// Base analytics context - tracks user behavior
+const analyticsContext = context({
+  type: "analytics",
+  create: () => ({ events: [], sessions: 0 }),
+}).setActions([
+  action({
+    name: "trackEvent",
+    schema: { event: z.string() },
+    handler: async ({ event }, ctx) => {
+      ctx.memory.events.push({ event, timestamp: Date.now() });
+      return { tracked: true };
+    },
   }),
+]);
+
+// Customer support context that composes with analytics
+const supportContext = context({
+  type: "support",
+  schema: z.object({
+    customerId: z.string(),
+    tier: z.enum(["free", "premium"]),
+  }),
+  create: () => ({ tickets: [] }),
+})
+  // 🌟 The magic: compose contexts together
+  .use((state) => [
+    { context: analyticsContext, args: { userId: state.args.customerId } },
+    // Conditional composition based on customer tier
+    ...(state.args.tier === "premium" ? [{ context: premiumContext }] : []),
+  ])
+  .instructions(
+    (state) =>
+      `You are a ${state.args.tier} customer support agent. Track all interactions.`
+  );
+
+// Agent automatically gets ALL composed functionality
+const agent = createDreams({
+  model: openai("gpt-4o"),
+  contexts: [supportContext],
 });
 
-// Create agent with custom action
-const agent = await createDreams({
-  model: anthropic("claude-3-5-sonnet-latest"),
-  contexts: [userContext],
-  actions: [
-    action({
-      name: "save-preference",
-      schema: z.object({
-        key: z.string(),
-        value: z.string(),
-      }),
-      handler: async ({ key, value }, ctx) => {
-        ctx.memory.preferences[key] = value;
-        return `Saved: ${key} = ${value}`;
-      },
-    }),
-  ],
-}).start();
-
-// Send message - state persists across calls
+// Customer gets support + analytics + premium features (if applicable)
 await agent.send({
-  context: userContext,
-  args: { userId: "alice" },
-  input: { type: "text", data: "I prefer TypeScript over JavaScript" },
+  context: supportContext,
+  args: { customerId: "alice", tier: "premium" },
+  input: "I need help with billing",
 });
 ```
 
-## Key Features
+**Result**: Your agent seamlessly combines customer support, analytics tracking,
+and premium features in a single conversation. No manual integration required.
 
-- **Type-safe contexts** - Define memory schemas with Zod validation
-- **Persistent state** - Automatic storage and restoration across sessions
-- **Custom actions** - Give agents tools to interact with your systems
-- **Multi-context** - Handle multiple conversations simultaneously
-- **Universal runtime** - Node.js, browsers, Deno, Bun, edge functions
-- **Provider agnostic** - Works with any LLM via AI SDK adapters
+## 🔌 Universal MCP Integration
 
-## Installation
+Connect to **any** [Model Context Protocol](https://modelcontextprotocol.io)
+server for instant access to external tools:
+
+```typescript
+import { createMcpExtension } from "@daydreamsai/mcp";
+
+const agent = createDreams({
+  extensions: [
+    createMcpExtension([
+      {
+        id: "filesystem",
+        transport: {
+          type: "stdio",
+          command: "npx",
+          args: ["@modelcontextprotocol/server-filesystem", "./docs"],
+        },
+      },
+      {
+        id: "database",
+        transport: {
+          type: "stdio",
+          command: "npx",
+          args: ["@modelcontextprotocol/server-sqlite", "./data.db"],
+        },
+      },
+    ]),
+  ],
+});
+
+// Use MCP tools in any action
+const searchAction = action({
+  name: "search-docs",
+  handler: async ({ query }, ctx) => {
+    // Read files via MCP
+    const docs = await ctx.callAction("mcp.listResources", {
+      serverId: "filesystem",
+    });
+
+    // Query database via MCP
+    const results = await ctx.callAction("mcp.callTool", {
+      serverId: "database",
+      name: "query",
+      arguments: { sql: `SELECT * FROM docs WHERE content LIKE '%${query}%'` },
+    });
+
+    return { docs, results };
+  },
+});
+```
+
+**Result**: Your agent instantly gets file system access, database querying, web
+scraping, 3D rendering, and more through the growing MCP ecosystem.
+
+## ⚡ Quick Start
 
 ```bash
 npm install @daydreamsai/core
 ```
 
-**Quick setup:**
+Or scaffold a new agent:
 
 ```bash
 npx create-daydreams-agent my-agent
-cd my-agent
-npm run dev
+cd my-agent && npm run dev
 ```
 
-## Core Concepts
+## ✨ Key Features
 
-### 1. Contexts
+**🧩 Composable Contexts** - Build complex agents from simple, reusable
+contexts  
+**🔌 Native MCP Support** - Universal access to external tools and services  
+**💾 Persistent Memory** - True stateful agents that remember across sessions  
+**⚡ Full TypeScript** - Complete type safety with excellent developer
+experience  
+**🎯 Context Isolation** - Automatic separation of user data and conversations  
+**🔧 Action Scoping** - Context-specific capabilities and permissions  
+**🌐 Universal Runtime** - Works in Node.js, browsers, Deno, Bun, and edge
+functions  
+**🏗️ Modular Extensions** - Clean plugin architecture for platforms and services
 
-Isolated stateful environments for conversations or tasks:
+## 🏗️ Core Architecture
+
+### Context System
+
+**Isolated stateful workspaces** for different conversation types:
 
 ```typescript
-const chatContext = context({
-  type: "chat",
+const userContext = context({
+  type: "user",
   schema: z.object({ userId: z.string() }),
-  create: () => ({ messages: [], settings: {} }),
+  create: () => ({ preferences: {}, history: [] }),
   render: (state) =>
-    `User: ${state.args.userId}\nMessages: ${state.memory.messages.length}`,
+    `User: ${state.args.userId} | History: ${state.memory.history.length} items`,
 });
 ```
 
-### 2. Actions
+### Memory System
 
-Type-safe functions your agent can execute:
-
-```typescript
-const searchAction = action({
-  name: "web_search",
-  description: "Search the web for information",
-  schema: z.object({ query: z.string() }),
-  handler: async ({ query }) => {
-    // Your search implementation
-    return { results: [...] };
-  },
-});
-```
-
-### 3. Memory
-
-Dual-tier storage system:
+**Dual-tier storage** with automatic persistence:
 
 - **Working Memory**: Temporary execution state (inputs, outputs, actions)
 - **Context Memory**: Persistent data defined by your `create()` function
 
-## Best Practices
+### Action System
 
-✅ **Define clear memory schemas** - Use Zod for validation and type safety
+**Type-safe functions** with context access and schema validation:
 
 ```typescript
-const schema = z.object({
-  userId: z.string().min(1),
-  sessionId: z.string().uuid(),
+const savePreference = action({
+  name: "save-preference",
+  description: "Save a user preference",
+  schema: z.object({ key: z.string(), value: z.string() }),
+  handler: async ({ key, value }, ctx) => {
+    ctx.memory.preferences[key] = value;
+    return { saved: `${key} = ${value}` };
+  },
 });
 ```
 
-✅ **Use context keys for isolation** - Separate data by user, session, or
-tenant
+### Extension System
+
+**Modular integrations** for platforms and services:
 
 ```typescript
-const context = context({
-  type: "user",
-  schema: z.object({ userId: z.string() }),
-  key: ({ userId }) => userId, // Each user gets isolated state
+import { discordExtension } from "@daydreamsai/discord";
+import { supabaseExtension } from "@daydreamsai/supabase";
+
+const agent = createDreams({
+  extensions: [
+    discordExtension({ token: process.env.DISCORD_TOKEN }),
+    supabaseExtension({ url: process.env.SUPABASE_URL }),
+  ],
 });
 ```
 
-✅ **Design focused actions** - Single responsibility, clear schemas
+## 🎯 Context Patterns
+
+### Single Context - Simple & Focused
+
+Perfect for straightforward bots:
 
 ```typescript
-// Good: Specific, focused action
-action({
-  name: "send_email",
-  schema: z.object({ to: z.string().email(), subject: z.string() }),
-});
-
-// Avoid: Generic, unclear actions
-action({ name: "do_something", schema: z.any() });
-```
-
-✅ **Handle errors gracefully** - Actions should return meaningful error
-messages
-
-```typescript
-handler: async ({ email }) => {
-  try {
-    await sendEmail(email);
-    return { success: true };
-  } catch (error) {
-    return { error: "Failed to send email: " + error.message };
-  }
-};
-```
-
-✅ **Structure memory logically** - Organize data for easy access and updates
-
-```typescript
-create: () => ({
-  user: { name: "", preferences: {} },
-  session: { startTime: Date.now(), messageCount: 0 },
-  history: { topics: [], decisions: [] },
+const faqBot = context({
+  type: "faq",
+  instructions: "Answer questions about our product",
 });
 ```
 
-## Documentation
+### Multiple Contexts - Separate Workspaces
 
-**📖 [Complete Documentation](https://docs.dreams.fun)** - Everything you need
-to know
+When you need isolated functionality:
+
+```typescript
+const agent = createDreams({
+  contexts: [
+    chatContext, // User conversations
+    gameContext, // Game sessions
+    adminContext, // Admin functions
+  ],
+});
+```
+
+### 🌟 Composed Contexts - Maximum Power
+
+**This is where Daydreams excels** - contexts working together:
+
+```typescript
+const smartAssistant = context({
+  type: "assistant",
+  schema: z.object({ userId: z.string(), plan: z.enum(["free", "pro"]) }),
+}).use((state) => [
+  // Always include user profile
+  { context: profileContext, args: { userId: state.args.userId } },
+  // Always include basic analytics
+  { context: analyticsContext, args: { userId: state.args.userId } },
+  // Add premium features for pro users
+  ...(state.args.plan === "pro" ? [{ context: premiumContext }] : []),
+]);
+```
+
+**[📖 Learn More About Contexts →](https://docs.dreams.fun/docs/core/concepts/contexts)**
+
+## 🔌 MCP Integration
+
+Daydreams provides **native** Model Context Protocol support through extensions:
+
+```typescript
+import { createMcpExtension } from "@daydreamsai/mcp";
+
+// Connect to any MCP server
+createMcpExtension([
+  // Local servers via stdio
+  {
+    id: "files",
+    transport: { type: "stdio", command: "mcp-server", args: ["./data"] },
+  },
+  // Remote servers via HTTP/SSE
+  {
+    id: "api",
+    transport: { type: "sse", serverUrl: "https://mcp-api.example.com" },
+  },
+]);
+```
+
+**Popular MCP Servers**:
+
+- **Database Access**: SQLite, PostgreSQL, MySQL
+- **File Systems**: Local files, cloud storage, git repos
+- **Web Services**: Search, scraping, APIs, social media
+- **Developer Tools**: Code execution, testing, deployment
+- **Specialized**: 3D rendering, image processing, analytics
+
+**[📖 Learn More About MCP →](https://docs.dreams.fun/docs/core/concepts/mcp)**
+
+## 📚 Documentation
+
+**🏠 [Complete Documentation](https://docs.dreams.fun)** - Everything you need
+to build production agents
 
 ### Essential Guides
 
-- **[Getting Started](https://docs.dreams.fun/getting-started)** - Your first
-  agent in 5 minutes
-- **[Context System](https://docs.dreams.fun/concepts/contexts)** - Managing
-  stateful conversations
-- **[Actions & Tools](https://docs.dreams.fun/concepts/actions)** - Extending
-  agent capabilities
-- **[Memory & Persistence](https://docs.dreams.fun/concepts/memory)** - Storage
-  and retrieval patterns
-- **[Production Deployment](https://docs.dreams.fun/deployment)** - Scale your
-  agents
+- **[First Agent](https://docs.dreams.fun/docs/core/first-agent)** - Build your
+  first agent in 5 minutes
+- **[Context System](https://docs.dreams.fun/docs/core/concepts/contexts)** -
+  Master stateful conversations
+- **[MCP Integration](https://docs.dreams.fun/docs/core/concepts/mcp)** -
+  Connect to external tools
+- **[Extensions](https://docs.dreams.fun/docs/core/concepts/extensions)** -
+  Platform integrations
 
-### API Reference
+### Tutorials
 
-- **[Core API](https://docs.dreams.fun/api/core)** - Complete API documentation
-- **[Extension APIs](https://docs.dreams.fun/api/extensions)** - Platform
-  integrations
-- **[Types](https://docs.dreams.fun/api/types)** - TypeScript definitions
+- **[Basic Agent](https://docs.dreams.fun/docs/tutorials/basic/single-context)** -
+  Simple conversational bot
+- **[Multi-Context Agent](https://docs.dreams.fun/docs/tutorials/basic/multi-context-agent)** -
+  Handle multiple workflows
+- **[MCP Setup](https://docs.dreams.fun/docs/tutorials/mcp/mcp-guide)** -
+  Connect external servers
+- **[x402 Nanoservice](https://docs.dreams.fun/docs/tutorials/x402/server)** -
+  Paid AI services
 
-## Examples
-
-Learn by example in the [`examples/`](./examples) directory:
-
-- **[Basic Chat](./examples/basic/)** - Simple conversational agent
-- **[Multi-Context](./examples/basic/multi-context.tsx)** - Handle multiple
-  users
-- **[Discord Bot](./examples/social/discord.ts)** - Platform integration
-- **[Web Scraper](./examples/basic/web-scraper-memory-agent.ts)** - Data
-  collection agent
-- **[Game Agents](./examples/games/)** - Interactive game bots
-
-## Extensions
+## 🚀 Extensions & Ecosystem
 
 ### Platform Integrations
 
-- **[@daydreamsai/discord](https://www.npmjs.com/package/@daydreamsai/discord)** -
-  Discord bot integration
-- **[@daydreamsai/twitter](https://www.npmjs.com/package/@daydreamsai/twitter)** -
+- **[@daydreamsai/discord](https://npmjs.com/package/@daydreamsai/discord)** -
+  Discord bot support
+- **[@daydreamsai/twitter](https://npmjs.com/package/@daydreamsai/twitter)** -
   Twitter/X automation
-- **[@daydreamsai/telegram](https://www.npmjs.com/package/@daydreamsai/telegram)** -
-  Telegram bot support
-- **[@daydreamsai/cli](https://www.npmjs.com/package/@daydreamsai/cli)** -
-  Interactive CLI
+- **[@daydreamsai/telegram](https://npmjs.com/package/@daydreamsai/telegram)** -
+  Telegram bots
+- **[@daydreamsai/cli](https://npmjs.com/package/@daydreamsai/cli)** -
+  Interactive terminal
 
 ### Storage & Memory
 
-- **[@daydreamsai/supabase](https://www.npmjs.com/package/@daydreamsai/supabase)** -
+- **[@daydreamsai/supabase](https://npmjs.com/package/@daydreamsai/supabase)** -
   Supabase vector store
-- **[@daydreamsai/chroma](https://www.npmjs.com/package/@daydreamsai/chroma)** -
+- **[@daydreamsai/chroma](https://npmjs.com/package/@daydreamsai/chroma)** -
   ChromaDB integration
-- **[@daydreamsai/mongo](https://www.npmjs.com/package/@daydreamsai/mongo)** -
-  MongoDB support
+- **[@daydreamsai/mongo](https://npmjs.com/package/@daydreamsai/mongo)** -
+  MongoDB persistence
 
 ### Developer Tools
 
-- **[@daydreamsai/create-agent](https://www.npmjs.com/package/create-daydreams-agent)** -
+- **[@daydreamsai/mcp](https://npmjs.com/package/@daydreamsai/mcp)** - Model
+  Context Protocol
+- **[create-daydreams-agent](https://npmjs.com/package/create-daydreams-agent)** -
   Project scaffolding
 
-## Development
+## 🏃‍♂️ Examples
+
+Explore working examples in [`examples/`](./examples):
+
+- **[Basic Chat](./examples/basic/)** - Simple conversational agents
+- **[Multi-Context](./examples/basic/multi-context.tsx)** - Multiple
+  conversation types
+- **[Discord Bot](./examples/social/discord.ts)** - Platform integration example
+- **[MCP Integration](./examples/mcp/)** - External tool connections
+- **[x402 Nanoservice](./examples/x402/)** - Paid AI services with micropayments
+
+## 🛠️ Development
 
 ### Contributing
 
@@ -265,12 +381,24 @@ bun run packages/core  # Run tests
 
 ### Community
 
-- **[Discord](https://discord.gg/rt8ajxQvXh)** - Chat with developers
-- **[Twitter](https://twitter.com/daydreamsagents)** - Updates and announcements
+- **[Discord](https://discord.gg/rt8ajxQvXh)** - Chat with developers and get
+  help
 - **[GitHub Issues](https://github.com/daydreamsai/daydreams/issues)** - Bug
   reports and feature requests
+- **[Documentation](https://docs.dreams.fun)** - Complete guides and API
+  reference
+
+## ✨ Why Daydreams?
+
+**🧩 Composable by Design** - Build complex agents from simple, reusable
+contexts  
+**🔌 MCP Native** - Universal access to external tools and services  
+**💾 True State** - Persistent memory that survives restarts and scales  
+**⚡ TypeScript First** - Full type safety with excellent DX  
+**🌐 Universal Runtime** - Works everywhere JavaScript runs  
+**🏗️ Production Ready** - Built for scale with monitoring and error handling
 
 ---
 
-**[MIT Licensed](./licence.md)** • Built by the [Daydreams](https://dreams.fun)
-team
+**[MIT Licensed](./licence.md)** • Built with ❤️ by the
+[Daydreams](https://dreams.fun) team
