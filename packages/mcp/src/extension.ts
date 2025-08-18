@@ -108,13 +108,15 @@ export function createMcpExtension(servers: McpServerConfig[]) {
               error: `MCP server with ID '${serverId}' not found`,
             };
           }
-          
+
           try {
             const tools = await client.listTools();
             return { tools };
           } catch (error) {
             return {
-              error: `Failed to list tools from server '${serverId}': ${error.message}`,
+              error: `Failed to list tools from server '${serverId}': ${
+                error instanceof Error ? error.message : String(error)
+              }`,
             };
           }
         },
@@ -139,7 +141,9 @@ export function createMcpExtension(servers: McpServerConfig[]) {
             return { prompts };
           } catch (error) {
             return {
-              error: `Failed to list prompts from server '${serverId}': ${error.message}`,
+              error: `Failed to list prompts from server '${serverId}': ${
+                error instanceof Error ? error.message : String(error)
+              }`,
             };
           }
         },
@@ -173,7 +177,9 @@ export function createMcpExtension(servers: McpServerConfig[]) {
             return { prompt };
           } catch (error) {
             return {
-              error: `Failed to get prompt '${name}' from server '${serverId}': ${error.message}`,
+              error: `Failed to get prompt '${name}' from server '${serverId}': ${
+                error instanceof Error ? error.message : String(error)
+              }`,
             };
           }
         },
@@ -199,7 +205,9 @@ export function createMcpExtension(servers: McpServerConfig[]) {
             return { resources };
           } catch (error) {
             return {
-              error: `Failed to list resources from server '${serverId}': ${error.message}`,
+              error: `Failed to list resources from server '${serverId}': ${
+                error instanceof Error ? error.message : String(error)
+              }`,
             };
           }
         },
@@ -228,7 +236,9 @@ export function createMcpExtension(servers: McpServerConfig[]) {
             return { resource };
           } catch (error) {
             return {
-              error: `Failed to read resource '${uri}' from server '${serverId}': ${error.message}`,
+              error: `Failed to read resource '${uri}' from server '${serverId}': ${
+                error instanceof Error ? error.message : String(error)
+              }`,
             };
           }
         },
@@ -262,7 +272,9 @@ export function createMcpExtension(servers: McpServerConfig[]) {
             return { result };
           } catch (error) {
             return {
-              error: `Failed to call tool '${name}' on server '${serverId}': ${error.message}`,
+              error: `Failed to call tool '${name}' on server '${serverId}': ${
+                error instanceof Error ? error.message : String(error)
+              }`,
             };
           }
         },
