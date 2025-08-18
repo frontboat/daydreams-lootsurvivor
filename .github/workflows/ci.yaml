@@ -18,6 +18,11 @@ jobs:
         with:
           version: latest
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -32,4 +37,4 @@ jobs:
         run: pnpm run build:packages
 
       - name: Run tests
-        run: pnpm run test:core
+        run: bun test
