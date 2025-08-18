@@ -68,14 +68,14 @@ function Terminal() {
           <div className="flex items-center gap-2 text-xs">
             <span className="text-primary">NEW:</span>
             <span className="text-muted-foreground">
-              x402 nanoservice enabled
+              MCP integration + x402 nanoservice
             </span>
             <span className="text-muted-foreground">|</span>
             <Link
-              href="/docs/tutorials/x402/server"
+              href="/docs/core/concepts/mcp"
               className="text-primary hover:underline"
             >
-              [view examples]
+              [mcp docs]
             </Link>
           </div>
         </div>
@@ -119,6 +119,12 @@ function Terminal() {
               [contexts]
             </Link>
             <Link
+              href="/docs/core/concepts/mcp"
+              className="text-primary hover:underline text-sm"
+            >
+              [mcp]
+            </Link>
+            <Link
               href="/docs/tutorials"
               className="text-primary hover:underline text-sm"
             >
@@ -148,6 +154,11 @@ function Features() {
       label: "STATEFUL",
       value: "Persistent memory per context",
       desc: "Each conversation remembers - true stateful agents",
+    },
+    {
+      label: "MCP-READY",
+      value: "Model Context Protocol support",
+      desc: "Connect to any MCP server for external tools and data sources",
     },
     {
       label: "SCOPED",

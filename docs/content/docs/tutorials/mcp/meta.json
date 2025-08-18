@@ -2,5 +2,5 @@
   "title": "Model Context Protocol",
   "description": "Guides for using the Model Context Protocol with Daydreams.",
   "icon": "Network",
-  "pages": ["mcp-guide", "---", "blender", "multi-server"]
+  "pages": ["blender", "multi-server"]
 }

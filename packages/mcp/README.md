@@ -23,8 +23,8 @@ To connect your Daydreams agent to one or more MCP servers, add the MCP
 extension to your agent configuration:
 
 ```typescript
-import { createDreams } from "@daydreams/core";
-import { createMcpExtension } from "@daydreams/core/mcp";
+import { createDreams } from "@daydreamsai/core";
+import { createMcpExtension } from "@daydreamsai/mcp";
 
 const agent = createDreams({
   // ... other agent configuration
@@ -63,21 +63,15 @@ The MCP extension adds the following actions to your agent:
 
 ```typescript
 // List all connected MCP servers
-const result = await agent.callTool({
-  name: "mcp.listServers",
-  arguments: {},
-});
+const result = await ctx.callAction("mcp.listServers", {});
 ```
 
 #### List Prompts
 
 ```typescript
 // List all prompts available on a specific MCP server
-const result = await agent.callTool({
-  name: "mcp.listPrompts",
-  arguments: {
-    serverId: "sqlite-explorer",
-  },
+const result = await ctx.callAction("mcp.listPrompts", {
+  serverId: "sqlite-explorer",
 });
 ```
 
@@ -85,14 +79,11 @@ const result = await agent.callTool({
 
 ```typescript
 // Get a specific prompt from an MCP server
-const result = await agent.callTool({
-  name: "mcp.getPrompt",
+const result = await ctx.callAction("mcp.getPrompt", {
+  serverId: "sqlite-explorer",
+  name: "query-database",
   arguments: {
-    serverId: "sqlite-explorer",
-    name: "query-database",
-    arguments: {
-      table: "users",
-    },
+    table: "users",
   },
 });
 ```
@@ -101,11 +92,8 @@ const result = await agent.callTool({
 
 ```typescript
 // List all resources available on a specific MCP server
-const result = await agent.callTool({
-  name: "mcp.listResources",
-  arguments: {
-    serverId: "sqlite-explorer",
-  },
+const result = await ctx.callAction("mcp.listResources", {
+  serverId: "sqlite-explorer",
 });
 ```
 
@@ -113,12 +101,9 @@ const result = await agent.callTool({
 
 ```typescript
 // Read a specific resource from an MCP server
-const result = await agent.callTool({
-  name: "mcp.readResource",
-  arguments: {
-    serverId: "sqlite-explorer",
-    uri: "schema://main",
-  },
+const result = await ctx.callAction("mcp.readResource", {
+  serverId: "sqlite-explorer",
+  uri: "schema://main",
 });
 ```
 
@@ -126,14 +111,11 @@ const result = await agent.callTool({
 
 ```typescript
 // Call a tool on an MCP server
-const result = await agent.callTool({
-  name: "mcp.callTool",
+const result = await ctx.callAction("mcp.callTool", {
+  serverId: "sqlite-explorer",
+  name: "query",
   arguments: {
-    serverId: "sqlite-explorer",
-    name: "query",
-    arguments: {
-      sql: "SELECT * FROM users LIMIT 10",
-    },
+    sql: "SELECT * FROM users LIMIT 10",
   },
 });
 ```
@@ -181,14 +163,11 @@ All MCP actions return an `error` field if something goes wrong. You can check
 for this field to handle errors:
 
 ```typescript
-const result = await agent.callTool({
-  name: "mcp.callTool",
+const result = await ctx.callAction("mcp.callTool", {
+  serverId: "sqlite-explorer",
+  name: "query",
   arguments: {
-    serverId: "sqlite-explorer",
-    name: "query",
-    arguments: {
-      sql: "SELECT * FROM users LIMIT 10",
-    },
+    sql: "SELECT * FROM users LIMIT 10",
   },
 });
 

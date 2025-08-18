@@ -108,8 +108,15 @@ export function createMcpExtension(servers: McpServerConfig[]) {
               error: `MCP server with ID '${serverId}' not found`,
             };
           }
-          const tools = await client.listTools();
-          return { tools };
+          
+          try {
+            const tools = await client.listTools();
+            return { tools };
+          } catch (error) {
+            return {
+              error: `Failed to list tools from server '${serverId}': ${error.message}`,
+            };
+          }
         },
       }),
       // Action to list available prompts from a specific MCP server
@@ -127,8 +134,14 @@ export function createMcpExtension(servers: McpServerConfig[]) {
             };
           }
 
-          const prompts = await client.listPrompts();
-          return { prompts };
+          try {
+            const prompts = await client.listPrompts();
+            return { prompts };
+          } catch (error) {
+            return {
+              error: `Failed to list prompts from server '${serverId}': ${error.message}`,
+            };
+          }
         },
       }),
 
@@ -152,11 +165,17 @@ export function createMcpExtension(servers: McpServerConfig[]) {
             };
           }
 
-          const prompt = await client.getPrompt({
-            name,
-            arguments: args || {},
-          });
-          return { prompt };
+          try {
+            const prompt = await client.getPrompt({
+              name,
+              arguments: args || {},
+            });
+            return { prompt };
+          } catch (error) {
+            return {
+              error: `Failed to get prompt '${name}' from server '${serverId}': ${error.message}`,
+            };
+          }
         },
       }),
 
@@ -175,8 +194,14 @@ export function createMcpExtension(servers: McpServerConfig[]) {
             };
           }
 
-          const resources = await client.listResources();
-          return { resources };
+          try {
+            const resources = await client.listResources();
+            return { resources };
+          } catch (error) {
+            return {
+              error: `Failed to list resources from server '${serverId}': ${error.message}`,
+            };
+          }
         },
       }),
 
@@ -196,11 +221,16 @@ export function createMcpExtension(servers: McpServerConfig[]) {
             };
           }
 
-          const resource = await client.readResource({
-            uri,
-          });
-
-          return { resource };
+          try {
+            const resource = await client.readResource({
+              uri,
+            });
+            return { resource };
+          } catch (error) {
+            return {
+              error: `Failed to read resource '${uri}' from server '${serverId}': ${error.message}`,
+            };
+          }
         },
       }),
 
@@ -224,12 +254,17 @@ export function createMcpExtension(servers: McpServerConfig[]) {
             };
           }
 
-          const result = await client.callTool({
-            name,
-            arguments: args,
-          });
-
-          return { result };
+          try {
+            const result = await client.callTool({
+              name,
+              arguments: args,
+            });
+            return { result };
+          } catch (error) {
+            return {
+              error: `Failed to call tool '${name}' on server '${serverId}': ${error.message}`,
+            };
+          }
         },
       }),
     ],
