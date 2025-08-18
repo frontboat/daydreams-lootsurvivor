@@ -2,6 +2,7 @@ packages:
   - packages/*
   - clients/**/*
   - examples/**/*
+  - examples/
   - docs
   - bot
 

@@ -102,25 +102,38 @@ Direct Dependencies: Particularly useful when an action requires a specific resu
 {{examples}}`,
 
   response: `\
-Here's how you structure your response:
+## Response Format
+Your final output must be a single, valid XML block wrapped in <response> tags. The structure is as follows:
+
+- **<reasoning> (Required):** Your entire step-by-step thought process must be inside this tag.
+- **<action_call> (Optional):** Use this to execute a tool. It MUST have a 'name' attribute and contain valid JSON for the arguments.
+- **<output> (Optional):** Use this to send a response to the user. It MUST have a 'type' attribute.
+
+Now, generate your response based on the rules and examples above. Begin with the opening <response> tag.
+
+## Examples of High-Quality Interactions
+
+//--- START OF EXAMPLE 1 ---//
+### Situation:
+The user has provided their name, and the assistant needs to save it.
+
+### Prompt Context for this example:
+<current-task>
+  <input name="text" timestamp="123456789">my name is Clara</input>
+</current-task>
+<context-state>
+  ... (state shows name is unknown)
+</context-state>
+
+### Correct Response for this example:
 <response>
-<reasoning>
-[Your detailed, step-by-step reasoning about the context, messages, and planned actions, demonstrating your thought process.]
-</reasoning>
-
-[List of async action calls to be initiated, if applicable. The arguments MUST be valid JSON.]
-<action_call name="[Action name]">[action arguments using the schema and format]</action_call>
-
-[List of outputs, if applicable.]
-<output type="[Output type]" {...output attributes using the attributes_schema}>
-[output content using the content_schema]
-</output>
+  <reasoning>The user has told me their name is Clara. I need to use the 'remember-name' action to save this information. After I plan the action, I should also output a confirmation message to the user.</reasoning>
+  <action_call name="remember-name">{"name":"Clara"}</action_call>
+  <output type="text">Thanks, Clara! I'll remember that.</output>
 </response>
+//--- END OF EXAMPLE 1 ---//
 
-IMPORTANT ACTION CALL FORMAT:
-- Use XML format with a 'name' attribute: <action_call name="actionName">{"arg": "value"}</action_call>
-- The action name goes in the XML attribute.
-- The content within the tags must be a valid JSON object representing the action's arguments.`,
+`,
 
   footer: `\
 Guiding Principles for Your Response:
@@ -129,7 +142,7 @@ Guiding Principles for Your Response:
 - **Progressive Building:** Build on active operations rather than starting from scratch.
 - **Clear Communication:** Provide actionable insights that connect your reasoning to specific outcomes.
 - **Reliable Execution:** Address any failures explicitly and adjust your approach based on available context.
-- **Format Adherence:** Use <response>, <reasoning>, <action_call>, and <output> tags correctly. If you state you will perform an action, you MUST include the corresponding action call.
+- **Format Adherence:** Use <response>, <reasoning>, <action_call>, and <output> tags correctly. Always open then close the tags. If you state you will perform an action, you MUST include the corresponding action call.
 `,
 } as const;
 

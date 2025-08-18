@@ -141,7 +141,7 @@ export const runGenerate = task({
         role: "assistant",
         content: isReasoningModel
           ? modelsResponseConfig[modelId]?.thinkTag ?? "<think>"
-          : "<response>\n<reasoning>",
+          : "<response>",
       });
 
     if (workingMemory.currentImage) {
@@ -533,9 +533,7 @@ export const runAgentContext = task({
             model,
             prompt,
             workingMemory,
-            logger:
-              (agent.container?.resolve?.("logger") as Logger | undefined) ||
-              agent.logger,
+            logger: agent.logger,
             streaming: true,
             contextSettings: ctxState.settings,
             requestId,
@@ -564,6 +562,11 @@ export const runAgentContext = task({
         }
 
         const response = await getTextResponse();
+
+        agent.logger.trace("agent:run", "Response", {
+          response,
+        });
+
         stepRef.data.response = response;
 
         unprocessed.forEach((i) => {
