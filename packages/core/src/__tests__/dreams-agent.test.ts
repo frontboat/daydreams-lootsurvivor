@@ -366,10 +366,15 @@ describe("Agent Creation & Configuration - Tier 1", () => {
 
   describe("Error Handling in Creation", () => {
     it("should handle extension install errors gracefully", async () => {
+      // Create a mock install function that will fail when called
+      const mockInstall = vi.fn().mockImplementation(async () => {
+        throw new Error("Install failed");
+      });
+
       const faultyExtension: Extension = {
         name: "faulty-extension", 
         inputs: {},
-        install: vi.fn().mockRejectedValue(new Error("Install failed"))
+        install: mockInstall
       };
 
       // Creation should succeed even if install will fail later
@@ -377,8 +382,11 @@ describe("Agent Creation & Configuration - Tier 1", () => {
         testAgent = createTestAgent({ extensions: [faultyExtension] });
       }).not.toThrow();
 
-      // Install errors should be handled during agent startup, not creation
-      await expect(testAgent.start()).rejects.toThrow();
+      // Install errors will cause startup to fail (as expected for critical install failures)
+      await expect(testAgent.start()).rejects.toThrow("Install failed");
+      
+      // Verify the install method was called
+      expect(mockInstall).toHaveBeenCalled();
     });
 
     it("should handle malformed context schemas", () => {

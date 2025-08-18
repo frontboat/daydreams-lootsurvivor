@@ -1,12 +1,6 @@
 import * as z from "zod";
 import { createMcpClient } from "./client";
-import {
-  Logger,
-  action,
-  extension,
-  type ActionCallContext,
-  type Context,
-} from "@daydreamsai/core";
+import { action, extension, Logger } from "@daydreamsai/core";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 
 export interface McpServerConfig {

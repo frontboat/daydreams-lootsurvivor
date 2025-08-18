@@ -257,8 +257,23 @@ describe("Engine State Management - Tier 1", () => {
 
       await engine.push(outputRef);
 
-      expect(engine.state.chain).toContain(outputRef);
-      expect(mockWorkingMemory.outputs).toContain(outputRef);
+      // The output gets modified during processing (formatted property added)
+      expect(engine.state.chain).toContainEqual(expect.objectContaining({
+        id: "output-test",
+        ref: "output", 
+        type: "text",
+        content: "test output",
+        data: "test output",
+        processed: true
+      }));
+      expect(mockWorkingMemory.outputs).toContainEqual(expect.objectContaining({
+        id: "output-test",
+        ref: "output",
+        type: "text", 
+        content: "test output",
+        data: "test output",
+        processed: true
+      }));
     });
 
     it("should handle action calls and create results", async () => {
