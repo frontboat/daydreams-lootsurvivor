@@ -12,7 +12,7 @@ title: "InferAgentContext"
 
 > **InferAgentContext**\<`TAgent`\> = `TAgent` *extends* [`Agent`](./Agent.md)\<infer Content\> ? `Content` : `never`
 
-Defined in: [packages/core/src/types.ts:50](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L50)
+Defined in: [packages/core/src/types.ts:48](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L48)
 
 Extracts the context type from an Agent type
 

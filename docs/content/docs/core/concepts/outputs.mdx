@@ -5,152 +5,42 @@ description: How Daydreams agents send information and responses.
 
 ## What is an Output?
 
-An output is how your agent **sends** information to the outside world. If
-actions are what your agent can "do", outputs are how your agent "speaks" or
-"responds".
+An output is how your agent **sends** information to the outside world. Outputs are the final communication step - they don't return data to the LLM for further reasoning.
 
-## Real Examples
+For common patterns like schema validation, error handling, and external service integration, see [Building Block Operations](/docs/core/concepts/building-block-operations).
 
-Here are outputs that make agents useful:
+## Outputs vs Actions/Inputs
 
-### Discord Message
+Understanding when to use each:
 
-```typescript title="discord-output.ts"
-// Agent can send Discord messages
-const discordMessage = output({
-  type: "discord:message",
-  description: "Sends a message to Discord",
-  schema: z.string(),
-  attributes: z.object({
-    channelId: z.string(),
-  }),
-  handler: async (message, ctx) => {
-    await discord.send(ctx.outputRef.params.channelId, message);
-    return { sent: true };
-  },
-});
+| Building Block | Purpose | LLM Uses When | Returns Data |
+|---------------|---------|---------------|--------------|
+| **Outputs** | Communicate final results | Wants to respond/notify | ❌ No - final step |
+| **Actions** | Get data, perform operations | Needs info for reasoning | ✅ Yes - for next steps |
+| **Inputs** | Listen for external events | Never - triggers agent | ❌ No - starts conversation |
+
+### Output Decision Matrix
+
+```typescript title="when-to-use-outputs.ts"
+// ✅ Use OUTPUT for final communication
+<output type="discord:message" channelId="123">
+  Weather: 72°F, sunny. Have a great day!
+</output>
+
+// ✅ Use ACTION to get data for reasoning
+<action_call name="get-weather">{"city": "Boston"}</action_call>
+// LLM gets result and can use it in next step
+
+// ✅ Common pattern: Action → Output  
+<action_call name="get-weather">{"city": "NYC"}</action_call>
+<output type="email:send" to="user@example.com" subject="Weather Update">
+  Current weather in NYC: {{calls[0].temperature}}, {{calls[0].condition}}
+</output>
 ```
-
-### Console Print
-
-```typescript title="console-output.ts"
-// Agent can print to console
-const consolePrint = output({
-  type: "console:print",
-  description: "Prints a message to the console",
-  schema: z.string(),
-  handler: async (message) => {
-    console.log(`Agent: ${message}`);
-    return { printed: true };
-  },
-});
-```
-
-### Email Notification
-
-```typescript title="email-output.ts"
-// Agent can send emails
-const emailOutput = output({
-  type: "email:send",
-  description: "Sends an email notification",
-  schema: z.string(),
-  attributes: z.object({
-    to: z.string(),
-    subject: z.string(),
-  }),
-  handler: async (body, ctx) => {
-    const { to, subject } = ctx.outputRef.params;
-    await emailService.send({ to, subject, body });
-    return { emailSent: true };
-  },
-});
-```
-
-## The Problem: Agents Need to Communicate
-
-Without outputs, your agent can think but can't communicate:
-
-```text title="silent-agent.txt"
-User: "Send me the weather report"
-Agent: *calls weather API internally*
-Agent: *knows it's 72°F and sunny*
-Agent: *...but can't tell you!*
-// ❌ Agent gets the data but you never see it
-// ❌ No way to respond or communicate
-// ❌ Useless to humans
-```
-
-## The Solution: Outputs Enable Communication
-
-With outputs, your agent can respond properly:
-
-```text title="communicating-agent.txt"
-User: "Send me the weather report"
-Agent: *calls weather API*
-Agent: *gets weather data*
-Agent: *uses discord:message output*
-Discord: "It's 72°F and sunny in San Francisco!"
-// ✅ Agent gets data AND tells you about it
-// ✅ Complete conversation loop
-// ✅ Actually useful
-```
-
-## How Outputs Work in Your Agent
-
-### 1. You Define How the Agent Can Respond
-
-```typescript title="define-outputs.ts"
-const agent = createDreams({
-  model: openai("gpt-4o"),
-  outputs: [
-    discordMessage, // Agent can send Discord messages
-    consolePrint, // Agent can print to console
-    emailOutput, // Agent can send emails
-  ],
-});
-```
-
-### 2. The LLM Decides When to Respond
-
-When the agent thinks, it sees:
-
-```text title="llm-sees-outputs.txt"
-Available outputs:
-- discord:message: Sends a message to Discord
-- console:print: Prints a message to the console
-- email:send: Sends an email notification
-
-User asked: "Check weather and let me know via Discord"
-```
-
-### 3. The LLM Uses Outputs to Respond
-
-The LLM responds with structured output calls:
-
-```xml title="llm-uses-outputs.xml"
-<response>
-  <reasoning>User wants weather info via Discord. I'll get weather then send message.</reasoning>
-
-  <action_call name="get-weather">{"city": "San Francisco"}</action_call>
-
-  <output type="discord:message" channelId="123456789">
-    Weather in San Francisco: {{calls[0].temperature}}, {{calls[0].condition}}
-  </output>
-</response>
-```
-
-### 4. Daydreams Sends the Output
-
-Daydreams automatically:
-
-- Validates the output format
-- Runs your handler function
-- Actually sends the Discord message
-- Logs the result
 
 ## Creating Your First Output
 
-Here's a simple output that saves messages to a file:
+Here's a simple file output with attributes:
 
 ```typescript title="file-output.ts"
 import { output } from "@daydreamsai/core";
@@ -158,154 +48,101 @@ import * as z from "zod";
 import fs from "fs/promises";
 
 export const saveToFile = output({
-  // Type the LLM uses to call this output
   type: "file:save",
-
-  // Description helps LLM know when to use it
   description: "Saves a message to a text file",
-
-  // Schema defines what content is expected
+  
+  // Content schema - what goes inside the output tag
   schema: z.string().describe("The message to save"),
 
-  // Attributes define extra parameters on the output tag
+  // Attributes schema - extra parameters on the tag
   attributes: z.object({
     filename: z.string().describe("Name of the file to save to"),
   }),
 
-  // Handler is your actual code that runs
   handler: async (message, ctx) => {
     const { filename } = ctx.outputRef.params;
-
     await fs.writeFile(filename, message + "\n", { flag: "a" });
-
-    return {
-      saved: true,
-      filename,
-      message: `Saved message to ${filename}`,
-    };
+    return { saved: true, filename };
   },
 });
+
+// LLM uses it like this:
+// <output type="file:save" filename="log.txt">This is my message</output>
 ```
 
-Use it in your agent:
+## Output Features
 
-```typescript title="agent-with-file-output.ts"
-const agent = createDreams({
-  model: openai("gpt-4o"),
-  outputs: [saveToFile],
+### Attributes for Extra Parameters
+
+Outputs support attributes for additional configuration:
+
+```typescript title="discord-output.ts"
+const discordOutput = output({
+  type: "discord:message",
+  description: "Sends a message to Discord",
+  schema: z.string(), // Message content
+  
+  // Attributes appear as XML attributes  
+  attributes: z.object({
+    channelId: z.string(),
+    threadId: z.string().optional(),
+  }),
+  
+  handler: async (message, ctx) => {
+    const { channelId, threadId } = ctx.outputRef.params;
+    await discord.send(channelId, message, { threadId });
+    return { sent: true };
+  },
 });
 
-// Now when the LLM wants to save something:
-// <output type="file:save" filename="log.txt">This is my message</output>
-// The message gets saved to log.txt
+// LLM uses it like:
+// <output type="discord:message" channelId="123" threadId="456">
+//   Hello Discord!
+// </output>
 ```
 
-## Working with Context Memory
+### Memory Access in Outputs
 
-Outputs can read and update your agent's memory:
+Outputs can read and update context memory for tracking:
 
-```typescript title="notification-output.ts"
-// Define what your context remembers
-interface ChatMemory {
-  messagesSent: number;
-  lastNotification?: string;
-}
-
+```typescript title="notification-with-memory.ts"
 const notificationOutput = output({
   type: "notification:send",
-  description: "Sends a notification to the user",
   schema: z.string(),
-  attributes: z.object({
-    priority: z.enum(["low", "medium", "high"]),
-  }),
+  attributes: z.object({ priority: z.enum(["low", "high"]) }),
+  
   handler: async (message, ctx) => {
-    // Access context memory (automatically typed!)
-    const memory = ctx.memory as ChatMemory;
-
-    // Update statistics
-    if (!memory.messagesSent) {
-      memory.messagesSent = 0;
+    // Track notifications in memory
+    if (!ctx.memory.notificationsSent) {
+      ctx.memory.notificationsSent = 0;
     }
-    memory.messagesSent++;
-    memory.lastNotification = message;
-
-    // Send the actual notification
+    ctx.memory.notificationsSent++;
+    
     const { priority } = ctx.outputRef.params;
-    await notificationService.send({
-      message,
-      priority,
-      userId: ctx.args.userId,
-    });
-
-    // Changes to memory are automatically saved
+    await notificationService.send({ message, priority });
+    
     return {
       sent: true,
-      totalSent: memory.messagesSent,
-      message: `Notification sent (total: ${memory.messagesSent})`,
+      totalSent: ctx.memory.notificationsSent,
     };
   },
 });
 ```
 
-## Outputs vs Actions: When to Use Which?
+### Multiple Outputs
 
-Understanding the difference is crucial:
-
-### Use **Outputs** When:
-
-- **Communicating results** to users or external systems
-- **You don't need a response** back for the LLM to continue
-- **Final step** in a conversation or workflow
-
-```typescript title="output-example.ts"
-// ✅ Good use of output - telling user the result
-<output type="discord:message" channelId="123">
-  Weather: 72°F, sunny. Have a great day!
-</output>
-```
-
-### Use **Actions** When:
-
-- **Getting data** the LLM needs for next steps
-- **You need the result** for further reasoning
-- **Middle step** in a complex workflow
-
-```typescript title="action-example.ts"
-// ✅ Good use of action - getting data for next step
-<action_call name="get-weather">{"city": "San Francisco"}</action_call>
-// LLM will use this result to decide what to tell the user
-```
-
-### Common Pattern: Actions → Outputs
-
-```xml title="action-then-output.xml"
-<response>
-  <reasoning>I'll get weather data, then tell the user about it</reasoning>
-
-  <!-- Action: Get data -->
-  <action_call name="get-weather">{"city": "Boston"}</action_call>
-
-  <!-- Output: Communicate result -->
-  <output type="discord:message" channelId="123">
-    Boston weather: {{calls[0].temperature}}, {{calls[0].condition}}
-  </output>
-</response>
-```
-
-## Advanced: Multiple Outputs
-
-Your agent can send multiple outputs in one response:
+Agents can send multiple outputs in one response:
 
 ```xml title="multiple-outputs.xml"
 <response>
-  <reasoning>I'll notify both Discord and email about this important update</reasoning>
+  <reasoning>I'll notify both Discord and email about this alert</reasoning>
 
   <output type="discord:message" channelId="123">
     🚨 Server maintenance starting in 10 minutes!
   </output>
 
-  <output type="email:send" to="admin@company.com" subject="Maintenance Alert">
-    Server maintenance is beginning in 10 minutes. All users have been notified via Discord.
+  <output type="email:send" to="admin@company.com" subject="Alert">
+    Server maintenance beginning. Discord users notified.
   </output>
 </response>
 ```
@@ -373,19 +210,9 @@ const sendStuff = output({
 });
 ```
 
-### 2. Validate Input with Schemas
+### 2. Validate Content with Schemas
 
-```typescript title="good-schemas.ts"
-// ✅ Good - specific validation
-schema: z.object({
-  title: z.string().min(1).max(100),
-  content: z.string().min(1).max(2000),
-  urgency: z.enum(["low", "medium", "high"]),
-});
-
-// ❌ Bad - too loose
-schema: z.any();
-```
+Use proper Zod validation to ensure your outputs receive correct data. See [Schema Validation Best Practices](/docs/core/concepts/building-blocks#schema-validation-best-practices) for complete patterns and examples.
 
 ### 3. Handle Errors Gracefully
 

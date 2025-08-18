@@ -12,7 +12,7 @@ title: "Config"
 
 > **Config**\<`TContext`\> = `Partial`\<`AgentDef`\<`TContext`\>\> & `object`
 
-Defined in: [packages/core/src/types.ts:903](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L903)
+Defined in: [packages/core/src/types.ts:886](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L886)
 
 ## Type declaration
 
@@ -70,10 +70,6 @@ Whether to export training data for episodes
 
 > `optional` **topP**: `number`
 
-### reasoningModel?
-
-> `optional` **reasoningModel**: [`Agent`](./Agent.md)\[`"reasoningModel"`\]
-
 ### services?
 
 > `optional` **services**: `ServiceProvider`[]
@@ -81,6 +77,12 @@ Whether to export training data for episodes
 ### streaming?
 
 > `optional` **streaming**: `boolean`
+
+### tasks?
+
+> `optional` **tasks**: [`TaskConfiguration`](./TaskConfiguration.md)
+
+Task execution configuration
 
 ### trainingDataPath?
 

@@ -10,9 +10,9 @@ title: "MemorySystem"
 
 # Class: MemorySystem
 
-Defined in: [packages/core/src/memory/memory-system.ts:34](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/memory-system.ts#L34)
+Defined in: [packages/core/src/memory/memory-system.ts:24](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/memory-system.ts#L24)
 
-Main Memory System implementation
+Simplified Memory System - basic storage only
 
 ## Implements
 
@@ -24,7 +24,7 @@ Main Memory System implementation
 
 > **new MemorySystem**(`config`): `MemorySystem`
 
-Defined in: [packages/core/src/memory/memory-system.ts:51](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/memory-system.ts#L51)
+Defined in: [packages/core/src/memory/memory-system.ts:35](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/memory-system.ts#L35)
 
 #### Parameters
 
@@ -42,7 +42,7 @@ Defined in: [packages/core/src/memory/memory-system.ts:51](https://github.com/do
 
 > **episodes**: [`EpisodicMemory`](./EpisodicMemory.md)
 
-Defined in: [packages/core/src/memory/memory-system.ts:41](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/memory-system.ts#L41)
+Defined in: [packages/core/src/memory/memory-system.ts:29](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/memory-system.ts#L29)
 
 #### Implementation of
 
@@ -50,23 +50,11 @@ Defined in: [packages/core/src/memory/memory-system.ts:41](https://github.com/do
 
 ***
 
-### facts
-
-> **facts**: [`FactualMemory`](./FactualMemory.md)
-
-Defined in: [packages/core/src/memory/memory-system.ts:40](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/memory-system.ts#L40)
-
-#### Implementation of
-
-[`Memory`](./Memory.md).[`facts`](Memory.md#facts)
-
-***
-
 ### graph
 
 > **graph**: [`GraphMemory`](./GraphMemory.md)
 
-Defined in: [packages/core/src/memory/memory-system.ts:39](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/memory-system.ts#L39)
+Defined in: [packages/core/src/memory/memory-system.ts:28](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/memory-system.ts#L28)
 
 #### Implementation of
 
@@ -78,7 +66,7 @@ Defined in: [packages/core/src/memory/memory-system.ts:39](https://github.com/do
 
 > **kv**: [`KeyValueMemory`](./KeyValueMemory.md)
 
-Defined in: [packages/core/src/memory/memory-system.ts:37](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/memory-system.ts#L37)
+Defined in: [packages/core/src/memory/memory-system.ts:26](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/memory-system.ts#L26)
 
 #### Implementation of
 
@@ -86,35 +74,11 @@ Defined in: [packages/core/src/memory/memory-system.ts:37](https://github.com/do
 
 ***
 
-### lifecycle
-
-> **lifecycle**: [`MemoryLifecycle`](./MemoryLifecycle.md)
-
-Defined in: [packages/core/src/memory/memory-system.ts:35](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/memory-system.ts#L35)
-
-#### Implementation of
-
-[`Memory`](./Memory.md).[`lifecycle`](Memory.md#lifecycle)
-
-***
-
-### semantic
-
-> **semantic**: [`SemanticMemory`](./SemanticMemory.md)
-
-Defined in: [packages/core/src/memory/memory-system.ts:42](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/memory-system.ts#L42)
-
-#### Implementation of
-
-[`Memory`](./Memory.md).[`semantic`](Memory.md#semantic)
-
-***
-
 ### vector
 
 > **vector**: [`VectorMemory`](./VectorMemory.md)
 
-Defined in: [packages/core/src/memory/memory-system.ts:38](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/memory-system.ts#L38)
+Defined in: [packages/core/src/memory/memory-system.ts:27](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/memory-system.ts#L27)
 
 #### Implementation of
 
@@ -126,7 +90,7 @@ Defined in: [packages/core/src/memory/memory-system.ts:38](https://github.com/do
 
 > **working**: [`IWorkingMemory`](./IWorkingMemory.md)
 
-Defined in: [packages/core/src/memory/memory-system.ts:36](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/memory-system.ts#L36)
+Defined in: [packages/core/src/memory/memory-system.ts:25](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/memory-system.ts#L25)
 
 #### Implementation of
 
@@ -138,7 +102,7 @@ Defined in: [packages/core/src/memory/memory-system.ts:36](https://github.com/do
 
 > **close**(): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/memory-system.ts:131](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/memory-system.ts#L131)
+Defined in: [packages/core/src/memory/memory-system.ts:76](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/memory-system.ts#L76)
 
 #### Returns
 
@@ -150,53 +114,11 @@ Defined in: [packages/core/src/memory/memory-system.ts:131](https://github.com/d
 
 ***
 
-### evolve()
-
-> **evolve**(): `Promise`\<`void`\>
-
-Defined in: [packages/core/src/memory/memory-system.ts:471](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/memory-system.ts#L471)
-
-#### Returns
-
-`Promise`\<`void`\>
-
-#### Implementation of
-
-[`Memory`](./Memory.md).[`evolve`](Memory.md#evolve)
-
-***
-
-### extract()
-
-> **extract**(`content`, `context`): `Promise`\<[`ExtractedMemories`](./ExtractedMemories.md)\>
-
-Defined in: [packages/core/src/memory/memory-system.ts:467](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/memory-system.ts#L467)
-
-#### Parameters
-
-##### content
-
-`any`
-
-##### context
-
-`any`
-
-#### Returns
-
-`Promise`\<[`ExtractedMemories`](./ExtractedMemories.md)\>
-
-#### Implementation of
-
-[`Memory`](./Memory.md).[`extract`](Memory.md#extract)
-
-***
-
 ### forget()
 
 > **forget**(`criteria`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/memory-system.ts:393](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/memory-system.ts#L393)
+Defined in: [packages/core/src/memory/memory-system.ts:138](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/memory-system.ts#L138)
 
 #### Parameters
 
@@ -218,7 +140,7 @@ Defined in: [packages/core/src/memory/memory-system.ts:393](https://github.com/d
 
 > **initialize**(): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/memory-system.ts:75](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/memory-system.ts#L75)
+Defined in: [packages/core/src/memory/memory-system.ts:49](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/memory-system.ts#L49)
 
 #### Returns
 
@@ -234,7 +156,7 @@ Defined in: [packages/core/src/memory/memory-system.ts:75](https://github.com/do
 
 > **recall**(`query`, `options?`): `Promise`\<[`MemoryResult`](./MemoryResult.md)[]\>
 
-Defined in: [packages/core/src/memory/memory-system.ts:244](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/memory-system.ts#L244)
+Defined in: [packages/core/src/memory/memory-system.ts:113](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/memory-system.ts#L113)
 
 #### Parameters
 
@@ -260,13 +182,13 @@ Defined in: [packages/core/src/memory/memory-system.ts:244](https://github.com/d
 
 > **remember**(`content`, `options?`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/memory-system.ts:148](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/memory-system.ts#L148)
+Defined in: [packages/core/src/memory/memory-system.ts:89](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/memory-system.ts#L89)
 
 #### Parameters
 
 ##### content
 
-`any`
+`unknown`
 
 ##### options?
 

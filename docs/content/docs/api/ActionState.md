@@ -12,7 +12,7 @@ title: "ActionState"
 
 > **ActionState**\<`Data`\> = `object`
 
-Defined in: [packages/core/src/memory/types.ts:566](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L566)
+Defined in: [packages/core/src/memory/types.ts:412](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L412)
 
 Represents a memory configuration for storing data
 
@@ -30,7 +30,7 @@ Type of data stored in memory
 
 > **create**: () => `Promise`\<`Data`\> \| `Data`
 
-Defined in: [packages/core/src/memory/types.ts:570](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L570)
+Defined in: [packages/core/src/memory/types.ts:416](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L416)
 
 Function to initialize memory data
 
@@ -44,6 +44,6 @@ Function to initialize memory data
 
 > **key**: `string`
 
-Defined in: [packages/core/src/memory/types.ts:568](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L568)
+Defined in: [packages/core/src/memory/types.ts:414](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L414)
 
 Unique identifier for this memory

@@ -12,7 +12,7 @@ title: "OutputRefResponse"
 
 > **OutputRefResponse** = `Pick`\<[`OutputRef`](./OutputRef.md), `"data"` \| `"params"`\> & `object`
 
-Defined in: [packages/core/src/types.ts:289](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L289)
+Defined in: [packages/core/src/types.ts:259](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L259)
 
 Response type for output references
 

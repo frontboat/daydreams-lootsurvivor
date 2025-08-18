@@ -10,7 +10,7 @@ title: "VectorMemoryImpl"
 
 # Class: VectorMemoryImpl
 
-Defined in: [packages/core/src/memory/vector-memory.ts:3](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/vector-memory.ts#L3)
+Defined in: [packages/core/src/memory/vector-memory.ts:3](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/vector-memory.ts#L3)
 
 Vector Memory interface
 
@@ -24,7 +24,7 @@ Vector Memory interface
 
 > **new VectorMemoryImpl**(`provider`): `VectorMemoryImpl`
 
-Defined in: [packages/core/src/memory/vector-memory.ts:4](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/vector-memory.ts#L4)
+Defined in: [packages/core/src/memory/vector-memory.ts:4](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/vector-memory.ts#L4)
 
 #### Parameters
 
@@ -42,7 +42,7 @@ Defined in: [packages/core/src/memory/vector-memory.ts:4](https://github.com/doj
 
 > **delete**(`ids`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/vector-memory.ts:14](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/vector-memory.ts#L14)
+Defined in: [packages/core/src/memory/vector-memory.ts:14](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/vector-memory.ts#L14)
 
 #### Parameters
 
@@ -64,7 +64,7 @@ Defined in: [packages/core/src/memory/vector-memory.ts:14](https://github.com/do
 
 > **index**(`documents`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/vector-memory.ts:6](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/vector-memory.ts#L6)
+Defined in: [packages/core/src/memory/vector-memory.ts:6](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/vector-memory.ts#L6)
 
 #### Parameters
 
@@ -86,7 +86,7 @@ Defined in: [packages/core/src/memory/vector-memory.ts:6](https://github.com/doj
 
 > **search**(`query`): `Promise`\<[`VectorResult`](./VectorResult.md)[]\>
 
-Defined in: [packages/core/src/memory/vector-memory.ts:10](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/vector-memory.ts#L10)
+Defined in: [packages/core/src/memory/vector-memory.ts:10](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/vector-memory.ts#L10)
 
 #### Parameters
 

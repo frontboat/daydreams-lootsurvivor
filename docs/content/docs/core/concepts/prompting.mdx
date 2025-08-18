@@ -260,25 +260,60 @@ When multiple contexts are active:
 - **Debugging** - You can see exactly what the LLM was told
 - **Extensibility** - Easy to add new actions and outputs
 
-## Customizing Prompts
+## Prompt Architecture
 
-You can customize prompts in your contexts:
+Daydreams uses a modular prompt system defined in `packages/core/src/prompts/main.ts`:
 
-```typescript title="custom-instructions.ts"
+```typescript title="prompt-structure.ts"
+// Template sections with placeholders
+export const templateSections = {
+  intro: `You are an expert AI assistant...`,
+  instructions: `Follow these steps to process...`,
+  content: `## CURRENT SITUATION\n{{currentTask}}...`,
+  response: `Structure your response: <response>...`,
+  footer: `Guiding Principles for Your Response...`
+};
+
+// Formatter processes data into prompt sections
+export function formatPromptSections({
+  contexts, outputs, actions, workingMemory
+}) {
+  return {
+    currentTask: xml("current-task", undefined, unprocessedLogs),
+    contextState: xml("context-state", undefined, contexts),
+    actions: xml("available-actions", undefined, actions),
+    // ... more sections
+  };
+}
+
+// Main prompt combines template + formatter
+export const mainPrompt = {
+  template: promptTemplate,
+  sections: templateSections,
+  render: (data) => render(template, data),
+  formatter: formatPromptSections
+};
+```
+
+### Context Customization
+
+Contexts can customize their contribution to prompts:
+
+```typescript title="context-customization.ts"
 const chatContext = context({
   type: "chat",
   schema: z.object({ userId: z.string() }),
-
-  // Custom instructions for this context
-  instructions: (state) =>
-    `You are helping user ${state.args.userId}. Be friendly and helpful.`,
-
-  // Custom context rendering
+  
+  // Custom instructions for this context type
+  instructions: `You are a helpful chat assistant. Be friendly and conversational.`,
+  
+  // Custom rendering of context state in prompts
   render: (state) => `
-    Chat with ${state.args.userId}
-    Recent messages: ${state.memory.messages.slice(-3).join("\n")}
-    User mood: ${state.memory.userMood || "neutral"}
-  `,
+    Chat Context: ${state.id}
+    User: ${state.args.userId}
+    Messages: ${state.memory.messages?.length || 0}
+    Last active: ${new Date(state.memory.lastActive || Date.now()).toLocaleString()}
+  `
 });
 ```
 

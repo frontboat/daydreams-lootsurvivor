@@ -10,7 +10,7 @@ title: "MemoryProvider"
 
 # Interface: MemoryProvider
 
-Defined in: [packages/core/src/memory/types.ts:79](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L79)
+Defined in: [packages/core/src/memory/types.ts:69](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L69)
 
 Base provider interface
 
@@ -26,7 +26,7 @@ Base provider interface
 
 > **close**(): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/types.ts:81](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L81)
+Defined in: [packages/core/src/memory/types.ts:71](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L71)
 
 #### Returns
 
@@ -38,7 +38,7 @@ Defined in: [packages/core/src/memory/types.ts:81](https://github.com/dojoengine
 
 > **health**(): `Promise`\<[`HealthStatus`](./HealthStatus.md)\>
 
-Defined in: [packages/core/src/memory/types.ts:82](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L82)
+Defined in: [packages/core/src/memory/types.ts:72](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L72)
 
 #### Returns
 
@@ -50,7 +50,7 @@ Defined in: [packages/core/src/memory/types.ts:82](https://github.com/dojoengine
 
 > **initialize**(): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/types.ts:80](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L80)
+Defined in: [packages/core/src/memory/types.ts:70](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L70)
 
 #### Returns
 

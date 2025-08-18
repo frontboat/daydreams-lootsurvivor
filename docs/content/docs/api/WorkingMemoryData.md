@@ -10,7 +10,7 @@ title: "WorkingMemoryData"
 
 # Interface: WorkingMemoryData
 
-Defined in: [packages/core/src/memory/types.ts:228](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L228)
+Defined in: [packages/core/src/memory/types.ts:218](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L218)
 
 ## Extended by
 
@@ -22,7 +22,7 @@ Defined in: [packages/core/src/memory/types.ts:228](https://github.com/dojoengin
 
 > **calls**: [`ActionCall`](./ActionCall.md)\<`any`\>[]
 
-Defined in: [packages/core/src/memory/types.ts:232](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L232)
+Defined in: [packages/core/src/memory/types.ts:222](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L222)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [packages/core/src/memory/types.ts:232](https://github.com/dojoengin
 
 > **events**: [`EventRef`](./EventRef.md)[]
 
-Defined in: [packages/core/src/memory/types.ts:234](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L234)
+Defined in: [packages/core/src/memory/types.ts:224](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L224)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [packages/core/src/memory/types.ts:234](https://github.com/dojoengin
 
 > **inputs**: [`InputRef`](./InputRef.md)\<`any`\>[]
 
-Defined in: [packages/core/src/memory/types.ts:229](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L229)
+Defined in: [packages/core/src/memory/types.ts:219](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L219)
 
 ***
 
@@ -46,7 +46,7 @@ Defined in: [packages/core/src/memory/types.ts:229](https://github.com/dojoengin
 
 > **outputs**: [`OutputRef`](./OutputRef.md)[]
 
-Defined in: [packages/core/src/memory/types.ts:230](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L230)
+Defined in: [packages/core/src/memory/types.ts:220](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L220)
 
 ***
 
@@ -54,7 +54,7 @@ Defined in: [packages/core/src/memory/types.ts:230](https://github.com/dojoengin
 
 > `optional` **relevantMemories**: [`MemoryResult`](./MemoryResult.md)[]
 
-Defined in: [packages/core/src/memory/types.ts:237](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L237)
+Defined in: [packages/core/src/memory/types.ts:227](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L227)
 
 ***
 
@@ -62,7 +62,7 @@ Defined in: [packages/core/src/memory/types.ts:237](https://github.com/dojoengin
 
 > **results**: [`ActionResult`](./ActionResult.md)\<`any`\>[]
 
-Defined in: [packages/core/src/memory/types.ts:233](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L233)
+Defined in: [packages/core/src/memory/types.ts:223](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L223)
 
 ***
 
@@ -70,7 +70,7 @@ Defined in: [packages/core/src/memory/types.ts:233](https://github.com/dojoengin
 
 > **runs**: [`RunRef`](./RunRef.md)[]
 
-Defined in: [packages/core/src/memory/types.ts:236](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L236)
+Defined in: [packages/core/src/memory/types.ts:226](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L226)
 
 ***
 
@@ -78,7 +78,7 @@ Defined in: [packages/core/src/memory/types.ts:236](https://github.com/dojoengin
 
 > **steps**: [`StepRef`](./StepRef.md)[]
 
-Defined in: [packages/core/src/memory/types.ts:235](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L235)
+Defined in: [packages/core/src/memory/types.ts:225](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L225)
 
 ***
 
@@ -86,4 +86,4 @@ Defined in: [packages/core/src/memory/types.ts:235](https://github.com/dojoengin
 
 > **thoughts**: [`ThoughtRef`](./ThoughtRef.md)[]
 
-Defined in: [packages/core/src/memory/types.ts:231](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L231)
+Defined in: [packages/core/src/memory/types.ts:221](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L221)

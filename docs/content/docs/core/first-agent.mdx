@@ -335,48 +335,68 @@ const gameContext = context<GameMemory>({
 });
 ```
 
-## Key Concepts to Remember
+## What You Built
 
-1. **Contexts = Isolated Workspaces**
+Your customer service agent demonstrates the three key Daydreams concepts:
 
-   - Each context instance has its own memory
-   - Perfect for multi-user applications
-   - No data leakage between contexts
+### 1. **Context Isolation**
+Each customer gets their own workspace:
+```typescript
+// Different customers = different context instances
+args: { customerId: "CUST001" } // Alice's data
+args: { customerId: "CUST002" } // Bob's data (completely separate)
+```
 
-2. **Contexts = Persistent Memory**
+### 2. **Context Composition** 
+Combine contexts with `.use()`:
+```typescript
+use: (state) => [{
+  context: accountContext,
+  args: { customerId: state.args.customerId }, // Share customer ID
+}]
+```
+The LLM automatically sees both customer support AND account data.
 
-   - State survives between conversations
-   - Build agents that truly remember
-   - No more stateless interactions
+### 3. **Action Scoping**
+Actions are available based on active contexts:
+- `save-customer-info`, `create-ticket` → Only in customer context
+- `link-account`, `check-balance` → Only in account context  
+- Global actions → Available everywhere
 
-3. **Contexts = Specialized Behavior**
-   - Different instructions for different situations
-   - Same agent, multiple personalities
-   - Clean separation of concerns
+## Test the Complete Flow
+
+```bash
+node agent.ts
+```
+
+Try this conversation:
+```text
+You: Hi, my name is Sarah Johnson, email sarah@email.com
+Agent: [Uses save-customer-info action]
+
+You: I need help with billing. My account is ACC12345
+Agent: [Uses link-account action, then can use check-balance]
+
+You: Create a ticket for my billing issue
+Agent: [Uses create-ticket action]
+
+You: Thanks, that's resolved now
+Agent: [Uses resolve-ticket action]
+```
+
+## Key Concepts Learned
+
+- **Contexts** provide isolated, stateful workspaces
+- **`.use()`** composes contexts for modular functionality
+- **`.setActions()`** scopes actions to specific contexts
+- **Memory persists** between conversations for the same context args
+- **LLM sees all** active context data and available actions
 
 ## Next Steps
 
-Now that you understand the power of contexts, explore:
+- [Contexts](/docs/core/concepts/contexts) - Deep dive into context patterns
+- [Building Blocks](/docs/core/concepts/building-blocks) - Understand actions, inputs, outputs
+- [Extensions](/docs/core/concepts/extensions) - Package functionality for reuse
+- [Building Block Operations](/docs/core/concepts/building-block-operations) - Common patterns
 
-- **[Contexts Deep Dive](/docs/core/concepts/contexts)** - Master context
-  features
-- **[Composing Contexts](/docs/core/concepts/composing-contexts)** - Combine
-  contexts for complex behaviors
-- **[Building Blocks](/docs/core/concepts/building-blocks)** - Understand all
-  agent components
-- **[Real Examples](/docs/tutorials)** - See contexts in action
-
-### Quick Challenges
-
-1. **Add a mood tracker** - Make the assistant remember and respond to your mood
-2. **Build a todo context** - Create a separate context for managing tasks
-3. **Add user authentication** - Use context args to implement simple auth
-
-## Remember This
-
-**Contexts are what make Daydreams special.** They transform simple chatbots
-into intelligent agents with real memory, proper isolation, and specialized
-behaviors.
-
-Every time you think "I wish my agent could remember...", that's what contexts
-are for!
+**Challenge:** Add a third context for order management using `.use()` and give it order-specific actions!

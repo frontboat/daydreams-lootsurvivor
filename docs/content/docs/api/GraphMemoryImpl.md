@@ -10,7 +10,7 @@ title: "GraphMemoryImpl"
 
 # Class: GraphMemoryImpl
 
-Defined in: [packages/core/src/memory/graph-memory.ts:3](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/graph-memory.ts#L3)
+Defined in: [packages/core/src/memory/graph-memory.ts:3](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/graph-memory.ts#L3)
 
 Graph Memory - stores entity relationships
 
@@ -24,7 +24,7 @@ Graph Memory - stores entity relationships
 
 > **new GraphMemoryImpl**(`provider`): `GraphMemoryImpl`
 
-Defined in: [packages/core/src/memory/graph-memory.ts:4](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/graph-memory.ts#L4)
+Defined in: [packages/core/src/memory/graph-memory.ts:4](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/graph-memory.ts#L4)
 
 #### Parameters
 
@@ -42,7 +42,7 @@ Defined in: [packages/core/src/memory/graph-memory.ts:4](https://github.com/dojo
 
 > **addEntity**(`entity`): `Promise`\<`string`\>
 
-Defined in: [packages/core/src/memory/graph-memory.ts:6](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/graph-memory.ts#L6)
+Defined in: [packages/core/src/memory/graph-memory.ts:6](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/graph-memory.ts#L6)
 
 #### Parameters
 
@@ -64,7 +64,7 @@ Defined in: [packages/core/src/memory/graph-memory.ts:6](https://github.com/dojo
 
 > **addRelationship**(`relationship`): `Promise`\<`string`\>
 
-Defined in: [packages/core/src/memory/graph-memory.ts:19](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/graph-memory.ts#L19)
+Defined in: [packages/core/src/memory/graph-memory.ts:19](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/graph-memory.ts#L19)
 
 #### Parameters
 
@@ -86,7 +86,7 @@ Defined in: [packages/core/src/memory/graph-memory.ts:19](https://github.com/doj
 
 > **findPath**(`from`, `to`): `Promise`\<[`Entity`](./Entity.md)[]\>
 
-Defined in: [packages/core/src/memory/graph-memory.ts:77](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/graph-memory.ts#L77)
+Defined in: [packages/core/src/memory/graph-memory.ts:79](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/graph-memory.ts#L79)
 
 #### Parameters
 
@@ -112,7 +112,7 @@ Defined in: [packages/core/src/memory/graph-memory.ts:77](https://github.com/doj
 
 > **findRelated**(`entityId`, `relationshipType?`): `Promise`\<[`Entity`](./Entity.md)[]\>
 
-Defined in: [packages/core/src/memory/graph-memory.ts:55](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/graph-memory.ts#L55)
+Defined in: [packages/core/src/memory/graph-memory.ts:57](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/graph-memory.ts#L57)
 
 #### Parameters
 
@@ -138,7 +138,7 @@ Defined in: [packages/core/src/memory/graph-memory.ts:55](https://github.com/doj
 
 > **getEntity**(`id`): `Promise`\<`null` \| [`Entity`](./Entity.md)\>
 
-Defined in: [packages/core/src/memory/graph-memory.ts:40](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/graph-memory.ts#L40)
+Defined in: [packages/core/src/memory/graph-memory.ts:40](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/graph-memory.ts#L40)
 
 #### Parameters
 
@@ -160,7 +160,7 @@ Defined in: [packages/core/src/memory/graph-memory.ts:40](https://github.com/doj
 
 > **removeEntity**(`id`): `Promise`\<`boolean`\>
 
-Defined in: [packages/core/src/memory/graph-memory.ts:104](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/graph-memory.ts#L104)
+Defined in: [packages/core/src/memory/graph-memory.ts:106](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/graph-memory.ts#L106)
 
 #### Parameters
 
@@ -182,7 +182,7 @@ Defined in: [packages/core/src/memory/graph-memory.ts:104](https://github.com/do
 
 > **updateEntity**(`id`, `updates`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/graph-memory.ts:90](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/graph-memory.ts#L90)
+Defined in: [packages/core/src/memory/graph-memory.ts:92](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/graph-memory.ts#L92)
 
 #### Parameters
 

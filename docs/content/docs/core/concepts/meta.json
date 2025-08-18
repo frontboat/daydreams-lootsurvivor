@@ -1,15 +1,19 @@
 {
   "pages": [
-    "core",
-    "agent-lifecycle",
     "building-blocks",
+    "agent-lifecycle",
+    "---Fundamentals---",
     "contexts",
-    "composing-contexts",
     "inputs",
     "outputs",
     "actions",
+    "building-block-operations",
+    "---Advanced---",
+    "extensions",
+    "services",
+    "extensions-vs-services",
+    "composing-contexts",
     "prompting",
-    "tasks",
     "mcp"
   ]
 }

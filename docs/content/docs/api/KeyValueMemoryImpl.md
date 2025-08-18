@@ -10,7 +10,7 @@ title: "KeyValueMemoryImpl"
 
 # Class: KeyValueMemoryImpl
 
-Defined in: [packages/core/src/memory/kv-memory.ts:3](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/kv-memory.ts#L3)
+Defined in: [packages/core/src/memory/kv-memory.ts:3](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/kv-memory.ts#L3)
 
 Key-Value Memory interface
 
@@ -24,7 +24,7 @@ Key-Value Memory interface
 
 > **new KeyValueMemoryImpl**(`provider`): `KeyValueMemoryImpl`
 
-Defined in: [packages/core/src/memory/kv-memory.ts:4](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/kv-memory.ts#L4)
+Defined in: [packages/core/src/memory/kv-memory.ts:4](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/kv-memory.ts#L4)
 
 #### Parameters
 
@@ -42,7 +42,7 @@ Defined in: [packages/core/src/memory/kv-memory.ts:4](https://github.com/dojoeng
 
 > **count**(`pattern?`): `Promise`\<`number`\>
 
-Defined in: [packages/core/src/memory/kv-memory.ts:26](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/kv-memory.ts#L26)
+Defined in: [packages/core/src/memory/kv-memory.ts:26](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/kv-memory.ts#L26)
 
 #### Parameters
 
@@ -64,7 +64,7 @@ Defined in: [packages/core/src/memory/kv-memory.ts:26](https://github.com/dojoen
 
 > **delete**(`key`): `Promise`\<`boolean`\>
 
-Defined in: [packages/core/src/memory/kv-memory.ts:14](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/kv-memory.ts#L14)
+Defined in: [packages/core/src/memory/kv-memory.ts:14](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/kv-memory.ts#L14)
 
 #### Parameters
 
@@ -82,11 +82,33 @@ Defined in: [packages/core/src/memory/kv-memory.ts:14](https://github.com/dojoen
 
 ***
 
+### deleteBatch()
+
+> **deleteBatch**(`keys`): `Promise`\<`number`\>
+
+Defined in: [packages/core/src/memory/kv-memory.ts:47](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/kv-memory.ts#L47)
+
+#### Parameters
+
+##### keys
+
+`string`[]
+
+#### Returns
+
+`Promise`\<`number`\>
+
+#### Implementation of
+
+[`KeyValueMemory`](./KeyValueMemory.md).[`deleteBatch`](KeyValueMemory.md#deletebatch)
+
+***
+
 ### exists()
 
 > **exists**(`key`): `Promise`\<`boolean`\>
 
-Defined in: [packages/core/src/memory/kv-memory.ts:18](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/kv-memory.ts#L18)
+Defined in: [packages/core/src/memory/kv-memory.ts:18](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/kv-memory.ts#L18)
 
 #### Parameters
 
@@ -108,7 +130,7 @@ Defined in: [packages/core/src/memory/kv-memory.ts:18](https://github.com/dojoen
 
 > **get**\<`T`\>(`key`): `Promise`\<`null` \| `T`\>
 
-Defined in: [packages/core/src/memory/kv-memory.ts:6](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/kv-memory.ts#L6)
+Defined in: [packages/core/src/memory/kv-memory.ts:6](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/kv-memory.ts#L6)
 
 #### Type Parameters
 
@@ -132,11 +154,39 @@ Defined in: [packages/core/src/memory/kv-memory.ts:6](https://github.com/dojoeng
 
 ***
 
+### getBatch()
+
+> **getBatch**\<`T`\>(`keys`): `Promise`\<`Map`\<`string`, `T`\>\>
+
+Defined in: [packages/core/src/memory/kv-memory.ts:39](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/kv-memory.ts#L39)
+
+#### Type Parameters
+
+##### T
+
+`T`
+
+#### Parameters
+
+##### keys
+
+`string`[]
+
+#### Returns
+
+`Promise`\<`Map`\<`string`, `T`\>\>
+
+#### Implementation of
+
+[`KeyValueMemory`](./KeyValueMemory.md).[`getBatch`](KeyValueMemory.md#getbatch)
+
+***
+
 ### keys()
 
 > **keys**(`pattern?`): `Promise`\<`string`[]\>
 
-Defined in: [packages/core/src/memory/kv-memory.ts:22](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/kv-memory.ts#L22)
+Defined in: [packages/core/src/memory/kv-memory.ts:22](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/kv-memory.ts#L22)
 
 #### Parameters
 
@@ -156,9 +206,9 @@ Defined in: [packages/core/src/memory/kv-memory.ts:22](https://github.com/dojoen
 
 ### scan()
 
-> **scan**(`pattern?`): `AsyncIterator`\<\[`string`, `any`\]\>
+> **scan**(`pattern?`): `AsyncIterator`\<\[`string`, `unknown`\]\>
 
-Defined in: [packages/core/src/memory/kv-memory.ts:30](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/kv-memory.ts#L30)
+Defined in: [packages/core/src/memory/kv-memory.ts:30](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/kv-memory.ts#L30)
 
 #### Parameters
 
@@ -168,7 +218,7 @@ Defined in: [packages/core/src/memory/kv-memory.ts:30](https://github.com/dojoen
 
 #### Returns
 
-`AsyncIterator`\<\[`string`, `any`\]\>
+`AsyncIterator`\<\[`string`, `unknown`\]\>
 
 #### Implementation of
 
@@ -180,7 +230,7 @@ Defined in: [packages/core/src/memory/kv-memory.ts:30](https://github.com/dojoen
 
 > **set**\<`T`\>(`key`, `value`, `options?`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/kv-memory.ts:10](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/kv-memory.ts#L10)
+Defined in: [packages/core/src/memory/kv-memory.ts:10](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/kv-memory.ts#L10)
 
 #### Type Parameters
 
@@ -209,3 +259,35 @@ Defined in: [packages/core/src/memory/kv-memory.ts:10](https://github.com/dojoen
 #### Implementation of
 
 [`KeyValueMemory`](./KeyValueMemory.md).[`set`](KeyValueMemory.md#set)
+
+***
+
+### setBatch()
+
+> **setBatch**\<`T`\>(`entries`, `options?`): `Promise`\<`void`\>
+
+Defined in: [packages/core/src/memory/kv-memory.ts:43](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/kv-memory.ts#L43)
+
+#### Type Parameters
+
+##### T
+
+`T`
+
+#### Parameters
+
+##### entries
+
+`Map`\<`string`, `T`\>
+
+##### options?
+
+[`SetOptions`](./SetOptions.md)
+
+#### Returns
+
+`Promise`\<`void`\>
+
+#### Implementation of
+
+[`KeyValueMemory`](./KeyValueMemory.md).[`setBatch`](KeyValueMemory.md#setbatch)

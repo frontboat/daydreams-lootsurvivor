@@ -1,5 +1,8 @@
 import { defineDocs, defineConfig } from "fumadocs-mdx/config";
 import { remarkAutoTypeTable, createGenerator } from "fumadocs-typescript";
+import { transformerTwoslash } from "fumadocs-twoslash";
+import { createFileSystemTypesCache } from "fumadocs-twoslash/cache-fs";
+import { rehypeCodeDefaultOptions } from "fumadocs-core/mdx-plugins";
 
 // Create TypeScript generator for inline type documentation
 const generator = createGenerator({
@@ -14,6 +17,18 @@ export const docs = defineDocs({
 
 export default defineConfig({
   mdxOptions: {
+    // rehypeCodeOptions: {
+    //   themes: {
+    //     light: "github-light",
+    //     dark: "github-dark",
+    //   },
+    //   transformers: [
+    //     ...(rehypeCodeDefaultOptions.transformers ?? []),
+    //     transformerTwoslash({
+    //       typesCache: createFileSystemTypesCache(),
+    //     }),
+    //   ],
+    // },
     remarkPlugins: [
       // Enable automatic type table generation
       [

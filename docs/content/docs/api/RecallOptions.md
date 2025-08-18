@@ -10,31 +10,23 @@ title: "RecallOptions"
 
 # Interface: RecallOptions
 
-Defined in: [packages/core/src/memory/types.ts:501](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L501)
+Defined in: [packages/core/src/memory/types.ts:371](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L371)
 
 ## Properties
 
-### boost?
+### contextId?
 
-> `optional` **boost**: `Record`\<`string`, `number`\>
+> `optional` **contextId**: `string`
 
-Defined in: [packages/core/src/memory/types.ts:506](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L506)
-
-***
-
-### context?
-
-> `optional` **context**: `string`
-
-Defined in: [packages/core/src/memory/types.ts:502](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L502)
+Defined in: [packages/core/src/memory/types.ts:372](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L372)
 
 ***
 
 ### filter?
 
-> `optional` **filter**: `Record`\<`string`, `any`\>
+> `optional` **filter**: `Record`\<`string`, `unknown`\>
 
-Defined in: [packages/core/src/memory/types.ts:507](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L507)
+Defined in: [packages/core/src/memory/types.ts:377](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L377)
 
 ***
 
@@ -42,7 +34,7 @@ Defined in: [packages/core/src/memory/types.ts:507](https://github.com/dojoengin
 
 > `optional` **limit**: `number`
 
-Defined in: [packages/core/src/memory/types.ts:504](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L504)
+Defined in: [packages/core/src/memory/types.ts:375](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L375)
 
 ***
 
@@ -50,12 +42,20 @@ Defined in: [packages/core/src/memory/types.ts:504](https://github.com/dojoengin
 
 > `optional` **minRelevance**: `number`
 
-Defined in: [packages/core/src/memory/types.ts:505](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L505)
+Defined in: [packages/core/src/memory/types.ts:376](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L376)
 
 ***
 
-### types?
+### scope?
 
-> `optional` **types**: `string`[]
+> `optional` **scope**: `"context"` \| `"user"` \| `"global"` \| `"all"`
 
-Defined in: [packages/core/src/memory/types.ts:503](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L503)
+Defined in: [packages/core/src/memory/types.ts:374](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L374)
+
+***
+
+### userId?
+
+> `optional` **userId**: `string`
+
+Defined in: [packages/core/src/memory/types.ts:373](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L373)

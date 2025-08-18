@@ -10,7 +10,7 @@ title: "VectorMemory"
 
 # Interface: VectorMemory
 
-Defined in: [packages/core/src/memory/types.ts:445](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L445)
+Defined in: [packages/core/src/memory/types.ts:352](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L352)
 
 Vector Memory interface
 
@@ -20,7 +20,7 @@ Vector Memory interface
 
 > **delete**(`ids`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/types.ts:448](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L448)
+Defined in: [packages/core/src/memory/types.ts:355](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L355)
 
 #### Parameters
 
@@ -38,7 +38,7 @@ Defined in: [packages/core/src/memory/types.ts:448](https://github.com/dojoengin
 
 > **index**(`documents`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/types.ts:446](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L446)
+Defined in: [packages/core/src/memory/types.ts:353](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L353)
 
 #### Parameters
 
@@ -56,7 +56,7 @@ Defined in: [packages/core/src/memory/types.ts:446](https://github.com/dojoengin
 
 > **search**(`query`): `Promise`\<[`VectorResult`](./VectorResult.md)[]\>
 
-Defined in: [packages/core/src/memory/types.ts:447](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L447)
+Defined in: [packages/core/src/memory/types.ts:354](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L354)
 
 #### Parameters
 

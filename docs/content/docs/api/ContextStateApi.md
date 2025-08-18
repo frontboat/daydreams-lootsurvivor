@@ -10,7 +10,7 @@ title: "ContextStateApi"
 
 # Interface: ContextStateApi\<TContext\>
 
-Defined in: [packages/core/src/types.ts:1309](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L1309)
+Defined in: [packages/core/src/types.ts:1290](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1290)
 
 API methods available on context state
 
@@ -32,7 +32,7 @@ The context type
 
 > **\_\_getRunResults**: () => `Promise`\<[`ActionResult`](./ActionResult.md)\<`any`\>\>[]
 
-Defined in: [packages/core/src/types.ts:1325](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L1325)
+Defined in: [packages/core/src/types.ts:1306](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1306)
 
 Get pending action results
 
@@ -46,7 +46,7 @@ Get pending action results
 
 > **callAction**: (`call`, `options?`) => `Promise`\<[`ActionResult`](./ActionResult.md)\<`any`\>\>
 
-Defined in: [packages/core/src/types.ts:1316](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L1316)
+Defined in: [packages/core/src/types.ts:1297](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1297)
 
 Call an action with optional configuration
 
@@ -70,7 +70,7 @@ Call an action with optional configuration
 
 > **emit**: `ContextEventEmitter`\<`TContext`\>
 
-Defined in: [packages/core/src/types.ts:1311](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L1311)
+Defined in: [packages/core/src/types.ts:1292](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1292)
 
 Emit an event for this context
 
@@ -80,7 +80,7 @@ Emit an event for this context
 
 > **push**: (`log`) => `Promise`\<`any`\>
 
-Defined in: [packages/core/src/types.ts:1313](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L1313)
+Defined in: [packages/core/src/types.ts:1294](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1294)
 
 Push a log entry
 

@@ -12,7 +12,7 @@ title: "ActionCall"
 
 > **ActionCall**\<`Data`\> = `object`
 
-Defined in: [packages/core/src/types.ts:466](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L466)
+Defined in: [packages/core/src/types.ts:434](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L434)
 
 Represents a call to an action
 
@@ -28,7 +28,7 @@ Represents a call to an action
 
 > **content**: `string`
 
-Defined in: [packages/core/src/types.ts:470](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L470)
+Defined in: [packages/core/src/types.ts:438](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L438)
 
 ***
 
@@ -36,7 +36,7 @@ Defined in: [packages/core/src/types.ts:470](https://github.com/dojoengine/daydr
 
 > **data**: `Data`
 
-Defined in: [packages/core/src/types.ts:471](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L471)
+Defined in: [packages/core/src/types.ts:439](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L439)
 
 ***
 
@@ -44,7 +44,7 @@ Defined in: [packages/core/src/types.ts:471](https://github.com/dojoengine/daydr
 
 > **id**: `string`
 
-Defined in: [packages/core/src/types.ts:468](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L468)
+Defined in: [packages/core/src/types.ts:436](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L436)
 
 ***
 
@@ -52,7 +52,7 @@ Defined in: [packages/core/src/types.ts:468](https://github.com/dojoengine/daydr
 
 > **name**: `string`
 
-Defined in: [packages/core/src/types.ts:469](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L469)
+Defined in: [packages/core/src/types.ts:437](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L437)
 
 ***
 
@@ -60,7 +60,7 @@ Defined in: [packages/core/src/types.ts:469](https://github.com/dojoengine/daydr
 
 > `optional` **params**: `Record`\<`string`, `string`\>
 
-Defined in: [packages/core/src/types.ts:472](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L472)
+Defined in: [packages/core/src/types.ts:440](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L440)
 
 ***
 
@@ -68,7 +68,7 @@ Defined in: [packages/core/src/types.ts:472](https://github.com/dojoengine/daydr
 
 > **processed**: `boolean`
 
-Defined in: [packages/core/src/types.ts:474](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L474)
+Defined in: [packages/core/src/types.ts:442](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L442)
 
 ***
 
@@ -76,7 +76,7 @@ Defined in: [packages/core/src/types.ts:474](https://github.com/dojoengine/daydr
 
 > **ref**: `"action_call"`
 
-Defined in: [packages/core/src/types.ts:467](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L467)
+Defined in: [packages/core/src/types.ts:435](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L435)
 
 ***
 
@@ -84,4 +84,4 @@ Defined in: [packages/core/src/types.ts:467](https://github.com/dojoengine/daydr
 
 > **timestamp**: `number`
 
-Defined in: [packages/core/src/types.ts:473](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L473)
+Defined in: [packages/core/src/types.ts:441](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L441)

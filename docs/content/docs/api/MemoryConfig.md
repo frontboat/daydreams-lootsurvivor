@@ -10,25 +10,57 @@ title: "MemoryConfig"
 
 # Interface: MemoryConfig
 
-Defined in: [packages/core/src/memory/types.ts:51](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L51)
+Defined in: [packages/core/src/memory/types.ts:46](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L46)
 
 Memory system configuration
 
 ## Properties
 
-### middleware?
+### knowledge?
 
-> `optional` **middleware**: [`MemoryMiddleware`](./MemoryMiddleware.md)[]
+> `optional` **knowledge**: `object`
 
-Defined in: [packages/core/src/memory/types.ts:57](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L57)
+Defined in: [packages/core/src/memory/types.ts:53](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L53)
+
+#### enabled?
+
+> `optional` **enabled**: `boolean`
+
+#### extraction?
+
+> `optional` **extraction**: `object`
+
+##### extraction.maxTokens?
+
+> `optional` **maxTokens**: `number`
+
+##### extraction.minConfidence?
+
+> `optional` **minConfidence**: `number`
+
+##### extraction.temperature?
+
+> `optional` **temperature**: `number`
+
+##### extraction.usePatternFallback?
+
+> `optional` **usePatternFallback**: `boolean`
+
+#### model?
+
+> `optional` **model**: `LanguageModel`
+
+#### schema?
+
+> `optional` **schema**: [`KnowledgeSchema`](./KnowledgeSchema.md)
 
 ***
 
-### options?
+### logger?
 
-> `optional` **options**: [`MemoryOptions`](./MemoryOptions.md)
+> `optional` **logger**: `any`
 
-Defined in: [packages/core/src/memory/types.ts:58](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L58)
+Defined in: [packages/core/src/memory/types.ts:52](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L52)
 
 ***
 
@@ -36,7 +68,7 @@ Defined in: [packages/core/src/memory/types.ts:58](https://github.com/dojoengine
 
 > **providers**: `object`
 
-Defined in: [packages/core/src/memory/types.ts:52](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L52)
+Defined in: [packages/core/src/memory/types.ts:47](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L47)
 
 #### graph
 

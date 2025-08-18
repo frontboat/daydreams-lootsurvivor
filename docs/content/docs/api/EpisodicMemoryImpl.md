@@ -10,9 +10,9 @@ title: "EpisodicMemoryImpl"
 
 # Class: EpisodicMemoryImpl
 
-Defined in: [packages/core/src/memory/episodic-memory.ts:8](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/episodic-memory.ts#L8)
+Defined in: [packages/core/src/memory/episodic-memory.ts:64](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/episodic-memory.ts#L64)
 
-Episodic Memory - stores past experiences
+Episodic Memory - manages conversational episodes and experiences
 
 ## Implements
 
@@ -22,9 +22,9 @@ Episodic Memory - stores past experiences
 
 ### Constructor
 
-> **new EpisodicMemoryImpl**(`memory`): `EpisodicMemoryImpl`
+> **new EpisodicMemoryImpl**(`memory`, `options`): `EpisodicMemoryImpl`
 
-Defined in: [packages/core/src/memory/episodic-memory.ts:9](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/episodic-memory.ts#L9)
+Defined in: [packages/core/src/memory/episodic-memory.ts:68](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/episodic-memory.ts#L68)
 
 #### Parameters
 
@@ -32,39 +32,23 @@ Defined in: [packages/core/src/memory/episodic-memory.ts:9](https://github.com/d
 
 [`Memory`](./Memory.md)
 
+##### options
+
+`EpisodicMemoryOptions` = `{}`
+
 #### Returns
 
 `EpisodicMemoryImpl`
 
 ## Methods
 
-### compress()
+### addToCurrentEpisode()
 
-> **compress**(`episodes`): `Promise`\<[`CompressedEpisode`](./CompressedEpisode.md)\>
+> **addToCurrentEpisode**(`contextId`, `ref`): `void`
 
-Defined in: [packages/core/src/memory/episodic-memory.ts:113](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/episodic-memory.ts#L113)
+Defined in: [packages/core/src/memory/episodic-memory.ts:319](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/episodic-memory.ts#L319)
 
-#### Parameters
-
-##### episodes
-
-[`Episode`](./Episode.md)[]
-
-#### Returns
-
-`Promise`\<[`CompressedEpisode`](./CompressedEpisode.md)\>
-
-#### Implementation of
-
-[`EpisodicMemory`](./EpisodicMemory.md).[`compress`](EpisodicMemory.md#compress)
-
-***
-
-### findSimilar()
-
-> **findSimilar**(`contextId`, `content`, `limit`): `Promise`\<[`Episode`](./Episode.md)[]\>
-
-Defined in: [packages/core/src/memory/episodic-memory.ts:53](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/episodic-memory.ts#L53)
+Add log to current episode
 
 #### Parameters
 
@@ -72,7 +56,143 @@ Defined in: [packages/core/src/memory/episodic-memory.ts:53](https://github.com/
 
 `string`
 
-##### content
+##### ref
+
+[`AnyRef`](./AnyRef.md)
+
+#### Returns
+
+`void`
+
+***
+
+### clearContext()
+
+> **clearContext**(`contextId`): `Promise`\<`void`\>
+
+Defined in: [packages/core/src/memory/episodic-memory.ts:252](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/episodic-memory.ts#L252)
+
+Clear all episodes for a context
+
+#### Parameters
+
+##### contextId
+
+`string`
+
+#### Returns
+
+`Promise`\<`void`\>
+
+#### Implementation of
+
+[`EpisodicMemory`](./EpisodicMemory.md).[`clearContext`](EpisodicMemory.md#clearcontext)
+
+***
+
+### createFromLogs()
+
+> **createFromLogs**(`contextId`, `logs`, `contextState`, `agent`): `Promise`\<[`Episode`](./Episode.md)\>
+
+Defined in: [packages/core/src/memory/episodic-memory.ts:173](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/episodic-memory.ts#L173)
+
+Create episode from logs
+
+#### Parameters
+
+##### contextId
+
+`string`
+
+##### logs
+
+[`AnyRef`](./AnyRef.md)[]
+
+##### contextState
+
+[`ContextState`](./ContextState.md)
+
+##### agent
+
+[`AnyAgent`](./AnyAgent.md)
+
+#### Returns
+
+`Promise`\<[`Episode`](./Episode.md)\>
+
+#### Implementation of
+
+[`EpisodicMemory`](./EpisodicMemory.md).[`createFromLogs`](EpisodicMemory.md#createfromlogs)
+
+***
+
+### delete()
+
+> **delete**(`episodeId`): `Promise`\<`boolean`\>
+
+Defined in: [packages/core/src/memory/episodic-memory.ts:231](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/episodic-memory.ts#L231)
+
+Delete episode
+
+#### Parameters
+
+##### episodeId
+
+`string`
+
+#### Returns
+
+`Promise`\<`boolean`\>
+
+#### Implementation of
+
+[`EpisodicMemory`](./EpisodicMemory.md).[`delete`](EpisodicMemory.md#delete)
+
+***
+
+### finalizeCurrentEpisode()
+
+> **finalizeCurrentEpisode**(`contextId`, `contextState`, `agent`): `Promise`\<`null` \| [`Episode`](./Episode.md)\>
+
+Defined in: [packages/core/src/memory/episodic-memory.ts:329](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/episodic-memory.ts#L329)
+
+Finalize current episode
+
+#### Parameters
+
+##### contextId
+
+`string`
+
+##### contextState
+
+[`ContextState`](./ContextState.md)
+
+##### agent
+
+[`AnyAgent`](./AnyAgent.md)
+
+#### Returns
+
+`Promise`\<`null` \| [`Episode`](./Episode.md)\>
+
+***
+
+### findSimilar()
+
+> **findSimilar**(`contextId`, `query`, `limit`): `Promise`\<[`Episode`](./Episode.md)[]\>
+
+Defined in: [packages/core/src/memory/episodic-memory.ts:120](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/episodic-memory.ts#L120)
+
+Find episodes similar to a query
+
+#### Parameters
+
+##### contextId
+
+`string`
+
+##### query
 
 `string`
 
@@ -92,13 +212,15 @@ Defined in: [packages/core/src/memory/episodic-memory.ts:53](https://github.com/
 
 ### get()
 
-> **get**(`id`): `Promise`\<`null` \| [`Episode`](./Episode.md)\>
+> **get**(`episodeId`): `Promise`\<`null` \| [`Episode`](./Episode.md)\>
 
-Defined in: [packages/core/src/memory/episodic-memory.ts:49](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/episodic-memory.ts#L49)
+Defined in: [packages/core/src/memory/episodic-memory.ts:146](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/episodic-memory.ts#L146)
+
+Get episode by ID
 
 #### Parameters
 
-##### id
+##### episodeId
 
 `string`
 
@@ -114,15 +236,21 @@ Defined in: [packages/core/src/memory/episodic-memory.ts:49](https://github.com/
 
 ### getByContext()
 
-> **getByContext**(`contextId`): `Promise`\<[`Episode`](./Episode.md)[]\>
+> **getByContext**(`contextId`, `limit`): `Promise`\<[`Episode`](./Episode.md)[]\>
 
-Defined in: [packages/core/src/memory/episodic-memory.ts:95](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/episodic-memory.ts#L95)
+Defined in: [packages/core/src/memory/episodic-memory.ts:151](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/episodic-memory.ts#L151)
+
+Get all episodes for a context
 
 #### Parameters
 
 ##### contextId
 
 `string`
+
+##### limit
+
+`number` = `20`
 
 #### Returns
 
@@ -134,37 +262,77 @@ Defined in: [packages/core/src/memory/episodic-memory.ts:95](https://github.com/
 
 ***
 
-### getTimeline()
+### shouldEndEpisode()
 
-> **getTimeline**(`start`, `end`): `Promise`\<[`Episode`](./Episode.md)[]\>
+> **shouldEndEpisode**(`ref`, `contextId`, `contextState`, `agent`): `Promise`\<`boolean`\>
 
-Defined in: [packages/core/src/memory/episodic-memory.ts:73](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/episodic-memory.ts#L73)
+Defined in: [packages/core/src/memory/episodic-memory.ts:293](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/episodic-memory.ts#L293)
+
+Check if the current episode should be ended
 
 #### Parameters
 
-##### start
+##### ref
 
-`Date`
+[`AnyRef`](./AnyRef.md)
 
-##### end
+##### contextId
 
-`Date`
+`string`
+
+##### contextState
+
+[`ContextState`](./ContextState.md)
+
+##### agent
+
+[`AnyAgent`](./AnyAgent.md)
 
 #### Returns
 
-`Promise`\<[`Episode`](./Episode.md)[]\>
+`Promise`\<`boolean`\>
 
-#### Implementation of
+***
 
-[`EpisodicMemory`](./EpisodicMemory.md).[`getTimeline`](EpisodicMemory.md#gettimeline)
+### shouldStartEpisode()
+
+> **shouldStartEpisode**(`ref`, `contextId`, `contextState`, `agent`): `Promise`\<`boolean`\>
+
+Defined in: [packages/core/src/memory/episodic-memory.ts:267](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/episodic-memory.ts#L267)
+
+Check if a new episode should be started
+
+#### Parameters
+
+##### ref
+
+[`AnyRef`](./AnyRef.md)
+
+##### contextId
+
+`string`
+
+##### contextState
+
+[`ContextState`](./ContextState.md)
+
+##### agent
+
+[`AnyAgent`](./AnyAgent.md)
+
+#### Returns
+
+`Promise`\<`boolean`\>
 
 ***
 
 ### store()
 
-> **store**(`episode`): `Promise`\<`void`\>
+> **store**(`episode`): `Promise`\<`string`\>
 
-Defined in: [packages/core/src/memory/episodic-memory.ts:11](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/episodic-memory.ts#L11)
+Defined in: [packages/core/src/memory/episodic-memory.ts:73](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/episodic-memory.ts#L73)
+
+Store an episode
 
 #### Parameters
 
@@ -174,7 +342,7 @@ Defined in: [packages/core/src/memory/episodic-memory.ts:11](https://github.com/
 
 #### Returns
 
-`Promise`\<`void`\>
+`Promise`\<`string`\>
 
 #### Implementation of
 

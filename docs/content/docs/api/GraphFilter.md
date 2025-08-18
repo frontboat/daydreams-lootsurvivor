@@ -10,7 +10,7 @@ title: "GraphFilter"
 
 # Interface: GraphFilter
 
-Defined in: [packages/core/src/memory/types.ts:191](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L191)
+Defined in: [packages/core/src/memory/types.ts:181](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L181)
 
 ## Properties
 
@@ -18,15 +18,15 @@ Defined in: [packages/core/src/memory/types.ts:191](https://github.com/dojoengin
 
 > `optional` **labels**: `string`[]
 
-Defined in: [packages/core/src/memory/types.ts:193](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L193)
+Defined in: [packages/core/src/memory/types.ts:183](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L183)
 
 ***
 
 ### properties?
 
-> `optional` **properties**: `Record`\<`string`, `any`\>
+> `optional` **properties**: `Record`\<`string`, `unknown`\>
 
-Defined in: [packages/core/src/memory/types.ts:194](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L194)
+Defined in: [packages/core/src/memory/types.ts:184](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L184)
 
 ***
 
@@ -34,4 +34,4 @@ Defined in: [packages/core/src/memory/types.ts:194](https://github.com/dojoengin
 
 > `optional` **type**: `string`
 
-Defined in: [packages/core/src/memory/types.ts:192](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L192)
+Defined in: [packages/core/src/memory/types.ts:182](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L182)

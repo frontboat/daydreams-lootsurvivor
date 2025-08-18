@@ -12,7 +12,7 @@ title: "ContextsEventsRecord"
 
 > **ContextsEventsRecord**\<`T`\> = `{ [K in keyof T]: T[K]["schema"] }`
 
-Defined in: [packages/core/src/types.ts:1078](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L1078)
+Defined in: [packages/core/src/types.ts:1059](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1059)
 
 Maps event definitions to their schema types
 

@@ -12,7 +12,7 @@ title: "ContextState"
 
 > **ContextState**\<`TContext`\> = `object`
 
-Defined in: [packages/core/src/types.ts:1332](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L1332)
+Defined in: [packages/core/src/types.ts:1313](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1313)
 
 Current state of a context instance
 
@@ -30,7 +30,7 @@ The context type
 
 > **args**: [`InferSchemaArguments`](./InferSchemaArguments.md)\<`TContext`\[`"schema"`\]\>
 
-Defined in: [packages/core/src/types.ts:1340](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L1340)
+Defined in: [packages/core/src/types.ts:1321](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1321)
 
 Arguments passed to this context
 
@@ -40,7 +40,7 @@ Arguments passed to this context
 
 > **context**: `TContext`
 
-Defined in: [packages/core/src/types.ts:1338](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L1338)
+Defined in: [packages/core/src/types.ts:1319](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1319)
 
 The context definition
 
@@ -50,7 +50,7 @@ The context definition
 
 > **contexts**: `string`[]
 
-Defined in: [packages/core/src/types.ts:1348](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L1348)
+Defined in: [packages/core/src/types.ts:1329](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1329)
 
 IDs of related contexts
 
@@ -60,7 +60,7 @@ IDs of related contexts
 
 > **id**: `string`
 
-Defined in: [packages/core/src/types.ts:1334](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L1334)
+Defined in: [packages/core/src/types.ts:1315](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1315)
 
 Unique identifier for this context instance
 
@@ -70,7 +70,7 @@ Unique identifier for this context instance
 
 > `optional` **key**: `string`
 
-Defined in: [packages/core/src/types.ts:1336](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L1336)
+Defined in: [packages/core/src/types.ts:1317](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1317)
 
 Optional key for this context instance
 
@@ -80,7 +80,7 @@ Optional key for this context instance
 
 > **memory**: [`InferContextMemory`](./InferContextMemory.md)\<`TContext`\>
 
-Defined in: [packages/core/src/types.ts:1344](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L1344)
+Defined in: [packages/core/src/types.ts:1325](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1325)
 
 Memory state for this context
 
@@ -90,7 +90,7 @@ Memory state for this context
 
 > **options**: [`InferContextOptions`](./InferContextOptions.md)\<`TContext`\>
 
-Defined in: [packages/core/src/types.ts:1342](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L1342)
+Defined in: [packages/core/src/types.ts:1323](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1323)
 
 Options/configuration for this context
 
@@ -100,6 +100,6 @@ Options/configuration for this context
 
 > **settings**: [`ContextSettings`](./ContextSettings.md)
 
-Defined in: [packages/core/src/types.ts:1346](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L1346)
+Defined in: [packages/core/src/types.ts:1327](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1327)
 
 Settings for this context

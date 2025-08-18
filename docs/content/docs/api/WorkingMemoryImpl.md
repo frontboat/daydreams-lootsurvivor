@@ -10,7 +10,7 @@ title: "WorkingMemoryImpl"
 
 # Class: WorkingMemoryImpl
 
-Defined in: [packages/core/src/memory/working-memory.ts:10](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/working-memory.ts#L10)
+Defined in: [packages/core/src/memory/working-memory.ts:10](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/working-memory.ts#L10)
 
 Working Memory - manages current session state
 
@@ -24,7 +24,7 @@ Working Memory - manages current session state
 
 > **new WorkingMemoryImpl**(`memory`): `WorkingMemoryImpl`
 
-Defined in: [packages/core/src/memory/working-memory.ts:11](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/working-memory.ts#L11)
+Defined in: [packages/core/src/memory/working-memory.ts:11](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/working-memory.ts#L11)
 
 #### Parameters
 
@@ -42,7 +42,7 @@ Defined in: [packages/core/src/memory/working-memory.ts:11](https://github.com/d
 
 > **clear**(`contextId`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/working-memory.ts:111](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/working-memory.ts#L111)
+Defined in: [packages/core/src/memory/working-memory.ts:120](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/working-memory.ts#L120)
 
 #### Parameters
 
@@ -64,7 +64,7 @@ Defined in: [packages/core/src/memory/working-memory.ts:111](https://github.com/
 
 > **create**(`contextId`): `Promise`\<[`WorkingMemoryData`](./WorkingMemoryData.md)\>
 
-Defined in: [packages/core/src/memory/working-memory.ts:13](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/working-memory.ts#L13)
+Defined in: [packages/core/src/memory/working-memory.ts:13](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/working-memory.ts#L13)
 
 #### Parameters
 
@@ -86,7 +86,7 @@ Defined in: [packages/core/src/memory/working-memory.ts:13](https://github.com/d
 
 > **get**(`contextId`): `Promise`\<[`WorkingMemoryData`](./WorkingMemoryData.md)\>
 
-Defined in: [packages/core/src/memory/working-memory.ts:29](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/working-memory.ts#L29)
+Defined in: [packages/core/src/memory/working-memory.ts:39](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/working-memory.ts#L39)
 
 #### Parameters
 
@@ -108,7 +108,7 @@ Defined in: [packages/core/src/memory/working-memory.ts:29](https://github.com/d
 
 > **push**\<`TContext`\>(`contextId`, `entry`, `ctx`, `agent`, `options?`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/working-memory.ts:46](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/working-memory.ts#L46)
+Defined in: [packages/core/src/memory/working-memory.ts:58](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/working-memory.ts#L58)
 
 #### Type Parameters
 
@@ -152,7 +152,7 @@ Defined in: [packages/core/src/memory/working-memory.ts:46](https://github.com/d
 
 > **set**(`contextId`, `data`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/working-memory.ts:42](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/working-memory.ts#L42)
+Defined in: [packages/core/src/memory/working-memory.ts:52](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/working-memory.ts#L52)
 
 #### Parameters
 
@@ -178,7 +178,7 @@ Defined in: [packages/core/src/memory/working-memory.ts:42](https://github.com/d
 
 > **summarize**(`contextId`): `Promise`\<`string`\>
 
-Defined in: [packages/core/src/memory/working-memory.ts:115](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/working-memory.ts#L115)
+Defined in: [packages/core/src/memory/working-memory.ts:137](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/working-memory.ts#L137)
 
 #### Parameters
 

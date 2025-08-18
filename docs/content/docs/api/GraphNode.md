@@ -10,7 +10,7 @@ title: "GraphNode"
 
 # Interface: GraphNode
 
-Defined in: [packages/core/src/memory/types.ts:176](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L176)
+Defined in: [packages/core/src/memory/types.ts:166](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L166)
 
 ## Properties
 
@@ -18,7 +18,7 @@ Defined in: [packages/core/src/memory/types.ts:176](https://github.com/dojoengin
 
 > **id**: `string`
 
-Defined in: [packages/core/src/memory/types.ts:177](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L177)
+Defined in: [packages/core/src/memory/types.ts:167](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L167)
 
 ***
 
@@ -26,15 +26,15 @@ Defined in: [packages/core/src/memory/types.ts:177](https://github.com/dojoengin
 
 > `optional` **labels**: `string`[]
 
-Defined in: [packages/core/src/memory/types.ts:180](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L180)
+Defined in: [packages/core/src/memory/types.ts:170](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L170)
 
 ***
 
 ### properties
 
-> **properties**: `Record`\<`string`, `any`\>
+> **properties**: `Record`\<`string`, `unknown`\>
 
-Defined in: [packages/core/src/memory/types.ts:179](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L179)
+Defined in: [packages/core/src/memory/types.ts:169](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L169)
 
 ***
 
@@ -42,4 +42,4 @@ Defined in: [packages/core/src/memory/types.ts:179](https://github.com/dojoengin
 
 > **type**: `string`
 
-Defined in: [packages/core/src/memory/types.ts:178](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/memory/types.ts#L178)
+Defined in: [packages/core/src/memory/types.ts:168](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L168)

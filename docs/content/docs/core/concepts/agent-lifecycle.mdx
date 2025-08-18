@@ -16,6 +16,30 @@ Think of an agent as following a simple loop:
 This loop continues as long as the agent is running, handling new inputs and
 responding intelligently based on its context and memory.
 
+## Agent Boot Process
+
+Before handling any inputs, agents go through an initialization phase:
+
+```typescript
+// Agent creation
+const agent = createDreams({
+  model: openai("gpt-4o"),
+  contexts: [chatContext, taskContext],
+  // ... other config
+});
+
+// Boot sequence
+await agent.start();
+```
+
+**Boot steps:**
+1. **Container Setup** - Dependency injection container initialized
+2. **Memory System** - KV store, vector store, working memory initialized  
+3. **TaskRunner** - Task queues and concurrency management setup
+4. **Context Registry** - All provided contexts registered with type validation
+5. **Extension Loading** - Input/output handlers and services activated
+6. **Agent Context** - If agent has its own context, it's created and prepared
+
 ## The Basic Flow
 
 Here's what happens when your agent receives a Discord message:
@@ -71,19 +95,12 @@ Let's trace the lifecycle of a typical request:
 
 ## 3. `agent.run` - Managing the Execution Cycle
 
-- **Load/Create Context:** The framework finds the specific `ContextState` for
-  the target instance (e.g., the state for chat session #123). If it's the first
-  time interacting with this instance, it creates the state and its associated
-  persistent memory (`ContextState.memory`). It also retrieves or creates the
-  temporary `WorkingMemory` for this specific run.
-- **Handle Concurrency:** It checks if this context instance is already
-  processing another request. If so, the new input is usually added to the
-  ongoing run. If not, it sets up a new run.
-- **Setup Run Environment:** It prepares the environment for the LLM
-  interaction, gathering all available `actions`, `outputs`, and relevant
-  context information.
-- **Start Step Loop:** It begins the main processing loop, which iterates
-  through one or more reasoning steps until the interaction is complete.
+- **Context Queue Management:** Uses TaskRunner to ensure only one execution per context instance at a time. Multiple inputs to the same context get queued.
+- **Load/Create Context:** The framework finds the specific `ContextState` for the target instance (e.g., the state for chat session #123). If it's the first time, it creates the state and persistent memory (`ContextState.memory`).
+- **Working Memory Setup:** Retrieves or creates temporary `WorkingMemory` for this execution containing arrays for inputs, outputs, actions, results, thoughts, events, steps, and runs.
+- **Context Preparation:** If the context uses `.use()` composition, all composer functions are executed to determine which additional contexts to prepare. These are prepared in parallel.
+- **Engine Initialization:** Creates an Engine instance that will orchestrate the step-by-step execution with its router system for handling inputs, outputs, and actions.
+- **Start Step Loop:** Begins the main reasoning loop that continues until the LLM stops generating actions or hits step limits.
 
 ## 4. Inside the Step Loop - Perception, Reasoning, Action
 
@@ -103,29 +120,23 @@ agent's core reasoning cycle:
   what tools (actions/outputs) it has, the current state, and what new
   information needs attention. (See [Prompting](/docs/core/concepts/prompting)).
 - **LLM Call:** The agent sends the complete prompt to the configured LLM.
-- **Process LLM Response Stream:** As the LLM generates its response token by
-  token:
-  - The framework **streams** the response.
-  - It **parses** the stream, looking for specific XML tags defined in the
-    expected response structure (`<reasoning>`, `<action_call>`, `<output>`).
-  - The LLM's thought process is extracted from `<reasoning>` tags and logged.
-  - Instructions to perform actions (`<action_call>`) or send outputs
-    (`<output>`) are identified.
-- **Execute Actions & Outputs:**
-  - For each identified `<action_call>`, the framework validates the arguments
-    against the action's schema and schedules the action's `handler` function to
-    run via the `TaskRunner`. (See [Actions](/docs/core/concepts/actions) and
-    [Tasks](/docs/core/concepts/tasks)).
-  * For each identified `<output>`, the framework validates the
-    content/attributes and runs the output's `handler` function to send the
-    information externally (e.g., post a message). (See
-    [Outputs](/docs/core/concepts/outputs)).
-- **Wait for Actions:** The agent waits for any critical asynchronous actions
-  scheduled in this step to complete. Their results (`ActionResult`) are logged
-  to `WorkingMemory`.
-- **Check Completion:** The agent determines if the interaction is complete or
-  if another reasoning step (another loop iteration) is needed based on defined
-  conditions (`shouldContinue` hooks or remaining unprocessed logs).
+- **Stream XML Parsing:** As the LLM generates its response token by token:
+  - The framework uses `xmlStreamParser` to process chunks in real-time
+  - Detects and extracts elements: `<think>`, `<action_call>`, `<output>`  
+  - Each element becomes a typed reference (ThoughtRef, ActionCall, OutputRef) immediately pushed to WorkingMemory
+  - Incomplete elements are held until closing tags are found
+- **Engine Router Processing:** The Engine routes each parsed element:
+  - **ThoughtRef** → Added to `workingMemory.thoughts` array
+  - **ActionCall** → Validated, template-resolved, queued via TaskRunner
+  - **OutputRef** → Validated and processed through output handlers
+- **Action Execution:** For each `<action_call>`:
+  - Arguments parsed and validated against Zod schema
+  - Template resolution for `{{calls[0].data}}` style references  
+  - TaskRunner queues action with proper concurrency control
+  - Results returned as ActionResult and added to `workingMemory.results`
+- **Step Completion:** Engine checks if more steps needed:
+  - Continues if LLM generated actions that might produce new information
+  - Stops if no unprocessed elements remain or step limit reached
 
 ## 5. Run Completion
 
@@ -139,7 +150,82 @@ agent's core reasoning cycle:
   `agent.send` or `agent.run`, providing the complete log (`chain`) of the
   interaction.
 
-This detailed cycle illustrates how Daydreams agents iteratively perceive
-(inputs, results), reason (LLM prompt/response), and act (outputs, actions),
-using streaming and asynchronous task management to handle potentially complex
-interactions efficiently.
+## Practical Example: Complete Lifecycle Trace
+
+Here's a real example showing the complete lifecycle when a user asks for weather:
+
+```typescript
+// User message triggers input
+await agent.send({
+  context: chatContext,
+  args: { userId: "alice" },
+  input: { type: "text", data: "What's the weather in NYC?" }
+});
+```
+
+**Execution trace:**
+
+```
+1. INPUT RECEPTION
+   InputRef created: { type: "text", data: "What's the weather in NYC?" }
+
+2. CONTEXT PREPARATION  
+   ContextState loaded/created: chat:alice
+   Working memory retrieved with conversation history
+   Composed contexts prepared (if any .use() definitions)
+
+3. ENGINE STEP 1
+   Prompt generated with:
+   - Context render: "Chat with alice, 5 previous messages..."  
+   - Available actions: [getWeather, ...]
+   - New input: "What's the weather in NYC?"
+   
+   LLM Response (streamed):
+   <think>User wants weather for NYC. I should use getWeather action.</think>
+   <action_call name="getWeather">
+   {"location": "New York City"}
+   </action_call>
+
+   Parsed elements:
+   - ThoughtRef → workingMemory.thoughts[]
+   - ActionCall → validated, queued via TaskRunner
+   
+   Action execution:
+   - getWeather handler called with {"location": "New York City"}  
+   - Returns: {temperature: 72, condition: "sunny"}
+   - ActionResult → workingMemory.results[]
+
+4. ENGINE STEP 2  
+   Prompt includes action result from Step 1
+   
+   LLM Response:
+   <think>Got weather data, now I'll respond to the user.</think>
+   <output type="text">
+   The weather in NYC is 72°F and sunny! Perfect day to go outside.
+   </output>
+
+   Parsed elements:
+   - ThoughtRef → workingMemory.thoughts[]
+   - OutputRef → processed through text output handler
+   
+5. RUN COMPLETION
+   - No more unprocessed elements
+   - Context onRun hooks executed
+   - Context memory saved: chat:alice state updated
+   - Working memory persisted
+   - Chain of all logs returned: [InputRef, ThoughtRef, ActionCall, ActionResult, ThoughtRef, OutputRef]
+```
+
+This shows how the agent cycles through reasoning steps, executing actions and generating outputs until the interaction is complete.
+
+## Error Handling in Lifecycle
+
+When errors occur during the lifecycle:
+
+- **Action Failures:** ActionResult contains error information, LLM can see failure and retry or handle gracefully
+- **LLM Errors:** Automatic retry with exponential backoff  
+- **Context Errors:** onError hooks called, execution can continue or abort
+- **Stream Parsing Errors:** Invalid XML is logged but doesn't crash execution
+- **Memory Errors:** Fallback to in-memory storage, logging for debugging
+
+This detailed cycle illustrates how Daydreams agents iteratively perceive (inputs, results), reason (LLM prompt/response), and act (outputs, actions), using streaming and asynchronous task management to handle complex interactions efficiently.

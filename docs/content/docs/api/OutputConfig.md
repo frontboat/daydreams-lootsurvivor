@@ -12,7 +12,7 @@ title: "OutputConfig"
 
 > **OutputConfig**\<`Schema`, `Response`, `TContext`, `TAgent`\> = `Omit`\<[`Output`](./Output.md)\<`Schema`, `Response`, `TContext`, `TAgent`\>, `"type"`\>
 
-Defined in: [packages/core/src/types.ts:939](https://github.com/dojoengine/daydreams/blob/877d54c3d7a1ffa2e1fe799ae3402216c969af05/packages/core/src/types.ts#L939)
+Defined in: [packages/core/src/types.ts:923](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L923)
 
 Configuration type for outputs without type field
 
