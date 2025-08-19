@@ -2,21 +2,206 @@
 
 A sophisticated cryptocurrency wallet management agent built with the Daydreams framework, demonstrating advanced context composition and multi-platform integration.
 
-## Overview
+## Architecture Diagram
 
-This agent showcases Daydreams' powerful **context composition pattern** where multiple specialized contexts work together to create a comprehensive wallet management system. Each user gets isolated wallet state while sharing common functionality through composed contexts.
-
-## Architecture
-
-### Context Composition Design
-
+```mermaid
+graph TD
+    %% User Interfaces
+    CLI[🖥️ CLI Interface] 
+    Discord[🎮 Discord Bot]
+    Telegram[📱 Telegram Bot] 
+    Twitter[🐦 Twitter Bot]
+    
+    %% Main Agent
+    Agent[🤖 Wallet Agent]
+    
+    %% Input/Output Layer
+    TextInput[📥 Text Input]
+    TextOutput[📤 Text Output]
+    AlertOutput[🚨 Alert Output]
+    
+    %% Main Context - Orchestrator
+    WalletContext[🏦 Wallet Agent Context<br/>Main Orchestrator]
+    
+    %% Composed Contexts
+    AccountsContext[💼 Accounts Context<br/>Mock Wallets]
+    CoinbaseContext[🏛️ Coinbase Context<br/>Real CDP Wallets]
+    TasksContext[🤖 Tasks Context<br/>Automation Rules]
+    AnalyticsContext[📊 Analytics Context<br/>User Tracking]
+    
+    %% Context Memory
+    WalletMem[(🏦 Agent Memory)]
+    AccountsMem[(💼 Accounts Memory)]
+    CoinbaseMem[(🏛️ Coinbase Memory)]
+    TasksMem[(🤖 Tasks Memory)]
+    AnalyticsMem[(📊 Analytics Memory)]
+    
+    %% Actions
+    AgentActions[🏦 Agent Actions]
+    AccountActions[📋 Account Actions]
+    CoinbaseActions[🏛️ Coinbase Actions]
+    TaskActions[🤖 Task Actions]
+    AnalyticsActions[📊 Analytics Actions]
+    
+    %% External Services
+    CDP[🏛️ Coinbase CDP SDK]
+    MockData[🎭 Mock Price Data]
+    
+    %% User Interfaces to Agent
+    CLI --> Agent
+    Discord --> Agent
+    Telegram --> Agent
+    Twitter --> Agent
+    
+    %% Agent Input/Output
+    Agent --> TextInput
+    Agent --> TextOutput
+    Agent --> AlertOutput
+    
+    %% Main Context Composition
+    Agent --> WalletContext
+    WalletContext -.->|use| AccountsContext
+    WalletContext -.->|use| CoinbaseContext  
+    WalletContext -.->|use| TasksContext
+    WalletContext -.->|use| AnalyticsContext
+    
+    %% Context to Memory
+    WalletContext --> WalletMem
+    AccountsContext --> AccountsMem
+    CoinbaseContext --> CoinbaseMem
+    TasksContext --> TasksMem
+    AnalyticsContext --> AnalyticsMem
+    
+    %% Context to Actions
+    WalletContext --> AgentActions
+    AccountsContext --> AccountActions
+    CoinbaseContext --> CoinbaseActions
+    TasksContext --> TaskActions
+    AnalyticsContext --> AnalyticsActions
+    
+    %% External Services
+    CoinbaseContext --> CDP
+    AccountsContext --> MockData
+    
+    %% Styling
+    classDef interface fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    classDef context fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef memory fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
+    classDef actions fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef external fill:#ffebee,stroke:#b71c1c,stroke-width:2px
+    
+    class CLI,Discord,Telegram,Twitter interface
+    class WalletContext,AccountsContext,CoinbaseContext,TasksContext,AnalyticsContext context
+    class AccountsMem,CoinbaseMem,TasksMem,AnalyticsMem,WalletMem memory
+    class AccountActions,CoinbaseActions,TaskActions,AnalyticsActions,AgentActions actions
+    class CDP,MockData external
 ```
-WalletAgentContext (Main Context)
-├── AccountsContext    - Wallet accounts and balances
-├── TasksContext       - Conditional trading tasks  
-├── AnalyticsContext   - User behavior tracking
-└── Composed Actions   - Unified functionality
+
+## Context Composition Architecture
+
+The wallet agent uses Daydreams' **context composition pattern** where the main `WalletAgentContext` orchestrates multiple specialized contexts using the `.use()` method:
+
+### 🏦 **WalletAgentContext** (Main Orchestrator)
+- **Role**: Main entry point and user interaction coordinator
+- **Memory**: User preferences, onboarding status, conversation state
+- **Actions**: Price checking, trade simulation, help system, preferences
+- **Composes**: All other contexts via `.use()` pattern
+
+### 💼 **AccountsContext** (Mock/Simulation)
+- **Role**: Local simulation accounts for testing and development
+- **Memory**: Mock accounts, simulated balances, portfolio calculations
+- **Actions**: Create accounts, check balances, simulate trades, portfolio summaries
+- **Data Source**: Mock price data and simulated transactions
+
+### 🏛️ **CoinbaseContext** (Real Wallets)
+- **Role**: Real blockchain operations via Coinbase CDP SDK
+- **Memory**: Real wallet data, addresses, network configurations
+- **Actions**: Create wallets, fund via faucet, real transfers, asset trading
+- **Data Source**: Coinbase CDP API and live blockchain data
+- **Networks**: Testnet (base-sepolia, ethereum-sepolia) & Mainnet (base-mainnet, ethereum-mainnet)
+
+### 🤖 **TasksContext** (Automation)
+- **Role**: Conditional trading rules and automated execution
+- **Memory**: Task definitions, execution history, condition monitoring
+- **Actions**: Create tasks, check conditions, execute automation, manage rules
+- **Features**: Price alerts, conditional trades, portfolio rebalancing
+
+### 📊 **AnalyticsContext** (Tracking)
+- **Role**: User behavior analysis and usage insights
+- **Memory**: Events, sessions, interaction patterns, feature usage
+- **Actions**: Track events, analyze patterns, export data, generate insights
+- **Features**: Session management, engagement metrics, usage analytics
+
+## Data Flow Architecture
+
+### Input Processing Flow
 ```
+1. User Input (CLI/Discord/Telegram/Twitter)
+   ↓
+2. Platform Interface (textInput/commandInput)
+   ↓
+3. Agent.send() → WalletAgentContext
+   ↓
+4. Context Composition via .use()
+   • AccountsContext (mock wallets)
+   • CoinbaseContext (real wallets) 
+   • TasksContext (automation)
+   • AnalyticsContext (tracking)
+   ↓
+5. LLM sees ALL actions from ALL contexts
+   ↓
+6. LLM orchestrates action calls based on user intent
+   ↓
+7. Actions execute in their respective contexts
+   ↓
+8. Results aggregate back to user via outputs
+```
+
+### Action Availability Matrix
+| Context | Actions Available | When Active |
+|---------|------------------|-------------|
+| **WalletAgent** | get-current-prices, simulate-trade, set-user-preferences, get-help | Always (main context) |
+| **Accounts** | create-account, get-balance, add-funds, get-portfolio-summary | Always (composed) |
+| **Coinbase** | create-coinbase-wallet, fund-wallet-faucet, transfer-funds, trade-assets | Always (composed) |
+| **Tasks** | create-task, list-tasks, check-tasks, toggle-task, delete-task | Always (composed) |
+| **Analytics** | track-event, start-session, get-interaction-stats, export-analytics | Always (composed) |
+
+### Context Isolation & Composition Benefits
+
+**User Isolation**: Each `userId` gets completely separate context instances:
+- `wallet-agent:alice` vs `wallet-agent:bob` 
+- `accounts:alice` vs `accounts:bob`
+- `coinbase:alice` vs `coinbase:bob`
+- No data leakage between users
+
+**Context Composition**: The `.use()` pattern provides:
+- **Automatic Action Sharing**: All composed context actions available to main context
+- **Isolated Memory**: Each context maintains separate memory stores
+- **Unified Interface**: Single entry point with full functionality
+- **Modular Design**: Easy to add/remove contexts without breaking functionality
+
+## Input/Output Specifications
+
+### Input Handlers
+| Input Type | Schema | Purpose | Platforms |
+|------------|--------|---------|-----------|
+| **textInput** | `z.string()` | Natural language user messages | CLI, Discord, Telegram, Twitter |
+| **commandInput** | `z.object()` | Structured commands with args | CLI, programmatic |
+
+### Output Handlers  
+| Output Type | Schema | Purpose | Platforms |
+|-------------|--------|---------|-----------|
+| **textOutput** | `z.string()` | Standard text responses to users | All platforms |
+| **alertOutput** | `z.object()` | Priority alerts and notifications | All platforms |
+| **tradeNotificationOutput** | `z.object()` | Trade execution notifications | All platforms |
+
+### Platform-Specific Features
+| Platform | Special Features | Input Methods | Output Formatting |
+|----------|-----------------|---------------|-------------------|
+| **CLI** | Interactive prompts, shortcuts | Command line, natural language | Plain text, colors |
+| **Discord** | Slash commands, rich embeds | Mentions, DMs, slash commands | Rich embeds, reactions |
+| **Telegram** | Inline keyboards, HTML formatting | Bot commands, buttons, natural language | HTML, inline keyboards |
+| **Twitter** | Character limits, scheduled tweets | Mentions, DMs, replies | Tweet threads, truncation |
 
 ### Key Features
 
