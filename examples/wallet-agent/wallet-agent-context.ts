@@ -3,6 +3,7 @@ import * as z from "zod";
 import { accountsContext } from "./accounts-context";
 import { tasksContext } from "./tasks-context";
 import { analyticsContext } from "./analytics-context";
+import { coinbaseContext } from "./coinbase-context";
 
 // Define what our main wallet agent remembers
 export interface WalletAgentMemory {
@@ -140,17 +141,24 @@ I can help you with:
     const baseInstructions = `You are a sophisticated wallet management agent that helps users manage their cryptocurrency portfolios and automate trading tasks.
 
 Your capabilities include:
-1. **Account Management**: Create accounts, check balances, manage portfolios
-2. **Conditional Tasks**: Set up automated trading rules and alerts
-3. **Analytics**: Track user behavior and provide insights
-4. **Multi-Platform Support**: Work seamlessly across Discord, Telegram, and Twitter
+1. **Real Wallet Management**: Create and manage real Coinbase CDP wallets on-chain
+2. **Mock Account Management**: Create local simulation accounts for testing
+3. **Conditional Tasks**: Set up automated trading rules and alerts
+4. **Analytics**: Track user behavior and provide insights
+5. **Multi-Platform Support**: Work seamlessly across Discord, Telegram, and Twitter
+6. **On-Chain Operations**: Real transfers, trades, and faucet funding (testnet)
 
 Key Behaviors:
-- Always track important interactions using the analytics system
-- Guide new users through onboarding if they haven't completed it
-- Be proactive about suggesting useful features
-- Provide clear explanations of risks for trading operations
-- Use the task system to help users automate their trading strategies
+- For real wallet operations, use Coinbase CDP actions (create-coinbase-wallet, transfer-funds, etc.)
+- For testing/simulation, use local account actions (create-account, simulate-trade, etc.)
+- Always explain whether operations are real or simulated
+- Guide new users through wallet setup and explain testnet vs mainnet
+- Provide clear explanations of risks for real trading operations
+- Use conditional tasks to help automate trading strategies
+
+Available Networks:
+- **Testnet**: base-sepolia, ethereum-sepolia (free funding via faucet)
+- **Mainnet**: base-mainnet, ethereum-mainnet (real assets required)
 
 Current prices available: ${Object.entries(MOCK_PRICES)
   .map(([token, price]) => `${token}: $${price.toLocaleString()}`)
@@ -160,10 +168,11 @@ Current prices available: ${Object.entries(MOCK_PRICES)
       return baseInstructions + `
 
 🚀 **ONBOARDING NEEDED**: This user hasn't completed onboarding yet. Help them:
-1. Create their first wallet account
-2. Understand the conditional task system
-3. Set up basic portfolio tracking
-4. Learn about available features`;
+1. Choose between real Coinbase wallet or simulation mode
+2. Create their first wallet (testnet recommended for beginners)
+3. Understand testnet vs mainnet differences
+4. Learn about faucet funding for testnet
+5. Set up conditional tasks and portfolio tracking`;
     }
 
     if (state.memory.userPreferences.riskTolerance === "high") {
@@ -181,8 +190,11 @@ Current prices available: ${Object.entries(MOCK_PRICES)
 })
   // 🌟 Compose all wallet functionality using .use()
   .use((state) => [
-    // Always include accounts management
+    // Always include accounts management (mock/local wallets)
     { context: accountsContext, args: { userId: state.args.userId } },
+    
+    // Always include Coinbase CDP integration (real wallets)
+    { context: coinbaseContext, args: { userId: state.args.userId } },
     
     // Always include conditional tasks
     { context: tasksContext, args: { userId: state.args.userId } },

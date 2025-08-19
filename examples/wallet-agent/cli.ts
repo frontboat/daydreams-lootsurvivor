@@ -55,16 +55,26 @@ async function main() {
   await agent.start();
 
   console.log("\n🏦 Wallet Agent CLI Started!");
-  console.log("💡 This demonstrates multi-context wallet management");
-  console.log("💡 Each user gets isolated wallet state with composed functionality");
-  console.log("💡 Try creating accounts, setting up tasks, and checking analytics");
-  console.log("\n🔹 Example commands:");
-  console.log("  • 'Create a trading account with 10 ETH and 20000 USDC'");
+  console.log("💡 This demonstrates multi-context wallet management with real Coinbase CDP integration");
+  console.log("💡 Each user gets isolated wallet state with both real and simulated wallets");
+  console.log("💡 Supports real on-chain operations via Coinbase CDP SDK");
+  
+  console.log("\n🔹 Real Coinbase Wallet Commands:");
+  console.log("  • 'Create a real Coinbase wallet called My Wallet'");
+  console.log("  • 'Fund my wallet with testnet ETH'");
+  console.log("  • 'Transfer 0.001 ETH to [address]'");
+  console.log("  • 'Check my Coinbase wallet balance'");
+  console.log("  • 'List all my Coinbase wallets'");
+  
+  console.log("\n🔹 Simulation Commands:");
+  console.log("  • 'Create a mock trading account with 10 ETH'");
+  console.log("  • 'Simulate trading 1 ETH for USDC'");
   console.log("  • 'Show me my portfolio summary'");
+  
+  console.log("\n🔹 General Commands:");
   console.log("  • 'What's the current ETH price?'");
   console.log("  • 'Create a task to alert me when BTC goes above $70000'");
-  console.log("  • 'Check my analytics and usage stats'");
-  console.log("  • 'help' for feature overview");
+  console.log("  • 'help' for complete feature overview");
   console.log("  • 'exit' to quit\n");
 
   // Get user ID from command line or use default

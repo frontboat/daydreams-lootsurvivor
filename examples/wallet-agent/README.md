@@ -100,13 +100,25 @@ Orchestrates all functionality using `.use()` pattern:
    export TWITTER_EMAIL="your-twitter-email"
    ```
 
-3. **Run the CLI**
+3. **Environment Setup (for real Coinbase wallets)**
+   ```bash
+   # Optional: Set up Coinbase CDP API keys for real wallet operations
+   export CDP_API_KEY_NAME="your-api-key-name"
+   export CDP_API_KEY_PRIVATE_KEY="your-private-key"
+   
+   # Without keys, the system runs in mock mode automatically
+   ```
+
+4. **Run the CLI**
    ```bash
    # Start interactive CLI
    npm run cli
    
    # Quick start with demo data
    npm run quick-start
+   
+   # Demonstrate Coinbase CDP integration
+   npm run coinbase-demo
    
    # Start with specific user ID
    npm run cli alice
@@ -125,12 +137,21 @@ Orchestrates all functionality using `.use()` pattern:
 # Start the CLI
 npm run cli
 
-# In the CLI, try these commands:
-wallet> Create an account called 'Main Wallet' with 10 ETH and 5000 USDC
+# Real Coinbase Wallet Commands:
+wallet> Create a real Coinbase wallet called 'My Testnet Wallet'
+wallet> Fund my wallet with testnet ETH
+wallet> Check my Coinbase wallet balance
+wallet> Transfer 0.001 ETH to 0x742d35Cc6634C0532925a3b8D03A23c14B3c7F3A
+wallet> List all my Coinbase wallets
+
+# Simulation Commands:
+wallet> Create a mock account called 'Trading Portfolio' with 10 ETH and 5000 USDC
+wallet> Simulate trading 1 ETH for USDC
 wallet> Show me my portfolio summary
-wallet> What's my ETH balance?
-wallet> Create a task to alert me when ETH goes above $4000
-wallet> Check current crypto prices
+
+# General Commands:
+wallet> What's the current ETH price?
+wallet> Create a task to alert me when BTC goes above $70000
 wallet> Show my analytics
 wallet> help
 wallet> exit
