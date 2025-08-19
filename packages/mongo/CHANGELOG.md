@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.3.15](https://github.com/daydreamsai/daydreams/compare/v0.3.14...v0.3.15) (2025-08-19)
+
+**Note:** Version bump only for package @daydreamsai/mongodb
+
+
+
+
+
 ## [0.3.14](https://github.com/daydreamsai/daydreams/compare/v0.3.13...v0.3.14) (2025-08-18)
 
 **Note:** Version bump only for package @daydreamsai/mongodb
