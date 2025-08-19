@@ -283,7 +283,7 @@ export async function main(
       chalk: "^5.4.1",
       typescript: "^5.3.3",
       zod: "^3.24.1",
-      "@openrouter/ai-sdk-provider": "^0.2.1",
+      "@daydreamsai/ai-sdk-provider": "^0.1.2",
     };
 
     const modelDep: Record<string, string> = {};

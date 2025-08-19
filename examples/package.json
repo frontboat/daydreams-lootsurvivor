@@ -28,7 +28,6 @@
     "@daydreamsai/mongodb": "workspace:*",
     "@daydreamsai/supabase": "workspace:*",
     "@octokit/rest": "catalog:",
-    "@openrouter/ai-sdk-provider": "1.1.2",
     "@tavily/core": "catalog:"
   }
 }

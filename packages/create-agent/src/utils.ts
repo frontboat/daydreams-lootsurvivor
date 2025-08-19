@@ -64,9 +64,6 @@ export async function getLatestDependencies(
       break;
   }
 
-  // Always include OpenRouter as it's a fallback/alternative provider
-  modelDependencies["@openrouter/ai-sdk-provider"] = "^0.2.1";
-
   // Extension-specific dependencies
   const extensionDependencies: Record<string, string> = {};
 

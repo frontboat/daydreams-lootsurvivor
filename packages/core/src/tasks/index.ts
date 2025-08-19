@@ -244,16 +244,7 @@ export const runGenerate = task({
           topP: modelSettings.topP,
           topK: modelSettings.topK,
           abortSignal,
-          // experimental_transform: smoothStream({
-          //   chunking: "word",
-          // }),
-          providerOptions: modelSettings.providerOptions || {
-            openrouter: {
-              reasoning: {
-                max_tokens: 32768,
-              },
-            },
-          },
+          providerOptions: modelSettings.providerOptions,
           onError: (event) => {
             onError(event.error);
           },
