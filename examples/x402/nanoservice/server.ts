@@ -1,9 +1,9 @@
 import { config } from "dotenv";
 import { Hono } from "hono";
 import { serve } from "@hono/node-server";
-import { paymentMiddleware, type Network, type Resource } from "x402-hono";
-import { createDreams, context, action, LogLevel } from "@daydreamsai/core";
-import { openai } from "@ai-sdk/openai";
+import { paymentMiddleware, type Network } from "x402-hono";
+import { createDreams, context, LogLevel } from "@daydreamsai/core";
+
 import * as z from "zod";
 import { privateKeyToAccount } from "viem/accounts";
 import { createDreamsRouterAuth } from "@daydreamsai/ai-sdk-provider";
