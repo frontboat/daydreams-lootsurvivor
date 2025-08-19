@@ -73,7 +73,16 @@ function prepareStreamResponse({
   return {
     getTextResponse: async () => {
       const result = await stream.text;
-      const text = prefix + result + suffix;
+      // Clean up any duplicate closing response tags and ensure proper structure
+      let cleanedResult = result;
+      // Remove any trailing </response> tags
+      cleanedResult = cleanedResult.replace(
+        /<\/response>\s*(<\/response>\s*)*$/g,
+        ""
+      );
+      // Only add suffix if needed
+      const needsSuffix = !cleanedResult.includes("</response>");
+      const text = prefix + cleanedResult + (needsSuffix ? suffix : "");
       return text;
     },
     stream: wrapStream(stream.textStream, prefix, suffix),
@@ -229,7 +238,7 @@ export const runGenerate = task({
         const stream = streamText({
           model,
           messages,
-          stopSequences: modelSettings.stopSequences ?? ["\n</response>"],
+          stopSequences: modelSettings.stopSequences,
           temperature: modelSettings.temperature ?? undefined,
           maxTokens: modelSettings.maxTokens,
           topP: modelSettings.topP,

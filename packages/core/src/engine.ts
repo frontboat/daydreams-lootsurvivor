@@ -246,6 +246,11 @@ export function createEngine({
         logId: log.id,
         contextId: ctxState.id,
         options,
+        ...(error instanceof ParsingError && {
+          parsingError: error.parsingError instanceof Error 
+            ? { message: error.parsingError.message, name: error.parsingError.constructor.name }
+            : error.parsingError
+        }),
       });
 
       if (log.ref === "output") {
@@ -689,7 +694,9 @@ function createErrorEvent(errorRef: ErrorRef) {
           message:
             errorRef.error.parsingError instanceof ZodError
               ? prettifyZodError(errorRef.error.parsingError)
-              : JSON.stringify(errorRef.error.parsingError),
+              : errorRef.error.parsingError instanceof Error
+              ? errorRef.error.parsingError.message
+              : String(errorRef.error.parsingError),
         },
       },
       processed: false,

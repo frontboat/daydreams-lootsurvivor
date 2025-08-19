@@ -174,8 +174,23 @@ export async function* wrapStream(
   suffix: string
 ) {
   yield prefix;
-  yield* stream;
-  yield suffix;
+  let streamContent = '';
+  for await (const chunk of stream) {
+    streamContent += chunk;
+    yield chunk;
+  }
+  
+  // Clean up duplicate closing response tags for streaming
+  if (suffix === '</response>') {
+    // Count how many closing response tags are already in the content
+    const closingTags = (streamContent.match(/<\/response>/g) || []).length;
+    if (closingTags === 0) {
+      yield suffix;
+    }
+    // If there are already closing tags, don't add another one
+  } else {
+    yield suffix;
+  }
 }
 
 const defaultTags = new Set([
