@@ -40,11 +40,11 @@ import {
   output,
   type EpisodeHooks,
 } from "@daydreamsai/core";
-import { openai } from "@ai-sdk/openai";
+
 import * as z from "zod";
 import * as readline from "readline";
-import { createChromaMemory } from "@daydreamsai/chroma";
-import { openrouter } from "@openrouter/ai-sdk-provider";
+
+import { dreamsrouter } from "@daydreamsai/ai-sdk-provider";
 
 const personalAssistantHooks: EpisodeHooks = {
   // Start episode when user begins a new conversation
@@ -364,7 +364,7 @@ const textOutput = output({
 // Create the agent
 const agent = createDreams({
   logLevel: LogLevel.TRACE,
-  model: openrouter("google/gemini-2.5-pro"),
+  model: dreamsrouter("google/gemini-2.5-pro"),
   contexts: [assistantContext],
   inputs: {
     text: textInput,
