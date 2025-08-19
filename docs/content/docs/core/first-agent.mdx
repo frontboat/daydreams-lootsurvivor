@@ -92,16 +92,8 @@ import { cliExtension } from "@daydreamsai/cli";
 import { openai } from "@ai-sdk/openai";
 import * as z from "zod";
 
-// Define what our assistant remembers about each user
-interface AssistantMemory {
-  userName?: string;
-  preferences: Record<string, any>;
-  conversationCount: number;
-  lastTopic?: string;
-}
-
 // Create a context - this is where the magic happens!
-const assistantContext = context<AssistantMemory>({
+const assistantContext = context({
   type: "personal-assistant",
 
   // Each user gets their own context instance
@@ -111,6 +103,8 @@ const assistantContext = context<AssistantMemory>({
 
   // Initialize memory for new users
   create: () => ({
+    userName: "",
+    lastTopic: "",
     preferences: {},
     conversationCount: 0,
   }),
@@ -160,22 +154,6 @@ assistantContext.setActions([
       return {
         remembered: true,
         message: `I'll remember your name is ${name}`,
-      };
-    },
-  }),
-
-  action({
-    name: "save-preference",
-    description: "Save a user preference",
-    schema: z.object({
-      key: z.string().describe("Preference category"),
-      value: z.string().describe("Preference value"),
-    }),
-    handler: async ({ key, value }, ctx) => {
-      ctx.memory.preferences[key] = value;
-      return {
-        saved: true,
-        message: `Noted! Your ${key} preference is ${value}`,
       };
     },
   }),
@@ -340,27 +318,40 @@ const gameContext = context<GameMemory>({
 Your customer service agent demonstrates the three key Daydreams concepts:
 
 ### 1. **Context Isolation**
+
 Each customer gets their own workspace:
+
 ```typescript
 // Different customers = different context instances
-args: { customerId: "CUST001" } // Alice's data
-args: { customerId: "CUST002" } // Bob's data (completely separate)
+args: {
+  customerId: "CUST001";
+} // Alice's data
+args: {
+  customerId: "CUST002";
+} // Bob's data (completely separate)
 ```
 
-### 2. **Context Composition** 
+### 2. **Context Composition**
+
 Combine contexts with `.use()`:
+
 ```typescript
-use: (state) => [{
-  context: accountContext,
-  args: { customerId: state.args.customerId }, // Share customer ID
-}]
+use: (state) => [
+  {
+    context: accountContext,
+    args: { customerId: state.args.customerId }, // Share customer ID
+  },
+];
 ```
+
 The LLM automatically sees both customer support AND account data.
 
 ### 3. **Action Scoping**
+
 Actions are available based on active contexts:
+
 - `save-customer-info`, `create-ticket` → Only in customer context
-- `link-account`, `check-balance` → Only in account context  
+- `link-account`, `check-balance` → Only in account context
 - Global actions → Available everywhere
 
 ## Test the Complete Flow
@@ -370,6 +361,7 @@ node agent.ts
 ```
 
 Try this conversation:
+
 ```text
 You: Hi, my name is Sarah Johnson, email sarah@email.com
 Agent: [Uses save-customer-info action]
@@ -395,8 +387,11 @@ Agent: [Uses resolve-ticket action]
 ## Next Steps
 
 - [Contexts](/docs/core/concepts/contexts) - Deep dive into context patterns
-- [Building Blocks](/docs/core/concepts/building-blocks) - Understand actions, inputs, outputs
+- [Building Blocks](/docs/core/concepts/building-blocks) - Understand actions,
+  inputs, outputs
 - [Extensions](/docs/core/concepts/extensions) - Package functionality for reuse
-- [Building Block Operations](/docs/core/concepts/building-block-operations) - Common patterns
+- [Building Block Operations](/docs/core/concepts/building-block-operations) -
+  Common patterns
 
-**Challenge:** Add a third context for order management using `.use()` and give it order-specific actions!
+**Challenge:** Add a third context for order management using `.use()` and give
+it order-specific actions!
