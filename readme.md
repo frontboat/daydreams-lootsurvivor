@@ -1,10 +1,12 @@
-<p align="center">
-  <img src="./docs/public/new-logo.png" alt="Daydreams" width="600">
-</p>
+![dreams](./docs/public/new-logo.png)
 
-<p align="center">
-  <strong>TypeScript Framework for Stateful AI Agents</strong>
-</p>
+# Daydreams - AI Agent Framework
+
+Finally, TypeScript agents that scale and compose
+
+🌐 [Website](https://dreams.fun) • ⚡ [Quick Start](#-quick-start) • 📖
+[Documentation](https://docs.dreams.fun) • 💬
+[Discord](https://discord.gg/rt8ajxQvXh)
 
 <p align="center">
   <a href="https://docs.dreams.fun"><img src="https://img.shields.io/badge/docs-dreams.fun-blue?style=flat-square" alt="Documentation"></a>
@@ -13,10 +15,58 @@
   <a href="https://github.com/daydreamsai/daydreams/stargazers"><img src="https://img.shields.io/github/stars/daydreamsai/daydreams?style=flat-square" alt="GitHub stars"></a>
 </p>
 
+## 🎯 The Problem Every AI Developer Faces
+
+You build an AI agent. It works great in testing. Then you need to add more
+features and...
+
+❌ Context switching breaks existing functionality  
+❌ State management becomes a nightmare  
+❌ Memory doesn't persist across sessions  
+❌ Code becomes a tangled mess of prompts and logic
+
+Sound familiar? You're not alone. This is why most AI agents never make it to
+production.
+
+## ⚡ The Solution: Composable Context Architecture
+
 Daydreams is the **first AI framework with composable contexts** - isolated
 workspaces that combine for complex behaviors. Build agents that remember,
 learn, and scale with **true memory**, **MCP integration**, and
 **TypeScript-first** design.
+
+## 🌐 Dreams Router - Universal AI Gateway
+
+Access any AI model through one API with built-in authentication and payments:
+
+```typescript
+import { dreamsRouter } from "@daydreamsai/ai-sdk-provider";
+
+// Use any model from any provider
+const models = [
+  dreamsRouter("openai/gpt-4o"),
+  dreamsRouter("anthropic/claude-3-5-sonnet-20241022"),
+  dreamsRouter("google-vertex/gemini-2.5-flash"),
+  dreamsRouter("groq/llama-3.1-405b-reasoning"),
+];
+
+// Pay-per-use with USDC micropayments (no subscriptions)
+const { dreamsRouter } = await createDreamsRouterAuth(account, {
+  payments: { amount: "100000", network: "base-sepolia" }, // $0.10 per request
+});
+```
+
+**Features:**
+
+- **Universal Access** - OpenAI, Anthropic, Google, Groq, xAI, and more
+- **x402 Payments** - Pay-per-use with USDC micropayments
+- **OpenAI Compatible** - Works with existing OpenAI SDK clients
+- **Automatic Fallbacks** - Built-in provider redundancy
+
+🌐 **Live Service**:
+[router.daydreams.systems](https://router.daydreams.systems) • 📖
+**[Router Docs](https://docs.dreams.fun/docs/router)** • ⚡
+**[Router Quickstart](https://docs.dreams.fun/docs/router/quickstart)**
 
 ## 🌟 The Power of Context Composition
 
@@ -134,20 +184,66 @@ const searchAction = action({
 **Result**: Your agent instantly gets file system access, database querying, web
 scraping, 3D rendering, and more through the growing MCP ecosystem.
 
-## ⚡ Quick Start
+## 🚀 Get Your Agent Running in 60 Seconds
 
 ```bash
-npm install @daydreamsai/core
+npm install @daydreamsai/core @ai-sdk/openai zod
 ```
 
-Or scaffold a new agent:
+```typescript
+import { createDreams, context, action } from "@daydreamsai/core";
+import { openai } from "@ai-sdk/openai";
+import { z } from "zod";
+
+// Define a simple weather context
+const weatherContext = context({
+  type: "weather",
+  create: () => ({ lastQuery: null }),
+}).setActions([
+  action({
+    name: "getWeather",
+    schema: z.object({ city: z.string() }),
+    handler: async ({ city }, ctx) => {
+      ctx.memory.lastQuery = city;
+      // Your weather API logic here
+      return { weather: `Sunny, 72°F in ${city}` };
+    },
+  }),
+]);
+
+// Create your agent
+const agent = createDreams({
+  model: openai("gpt-4o"),
+  contexts: [weatherContext],
+});
+
+// Start chatting!
+await agent.send({
+  context: weatherContext,
+  input: "What's the weather in San Francisco?",
+});
+```
+
+That's it! Your agent is running with persistent memory and type-safe actions.
+
+### Or scaffold a complete project:
 
 ```bash
 npx create-daydreams-agent my-agent
 cd my-agent && npm run dev
 ```
 
-## ✨ Key Features
+## 🔥 Why Developers Are Switching to Daydreams
+
+| 🏗️ Traditional AI Frameworks    | ⚡ Daydreams                      |
+| ------------------------------- | --------------------------------- |
+| Monolithic agent design         | Composable context architecture   |
+| Memory resets between sessions  | Persistent memory across restarts |
+| Manual state management         | Automatic context isolation       |
+| Complex integration setup       | Native MCP support                |
+| JavaScript with types bolted on | TypeScript-first design           |
+
+## ✨ Enterprise-Grade Features
 
 **🧩 Composable Contexts** - Build complex agents from simple, reusable
 contexts  
@@ -159,7 +255,9 @@ experience
 **🔧 Action Scoping** - Context-specific capabilities and permissions  
 **🌐 Universal Runtime** - Works in Node.js, browsers, Deno, Bun, and edge
 functions  
-**🏗️ Modular Extensions** - Clean plugin architecture for platforms and services
+**🏗️ Modular Extensions** - Clean plugin architecture for platforms and
+services  
+**📊 Full Explainability** - Understand every decision your agent makes
 
 ## 🏗️ Core Architecture
 
@@ -295,10 +393,18 @@ createMcpExtension([
 
 **[📖 Learn More About MCP →](https://docs.dreams.fun/docs/core/concepts/mcp)**
 
-## 📚 Documentation
+## 📚 Documentation & Learning
 
 **🏠 [Complete Documentation](https://docs.dreams.fun)** - Everything you need
 to build production agents
+
+### 🏃‍♂️ Quick Start Paths
+
+🎯 **I want to test it myself** →
+[5-minute quickstart](https://docs.dreams.fun/docs/core/first-agent)  
+🛠️ **I want to see examples** → [Working examples](#-examples)  
+🚀 **I want to build something** → [Tutorials](#tutorials)  
+💬 **I need help** → [Join our Discord](https://discord.gg/rt8ajxQvXh)
 
 ### Essential Guides
 
@@ -351,6 +457,14 @@ to build production agents
 - **[create-daydreams-agent](https://npmjs.com/package/create-daydreams-agent)** -
   Project scaffolding
 
+## 🎯 Perfect For Your Use Case
+
+| **E-commerce**              | **Healthcare**            | **Financial Services**   | **Developer Tools**      |
+| --------------------------- | ------------------------- | ------------------------ | ------------------------ |
+| Customer service at scale   | HIPAA-ready agents        | Compliance-first design  | Code review automation   |
+| Order processing automation | Patient data protection   | Built-in risk management | Documentation generation |
+| Inventory management        | Treatment recommendations | Transaction monitoring   | API testing assistance   |
+
 ## 🏃‍♂️ Examples
 
 Explore working examples in [`examples/`](./examples):
@@ -361,6 +475,15 @@ Explore working examples in [`examples/`](./examples):
 - **[Discord Bot](./examples/social/discord.ts)** - Platform integration example
 - **[MCP Integration](./examples/mcp/)** - External tool connections
 - **[x402 Nanoservice](./examples/x402/)** - Paid AI services with micropayments
+
+### 🌟 Featured Examples
+
+Each example includes:
+
+- Complete TypeScript source code
+- Step-by-step setup instructions
+- Configuration examples
+- Testing and deployment guides
 
 ## 🛠️ Development
 
@@ -379,24 +502,29 @@ pnpm install
 bun run packages/core  # Run tests
 ```
 
-### Community
+## 🤝 Community & Support
 
-- **[Discord](https://discord.gg/rt8ajxQvXh)** - Chat with developers and get
-  help
-- **[GitHub Issues](https://github.com/daydreamsai/daydreams/issues)** - Bug
-  reports and feature requests
-- **[Documentation](https://docs.dreams.fun)** - Complete guides and API
-  reference
+### 📈 Join 1,000+ Developers Building Better AI
 
-## ✨ Why Daydreams?
+**Companies using Daydreams**:  
+E-commerce platforms • Healthcare providers • Financial institutions • Developer
+tools
 
-**🧩 Composable by Design** - Build complex agents from simple, reusable
-contexts  
-**🔌 MCP Native** - Universal access to external tools and services  
-**💾 True State** - Persistent memory that survives restarts and scales  
-**⚡ TypeScript First** - Full type safety with excellent DX  
-**🌐 Universal Runtime** - Works everywhere JavaScript runs  
-**🏗️ Production Ready** - Built for scale with monitoring and error handling
+### Get Help & Connect
+
+💬 **[Discord Community](https://discord.gg/rt8ajxQvXh)** - Get help from the
+team and community  
+📖 **[Documentation](https://docs.dreams.fun)** - Comprehensive guides and
+examples  
+🐛 **[GitHub Issues](https://github.com/daydreamsai/daydreams/issues)** - Bug
+reports and feature requests  
+📧 **Direct Support** - Direct line to our engineering team
+
+## ✨ Ready to Build AI Agents That Actually Work?
+
+**⭐ Star this repo** • **🚀
+[Try Daydreams now](https://docs.dreams.fun/docs/core/first-agent)** • **💬
+[Join Discord](https://discord.gg/rt8ajxQvXh)**
 
 ---
 
