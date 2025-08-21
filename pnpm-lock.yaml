@@ -292,6 +292,9 @@ importers:
       '@ai-sdk/provider':
         specifier: 2.0.0-beta.2
         version: 2.0.0-beta.2
+      '@coinbase/cdp-sdk':
+        specifier: 1.36.0
+        version: 1.36.0(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)(utf-8-validate@5.0.10)
       '@coinbase/x402':
         specifier: ^0.5.1
         version: 0.5.1(@tanstack/query-core@5.85.3)(@tanstack/react-query@5.85.3(react@19.1.1))(@types/react@19.1.10)(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(react@19.1.1)(typescript@5.9.2)(utf-8-validate@5.0.10)
@@ -334,6 +337,9 @@ importers:
       ai:
         specifier: ^5.0.12
         version: 5.0.15(zod@4.0.16)
+      dotenv:
+        specifier: 'catalog:'
+        version: 16.4.7
       viem:
         specifier: ^2.31.7
         version: 2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.0.16)
@@ -404,7 +410,7 @@ importers:
         version: 0.5.1(@types/react@18.3.23)(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)
       x402-hono:
         specifier: ^0.5.2
-        version: 0.5.2(@types/react@18.3.23)(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)(utf-8-validate@5.0.10)
+        version: 0.5.2(@types/react@18.3.23)(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)
       zod:
         specifier: 'catalog:'
         version: 4.0.16
@@ -1613,8 +1619,8 @@ packages:
     peerDependencies:
       typescript: ^5.0.0
 
-  '@coinbase/cdp-sdk@1.35.0':
-    resolution: {integrity: sha512-T/jpDVl5fdTRG/wd/oheSBsyfGvOLdZgajnsSwz+y2SCP0VpvKHzUWYZqNXXAuK0+WHC4bfcE0Ga6qar+BCjiQ==}
+  '@coinbase/cdp-sdk@1.36.0':
+    resolution: {integrity: sha512-q+8KnNEZW7mFKdCw0FsZKQ0CuxP5B0JNCkj4Ucmspjbe/EM8ZXVNh1SQMISZCu7gq9KY4bJDmpGqddwtkSGL5Q==}
 
   '@coinbase/wallet-sdk@3.9.3':
     resolution: {integrity: sha512-N/A2DRIf0Y3PHc1XAMvbBUu4zisna6qAdqABMZwBMNEfWrXpAwx16pZGkYCLGE+Rvv1edbcB2LYDRnACNcmCiw==}
@@ -10343,7 +10349,7 @@ snapshots:
       - ts-node
       - utf-8-validate
 
-  '@coinbase/cdp-sdk@1.35.0(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)(utf-8-validate@5.0.10)':
+  '@coinbase/cdp-sdk@1.36.0(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)(utf-8-validate@5.0.10)':
     dependencies:
       '@solana/spl-token': 0.4.13(@solana/web3.js@1.98.4(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10))(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)(utf-8-validate@5.0.10)
       '@solana/web3.js': 1.98.4(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)
@@ -10419,7 +10425,7 @@ snapshots:
 
   '@coinbase/x402@0.5.1(@tanstack/query-core@5.85.3)(@tanstack/react-query@5.85.3(react@19.1.1))(@types/react@19.1.10)(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(react@19.1.1)(typescript@5.9.2)(utf-8-validate@5.0.10)':
     dependencies:
-      '@coinbase/cdp-sdk': 1.35.0(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)(utf-8-validate@5.0.10)
+      '@coinbase/cdp-sdk': 1.36.0(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)(utf-8-validate@5.0.10)
       viem: 2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       x402: 0.5.2(@tanstack/query-core@5.85.3)(@tanstack/react-query@5.85.3(react@19.1.1))(@types/react@19.1.10)(bufferutil@4.0.9)(react@19.1.1)(typescript@5.9.2)(utf-8-validate@5.0.10)
       zod: 3.25.76
@@ -20549,9 +20555,9 @@ snapshots:
       - uploadthing
       - utf-8-validate
 
-  x402-hono@0.5.2(@types/react@18.3.23)(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)(utf-8-validate@5.0.10):
+  x402-hono@0.5.2(@types/react@18.3.23)(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10):
     dependencies:
-      '@coinbase/cdp-sdk': 1.35.0(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)(utf-8-validate@5.0.10)
+      '@coinbase/cdp-sdk': 1.36.0(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)(utf-8-validate@5.0.10)
       hono: 4.9.2
       viem: 2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       x402: 0.5.2(@types/react@18.3.23)(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)
