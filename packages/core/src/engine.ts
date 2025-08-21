@@ -448,7 +448,7 @@ export function createEngine({
 
       for (const ref of refs) {
         agent.logger.debug("agent:output", "Output processed status", {
-          type: ref.type,
+          name: ref.name,
           processed: ref.processed,
         });
 
@@ -652,7 +652,7 @@ function createErrorEvent(errorRef: ErrorRef) {
           ref: {
             ref: errorRef.log.ref,
             id: errorRef.log.id,
-            type: errorRef.error.ref.type,
+            type: errorRef.error.ref.ref === "output" ? errorRef.error.ref.name : errorRef.error.ref.type,
           },
           error: {
             name: "NotFoundError",

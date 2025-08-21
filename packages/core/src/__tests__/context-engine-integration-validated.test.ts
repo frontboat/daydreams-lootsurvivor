@@ -35,7 +35,7 @@ describe("Context-Engine Integration - Tier 2 (Validated)", () => {
       // Create agent with complete input/output setup
       agent = createSilentTestAgent({
         model: createMockLanguageModel({
-          responses: ["<output type=\"text\">Setup validated successfully</output>"]
+          responses: ["<output name=\"text\">{\"content\": \"Setup validated successfully\"}</output>"]
         }),
         memory: createTestMemory(),
         inputs: {
@@ -90,7 +90,7 @@ describe("Context-Engine Integration - Tier 2 (Validated)", () => {
       // Create agent with the context
       agent = createSilentTestAgent({
         model: createMockLanguageModel({
-          responses: ["<output type=\"text\">Context created successfully</output>"]
+          responses: ["<output name=\"text\">{\"content\": \"Context created successfully\"}</output>"]
         }),
         memory: createTestMemory(),
         inputs: {
@@ -140,7 +140,7 @@ describe("Context-Engine Integration - Tier 2 (Validated)", () => {
 
       agent = createSilentTestAgent({
         model: createMockLanguageModel({
-          responses: ["<output type=\"text\">Engine integration ready</output>"]
+          responses: ["<output name=\"text\">{\"content\": \"Engine integration ready\"}</output>"]
         }),
         memory: createTestMemory(),
         inputs: {
@@ -215,7 +215,7 @@ describe("Context-Engine Integration - Tier 2 (Validated)", () => {
       // Create agent with the context
       agent = createSilentTestAgent({
         model: createMockLanguageModel({
-          responses: ["<output type=\"text\">Message processed successfully</output>"]
+          responses: ["<output name=\"text\">{\"content\": \"Message processed successfully\"}</output>"]
         }),
         memory: createTestMemory(),
         inputs: {
@@ -308,7 +308,7 @@ describe("Context-Engine Integration - Tier 2 (Validated)", () => {
       // Create agent
       agent = createSilentTestAgent({
         model: createMockLanguageModel({
-          responses: ["<output type=\"text\">Subscription test response</output>"]
+          responses: ["<output name=\"text\">{\"content\": \"Subscription test response\"}</output>"]
         }),
         memory: createTestMemory(),
         inputs: {
@@ -417,8 +417,8 @@ describe("Context-Engine Integration - Tier 2 (Validated)", () => {
       agent = createSilentTestAgent({
         model: createMockLanguageModel({
           responses: [
-            "<output type=\"text\">First operation completed</output>",
-            "<output type=\"text\">Second operation completed</output>"
+            "<output name=\"text\">{\"content\": \"First operation completed\"}</output>",
+            "<output name=\"text\">{\"content\": \"Second operation completed\"}</output>"
           ]
         }),
         memory: createTestMemory(),

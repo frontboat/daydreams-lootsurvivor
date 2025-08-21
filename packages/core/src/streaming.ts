@@ -292,13 +292,13 @@ export function createContextStreamHandler({
               ref: "output",
             });
 
-            const { type, ...params } = el.attributes;
+            const { name, ...params } = el.attributes;
 
             __pushLogChunk?.({
               type: "log",
               log: {
                 ...ref,
-                type,
+                name,
                 params,
                 content: "",
                 data: undefined,
@@ -382,11 +382,11 @@ export function createContextStreamHandler({
         const ref = getOrCreateRef(el.index, {
           ref: "output",
         });
-        const { type, ...params } = el.attributes;
+        const { name, ...params } = el.attributes;
         pushLog(
           {
             ...ref,
-            type,
+            name,
             params,
             content: el.content,
             data: undefined,

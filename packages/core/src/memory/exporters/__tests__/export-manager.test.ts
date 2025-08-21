@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { ExportManager } from '../export-manager';
 import { JSONExporter } from '../json-exporter';
 import { MarkdownExporter } from '../markdown-exporter';
-import type { Episode } from '../../types';
+import type { Episode } from '../..';
 
 describe('ExportManager', () => {
   let exportManager: ExportManager;
@@ -15,11 +15,16 @@ describe('ExportManager', () => {
 
     sampleEpisode = {
       id: 'test-episode-1',
+      contextId: 'test-context',
       type: 'conversation',
+      summary: 'Test conversation episode',
+      logs: [],
       input: { content: 'Hello, how are you?' },
       output: { content: 'I am doing well, thank you!' },
       context: 'test-context',
       timestamp: Date.now(),
+      startTime: Date.now() - 1000,
+      endTime: Date.now(),
       duration: 1000,
       metadata: {
         user: 'test-user',
