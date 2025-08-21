@@ -7,7 +7,7 @@ import {
   InMemoryVectorProvider,
   InMemoryGraphProvider,
   type Memory,
-} from "@daydreams/core";
+} from "@daydreamsai/core";
 
 // Create and initialize the memory system
 export async function createBrowserMemory(): Promise<Memory> {
