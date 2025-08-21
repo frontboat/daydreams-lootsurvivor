@@ -44,11 +44,7 @@ pnpm install
 ### Running
 
 ```bash
-# Default user and network
-tsx examples/CDP/server-wallet/multi-context-wallet.tsx
-
-# Specific user and network
-tsx examples/CDP/server-wallet/multi-context-wallet.tsx alice base-sepolia
+bun run examples/CDP/server-wallet/multi-context-wallet.tsx
 ```
 
 ## Usage
