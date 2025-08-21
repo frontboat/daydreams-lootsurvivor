@@ -604,7 +604,7 @@ export function createEngine({
       }
 
       const pendingResults = state.chain.filter(
-        (i) => i.ref !== "thought" && i.processed === false
+        (i) => i.ref === "action_call" && i.processed === false
       );
 
       return pendingResults.length > 0;
