@@ -1,6 +1,6 @@
 {
   "name": "@daydreamsai/deploy",
-  "version": "0.3.17",
+  "version": "0.3.18",
   "description": "Deploy Daydreams agents to Google Cloud with custom domains",
   "type": "module",
   "bin": {
