@@ -275,7 +275,7 @@ export type Output<
   TContext extends AnyContext = AnyContext,
   TAgent extends AnyAgent = AnyAgent
 > = {
-  type: string;
+  name: string;
   description?: string;
   instructions?: string;
   required?: boolean;
@@ -420,7 +420,7 @@ export type InputRef<Data = any> = {
 export type OutputRef<Data = any> = {
   id: string;
   ref: "output";
-  type: string;
+  name: string;
   params?: Record<string, string>;
   content: string;
   data: Data;
@@ -641,7 +641,7 @@ interface AgentDef<TContext extends AnyContext = AnyContext> {
   /**
    * A record of output configurations for the agent.
    */
-  outputs: Record<string, Omit<Output<any, any, TContext, any>, "type">>;
+  outputs: Record<string, Omit<Output<any, any, TContext, any>, "name">>;
 
   /**
    * A record of event schemas for the agent.
@@ -748,7 +748,7 @@ export interface Agent<TContext extends AnyContext = AnyContext>
       [key: string]: any;
     };
     contexts?: ContextRefArray<SubContextRefs>;
-    outputs?: Record<string, Omit<Output<any, any, TContext, any>, "type">>;
+    outputs?: Record<string, Omit<Output<any, any, TContext, any>, "name">>;
     actions?: AnyAction[];
     handlers?: Partial<Handlers>;
     abortSignal?: AbortSignal;
@@ -771,7 +771,7 @@ export interface Agent<TContext extends AnyContext = AnyContext>
     input: { type: string; data: any };
     model?: LanguageModel;
     contexts?: ContextRefArray<SubContextRefs>;
-    outputs?: Record<string, Omit<Output<any, any, SContext, any>, "type">>;
+    outputs?: Record<string, Omit<Output<any, any, SContext, any>, "name">>;
     actions?: AnyAction[];
     handlers?: Partial<Handlers>;
     abortSignal?: AbortSignal;
@@ -925,7 +925,7 @@ export type OutputConfig<
   Response extends OutputRefResponse = OutputRefResponse,
   TContext extends AnyContext = AnyContext,
   TAgent extends AnyAgent = AnyAgent
-> = Omit<Output<Schema, Response, TContext, TAgent>, "type">;
+> = Omit<Output<Schema, Response, TContext, TAgent>, "name">;
 
 /** Function type for subscription cleanup */
 export type Subscription = () => void;
@@ -1194,7 +1194,7 @@ export interface Context<
    * A record of output configurations for the context.
    */
   outputs?: Resolver<
-    Record<string, Omit<Output<any, any, AnyContext, any>, "type">>,
+    Record<string, Omit<Output<any, any, AnyContext, any>, "name">>,
     ContextState<this>
   >;
 

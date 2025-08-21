@@ -96,7 +96,7 @@ export function formatInput(input: InputRef) {
 export function formatOutput(output: OutputRef) {
   return xml(
     "output",
-    { name: output.type, timestamp: output.timestamp, ...output.params },
+    { name: output.name, timestamp: output.timestamp, ...output.params },
     output.data ?? output.content
   );
 }
@@ -114,7 +114,7 @@ export function formatSchema(schema: any, key: string = "schema") {
  */
 export function formatOutputInterface(output: Output<any>) {
   const params: Record<string, string> = {
-    type: output.type,
+    name: output.name,
   };
 
   if (output.required) {

@@ -248,7 +248,7 @@ describe("Engine State Management - Tier 1", () => {
       const outputRef: OutputRef = {
         id: "output-test",
         ref: "output",
-        type: "text",
+        name: "text",
         content: "test output",
         data: "test output",
         timestamp: Date.now(),
@@ -304,7 +304,7 @@ describe("Engine State Management - Tier 1", () => {
       const outputRef: OutputRef = {
         id: "output-test",
         ref: "output",
-        type: "text",
+        name: "text",
         content: "test output",
         data: "test output",
         timestamp: Date.now(),

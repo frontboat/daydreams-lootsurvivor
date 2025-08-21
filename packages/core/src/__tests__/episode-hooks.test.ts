@@ -50,7 +50,7 @@ describe("Episode Hooks Examples", () => {
           // End episode when assistant responds
           return (
             ref.ref === "output" &&
-            ref.type === "assistant_message" &&
+            ref.name === "assistant_message" &&
             ref.processed
           );
         },

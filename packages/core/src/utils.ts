@@ -221,7 +221,7 @@ export function createInputRef(
 }
 
 export function createOutputRef(
-  ref: Pick<OutputRef, "type" | "content" | "data" | "processed">
+  ref: Pick<OutputRef, "name" | "content" | "data" | "processed">
 ): OutputRef {
   return {
     id: randomUUIDv7(),

@@ -715,9 +715,9 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
         count: Object.keys(outputs).length,
       });
 
-      for (const [type, output] of Object.entries(outputs)) {
+      for (const [name, output] of Object.entries(outputs)) {
         if (output.install) {
-          logger.trace("agent:start", "Installing output", { type });
+          logger.trace("agent:start", "Installing output", { name });
           await tryAsync(output.install, agent);
         }
       }

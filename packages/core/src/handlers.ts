@@ -558,30 +558,30 @@ export function prepareOutputRef({
   outputs: readonly OutputCtxRef[];
   logger: Logger;
 }): { output: OutputCtxRef } {
-  const output = outputs.find((output) => output.type === outputRef.type);
+  const output = outputs.find((output) => output.name === outputRef.name);
 
   if (!output) {
-    const availableOutputs = outputs.map((o) => o.type);
+    const availableOutputs = outputs.map((o) => o.name);
     const errorDetails = {
-      error: "OUTPUT_TYPE_MISMATCH",
-      requestedType: outputRef.type,
-      availableTypes: availableOutputs,
+      error: "OUTPUT_NAME_MISMATCH",
+      requestedName: outputRef.name,
+      availableNames: availableOutputs,
       outputData: outputRef.data,
       outputId: outputRef.id,
     };
 
     logger.error(
       "agent:output",
-      `Output type '${
-        outputRef.type
-      }' not found. Available types: ${availableOutputs.join(", ")}`,
+      `Output name '${
+        outputRef.name
+      }' not found. Available names: ${availableOutputs.join(", ")}`,
       errorDetails
     );
 
     throw new NotFoundError(outputRef);
   }
 
-  logger.debug("agent:output", outputRef.type, outputRef.data);
+  logger.debug("agent:output", outputRef.name, outputRef.data);
 
   if (output.schema) {
     const schema = (
@@ -724,10 +724,10 @@ export async function prepareContextOutputs(params: {
 }): Promise<readonly OutputCtxRef[]> {
   return params.context.outputs
     ? Promise.all(
-        Object.entries(params.context.outputs).map(([type, output]) =>
+        Object.entries(params.context.outputs).map(([name, output]) =>
           prepareOutput({
             output: {
-              type,
+              name,
               ...output,
             },
             ...params,
@@ -834,10 +834,10 @@ export async function prepareContext(
   const outputs: OutputCtxRef[] = ctxState.context.outputs
     ? await Promise.all(
         Object.entries(await resolve(ctxState.context.outputs, ctxState)).map(
-          ([type, output]) =>
+          ([name, output]) =>
             prepareOutput({
               output: {
-                type,
+                name,
                 ...output,
               },
               context: ctxState.context,
@@ -920,10 +920,10 @@ export async function prepareContexts({
     Object.entries({
       ...agent.outputs,
       ...(params?.outputs ?? {}),
-    }).map(([type, output]) =>
+    }).map(([name, output]) =>
       prepareOutput({
         output: {
-          type,
+          name,
           ...output,
         },
         context: ctxState.context,

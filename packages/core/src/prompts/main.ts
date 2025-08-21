@@ -16,16 +16,7 @@ import type {
   WorkingMemory,
 } from "../types";
 import type { MemoryResult } from "../memory/types";
-/*
 
-## Instructions
-- If asked for something - never do a summary unless you are asked to do a summary. Always respond with the exact information requested.
-- You must use the available actions and outputs to respond to the context.
-- You must reason about the context, think, and planned actions.
-- IMPORTANT: If you state that you will perform an action, you MUST issue the corresponding action call. Do not say you will do something without actually issuing the action call.
-- IMPORTANT: Never end your response with a plan to do something without actually doing it. Always follow through with action calls.
-- When you determine that no further actions or outputs are needed and the flow should end, use the <finalize/> tag to indicate completion.
-*/
 export const templateSections = {
   intro: `\
   You are an expert AI assistant acting as the control system for a software application. Your goal is to analyze the current situation, reason methodically, and generate the appropriate actions and outputs to complete the active task.`,
@@ -96,10 +87,7 @@ Direct Dependencies: Particularly useful when an action requires a specific resu
 {{recentHistory}}
 
 ### Decision Context
-{{decisionContext}}
-
-### Examples of High-Quality Interactions
-{{examples}}`,
+{{decisionContext}}`,
 
   response: `\
 ## Response Format
@@ -107,7 +95,7 @@ Your final output must be a single, valid XML block wrapped in <response> tags. 
 
 - **<reasoning> (Required):** Your entire step-by-step thought process must be inside this tag.
 - **<action_call> (Optional):** Use this to execute a tool. It MUST have a 'name' attribute and contain valid JSON for the arguments.
-- **<output> (Optional):** Use this to send a response to the user. It MUST have a 'type' attribute.
+- **<output> (Optional):** Use this to send a response to the user. It MUST have a 'name' attribute and contain valid JSON for the parameters.
 
 Now, generate your response based on the rules and examples above. Begin with the opening <response> tag.
 
@@ -129,7 +117,7 @@ The user has provided their name, and the assistant needs to save it.
 <response>
   <reasoning>The user has told me their name is Clara. I need to use the 'remember-name' action to save this information. After I plan the action, I should also output a confirmation message to the user.</reasoning>
   <action_call name="remember-name">{"name":"Clara"}</action_call>
-  <output type="text">Thanks, Clara! I'll remember that.</output>
+  <output name="text">{"content": "Thanks, Clara! I'll remember that."}</output>
 </response>
 //--- END OF EXAMPLE 1 ---//
 
@@ -142,7 +130,7 @@ Guiding Principles for Your Response:
 - **Progressive Building:** Build on active operations rather than starting from scratch.
 - **Clear Communication:** Provide actionable insights that connect your reasoning to specific outcomes.
 - **Reliable Execution:** Address any failures explicitly and adjust your approach based on available context.
-- **Format Adherence:** Use <response>, <reasoning>, <action_call>, and <output> tags correctly. Always open then close the tags. If you state you will perform an action, you MUST include the corresponding action call.
+- **Format Adherence:** Use <response>, <reasoning>, <action_call>, and <output> tags correctly. Always open then close the tags. Both action_call and output content must be valid JSON. If you state you will perform an action, you MUST include the corresponding action call.
 `,
 } as const;
 
@@ -157,6 +145,11 @@ export const promptTemplate = `\
 
 {{footer}}
 `;
+
+// Helper function to reduce XML wrapper duplication
+function xmlSection(tag: string, content: any[], fallback: string[]): ReturnType<typeof xml> {
+  return xml(tag, undefined, content.length > 0 ? content : fallback);
+}
 
 export function formatPromptSections({
   contexts,
@@ -216,10 +209,6 @@ export function formatPromptSections({
       return `**Episode Memory**${score}${timestamp}: ${JSON.stringify(
         memory.content
       )}`;
-    } else if (memory.type === "episode") {
-      return `**${memory.type} Episode**${score}${timestamp}: ${JSON.stringify(
-        memory.content
-      )}`;
     } else {
       return `**${
         memory.type || "Memory"
@@ -234,53 +223,45 @@ export function formatPromptSections({
 
   return {
     // CURRENT SITUATION
-    currentTask: xml(
+    currentTask: xmlSection(
       "current-task",
-      undefined,
-      unprocessedLogs.length > 0
-        ? unprocessedLogs.map((log) => formatContextLog(log))
-        : ["No pending tasks."]
+      unprocessedLogs.map((log) => formatContextLog(log)),
+      ["No pending tasks."]
     ),
     contextState: xml(
       "context-state",
       undefined,
       contexts.map(formatContextState)
     ),
-    activeOperations: xml(
+    activeOperations: xmlSection(
       "active-operations",
-      undefined,
-      pendingActions.length > 0
-        ? pendingActions.map((call) => formatContextLog(call))
-        : ["No operations in progress."]
+      pendingActions.map((call) => formatContextLog(call)),
+      ["No operations in progress."]
     ),
 
     // AVAILABLE TOOLS
-    actions: xml(
+    actions: xmlSection(
       "available-actions",
-      undefined,
-      actions.length > 0 ? actions.map(formatAction) : ["No actions available."]
+      actions.map(formatAction),
+      ["No actions available."]
     ),
-    outputs: xml(
+    outputs: xmlSection(
       "available-outputs",
-      undefined,
-      outputs.length > 0
-        ? outputs.map(formatOutputInterface)
-        : ["No outputs available."]
+      outputs.map(formatOutputInterface),
+      ["No outputs available."]
     ),
 
     // CONTEXTUAL KNOWLEDGE
     semanticContext: xml("semantic-context", undefined, relevantMemories),
-    recentHistory: xml(
+    recentHistory: xmlSection(
       "recent-history",
-      undefined,
-      recentConversation.length > 0
-        ? recentConversation.map((log) => formatContextLog(log))
-        : ["No recent conversation history."]
+      recentConversation.map((log) => formatContextLog(log)),
+      ["No recent conversation history."]
     ),
-    decisionContext: xml(
+    decisionContext: xmlSection(
       "decision-context",
-      undefined,
-      keyThoughts.length > 0 ? keyThoughts : ["No recent reasoning available."]
+      keyThoughts,
+      ["No recent reasoning available."]
     ),
   };
 }

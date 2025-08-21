@@ -3,6 +3,8 @@
  *
  * This example demonstrates Daydreams' powerful context composition pattern where
  * contexts can include other contexts to create rich, modular experiences.
+ * 
+ * Updated for the new output system with JSON structured data and 'name' attributes.
  *
  * What's included:
  * 1. Analytics Context - Tracks user interactions and events
@@ -15,6 +17,7 @@
  * - Separate memory spaces for each context
  * - Dynamic behavior based on composed context state
  * - Built-in SimpleTracker for analytics
+ * - New JSON-structured outputs with schema validation
  *
  * The assistant context has access to ALL actions from composed contexts:
  * - track-event (from analytics)
@@ -37,7 +40,6 @@ import {
   action,
   LogLevel,
   input,
-  output,
   type EpisodeHooks,
 } from "@daydreamsai/core";
 
@@ -59,8 +61,15 @@ const personalAssistantHooks: EpisodeHooks = {
       return false;
     }
 
-    // Check both content and data fields for output text
-    const content = (ref.content || ref.data || "").toString().toLowerCase();
+    // Handle new JSON structure - check both content field and data.content
+    let content = "";
+    if (typeof ref.data === 'object' && ref.data?.content) {
+      content = ref.data.content.toString().toLowerCase();
+    } else if (ref.content) {
+      content = ref.content.toString().toLowerCase();
+    } else if (ref.data) {
+      content = ref.data.toString().toLowerCase();
+    }
 
     const isGoodbye =
       content.includes("Goodbye") ||
@@ -355,22 +364,25 @@ const textInput = input({
   schema: z.string(),
 });
 
-// Define text output handler
-const textOutput = output({
-  description: "Text response to the user",
-  schema: z.string(),
-});
-
 // Create the agent
 const agent = createDreams({
   logLevel: LogLevel.TRACE,
-  model: dreamsrouter("google/gemini-2.5-pro"),
+  model: dreamsrouter("google-vertex/gemini-2.5-flash"),
   contexts: [assistantContext],
   inputs: {
     text: textInput,
   },
   outputs: {
-    text: textOutput,
+    text: {
+      description: "Text response to the user", 
+      schema: z.object({
+        content: z.string().describe("The text content to send to the user"),
+      }),
+      handler: async (data, ctx, agent) => {
+        // Process the structured output data
+        return { content: data.content, processed: true };
+      },
+    },
   },
 });
 
@@ -484,7 +496,11 @@ async function main() {
       // Extract and display the assistant's response
       const output = result.find((r) => r.ref === "output");
       if (output && "data" in output) {
-        console.log("\n🤖:", output.data);
+        // Handle the new JSON structure - extract content from the structured data
+        const content = typeof output.data === 'object' && output.data?.content 
+          ? output.data.content 
+          : output.data;
+        console.log("\n🤖:", content);
       }
     } catch (error) {
       console.error("Error:", error);
