@@ -1,6 +1,6 @@
 {
   "name": "@daydreamsai/cli",
-  "version": "0.3.18",
+  "version": "0.3.19",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
