@@ -216,7 +216,7 @@ describe("Engine State Management - Tier 1", () => {
 
       engine.state.outputs = [
         {
-          type: "text",
+          name: "text",
           schema: z.string(),
           handler: async () => ({ data: "processed", processed: true }),
           ctxRef: { type: "test", id: "test", key: "test" },
@@ -261,7 +261,7 @@ describe("Engine State Management - Tier 1", () => {
       expect(engine.state.chain).toContainEqual(expect.objectContaining({
         id: "output-test",
         ref: "output", 
-        type: "text",
+        name: "text",
         content: "test output",
         data: "test output",
         processed: true
@@ -269,7 +269,7 @@ describe("Engine State Management - Tier 1", () => {
       expect(mockWorkingMemory.outputs).toContainEqual(expect.objectContaining({
         id: "output-test",
         ref: "output",
-        type: "text", 
+        name: "text", 
         content: "test output",
         data: "test output",
         processed: true
