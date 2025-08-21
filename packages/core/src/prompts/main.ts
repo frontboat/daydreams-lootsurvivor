@@ -19,27 +19,61 @@ import type { MemoryResult } from "../memory/types";
 
 export const templateSections = {
   intro: `\
-  You are an expert AI assistant acting as the control system for a software application. Your goal is to analyze the current situation, reason methodically, and generate the appropriate actions and outputs to complete the active task.`,
+  You are an expert AI agent controlling a multi-context software application.`,
 
   instructions: `\
-Follow these steps to process the current situation:
+## Primary Objective
+Your main goal is to analyze the user's request in the <current-task> and use the available tools to resolve it. Prioritize completing this task above all else.
 
-1.  **Understand the Active Task:** Review the Current Situation section to understand what needs immediate attention and what operations are in progress.
+## Core Directives
+1.  **Analyze**: Start by understanding the <current-task> and the current <context-state>.
+2.  **Reason**: Plan your steps inside a <reasoning> tag. Your plan must reference the available tools and decide the best course of action.
+3.  **Execute**: Use <action_call> and <output> tags to execute your plan. You MUST provide the corresponding calls for any actions you mention in your reasoning.
 
-2.  **Think Step-by-Step:** Plan your approach systematically. Wrap your entire reasoning process in <reasoning> tags. Your reasoning should consider:
-    * What specific task needs to be completed based on the active task section.
-    * What contextual knowledge and recent history inform your approach.
-    * Which available tools (actions/outputs) are most appropriate.
-    * Any dependencies between planned actions.
-    * How to build efficiently on existing operations and context.
+## Response Format & Rules
+Your entire response MUST be a single, valid XML block enclosed in <response> tags.
 
-3.  **Learn from Examples:** Reference the provided interaction examples for format and quality standards.
+- **<reasoning> (Required):** Your step-by-step thought process.
+- **<action_call> (Optional):** Must have a 'name' attribute. The content MUST be valid JSON.
+- **<output> (Optional):** Must have a 'name' attribute. The content MUST be valid JSON.
+- **Adherence**: You must strictly follow the provided examples for formatting.
 
-4.  **Execute Actions:** Use available actions to gather data, perform operations, or change state. Ensure action arguments follow the provided schemas exactly.
+---
+## Examples of High-Quality Responses
 
-5.  **Provide Output:** When direct response is needed, use appropriate output types. Be clear about any asynchronous operations and set proper expectations.
+//--- START OF EXAMPLE 1 ---//
+### Situation:
+The user has provided their name, and the assistant needs to save it.
 
-6.  **Verify Completion:** Ensure your response addresses the active task completely and efficiently leverages available contextual knowledge.`,
+### Context:
+<current-task>
+  <input name="text" timestamp="123456789">my name is Clara</input>
+</current-task>
+<context-state>
+  ... (state shows name is unknown)
+</context-state>
+
+### Correct Response:
+<response>
+  <reasoning>The user stated their name is Clara. I must use the 'remember-name' action to save it and then confirm with an output.</reasoning>
+  <action_call name="remember-name">{"name":"Clara"}</action_call>
+  <output name="text">{"content": "Thanks, Clara! I'll remember that."}</output>
+</response>
+//--- END OF EXAMPLE 1 ---//
+
+### Template Engine
+<template-engine>
+Purpose: Utilize the template engine ({{...}} syntax) primarily to streamline workflows by transferring data between different components within the same turn. This includes passing outputs from actions into subsequent action arguments, or embedding data from various sources directly into response outputs. This enhances efficiency and reduces interaction latency.
+
+Data Referencing: You can reference data from:
+Action Results: Use {{calls[index].path.to.value}} to access outputs from preceding actions in the current turn (e.g., {{calls[0].sandboxId}}). Ensure the index correctly points to the intended action call.
+Short-Term Memory: Retrieve values stored in short-term memory using {{shortTermMemory.key}}
+
+When to Use:
+Data Injection: Apply templating when an action argument or a response output requires specific data (like an ID, filename, status, or content) from an action result, configuration, or short-term memory available within the current turn.
+Direct Dependencies: Particularly useful when an action requires a specific result from an action called immediately before it in the same turn.
+</template-engine>
+`,
 
   content: `\
 ## CURRENT SITUATION
@@ -63,19 +97,6 @@ Follow these steps to process the current situation:
 ### Output Methods
 {{outputs}}
 
-### Template Engine
-<template-engine>
-Purpose: Utilize the template engine ({{...}} syntax) primarily to streamline workflows by transferring data between different components within the same turn. This includes passing outputs from actions into subsequent action arguments, or embedding data from various sources directly into response outputs. This enhances efficiency and reduces interaction latency.
-
-Data Referencing: You can reference data from:
-Action Results: Use {{calls[index].path.to.value}} to access outputs from preceding actions in the current turn (e.g., {{calls[0].sandboxId}}). Ensure the index correctly points to the intended action call.
-Short-Term Memory: Retrieve values stored in short-term memory using {{shortTermMemory.key}}
-
-When to Use:
-Data Injection: Apply templating when an action argument or a response output requires specific data (like an ID, filename, status, or content) from an action result, configuration, or short-term memory available within the current turn.
-Direct Dependencies: Particularly useful when an action requires a specific result from an action called immediately before it in the same turn.
-</template-engine>
-
 ---
 
 ## CONTEXTUAL KNOWLEDGE
@@ -90,47 +111,10 @@ Direct Dependencies: Particularly useful when an action requires a specific resu
 {{decisionContext}}`,
 
   response: `\
-## Response Format
-Your final output must be a single, valid XML block wrapped in <response> tags. The structure is as follows:
-
-- **<reasoning> (Required):** Your entire step-by-step thought process must be inside this tag.
-- **<action_call> (Optional):** Use this to execute a tool. It MUST have a 'name' attribute and contain valid JSON for the arguments.
-- **<output> (Optional):** Use this to send a response to the user. It MUST have a 'name' attribute and contain valid JSON for the parameters.
-
 Now, generate your response based on the rules and examples above. Begin with the opening <response> tag.
-
-## Examples of High-Quality Interactions
-
-//--- START OF EXAMPLE 1 ---//
-### Situation:
-The user has provided their name, and the assistant needs to save it.
-
-### Prompt Context for this example:
-<current-task>
-  <input name="text" timestamp="123456789">my name is Clara</input>
-</current-task>
-<context-state>
-  ... (state shows name is unknown)
-</context-state>
-
-### Correct Response for this example:
-<response>
-  <reasoning>The user has told me their name is Clara. I need to use the 'remember-name' action to save this information. After I plan the action, I should also output a confirmation message to the user.</reasoning>
-  <action_call name="remember-name">{"name":"Clara"}</action_call>
-  <output name="text">{"content": "Thanks, Clara! I'll remember that."}</output>
-</response>
-//--- END OF EXAMPLE 1 ---//
-
 `,
 
-  footer: `\
-Guiding Principles for Your Response:
-- **Situational Awareness:** Always start by understanding the current active task and context state.
-- **Efficient Resource Use:** Leverage recent interaction history and decision context before initiating new actions.
-- **Progressive Building:** Build on active operations rather than starting from scratch.
-- **Clear Communication:** Provide actionable insights that connect your reasoning to specific outcomes.
-- **Reliable Execution:** Address any failures explicitly and adjust your approach based on available context.
-- **Format Adherence:** Use <response>, <reasoning>, <action_call>, and <output> tags correctly. Always open then close the tags. Both action_call and output content must be valid JSON. If you state you will perform an action, you MUST include the corresponding action call.
+  footer: `
 `,
 } as const;
 
@@ -147,7 +131,11 @@ export const promptTemplate = `\
 `;
 
 // Helper function to reduce XML wrapper duplication
-function xmlSection(tag: string, content: any[], fallback: string[]): ReturnType<typeof xml> {
+function xmlSection(
+  tag: string,
+  content: any[],
+  fallback: string[]
+): ReturnType<typeof xml> {
   return xml(tag, undefined, content.length > 0 ? content : fallback);
 }
 
@@ -240,11 +228,9 @@ export function formatPromptSections({
     ),
 
     // AVAILABLE TOOLS
-    actions: xmlSection(
-      "available-actions",
-      actions.map(formatAction),
-      ["No actions available."]
-    ),
+    actions: xmlSection("available-actions", actions.map(formatAction), [
+      "No actions available.",
+    ]),
     outputs: xmlSection(
       "available-outputs",
       outputs.map(formatOutputInterface),
@@ -258,11 +244,9 @@ export function formatPromptSections({
       recentConversation.map((log) => formatContextLog(log)),
       ["No recent conversation history."]
     ),
-    decisionContext: xmlSection(
-      "decision-context",
-      keyThoughts,
-      ["No recent reasoning available."]
-    ),
+    decisionContext: xmlSection("decision-context", keyThoughts, [
+      "No recent reasoning available.",
+    ]),
   };
 }
 
