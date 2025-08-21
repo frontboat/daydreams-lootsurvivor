@@ -1,46 +1,3 @@
-/**
- * 🌟 Multi-Context Example with Wallet Integration
- *
- * This example extends the multi-context pattern to include Coinbase wallet functionality.
- * It demonstrates how Daydreams' context composition enables sophisticated agent behaviors
- * by combining analytics, profile, and wallet management in a single assistant.
- *
- * What's included:
- * 1. Analytics Context - Tracks user interactions and events
- * 2. Profile Context - Manages user profile data and settings
- * 3. Wallet Context - Manages Coinbase wallets and transactions
- * 4. Assistant Context - Main context that composes all the above
- *
- * Key Features Demonstrated:
- * - Context composition with .use() method
- * - Coinbase CDP SDK integration for wallet management
- * - Shared actions across composed contexts
- * - Separate memory spaces for each context
- * - Real cryptocurrency operations on testnet
- *
- * The assistant has access to ALL actions from composed contexts:
- * - track-event, get-interaction-stats (from analytics)
- * - update-profile, upgrade-tier (from profile)
- * - create-wallet, check-balance, send-transaction, request-faucet (from wallet)
- * - update-topic, set-mood (its own actions)
- *
- * Try these commands:
- * - "Create a wallet for me" - Creates a new Coinbase wallet
- * - "Check my balance" - Shows current wallet balance
- * - "Request test funds" - Gets testnet ETH from faucet
- * - "Send 0.001 ETH to 0x..." - Sends a transaction
- * - "Show my transactions" - Lists transaction history
- * - "My name is Alice" - Updates profile
- * - "analytics" - Shows usage statistics
- * - "wallet" - Shows wallet status
- *
- * REQUIRED Environment Variables - Coinbase Developer Platform (CDP) Credentials from: https://portal.cdp.coinbase.com/
- * - CDP_API_KEY_ID
- * - CDP_API_KEY_SECRET
- * - CDP_WALLET_SECRET
- * - DREAMSROUTER_API_KEY
- */
-
 import {
   createDreams,
   context,
@@ -57,13 +14,10 @@ import * as dotenv from "dotenv";
 
 import { dreamsrouter } from "@daydreamsai/ai-sdk-provider";
 
-// Import our wallet context
 import { walletContext } from "../server-wallet/wallet-context";
 
-// Load environment variables
 dotenv.config();
 
-// Check for required CDP credentials
 if (!process.env.CDP_API_KEY_ID || !process.env.CDP_API_KEY_SECRET) {
   console.warn(
     "⚠️  Warning: CDP_API_KEY_ID and CDP_API_KEY_SECRET not found in environment variables"
@@ -75,12 +29,10 @@ if (!process.env.CDP_API_KEY_ID || !process.env.CDP_API_KEY_SECRET) {
 }
 
 const personalAssistantHooks: EpisodeHooks = {
-  // Start episode when user begins a new conversation
   shouldStartEpisode: (ref) => {
     return ref.ref === "input" && ref.type === "text";
   },
 
-  // End episode when conversation naturally concludes or user says goodbye
   shouldEndEpisode: (ref) => {
     if (ref.ref !== "output") {
       return false;
@@ -100,13 +52,11 @@ const personalAssistantHooks: EpisodeHooks = {
     return isGoodbye || isTaskComplete;
   },
 
-  // Create structured episode data for personal assistant interactions
   createEpisode: (logs, ctx) => {
     const userInputs = logs.filter((l) => l.ref === "input");
     const assistantOutputs = logs.filter((l) => l.ref === "output");
     const actions = logs.filter((l) => l.ref === "action_call");
 
-    // Track wallet-specific actions
     const walletActions = actions.filter((a) =>
       [
         "create-wallet",
@@ -143,7 +93,6 @@ const personalAssistantHooks: EpisodeHooks = {
     };
   },
 
-  // Classify episodes based on interactions
   classifyEpisode: (episodeData) => {
     if (episodeData.assistant?.walletActionsCount > 0) return "financial";
     if (episodeData.session?.totalExchanges > 5) return "extended";
@@ -151,7 +100,6 @@ const personalAssistantHooks: EpisodeHooks = {
     return "standard";
   },
 
-  // Extract metadata for analytics
   extractMetadata: (episodeData, _logs, ctx) => ({
     userId: ctx.args?.userId,
     sessionType:
@@ -163,7 +111,6 @@ const personalAssistantHooks: EpisodeHooks = {
   }),
 };
 
-// Define what our analytics context tracks
 interface AnalyticsMemory {
   events: Array<{
     type: string;
@@ -174,7 +121,6 @@ interface AnalyticsMemory {
   lastActive: number;
 }
 
-// Analytics context for tracking user behavior
 const analyticsContext = context({
   type: "analytics",
   schema: z.object({
@@ -232,7 +178,6 @@ Recent events: ${state.memory.events
   }),
 ]);
 
-// Define what our profile context stores
 interface ProfileMemory {
   name?: string;
   tier: "free" | "premium";
@@ -244,7 +189,6 @@ interface ProfileMemory {
   };
 }
 
-// Profile context for user profile management
 const profileContext = context({
   type: "profile",
   schema: z.object({
@@ -290,7 +234,6 @@ Settings: ${JSON.stringify(state.memory.settings)}
   }),
 ]);
 
-// Define what our assistant remembers about each user
 interface AssistantMemory {
   conversationCount: number;
   lastTopic?: string;
@@ -298,7 +241,6 @@ interface AssistantMemory {
   hasWallet: boolean;
 }
 
-// Create a composed context with wallet functionality!
 const assistantContext = context({
   type: "personal-assistant",
   episodeHooks: personalAssistantHooks,
@@ -345,20 +287,11 @@ For wallet operations:
 Always end the conversation with a goodbye when the user is done.`,
   onRun: async (ctx) => {
     ctx.memory.conversationCount++;
-
-    // We'll track wallet status differently
-    // The wallet context will handle its own state
   },
 })
-  // 🌟 Compose all contexts including wallet!
   .use((state) => [
-    // Analytics for tracking
     { context: analyticsContext, args: { userId: state.args.userId } },
-
-    // Profile management
     { context: profileContext, args: { userId: state.args.userId } },
-
-    // 💰 Wallet functionality
     {
       context: walletContext,
       args: {
@@ -392,19 +325,16 @@ Always end the conversation with a goodbye when the user is done.`,
     }),
   ]);
 
-// Define text input handler
 const textInput = input({
   description: "Text input from the user",
   schema: z.string(),
 });
 
-// Define text output handler
 const textOutput = output({
   description: "Text response to the user",
   schema: z.string(),
 });
 
-// Create the agent
 const agent = createDreams({
   logLevel: LogLevel.INFO,
   model: dreamsrouter("openai/gpt-4o"),
@@ -417,40 +347,21 @@ const agent = createDreams({
   },
 });
 
-// Start the interactive CLI
 async function main() {
   await agent.start();
 
   console.log("\n🤖 Personal Assistant with Wallet Integration Started!");
-  console.log(
-    "💡 This assistant includes analytics + profile + wallet contexts"
-  );
-  console.log("\n💰 === WALLET COMMANDS ===");
-  console.log("💡 'Create a wallet' - Creates your Coinbase wallet");
-  console.log("💡 'Check balance' - Shows your current balance");
-  console.log("💡 'Request funds' - Gets testnet ETH from faucet");
-  console.log("💡 'Send 0.001 ETH to 0x...' - Sends a transaction");
-  console.log("💡 'Show transactions' - Lists your transaction history");
-  console.log("\n📊 === OTHER COMMANDS ===");
-  console.log("💡 'My name is Alice' - Updates your profile");
-  console.log("💡 'analytics' - Shows usage statistics");
-  console.log("💡 'profile' - Shows profile information");
-  console.log("💡 'wallet' - Shows wallet status");
-  console.log("💡 'exit' - Quit the application\n");
 
-  // Simulate different users with different context instances
   const userId = process.argv[2] || "default-user";
   const network = (process.argv[3] || "base-sepolia") as any;
   console.log(`Starting session for user: ${userId} on network: ${network}\n`);
 
-  // Create readline interface
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
     prompt: "> ",
   });
 
-  // Function to handle user input
   async function handleInput(input: string) {
     if (input.toLowerCase() === "exit") {
       console.log("\n👋 See you next time!");
@@ -458,20 +369,15 @@ async function main() {
       process.exit(0);
     }
 
-    // Show analytics
     if (input.toLowerCase() === "analytics") {
-      console.log("\n📊 === USAGE ANALYTICS ===");
-
       const analytics = agent.tracker.getAnalytics();
-      console.log(`💰 Total cost: $${analytics.totalCost.toFixed(4)}`);
+      console.log(`\n📊 Total cost: $${analytics.totalCost.toFixed(4)}`);
       console.log(`🔤 Total tokens: ${analytics.totalTokens.toLocaleString()}`);
       console.log(
         `✅ Success rate: ${(analytics.successRate * 100).toFixed(1)}%`
       );
       console.log(
-        `⏱️  Average response time: ${analytics.averageResponseTime.toFixed(
-          0
-        )}ms`
+        `⏱️  Avg response time: ${analytics.averageResponseTime.toFixed(0)}ms`
       );
 
       const userActivity = agent.tracker.getUserActivity(userId);
@@ -479,42 +385,25 @@ async function main() {
       console.log(`📝 Total requests: ${userActivity.totalRequests}`);
       console.log(`💰 Total cost: $${userActivity.totalCost.toFixed(4)}`);
 
-      console.log(`\n🌟 Context Composition:`);
-      console.log(`• Assistant context includes: analytics + profile + wallet`);
-      console.log(`• All actions from composed contexts are available`);
-      console.log(`• Each context maintains separate memory`);
-
       rl.prompt();
       return;
     }
 
-    // Show profile data
     if (input.toLowerCase() === "profile") {
-      console.log("\n👤 === USER PROFILE ===");
-      console.log(
-        "This data comes from the profile context composed into the assistant!"
-      );
       input = "Show me my profile information";
     }
 
-    // Show wallet status
     if (input.toLowerCase() === "wallet") {
-      console.log("\n💰 === WALLET STATUS ===");
-      console.log(
-        "This data comes from the wallet context composed into the assistant!"
-      );
       input = "Show me my wallet status and balance";
     }
 
     try {
-      // Send the message with the proper context
       const result = await agent.send({
         context: assistantContext,
         args: { userId, network },
         input: { type: "text", data: input },
       });
 
-      // Extract and display the assistant's response
       const output = result.find((r) => r.ref === "output");
       if (output && "data" in output) {
         console.log("\n🤖:", output.data);
@@ -523,51 +412,12 @@ async function main() {
       console.error("Error:", error);
     }
 
-    // Show prompt again
     rl.prompt();
   }
 
-  // Handle line input
   rl.on("line", handleInput);
 
-  // Show initial prompt
   rl.prompt();
 }
 
 main().catch(console.error);
-
-/**
- * 🎯 Key Takeaways from this Example:
- *
- * 1. Wallet Integration via Context Composition:
- *    - The wallet context is composed just like analytics and profile
- *    - All wallet actions become available to the assistant
- *    - Wallet memory is kept separate but accessible
- *
- * 2. Real Blockchain Operations:
- *    - Create real wallets using Coinbase CDP SDK
- *    - Check balances on actual networks
- *    - Send real transactions (on testnet)
- *    - Request funds from faucets for testing
- *
- * 3. Benefits of This Architecture:
- *    - Clean separation of concerns (wallet logic isolated)
- *    - Easy to add/remove wallet functionality
- *    - Wallet context can be reused in other agents
- *    - Each user gets their own wallet instance
- *
- * 4. Security Considerations:
- *    - Private keys are managed by CDP's TEE
- *    - Transactions require confirmation
- *    - Network-specific operations (testnet vs mainnet)
- *    - Proper error handling for failed transactions
- *
- * 5. Real-World Applications:
- *    - DeFi assistants with trading capabilities
- *    - NFT marketplace agents
- *    - Payment processing bots
- *    - Treasury management systems
- *    - Loyalty/rewards programs
- *
- * This pattern shows how Daydreams + Coinbase enables sophisticated crypto applications!
- */

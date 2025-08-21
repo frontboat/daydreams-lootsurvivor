@@ -1,36 +1,14 @@
-/**
- * 💰 Coinbase Wallet Context for Daydreams
- *
- * This context provides Coinbase Server Wallet v2 integration for Daydreams agents.
- * It enables agents to:
- * - Create and manage EVM wallets
- * - Check balances across multiple tokens
- * - Send transactions
- * - Request testnet funds from faucets
- * - Track transaction history
- *
- * Features:
- * - Secure key management via CDP's TEE (Trusted Execution Environment)
- * - Support for multiple EVM networks
- * - Automatic transaction tracking in context memory
- * - Integration with viem for transaction handling
- */
-
 import { context, action } from "@daydreamsai/core";
 import { CdpClient } from "@coinbase/cdp-sdk";
 import { parseEther, formatEther, createPublicClient, http } from "viem";
 import { baseSepolia, base, mainnet, polygon } from "viem/chains";
 import * as z from "zod";
 
-// Define what our wallet context stores in memory
 interface WalletMemory {
-  // Account information
   accountAddress: string | null;
   accountName: string | null;
   network: string;
   createdAt: number | null;
-
-  // Transaction history
   transactions: Array<{
     hash: string;
     to: string;
@@ -39,21 +17,16 @@ interface WalletMemory {
     timestamp: number;
     type: "send" | "receive" | "faucet";
   }>;
-
-  // Balance tracking
   lastBalanceCheck: number | null;
   cachedBalance: {
     eth: string;
     usdc?: string;
   } | null;
-
-  // Usage statistics
   totalTransactionsSent: number;
   totalTransactionsReceived: number;
   totalGasSpent: string;
 }
 
-// Network configuration
 const SUPPORTED_NETWORKS = {
   "base-sepolia": {
     chain: baseSepolia,
@@ -79,7 +52,6 @@ const SUPPORTED_NETWORKS = {
 
 type SupportedNetwork = keyof typeof SUPPORTED_NETWORKS;
 
-// Create the wallet context with CDP integration
 export const walletContext = context({
   type: "coinbase-wallet",
   schema: z.object({
@@ -155,7 +127,6 @@ For testnet, you can freely request funds from the faucet for testing.
 Format addresses and amounts clearly for the user.`,
 
   setup: async (args) => {
-    // Verify CDP credentials are available
     if (!process.env.CDP_API_KEY_ID || !process.env.CDP_API_KEY_SECRET) {
       console.warn("CDP API credentials not found in environment variables");
       console.warn("Please set CDP_API_KEY_ID and CDP_API_KEY_SECRET");
@@ -167,7 +138,6 @@ Format addresses and amounts clearly for the user.`,
     };
   },
 }).setActions([
-  // Create a new wallet
   action({
     name: "create-wallet",
     description: "Create a new Coinbase wallet for the user",
@@ -181,7 +151,6 @@ Format addresses and amounts clearly for the user.`,
     }),
     handler: async ({ name }, ctx) => {
       try {
-        // Check if wallet already exists
         if (ctx.memory.accountAddress) {
           return {
             success: false,
@@ -190,21 +159,17 @@ Format addresses and amounts clearly for the user.`,
           };
         }
 
-        // Initialize CDP client
         const cdp = new CdpClient();
 
-        // Create new EVM account
         const account = await cdp.evm.createAccount({
           name: name || `wallet-${ctx.args.userId}`,
         });
 
-        // Update context memory
         ctx.memory.accountAddress = account.address;
         ctx.memory.accountName = account.name || null;
         ctx.memory.network = ctx.args.network || "base-sepolia";
         ctx.memory.createdAt = Date.now();
 
-        // Get network explorer URL
         const networkConfig =
           SUPPORTED_NETWORKS[ctx.memory.network as SupportedNetwork];
         const explorerUrl = `${networkConfig.explorerUrl}/address/${account.address}`;
@@ -228,7 +193,6 @@ Format addresses and amounts clearly for the user.`,
     },
   }),
 
-  // Check wallet balance
   action({
     name: "check-balance",
     description: "Check the current balance of the wallet",
@@ -248,8 +212,7 @@ Format addresses and amounts clearly for the user.`,
           };
         }
 
-        // Check if we have a recent cached balance (within 30 seconds)
-        const cacheExpiry = 30 * 1000; // 30 seconds
+        const cacheExpiry = 30 * 1000;
         if (
           !forceRefresh &&
           ctx.memory.lastBalanceCheck &&
@@ -264,7 +227,6 @@ Format addresses and amounts clearly for the user.`,
           };
         }
 
-        // Get fresh balance
         const networkConfig =
           SUPPORTED_NETWORKS[ctx.memory.network as SupportedNetwork];
         const publicClient = createPublicClient({
@@ -278,7 +240,6 @@ Format addresses and amounts clearly for the user.`,
 
         const ethBalance = formatEther(balance);
 
-        // Update cache
         ctx.memory.cachedBalance = {
           eth: ethBalance,
         };
@@ -305,7 +266,6 @@ Format addresses and amounts clearly for the user.`,
     },
   }),
 
-  // Send transaction
   action({
     name: "send-transaction",
     description: "Send ETH to another address",
@@ -327,7 +287,6 @@ Format addresses and amounts clearly for the user.`,
           };
         }
 
-        // Validate recipient address
         if (!to.match(/^0x[a-fA-F0-9]{40}$/)) {
           return {
             success: false,
@@ -335,11 +294,9 @@ Format addresses and amounts clearly for the user.`,
           };
         }
 
-        // Parse amount
         const amountWei = parseEther(amount);
 
         if (confirmBeforeSending) {
-          // Return transaction details for confirmation
           return {
             success: true,
             requiresConfirmation: true,
@@ -354,10 +311,8 @@ Format addresses and amounts clearly for the user.`,
           };
         }
 
-        // Initialize CDP client
         const cdp = new CdpClient();
 
-        // Send transaction
         const result = await cdp.evm.sendTransaction({
           address: ctx.memory.accountAddress as `0x${string}`,
           transaction: {
@@ -367,7 +322,6 @@ Format addresses and amounts clearly for the user.`,
           network: ctx.memory.network as any,
         });
 
-        // Record transaction in memory
         ctx.memory.transactions.unshift({
           hash: result.transactionHash,
           to,
@@ -378,7 +332,6 @@ Format addresses and amounts clearly for the user.`,
         });
         ctx.memory.totalTransactionsSent++;
 
-        // Get explorer URL
         const networkConfig =
           SUPPORTED_NETWORKS[ctx.memory.network as SupportedNetwork];
         const explorerUrl = `${networkConfig.explorerUrl}/tx/${result.transactionHash}`;
@@ -404,7 +357,6 @@ Format addresses and amounts clearly for the user.`,
     },
   }),
 
-  // Request faucet funds (testnet only)
   action({
     name: "request-faucet",
     description: "Request testnet ETH from faucet (testnet only)",
@@ -424,7 +376,6 @@ Format addresses and amounts clearly for the user.`,
           };
         }
 
-        // Check if network supports faucet
         const networkConfig =
           SUPPORTED_NETWORKS[ctx.memory.network as SupportedNetwork];
         if (!networkConfig.faucetSupported) {
@@ -434,28 +385,24 @@ Format addresses and amounts clearly for the user.`,
           };
         }
 
-        // Initialize CDP client
         const cdp = new CdpClient();
 
-        // Request faucet
         const { transactionHash } = await cdp.evm.requestFaucet({
           address: ctx.memory.accountAddress,
           network: ctx.memory.network as any,
           token,
         });
 
-        // Record faucet transaction
         ctx.memory.transactions.unshift({
           hash: transactionHash,
           to: ctx.memory.accountAddress,
-          value: token === "eth" ? "0.01" : "10", // Typical faucet amounts
+          value: token === "eth" ? "0.01" : "10",
           status: "pending",
           timestamp: Date.now(),
           type: "faucet",
         });
         ctx.memory.totalTransactionsReceived++;
 
-        // Get explorer URL
         const explorerUrl = `${networkConfig.explorerUrl}/tx/${transactionHash}`;
 
         return {
@@ -478,7 +425,6 @@ Format addresses and amounts clearly for the user.`,
     },
   }),
 
-  // Get transaction history
   action({
     name: "get-transaction-history",
     description: "Get the transaction history for this wallet",
@@ -504,12 +450,10 @@ Format addresses and amounts clearly for the user.`,
 
       let transactions = ctx.memory.transactions;
 
-      // Filter by type if specified
       if (type !== "all") {
         transactions = transactions.filter((tx) => tx.type === type);
       }
 
-      // Limit results
       transactions = transactions.slice(0, limit);
 
       return {
