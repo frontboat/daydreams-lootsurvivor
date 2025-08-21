@@ -576,11 +576,6 @@ export const runAgentContext = task({
         await engine.settled();
         stepRef.processed = true;
 
-        // Mark all items in the chain as processed to prevent unnecessary additional steps
-        state.chain.forEach((i) => {
-          (i as { processed: boolean }).processed = true;
-        });
-
         // Save working memory
         await saveContextWorkingMemory(agent, ctxState.id, workingMemory);
 
