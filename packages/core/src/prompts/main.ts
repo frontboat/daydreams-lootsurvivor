@@ -23,12 +23,13 @@ export const templateSections = {
 
   instructions: `\
 ## Primary Objective
-Your main goal is to analyze the user's request in the <current-task> and use the available tools to resolve it. Prioritize completing this task above all else.
+Your main goal is to respond to any <unprocessed-inputs> from users. If there are no unprocessed inputs, complete any <pending-operations> or provide appropriate follow-up based on recent <action-results>.
 
 ## Core Directives
-1.  **Analyze**: Start by understanding the <current-task> and the current <context-state>.
-2.  **Reason**: Plan your steps inside a <reasoning> tag. Your plan must reference the available tools and decide the best course of action.
-3.  **Execute**: Use <action_call> and <output> tags to execute your plan. You MUST provide the corresponding calls for any actions you mention in your reasoning.
+1.  **Prioritize**: Address unprocessed user inputs first, then handle pending operations or action results
+2.  **Analyze**: Understand the current context, recent actions, and what the user expects next
+3.  **Reason**: Plan your steps inside a <reasoning> tag, referencing available tools and deciding the best course of action
+4.  **Execute**: Use <action_call> and <output> tags to execute your plan. You MUST provide the corresponding calls for any actions you mention in your reasoning
 
 ## Response Format & Rules
 Your entire response MUST be a single, valid XML block enclosed in <response> tags.
@@ -43,23 +44,48 @@ Your entire response MUST be a single, valid XML block enclosed in <response> ta
 
 //--- START OF EXAMPLE 1 ---//
 ### Situation:
-The user has provided their name, and the assistant needs to save it.
+User provided their name and needs a response.
 
 ### Context:
-<current-task>
+<unprocessed-inputs>
   <input name="text" timestamp="123456789">my name is Clara</input>
-</current-task>
+</unprocessed-inputs>
+<pending-operations>
+  No operations in progress.
+</pending-operations>
 <context-state>
   ... (state shows name is unknown)
 </context-state>
 
 ### Correct Response:
 <response>
-  <reasoning>The user stated their name is Clara. I must use the 'remember-name' action to save it and then confirm with an output.</reasoning>
+  <reasoning>The user stated their name is Clara. I need to save this information using the 'remember-name' action and then acknowledge it with a friendly response.</reasoning>
   <action_call name="remember-name">{"name":"Clara"}</action_call>
   <output name="text">{"content": "Thanks, Clara! I'll remember that."}</output>
 </response>
 //--- END OF EXAMPLE 1 ---//
+
+//--- START OF EXAMPLE 2 ---//
+### Situation:
+Action just completed, user expects response based on the result.
+
+### Context:
+<unprocessed-inputs>
+  No unprocessed inputs.
+</unprocessed-inputs>
+<pending-operations>
+  No operations in progress.
+</pending-operations>
+<recent-action-results>
+  <action_result name="set-mood" timestamp="123456790">{"updated":true,"message":"Noted your mood as happy"}</action_result>
+</recent-action-results>
+
+### Correct Response:
+<response>
+  <reasoning>The set-mood action completed successfully. The user's mood was recorded as happy. I should acknowledge this and provide a friendly response.</reasoning>
+  <output name="text">{"content": "Great! I've noted that you're feeling happy today. Is there anything else I can help you with?"}</output>
+</response>
+//--- END OF EXAMPLE 2 ---//
 
 ### Template Engine
 <template-engine>
@@ -78,14 +104,17 @@ Direct Dependencies: Particularly useful when an action requires a specific resu
   content: `\
 ## CURRENT SITUATION
 
-### Active Task
-{{currentTask}}
+### Unprocessed Inputs
+{{unprocessedInputs}}
+
+### Pending Operations
+{{pendingOperations}}
+
+### Recent Action Results
+{{actionResults}}
 
 ### Context State
 {{contextState}}
-
-### Operations in Progress
-{{activeOperations}}
 
 ---
 
@@ -154,14 +183,10 @@ export function formatPromptSections({
   maxWorkingMemorySize?: number;
   chainOfThoughtSize?: number;
 }) {
-  // Get unprocessed items that need attention
-  const unprocessedLogs = [
-    ...(workingMemory.inputs?.filter((log) => !log.processed) ?? []),
-    ...(workingMemory.calls?.filter((log) => !log.processed) ?? []),
-    ...(workingMemory.results?.filter((log) => !log.processed) ?? []),
-  ].sort((a, b) => a.timestamp - b.timestamp);
+  // Get unprocessed user inputs that need responses
+  const unprocessedInputs = workingMemory.inputs?.filter((log) => !log.processed) ?? [];
 
-  // Get pending action calls
+  // Get pending action calls (calls without results)
   const pendingActions =
     workingMemory.calls?.filter((call) => {
       const hasResult = workingMemory.results?.some(
@@ -169,6 +194,9 @@ export function formatPromptSections({
       );
       return !hasResult;
     }) ?? [];
+
+  // Get recent action results (completed actions)
+  const recentResults = workingMemory.results?.slice(-3) ?? [];
 
   // Get recent conversation flow (processed inputs/outputs)
   const recentConversation = [
@@ -211,20 +239,25 @@ export function formatPromptSections({
 
   return {
     // CURRENT SITUATION
-    currentTask: xmlSection(
-      "current-task",
-      unprocessedLogs.map((log) => formatContextLog(log)),
-      ["No pending tasks."]
+    unprocessedInputs: xmlSection(
+      "unprocessed-inputs",
+      unprocessedInputs.map((log) => formatContextLog(log)),
+      ["No unprocessed inputs."]
+    ),
+    pendingOperations: xmlSection(
+      "pending-operations",
+      pendingActions.map((call) => formatContextLog(call)),
+      ["No operations in progress."]
+    ),
+    actionResults: xmlSection(
+      "recent-action-results",
+      recentResults.map((result) => formatContextLog(result)),
+      ["No recent action results."]
     ),
     contextState: xml(
       "context-state",
       undefined,
       contexts.map(formatContextState)
-    ),
-    activeOperations: xmlSection(
-      "active-operations",
-      pendingActions.map((call) => formatContextLog(call)),
-      ["No operations in progress."]
     ),
 
     // AVAILABLE TOOLS
