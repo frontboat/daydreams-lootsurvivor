@@ -877,11 +877,7 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
           agent,
           context: params.context,
           args: params.args,
-          // TODO: Fix type
-          outputs: params.outputs as Record<
-            string,
-            Omit<Output<any, any, AnyContext, any>, "type">
-          >,
+          outputs: params.outputs,
           handlers: params.handlers,
           chain: params.chain,
           model: params.model,

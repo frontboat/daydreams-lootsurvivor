@@ -24,7 +24,8 @@ export async function handleStream(
   initialIndex: number,
   tags: Set<string>,
   push: (el: StackElement) => void,
-  __pushChunk?: (chunk: StackElementChunk) => void
+  __pushChunk?: (chunk: StackElementChunk) => void,
+  abortSignal?: AbortSignal
 ) {
   let current: StackElement | undefined = undefined;
   let stack: StackElement[] = [];
@@ -162,6 +163,7 @@ export async function handleStream(
   }
 
   for await (const chunk of textStream) {
+    if (abortSignal?.aborted) break;
     handleChunk(chunk);
   }
 

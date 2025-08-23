@@ -37,6 +37,14 @@ function getModelInfo(model: LanguageModel): {
     provider: model.provider || "unknown",
   };
 }
+
+function getReasoningTokens(usage: unknown): number | undefined {
+  if (usage && typeof usage === "object" && "reasoningTokens" in usage) {
+    const v = (usage as { reasoningTokens?: unknown }).reasoningTokens;
+    return typeof v === "number" ? v : undefined;
+  }
+  return undefined;
+}
 /**
  * Prepares a stream response by handling the stream result and parsing it.
  *
@@ -168,7 +176,7 @@ export const runGenerate = task({
             input: response.usage.inputTokens ?? 0,
             output: response.usage.outputTokens ?? 0,
             total: response.usage.totalTokens ?? 0,
-            reasoning: (response.usage as any).reasoningTokens,
+            reasoning: getReasoningTokens(response.usage),
           };
 
           logger.event("MODEL_CALL_COMPLETE", {
@@ -225,7 +233,7 @@ export const runGenerate = task({
                 input: usage.inputTokens ?? 0,
                 output: usage.outputTokens ?? 0,
                 total: usage.totalTokens ?? 0,
-                reasoning: (usage as any).reasoningTokens,
+                reasoning: getReasoningTokens(usage),
               };
 
               logger.event("MODEL_CALL_COMPLETE", {
@@ -349,7 +357,7 @@ export const runAgentContext = task({
       agent: AnyAgent;
       context: AnyContext;
       args: unknown;
-      outputs?: Record<string, Omit<Output<any, any, AnyContext, any>, "type">>;
+      outputs?: Record<string, Omit<Output<any, any, any, any>, "name">>;
       handlers?: Record<string, unknown>;
       requestId?: string;
       userId?: string;

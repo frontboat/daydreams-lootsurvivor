@@ -21,7 +21,7 @@ export const defaultXmlResponseAdapter: ResponseAdapter = {
     };
   },
 
-  async handleStream({ textStream, index, defaultHandlers }) {
+  async handleStream({ textStream, index, defaultHandlers, abortSignal }) {
     if (!defaultHandlers) {
       throw new Error("XML adapter requires defaultHandlers (tags/streamHandler)");
     }
@@ -30,7 +30,8 @@ export const defaultXmlResponseAdapter: ResponseAdapter = {
       index,
       defaultHandlers.tags,
       defaultHandlers.streamHandler as (el: StackElement) => void,
-      defaultHandlers.__streamChunkHandler as undefined | ((chunk: StackElementChunk) => void)
+      defaultHandlers.__streamChunkHandler as undefined | ((chunk: StackElementChunk) => void),
+      abortSignal
     );
   },
 };

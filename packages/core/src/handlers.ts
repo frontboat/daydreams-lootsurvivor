@@ -900,7 +900,7 @@ export async function prepareContexts({
   agentCtxState?: ContextState;
   workingMemory: WorkingMemory;
   params?: {
-    outputs?: Record<string, Omit<Output, "type">>;
+    outputs?: Record<string, Omit<Output, "name">>;
     inputs?: Record<string, InputConfig>;
     actions?: AnyAction[];
     contexts?: ContextRef[];
