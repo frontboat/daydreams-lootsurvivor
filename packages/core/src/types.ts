@@ -1,4 +1,4 @@
-import { type LanguageModel, type Schema } from "ai";
+import { type LanguageModel, type Schema, type StreamTextResult, type ToolSet } from "ai";
 import { z, ZodObject, ZodType, type ZodRawShape } from "zod";
 import type { Container } from "./container";
 import type { ServiceProvider } from "./service-provider";
@@ -689,6 +689,12 @@ export interface Agent<TContext extends AnyContext = AnyContext>
   extends AgentDef<TContext> {
   registry: Registry;
 
+  /** Prompt builder used to generate the model prompt */
+  prompt: PromptBuilder;
+
+  /** Response adapter used to parse model responses */
+  response: ResponseAdapter;
+
   isBooted(): boolean;
 
   /**
@@ -856,6 +862,56 @@ export interface Agent<TContext extends AnyContext = AnyContext>
 }
 
 /**
+ * Prompt building interfaces to decouple prompt generation from the core.
+ */
+export type PromptBuildContext = {
+  contexts: ContextState<AnyContext>[];
+  actions: ActionCtxRef[];
+  outputs: OutputCtxRef[];
+  workingMemory: WorkingMemory;
+  settings?: { maxWorkingMemorySize?: number };
+  chainOfThoughtSize?: number;
+  agent?: AnyAgent;
+};
+
+export type PromptBuildResult = {
+  prompt: string;
+  metadata?: Record<string, any>;
+};
+
+export interface PromptBuilder {
+  name?: string;
+  build(input: PromptBuildContext): MaybePromise<PromptBuildResult>;
+}
+
+/**
+ * Response parsing abstraction to decouple output format from the core.
+ */
+export interface ResponseAdapter {
+  prepareStream(options: {
+    model: LanguageModel;
+    stream: StreamTextResult<ToolSet, never>;
+    isReasoningModel: boolean;
+  }): {
+    stream: AsyncIterable<string>;
+    getTextResponse: () => Promise<string>;
+  };
+
+  handleStream(options: {
+    textStream: AsyncIterable<string>;
+    index: number;
+    pushLog: (log: Log, done: boolean) => void;
+    pushChunk?: (chunk: LogChunk) => void;
+    abortSignal?: AbortSignal;
+    defaultHandlers?: {
+      tags: Set<string>;
+      streamHandler: (el: unknown) => void;
+      __streamChunkHandler?: (chunk: unknown) => void;
+    };
+  }): Promise<void>;
+}
+
+/**
  * Function type for debugging agent operations
  * @param contextId - The ID of the context being debugged
  * @param keys - Array of keys identifying the debug point
@@ -907,6 +963,10 @@ export type Config<TContext extends AnyContext = AnyContext> = Partial<
   streaming?: boolean;
   /** Task execution configuration */
   tasks?: TaskConfiguration;
+  /** Optional custom prompt builder */
+  prompt?: PromptBuilder;
+  /** Optional custom response adapter */
+  response?: ResponseAdapter;
 };
 
 /** Configuration type for inputs without type field */

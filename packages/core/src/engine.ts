@@ -78,7 +78,7 @@ type State = {
   results: Promise<ActionResult>[];
 
   params?: Partial<{
-    outputs: Record<string, Omit<Output<any, any, any, any>, "type">>;
+    outputs: Record<string, Omit<Output, "name">>;
     inputs: Record<string, InputConfig>;
     actions: AnyAction[];
     contexts: ContextRef[];

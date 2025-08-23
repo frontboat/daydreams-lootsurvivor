@@ -14,5 +14,7 @@ export * from "./handlers";
 export * from "./providers";
 export * from "./http";
 export * from "./prompts/main";
+export * from "./prompts/default-builder";
+export * from "./response/default-xml-adapter";
 export * from "./tasks";
 export * from "./simple-tracker";

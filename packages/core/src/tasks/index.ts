@@ -1,10 +1,4 @@
-import {
-  streamText,
-  type CoreMessage,
-  type LanguageModel,
-  type StreamTextResult,
-  type ToolSet,
-} from "ai";
+import { streamText, type CoreMessage, type LanguageModel } from "ai";
 import { task } from "../task";
 import type {
   Action,
@@ -20,12 +14,12 @@ import type {
   Output,
 } from "../types";
 import type { Logger } from "../logger";
-import { wrapStream } from "../streaming";
 import { modelsResponseConfig, reasoningModels } from "../configs";
 import { generateText } from "ai";
 import { createEngine } from "../engine";
-import { createContextStreamHandler, handleStream } from "../streaming";
-import { mainPrompt } from "../prompts/main";
+import { createContextStreamHandler } from "../streaming";
+import type { StackElement, StackElementChunk } from "../streaming";
+import type { ResponseAdapter, PromptBuildResult } from "../types";
 import { saveContextWorkingMemory } from "../context";
 
 /**
@@ -43,6 +37,14 @@ function getModelInfo(model: LanguageModel): {
     provider: model.provider || "unknown",
   };
 }
+
+function getReasoningTokens(usage: unknown): number | undefined {
+  if (usage && typeof usage === "object" && "reasoningTokens" in usage) {
+    const v = (usage as { reasoningTokens?: unknown }).reasoningTokens;
+    return typeof v === "number" ? v : undefined;
+  }
+  return undefined;
+}
 /**
  * Prepares a stream response by handling the stream result and parsing it.
  *
@@ -54,40 +56,7 @@ function getModelInfo(model: LanguageModel): {
  * @param options.task - The task context containing callId and debug function
  * @returns An object containing the parsed response promise and wrapped text stream
  */
-function prepareStreamResponse({
-  model,
-  stream,
-  isReasoningModel,
-}: {
-  model: LanguageModel;
-  stream: StreamTextResult<ToolSet, never>;
-  isReasoningModel: boolean;
-}) {
-  const { modelId } = getModelInfo(model);
-  const prefix =
-    modelsResponseConfig[modelId]?.prefix ??
-    (isReasoningModel
-      ? modelsResponseConfig[modelId]?.thinkTag ?? "<think>"
-      : "<response>");
-  const suffix = "</response>";
-  return {
-    getTextResponse: async () => {
-      const result = await stream.text;
-      // Clean up any duplicate closing response tags and ensure proper structure
-      let cleanedResult = result;
-      // Remove any trailing </response> tags
-      cleanedResult = cleanedResult.replace(
-        /<\/response>\s*(<\/response>\s*)*$/g,
-        ""
-      );
-      // Only add suffix if needed
-      const needsSuffix = !cleanedResult.includes("</response>");
-      const text = prefix + cleanedResult + (needsSuffix ? suffix : "");
-      return text;
-    },
-    stream: wrapStream(stream.textStream, prefix, suffix),
-  };
-}
+// Stream wrapping handled by ResponseAdapter
 
 type GenerateOptions = {
   prompt: string;
@@ -110,6 +79,7 @@ type GenerateOptions = {
       [key: string]: any;
     };
   };
+  adapter: ResponseAdapter;
 };
 
 export const runGenerate = task({
@@ -126,6 +96,7 @@ export const runGenerate = task({
       sessionId,
       contextSettings,
       logger,
+      adapter,
     }: GenerateOptions,
     { abortSignal }
   ) => {
@@ -205,7 +176,7 @@ export const runGenerate = task({
             input: response.usage.inputTokens ?? 0,
             output: response.usage.outputTokens ?? 0,
             total: response.usage.totalTokens ?? 0,
-            reasoning: (response.usage as any).reasoningTokens,
+            reasoning: getReasoningTokens(response.usage),
           };
 
           logger.event("MODEL_CALL_COMPLETE", {
@@ -262,7 +233,7 @@ export const runGenerate = task({
                 input: usage.inputTokens ?? 0,
                 output: usage.outputTokens ?? 0,
                 total: usage.totalTokens ?? 0,
-                reasoning: (usage as any).reasoningTokens,
+                reasoning: getReasoningTokens(usage),
               };
 
               logger.event("MODEL_CALL_COMPLETE", {
@@ -320,11 +291,7 @@ export const runGenerate = task({
             });
           });
 
-        return prepareStreamResponse({
-          model,
-          stream,
-          isReasoningModel,
-        });
+        return adapter.prepareStream({ model, stream, isReasoningModel });
       }
     } catch (error) {
       const endTime = Date.now();
@@ -390,7 +357,7 @@ export const runAgentContext = task({
       agent: AnyAgent;
       context: AnyContext;
       args: unknown;
-      outputs?: Record<string, Omit<Output<any, any, AnyContext, any>, "type">>;
+      outputs?: Record<string, Omit<Output<any, any, any, any>, "name">>;
       handlers?: Record<string, unknown>;
       requestId?: string;
       userId?: string;
@@ -502,16 +469,17 @@ export const runAgentContext = task({
           streamState.index++;
         }
 
-        const promptData = mainPrompt.formatter({
+        const buildResult: PromptBuildResult = await agent.prompt.build({
           contexts: state.contexts,
           actions: state.actions,
           outputs: state.outputs,
           workingMemory,
           chainOfThoughtSize: 0,
-          maxWorkingMemorySize: ctxState.settings.maxWorkingMemorySize,
+          settings: { maxWorkingMemorySize: ctxState.settings.maxWorkingMemorySize },
+          agent,
         });
 
-        const prompt = mainPrompt.render(promptData);
+        const prompt = buildResult.prompt;
 
         agent.logger.trace("agent:run", "Prompt", {
           prompt: JSON.stringify(prompt),
@@ -539,6 +507,7 @@ export const runAgentContext = task({
             requestId,
             userId,
             sessionId,
+            adapter: agent.response,
             onError: (error: unknown) => {
               streamError = error;
             },
@@ -549,13 +518,22 @@ export const runAgentContext = task({
           }
         );
 
-        await handleStream(
-          stream,
-          streamState.index,
-          tags,
-          streamHandler,
-          __streamChunkHandler
-        );
+        await agent.response.handleStream({
+          textStream: stream,
+          index: streamState.index,
+          pushLog(log, done) {
+            engine.push(log, done, false);
+          },
+          pushChunk: (chunk) => engine.pushChunk(chunk),
+          abortSignal,
+          defaultHandlers: {
+            tags,
+            streamHandler: (el: unknown) => streamHandler(el as StackElement),
+            __streamChunkHandler: __streamChunkHandler
+              ? (chunk: unknown) => __streamChunkHandler(chunk as StackElementChunk)
+              : undefined,
+          },
+        });
 
         if (streamError) {
           throw streamError;
