@@ -41,6 +41,8 @@ import {
 import { LogLevel } from "./types";
 import { randomUUIDv7, tryAsync } from "./utils";
 import { promptTemplate } from "./prompts/main";
+import { defaultPromptBuilder } from "./prompts/default-builder";
+import { defaultXmlResponseAdapter } from "./response/default-xml-adapter";
 import type { DeferredPromise } from "p-defer";
 import { runAgentContext } from "./tasks";
 import { SimpleTracker } from "./simple-tracker";
@@ -260,6 +262,8 @@ export function createDreams<TContext extends AnyContext = AnyContext>(
   const agent: Agent<TContext> = {
     logger,
     tracker,
+    prompt: config.prompt ?? defaultPromptBuilder,
+    response: config.response ?? defaultXmlResponseAdapter,
     inputs,
     outputs,
     events,

@@ -16,6 +16,10 @@ import type {
   OutputRefResponse,
   OutputSchema,
   WorkingMemory,
+  PromptBuilder,
+  PromptBuildContext,
+  PromptBuildResult,
+  MaybePromise,
 } from "./types";
 import { v7 as randomUUIDv7 } from "uuid";
 
@@ -146,6 +150,38 @@ export function extension<
     ...config,
     inputs: config.inputs ?? ({} as Inputs),
   };
+}
+
+/**
+ * Creates a PromptBuilder with strong typing for developers.
+ *
+ * Usage:
+ * - createPromptBuilder({ name: 'my-prompt', build })
+ * - createPromptBuilder('my-prompt', build)
+ */
+export function createPromptBuilder(def: {
+  name?: string;
+  build: (input: PromptBuildContext) => MaybePromise<PromptBuildResult>;
+}): PromptBuilder;
+export function createPromptBuilder(
+  name: string,
+  build: (input: PromptBuildContext) => MaybePromise<PromptBuildResult>
+): PromptBuilder;
+export function createPromptBuilder(
+  nameOrDef:
+    | string
+    | {
+        name?: string;
+        build: (input: PromptBuildContext) => MaybePromise<PromptBuildResult>;
+      },
+  maybeBuild?: (input: PromptBuildContext) => MaybePromise<PromptBuildResult>
+): PromptBuilder {
+  if (typeof nameOrDef === "string") {
+    if (!maybeBuild)
+      throw new Error("createPromptBuilder requires a build function");
+    return { name: nameOrDef, build: maybeBuild };
+  }
+  return { name: nameOrDef.name, build: nameOrDef.build };
 }
 
 /**
