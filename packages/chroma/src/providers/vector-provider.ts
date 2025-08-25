@@ -24,6 +24,8 @@ export interface ChromaVectorProviderConfig {
   collectionName?: string;
   /** Custom embedding function */
   embeddingFunction?: IEmbeddingFunction;
+  /** Opt-in to using OpenAI embeddings when OPENAI_API_KEY is set */
+  useOpenAI?: boolean;
   /** Auth configuration for ChromaDB */
   auth?: {
     provider?: string;
@@ -48,6 +50,7 @@ export class ChromaVectorProvider implements VectorProvider {
       path,
       collectionName = "daydreams_vectors",
       embeddingFunction,
+      useOpenAI = false,
       auth,
       metadata = {},
     } = config;
@@ -123,17 +126,33 @@ export class ChromaVectorProvider implements VectorProvider {
     if (documents.length === 0) return;
 
     try {
-      const ids = documents.map((doc) => doc.id);
-      const contents = documents.map((doc) => doc.content);
-      const metadatas = documents.map((doc) => ({
-        namespace: doc.namespace || "default",
-        ...doc.metadata,
-        indexed_at: new Date().toISOString(),
-      }));
+      // Normalize and filter out unindexable docs (no embedding and empty content)
+      const normalized = documents.map((doc) => {
+        const content =
+          typeof doc.content === "string" ? doc.content : String(doc.content ?? "");
+        return { ...doc, content };
+      });
 
-      // Use embeddings if provided, otherwise let ChromaDB generate them
-      const embeddings = documents.every((doc) => doc.embedding)
-        ? documents.map((doc) => doc.embedding!)
+      const indexable = normalized.filter(
+        (d) => d.embedding || (typeof d.content === "string" && d.content.trim() !== "")
+      );
+
+      if (indexable.length === 0) return;
+
+      const ids = indexable.map((doc) => doc.id);
+      const contents = indexable.map((doc) => doc.content as string);
+      const metadatas = indexable.map((doc) => {
+        const md = sanitizeMetadata(doc.metadata);
+        return {
+          ...md,
+          namespace: doc.namespace || "default",
+          indexed_at: new Date().toISOString(),
+        } as Record<string, string | number | boolean>;
+      });
+
+      // Use embeddings if provided for every item; otherwise let Chroma generate
+      const embeddings = indexable.every((doc) => doc.embedding)
+        ? indexable.map((doc) => doc.embedding!)
         : undefined;
 
       await this.collection.add({
@@ -164,16 +183,33 @@ export class ChromaVectorProvider implements VectorProvider {
         minScore,
       } = query;
 
-      // Build where clause for filtering
+      // Build where clause for filtering, including namespace and time range hints
       let where: Record<string, any> | undefined;
       if (namespace || filter) {
-        where = {};
+        const w: Record<string, any> = {};
         if (namespace) {
-          where.namespace = namespace;
+          // Bare equality on metadata fields is valid in Chroma filters
+          w.namespace = namespace;
         }
         if (filter) {
-          Object.assign(where, filter);
+          const f: Record<string, any> = { ...filter };
+          if (f.scope === "all") delete f.scope;
+          const timeFrom = f.timeFrom as number | undefined;
+          const timeTo = f.timeTo as number | undefined;
+          if (typeof timeFrom === "number" || typeof timeTo === "number") {
+            const ts: Record<string, number> = {};
+            if (typeof timeFrom === "number") ts.$gte = timeFrom;
+            if (typeof timeTo === "number") ts.$lte = timeTo;
+            w.timestamp = ts;
+            delete f.timeFrom;
+            delete f.timeTo;
+          }
+          for (const [k, v] of Object.entries(f)) {
+            if (v === undefined || v === null) continue;
+            w[k] = v;
+          }
         }
+        if (Object.keys(w).length > 0) where = w;
       }
 
       // Perform search
@@ -187,16 +223,88 @@ export class ChromaVectorProvider implements VectorProvider {
       if (includeContent) searchParams.include.push(IncludeEnum.Documents);
       searchParams.include.push(IncludeEnum.Distances);
 
-      // Use either query text or embedding
-      if (queryText) {
+      // Use either query text or embedding. If neither provided (empty string), fall back to listing by filter.
+      if (typeof queryText === "string" && queryText.trim() !== "") {
         searchParams.queryTexts = [queryText];
       } else if (embedding) {
         searchParams.queryEmbeddings = [embedding];
       } else {
-        throw new Error("Either query text or embedding must be provided");
+        // Fallback: list items by filter/namespace when no query is provided
+        try {
+          const list = await this.collection.get({
+            where,
+            include: [
+              ...(includeContent
+                ? ([IncludeEnum.Documents] as IncludeEnum[])
+                : []),
+              ...(includeMetadata
+                ? ([IncludeEnum.Metadatas] as IncludeEnum[])
+                : []),
+            ],
+            limit,
+          } as any);
+
+          const ids = list.ids || [];
+          const vectorResults: VectorResult[] = [];
+          for (let i = 0; i < ids.length; i++) {
+            vectorResults.push({
+              id: ids[i],
+              score: 0,
+              content: includeContent
+                ? list.documents?.[i] ?? undefined
+                : undefined,
+              metadata: includeMetadata
+                ? list.metadatas?.[i] ?? undefined
+                : undefined,
+            });
+          }
+          return vectorResults;
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          if (/Invalid where clause/i.test(msg)) {
+            const list = await this.collection.get({
+              include: [
+                ...(includeContent
+                  ? ([IncludeEnum.Documents] as IncludeEnum[])
+                  : []),
+                ...(includeMetadata
+                  ? ([IncludeEnum.Metadatas] as IncludeEnum[])
+                  : []),
+              ],
+              limit,
+            } as any);
+            const ids = list.ids || [];
+            const vectorResults: VectorResult[] = [];
+            for (let i = 0; i < ids.length; i++) {
+              vectorResults.push({
+                id: ids[i],
+                score: 0,
+                content: includeContent
+                  ? list.documents?.[i] ?? undefined
+                  : undefined,
+                metadata: includeMetadata
+                  ? list.metadatas?.[i] ?? undefined
+                  : undefined,
+              });
+            }
+            return vectorResults;
+          }
+          throw err;
+        }
       }
 
-      const results = await this.collection.query(searchParams);
+      let results;
+      try {
+        results = await this.collection.query(searchParams);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (/Invalid where clause/i.test(msg)) {
+          const { where: _omit, ...rest } = searchParams;
+          results = await this.collection.query(rest);
+        } else {
+          throw err;
+        }
+      }
 
       // Convert ChromaDB results to VectorResult format
       const vectorResults: VectorResult[] = [];
@@ -330,6 +438,32 @@ export class ChromaVectorProvider implements VectorProvider {
       );
     }
   }
+
+  /** Ensure metadata values are primitives supported by Chroma (string | number | boolean). */
+  static coerceValue(v: any): string | number | boolean | undefined {
+    if (v === undefined) return undefined;
+    if (v === null) return "null"; // represent null as string
+    const t = typeof v;
+    if (t === "string" || t === "number" || t === "boolean") return v as any;
+    // Arrays/objects -> JSON string
+    try {
+      return JSON.stringify(v);
+    } catch {
+      return String(v);
+    }
+  }
+}
+
+function sanitizeMetadata(
+  metadata?: Record<string, any>
+): Record<string, string | number | boolean> {
+  const out: Record<string, string | number | boolean> = {};
+  if (!metadata || typeof metadata !== "object") return out;
+  for (const [k, v] of Object.entries(metadata)) {
+    const coerced = ChromaVectorProvider.coerceValue(v);
+    if (coerced !== undefined) out[k] = coerced;
+  }
+  return out;
 }
 
 /**

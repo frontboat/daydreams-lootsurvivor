@@ -33,6 +33,26 @@ import { jsonPath } from "./jsonpath";
 import { jsonSchema } from "ai";
 
 import type { WorkingMemoryData } from "./memory";
+import type { RecallOptions, MemoryResult } from "./memory";
+import type { RetrievalPolicy } from "./types";
+
+/**
+ * Formats a memory content string with an ISO timestamp from metadata (if present).
+ * Keeps vector content clean at storage time and only decorates for display/use here.
+ */
+function formatMemoryWithTimestamp(
+  content: unknown,
+  metadata?: Record<string, unknown>
+): string {
+  const tsVal =
+    metadata && typeof (metadata as any).timestamp === "number"
+      ? ((metadata as any).timestamp as number)
+      : undefined;
+  const iso = tsVal ? new Date(tsVal).toISOString() : undefined;
+  const text =
+    typeof content === "string" ? content : JSON.stringify(content ?? "");
+  return iso ? `${iso} — ${text}` : text;
+}
 
 export class NotFoundError extends Error {
   name = "NotFoundError";
@@ -1036,15 +1056,73 @@ export async function handleInput({
 
   logger.debug("agent:send", "Querying relevant memories");
 
-  const relevantMemories = await agent.memory.recall(
+  const queryText =
     typeof inputRef.data === "string"
       ? inputRef.data
-      : JSON.stringify(inputRef.data),
-    { contextId: ctxState.id, limit: 5 }
-  );
+      : JSON.stringify(inputRef.data);
+
+  let policy: RetrievalPolicy | undefined;
+  if ("retrieval" in ctxState.context && ctxState.context.retrieval) {
+    const raw = ctxState.context.retrieval;
+    policy = typeof raw === "function" ? raw(ctxState) : raw;
+  }
+
+  const baseRecall: RecallOptions = {
+    contextId: ctxState.id,
+    scope: policy?.scope ?? "all",
+    include: policy?.include ?? { content: true, metadata: true },
+    groupBy: policy?.groupBy ?? "docId",
+    dedupeBy: policy?.dedupeBy ?? "docId",
+    topK: policy?.topK ?? 20,
+    minScore: policy?.minScore ?? 0,
+    weighting:
+      policy?.weighting ??
+      ({
+        salience: 0.25,
+        recencyHalfLifeMs: 1000 * 60 * 60 * 24 * 7,
+      } as RecallOptions["weighting"]),
+  };
+
+  // Namespaces order from policy or sensible default
+  const namespaces: (string | undefined)[] =
+    Array.isArray(policy?.namespaces) && policy.namespaces.length > 0
+      ? policy.namespaces
+      : [`episodes:${ctxState.id}`, undefined]; // undefined => general (no namespace filter)
+
+  // Query namespaces in order, stopping after filling topK, while deduping as we go
+  const collected: MemoryResult[] = [];
+  const seen = new Set<string>();
+  for (const ns of namespaces) {
+    const remaining = (baseRecall.topK ?? 5) - collected.length;
+    if (remaining <= 0) break;
+    const hits = await agent.memory.recall(queryText, {
+      ...baseRecall,
+      namespace: ns,
+      topK: remaining,
+    });
+    for (const r of hits) {
+      const key = ((r.metadata as any)?.docId as string) || r.id;
+      if (!seen.has(key)) {
+        seen.add(key);
+        collected.push(r);
+      }
+      if (collected.length >= (baseRecall.topK ?? 5)) break;
+    }
+  }
+  // Decorate memory content with display timestamp from metadata; no KV dependency
+  const relevantMemories = collected.map((r) => {
+    const md = (r.metadata || {}) as Record<string, unknown>;
+    if (typeof md.timestamp === "number") {
+      (md as any).displayTimestamp = new Date(md.timestamp).toISOString();
+      r.metadata = md;
+    }
+    r.content = formatMemoryWithTimestamp(r.content, md);
+    return r;
+  });
 
   logger.trace("agent:send", "Relevant memories retrieved", {
     memoriesCount: relevantMemories.length,
+    memories: relevantMemories,
   });
 
   workingMemory.relevantMemories = relevantMemories;

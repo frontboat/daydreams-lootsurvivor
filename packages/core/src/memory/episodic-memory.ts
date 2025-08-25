@@ -18,6 +18,26 @@ export interface Episode {
 }
 
 export interface EpisodicMemoryOptions {
+  /** Indexing policy for episode vectors */
+  indexing?: {
+    /** Enable indexing of episode summaries into vector memory (default: true) */
+    enabled?: boolean;
+    /**
+     * What textual content should be embedded for vector search
+     * - 'summary' (default): index only the episode.summary as the document content
+     * - 'logs': index concatenated conversation logs (optionally chunked)
+     * - 'summary+logs': index both the summary and the logs
+     */
+    contentMode?: "summary" | "logs" | "summary+logs";
+    /** Optional naive chunking for logs content */
+    chunk?: { size?: number; overlap?: number };
+    /** Provide additional aggregate namespaces to dual-index into (e.g., org/global) */
+    aggregateNamespaces?: (episode: Episode) => string[];
+    /** Compute a salience score to store in metadata (0-1) */
+    salience?: (episode: Episode) => number;
+    /** Tags provider for metadata */
+    tags?: (episode: Episode) => string[];
+  };
   /** Maximum number of episodes to keep per context */
   maxEpisodesPerContext?: number;
   /** Minimum time between episodes (ms) */
@@ -75,23 +95,131 @@ export class EpisodicMemoryImpl implements EpisodicMemory {
     const episodeKey = `episode:${episode.id}`;
     await this.memory.kv.set(episodeKey, episode);
 
-    // Index episode summary for vector search
-    if (episode.summary) {
-      await this.memory.vector.index([
-        {
+    // Index episode content for vector search (episode-first policy)
+    const indexingEnabled = this.options.indexing?.enabled !== false;
+    if (indexingEnabled) {
+      const baseNamespace = `episodes:${episode.contextId}`;
+      const tags =
+        this.options.indexing?.tags?.(episode) ||
+        (episode.metadata?.tags as string[] | undefined) ||
+        [];
+      const salience =
+        typeof this.options.indexing?.salience === "function"
+          ? this.options.indexing!.salience(episode)
+          : undefined;
+
+      const metadata = {
+        contextId: episode.contextId,
+        episodeId: episode.id,
+        type: "episode",
+        timestamp: episode.timestamp,
+        startTime: episode.startTime,
+        endTime: episode.endTime,
+        duration: episode.duration,
+        summary: episode.summary,
+        tags,
+        salience,
+        source: "episode",
+        ...episode.metadata,
+      } as Record<string, any>;
+
+      const mode = this.options.indexing?.contentMode ?? "summary+logs";
+
+      // Primary index per-context
+      const rr = (this.memory as Memory).rememberRecord as
+        | ((rec: any, opts?: any) => Promise<any>)
+        | undefined;
+      const indexOne = async (rec: any) => {
+        if (typeof rr === "function") {
+          await (this.memory as Memory).rememberRecord(rec, { upsert: true });
+        } else {
+          await this.memory.vector.index([
+            {
+              id: rec.id,
+              content: rec.text,
+              metadata: rec.metadata,
+              namespace: rec.namespace,
+            },
+          ]);
+        }
+      };
+
+      if ((mode === "summary" || mode === "summary+logs") && episode.summary) {
+        await indexOne({
           id: episode.id,
-          content: episode.summary,
-          metadata: {
-            contextId: episode.contextId,
-            type: "episode",
-            timestamp: episode.timestamp,
-            startTime: episode.startTime,
-            endTime: episode.endTime,
-            ...episode.metadata,
-          },
-          namespace: `episodes:${episode.contextId}`,
-        },
-      ]);
+          text: episode.summary,
+          namespace: baseNamespace,
+          metadata,
+        });
+      }
+
+      if (mode === "logs" || mode === "summary+logs") {
+        const logsText = this.logsToText(episode.logs);
+        const chunkSize = this.options.indexing?.chunk?.size ?? 1200;
+        const overlap = this.options.indexing?.chunk?.overlap ?? 200;
+        if (logsText && logsText.trim() !== "") {
+          if (chunkSize > 0 && logsText.length > chunkSize) {
+            let start = 0;
+            let part = 0;
+            const total = Math.ceil(
+              (logsText.length - overlap) / Math.max(1, chunkSize - overlap)
+            );
+            while (start < logsText.length) {
+              const end = Math.min(logsText.length, start + chunkSize);
+              const chunkText = logsText.slice(start, end);
+              await indexOne({
+                id: `${episode.id}::log-${part}`,
+                text: chunkText,
+                namespace: baseNamespace,
+                metadata: {
+                  ...metadata,
+                  source: "episode_log",
+                  partIndex: part,
+                  totalParts: total,
+                },
+              });
+              if (end >= logsText.length) break;
+              start = Math.max(0, end - overlap);
+              part++;
+            }
+          } else {
+            await indexOne({
+              id: `${episode.id}::log`,
+              text: logsText,
+              namespace: baseNamespace,
+              metadata: { ...metadata, source: "episode_log" },
+            });
+          }
+        }
+      }
+
+      // Aggregate namespaces (e.g., org/global)
+      const aggregates =
+        this.options.indexing?.aggregateNamespaces?.(episode) || [];
+      for (const ns of aggregates) {
+        if (
+          (mode === "summary" || mode === "summary+logs") &&
+          episode.summary
+        ) {
+          await indexOne({
+            id: episode.id,
+            text: episode.summary,
+            namespace: ns,
+            metadata,
+          });
+        }
+        if (mode === "logs" || mode === "summary+logs") {
+          const logsText = this.logsToText(episode.logs);
+          if (logsText && logsText.trim() !== "") {
+            await indexOne({
+              id: `${episode.id}::log`,
+              text: logsText,
+              namespace: ns,
+              metadata: { ...metadata, source: "episode_log" },
+            });
+          }
+        }
+      }
     }
 
     // Maintain context episode list
@@ -115,6 +243,39 @@ export class EpisodicMemoryImpl implements EpisodicMemory {
 
     await this.memory.kv.set(contextEpisodesKey, existingEpisodes);
     return episode.id;
+  }
+
+  private logsToText(logs: AnyRef[]): string {
+    const lines: string[] = [];
+    for (const l of logs) {
+      if (l.ref === "input") {
+        const text = extractText(
+          (l as any).content ??
+            (l as any).data?.content ??
+            (l as any).data ??
+            ""
+        );
+        if (text) lines.push(`User: ${text}`);
+      } else if (l.ref === "output") {
+        const text = extractText(
+          (l as any).content ??
+            (l as any).data?.content ??
+            (l as any).data ??
+            ""
+        );
+        if (text) lines.push(`Assistant: ${text}`);
+      } else if (l.ref === "thought") {
+        const text = extractText((l as any).content ?? "");
+        if (text) lines.push(`Thought: ${text}`);
+      } else if (l.ref === "action_call") {
+        const name = (l as any).name ?? "action";
+        lines.push(`Action: ${String(name)}`);
+      } else if (l.ref === "action_result") {
+        const name = (l as any).name ?? "result";
+        lines.push(`Result: ${String(name)}`);
+      }
+    }
+    return lines.join("\n");
   }
 
   async findSimilar(
@@ -227,7 +388,6 @@ export class EpisodicMemoryImpl implements EpisodicMemory {
     await this.store(episode);
     return episode;
   }
-
   async delete(episodeId: string): Promise<boolean> {
     const episode = await this.get(episodeId);
     if (!episode) return false;
@@ -385,4 +545,40 @@ export class EpisodicMemoryImpl implements EpisodicMemory {
 
     return parts.join(" | ");
   }
+}
+
+function extractText(value: unknown): string {
+  if (value == null) return "";
+  if (typeof value === "string") {
+    const s = value.trim();
+    if (
+      (s.startsWith("{") && s.endsWith("}")) ||
+      (s.startsWith("[") && s.endsWith("]"))
+    ) {
+      try {
+        const obj = JSON.parse(s);
+        const t = pickTextField(obj);
+        if (t) return t;
+      } catch {}
+    }
+    return s;
+  }
+  if (typeof value === "object") {
+    const t = pickTextField(value as any);
+    if (t) return t;
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
+    }
+  }
+  return String(value);
+}
+
+function pickTextField(obj: any): string | undefined {
+  if (!obj || typeof obj !== "object") return undefined;
+  for (const k of ["content", "text", "message", "value"]) {
+    if (typeof obj[k] === "string") return obj[k] as string;
+  }
+  return undefined;
 }

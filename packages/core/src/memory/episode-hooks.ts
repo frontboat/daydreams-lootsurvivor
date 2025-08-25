@@ -3,7 +3,9 @@ import type {
   AnyContext,
   AnyRef,
   ContextState,
+  Episode,
   WorkingMemory,
+  EpisodeHooks as HooksType,
 } from "../types";
 
 // =============================================================================
@@ -105,25 +107,53 @@ export async function handleEpisodeHooks<TContext extends AnyContext>(
           )
         : {};
 
-      // Store the episode using the unified memory API
-      await agent.memory.remember(episodeData, {
-        type: "episode",
-        scope: "context",
+      // Build a normalized Episode and store via episodic memory for indexing
+      const logs = state.currentEpisodeLogs;
+      const startTime = logs[0]?.timestamp ?? Date.now();
+      const endTime = ref.timestamp ?? Date.now();
+
+      const candidate: any = episodeData;
+      const providedLogs: AnyRef[] | undefined = Array.isArray(candidate?.logs)
+        ? (candidate.logs as AnyRef[])
+        : undefined;
+      const summary: string | undefined =
+        typeof candidate?.summary === "string" ? candidate.summary : undefined;
+      const input = "input" in candidate ? candidate.input : undefined;
+      const output = "output" in candidate ? candidate.output : undefined;
+      const extraMeta: Record<string, any> =
+        candidate?.metadata && typeof candidate.metadata === "object"
+          ? candidate.metadata
+          : {};
+
+      const rawLogs =
+        providedLogs && providedLogs.length > 0 ? providedLogs : logs;
+      const finalLogs = sanitizeEpisodeLogs(rawLogs, hooks as HooksType | undefined);
+      const finalSummary = summary ?? generateBasicSummary(finalLogs);
+
+      const episode: Episode = {
+        id: `${contextId}-${Date.now()}-${Math.random().toString(36).slice(2)}`,
         contextId,
-        metadata: {
-          episodeType,
-          logCount: state.currentEpisodeLogs.length,
-          startTime: state.currentEpisodeLogs[0]?.timestamp,
-          endTime: ref.timestamp,
-          ...metadata,
-        },
-      });
+        type: episodeType,
+        summary: finalSummary,
+        logs: finalLogs,
+        metadata: { ...metadata, ...extraMeta },
+        timestamp: endTime,
+        startTime,
+        endTime,
+        duration: Math.max(0, endTime - startTime),
+        input,
+        output,
+        context: contextId,
+      };
+
+      await agent.memory.episodes.store(episode);
 
       agent.logger.debug("context:episode", "Stored episode using hooks", {
         contextId,
         episodeType,
         logCount: state.currentEpisodeLogs.length,
         duration: ref.timestamp - (state.currentEpisodeLogs[0]?.timestamp || 0),
+        episode,
       });
 
       if (!hooks?.createEpisode) {
@@ -141,6 +171,78 @@ export async function handleEpisodeHooks<TContext extends AnyContext>(
       refId: ref.id,
     });
   }
+}
+
+function generateBasicSummary(logs: AnyRef[]): string {
+  const inputs = logs.filter((l) => l.ref === "input");
+  const outputs = logs.filter((l) => l.ref === "output");
+  const actions = logs.filter((l) => l.ref === "action_call");
+  const parts: string[] = [];
+  if (inputs.length > 0) {
+    const first = inputs[0] as any;
+    const msg = first?.content ?? first?.data?.content ?? "";
+    if (msg) parts.push(`User: ${String(msg)}`);
+  }
+  if (actions.length > 0) {
+    const names = actions
+      .map((a: any) => a.name)
+      .filter(Boolean)
+      .join(", ");
+    if (names) parts.push(`Actions: ${names}`);
+  }
+  if (outputs.length > 0) {
+    const last = outputs[outputs.length - 1] as any;
+    const msg = last?.content ?? last?.data?.content ?? "";
+    if (msg) parts.push(`Assistant: ${String(msg)}`);
+  }
+  return parts.join(" | ");
+}
+
+function sanitizeEpisodeLogs(logs: AnyRef[], hooks?: HooksType): AnyRef[] {
+  const defaultAllowed = [
+    "input",
+    "output",
+    "action_call",
+    "action_result",
+    "event",
+  ] as const;
+  const includeRefs = hooks?.includeRefs || (defaultAllowed as any);
+  const allowed = new Set(includeRefs);
+  return logs.filter((l) => allowed.has(l.ref)).map((l) => sanitizeLogEntry(l, hooks));
+}
+
+function sanitizeLogEntry<T extends AnyRef>(log: T, hooks?: HooksType): T {
+  const copy: any = { ...log };
+  if (copy.data && typeof copy.data === "object") {
+    const d: any = { ...copy.data };
+    for (const key of ["prompt", "instructions", "system", "template", "xml"]) {
+      if (key in d) d[key] = "[redacted]";
+    }
+    if (copy.ref === "action_result") {
+      if (typeof hooks?.actionResultRedactor === "function") {
+        copy.data = hooks.actionResultRedactor(d);
+      } else {
+        const maxBytes = hooks?.maxActionResultBytes ?? 4096;
+        try {
+          const s = JSON.stringify(d);
+          if (s.length > maxBytes) {
+            copy.data = {
+              __truncated: true,
+              __bytes: s.length,
+              __keys: Object.keys(d),
+            };
+          } else {
+            copy.data = d;
+          }
+        } catch {
+          copy.data = d;
+        }
+      }
+      return copy as T;
+    }
+    copy.data = d;
+  }
+  return copy as T;
 }
 
 /**

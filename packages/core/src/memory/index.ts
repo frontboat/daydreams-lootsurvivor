@@ -27,10 +27,3 @@ export { ExportManager, JSONExporter, MarkdownExporter } from "./exporters";
 
 // Context lock manager
 export { ContextLockManager, contextLockManager } from "./context-lock-manager";
-
-// Knowledge extraction system
-export { KnowledgeExtractor } from "./knowledge-extractor";
-export * from "./knowledge-schema";
-
-// Services
-export * from "./services";

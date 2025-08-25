@@ -82,6 +82,7 @@ const context = context({
 Two-tier architecture for managing agent memory:
 - **Working Memory**: Temporary execution state (inputs, outputs, actions)
 - **Persistent Storage**: Long-term memory via pluggable providers (KV, Vector, Graph)
+- **Episode Hooks**: Configure when to start/end episodes and how to build them — see [EpisodeHooks](./EpisodeHooks.md)
 
 ```typescript
 // Access episodes from memory
