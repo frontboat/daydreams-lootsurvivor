@@ -1,5 +1,5 @@
 import { expect, test, describe } from "vitest";
-import { isElement, parse, type ElementNode } from "../xml";
+import { isElement, parse, type ElementNode } from "../parsing";
 import { testData } from "../__tests__/utils";
 
 describe("XMLParser", () => {

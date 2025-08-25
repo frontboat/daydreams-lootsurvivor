@@ -1,6 +1,6 @@
 import type { Log, LogChunk } from "./types";
 import { randomUUIDv7 } from "./utils";
-import { xmlStreamParser } from "./xml";
+import { xmlStreamParser } from "./parsing";
 
 type PartialLog = Partial<Log> &
   Pick<Log, "ref" | "id" | "timestamp" | "processed">;
@@ -176,14 +176,14 @@ export async function* wrapStream(
   suffix: string
 ) {
   yield prefix;
-  let streamContent = '';
+  let streamContent = "";
   for await (const chunk of stream) {
     streamContent += chunk;
     yield chunk;
   }
-  
+
   // Clean up duplicate closing response tags for streaming
-  if (suffix === '</response>') {
+  if (suffix === "</response>") {
     // Count how many closing response tags are already in the content
     const closingTags = (streamContent.match(/<\/response>/g) || []).length;
     if (closingTags === 0) {

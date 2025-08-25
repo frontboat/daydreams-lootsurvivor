@@ -2,12 +2,13 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { createDreams } from "../dreams";
 import { context } from "../context";
 import { createEngine } from "../engine";
-import { createContextState, createWorkingMemory } from "../context";
-import { 
-  createSilentTestAgent, 
+import { createContextState } from "../context";
+import { createWorkingMemory } from "../memory/utils";
+import {
+  createSilentTestAgent,
   createMockLanguageModel,
   createTestMemory,
-  waitForPendingPromises
+  waitForPendingPromises,
 } from "./test-utilities";
 import type { Agent, AnyContext, InputRef } from "../types";
 import * as z from "zod";
@@ -16,7 +17,7 @@ import { randomUUIDv7 } from "../utils";
 
 /**
  * Tier 2: Context-Engine Integration Tests (Validated Setup)
- * 
+ *
  * This test suite validates the integration between contexts and engines
  * starting with basic setup validation before adding complex scenarios.
  */
@@ -35,7 +36,9 @@ describe("Context-Engine Integration - Tier 2 (Validated)", () => {
       // Create agent with complete input/output setup
       agent = createSilentTestAgent({
         model: createMockLanguageModel({
-          responses: ["<output name=\"text\">{\"content\": \"Setup validated successfully\"}</output>"]
+          responses: [
+            '<output name="text">{"content": "Setup validated successfully"}</output>',
+          ],
         }),
         memory: createTestMemory(),
         inputs: {
@@ -43,20 +46,20 @@ describe("Context-Engine Integration - Tier 2 (Validated)", () => {
             schema: z.string(),
             handler: async (content: string) => ({
               data: content,
-              params: {}
-            })
-          }
+              params: {},
+            }),
+          },
         },
         outputs: {
           text: {
             schema: z.string(),
             handler: async (data: string) => ({
               data,
-              processed: true
-            })
-          }
+              processed: true,
+            }),
+          },
         },
-        contexts: []
+        contexts: [],
       });
 
       // Validate agent creation
@@ -81,16 +84,18 @@ describe("Context-Engine Integration - Tier 2 (Validated)", () => {
       const testContext = context({
         type: "integration-test",
         schema: z.object({
-          message: z.string()
+          message: z.string(),
         }),
         create: () => ({ testData: "initialized" }),
-        instructions: "This is a test context for integration testing"
+        instructions: "This is a test context for integration testing",
       });
 
       // Create agent with the context
       agent = createSilentTestAgent({
         model: createMockLanguageModel({
-          responses: ["<output name=\"text\">{\"content\": \"Context created successfully\"}</output>"]
+          responses: [
+            '<output name="text">{"content": "Context created successfully"}</output>',
+          ],
         }),
         memory: createTestMemory(),
         inputs: {
@@ -98,20 +103,20 @@ describe("Context-Engine Integration - Tier 2 (Validated)", () => {
             schema: z.string(),
             handler: async (content: string) => ({
               data: content,
-              params: {}
-            })
-          }
+              params: {},
+            }),
+          },
         },
         outputs: {
           text: {
             schema: z.string(),
             handler: async (data: string) => ({
               data,
-              processed: true
-            })
-          }
+              processed: true,
+            }),
+          },
         },
-        contexts: [testContext]
+        contexts: [testContext],
       });
 
       await agent.start();
@@ -119,7 +124,7 @@ describe("Context-Engine Integration - Tier 2 (Validated)", () => {
       // Test context creation through agent
       const contextState = await agent.getContext({
         context: testContext,
-        args: { message: "test" }
+        args: { message: "test" },
       });
 
       expect(contextState).toBeDefined();
@@ -132,15 +137,17 @@ describe("Context-Engine Integration - Tier 2 (Validated)", () => {
       const testContext = context({
         type: "engine-test",
         schema: z.object({
-          id: z.string()
+          id: z.string(),
         }),
         create: () => ({ engineTestData: true }),
-        instructions: "Engine integration test context"
+        instructions: "Engine integration test context",
       });
 
       agent = createSilentTestAgent({
         model: createMockLanguageModel({
-          responses: ["<output name=\"text\">{\"content\": \"Engine integration ready\"}</output>"]
+          responses: [
+            '<output name="text">{"content": "Engine integration ready"}</output>',
+          ],
         }),
         memory: createTestMemory(),
         inputs: {
@@ -148,20 +155,20 @@ describe("Context-Engine Integration - Tier 2 (Validated)", () => {
             schema: z.string(),
             handler: async (content: string) => ({
               data: content,
-              params: {}
-            })
-          }
+              params: {},
+            }),
+          },
         },
         outputs: {
           text: {
             schema: z.string(),
             handler: async (data: string) => ({
               data,
-              processed: true
-            })
-          }
+              processed: true,
+            }),
+          },
         },
-        contexts: [testContext]
+        contexts: [testContext],
       });
 
       await agent.start();
@@ -169,7 +176,7 @@ describe("Context-Engine Integration - Tier 2 (Validated)", () => {
       // Create context state
       const contextState = await agent.getContext({
         context: testContext,
-        args: { id: "engine-test-1" }
+        args: { id: "engine-test-1" },
       });
 
       // Create working memory
@@ -181,7 +188,7 @@ describe("Context-Engine Integration - Tier 2 (Validated)", () => {
         ctxState: contextState,
         workingMemory,
         subscriptions: new Set(),
-        __chunkSubscriptions: new Set()
+        __chunkSubscriptions: new Set(),
       });
 
       expect(engine).toBeDefined();
@@ -206,16 +213,18 @@ describe("Context-Engine Integration - Tier 2 (Validated)", () => {
       const messageContext = context({
         type: "message-flow",
         schema: z.object({
-          userId: z.string()
+          userId: z.string(),
         }),
         create: () => ({ processedMessages: 0 }),
-        instructions: "Process user messages and respond appropriately"
+        instructions: "Process user messages and respond appropriately",
       });
 
       // Create agent with the context
       agent = createSilentTestAgent({
         model: createMockLanguageModel({
-          responses: ["<output name=\"text\">{\"content\": \"Message processed successfully\"}</output>"]
+          responses: [
+            '<output name="text">{"content": "Message processed successfully"}</output>',
+          ],
         }),
         memory: createTestMemory(),
         inputs: {
@@ -223,20 +232,20 @@ describe("Context-Engine Integration - Tier 2 (Validated)", () => {
             schema: z.string(),
             handler: async (content: string) => ({
               data: content,
-              params: {}
-            })
-          }
+              params: {},
+            }),
+          },
         },
         outputs: {
           text: {
             schema: z.string(),
             handler: async (data: string) => ({
               data,
-              processed: true
-            })
-          }
+              processed: true,
+            }),
+          },
         },
-        contexts: [messageContext]
+        contexts: [messageContext],
       });
 
       await agent.start();
@@ -244,7 +253,7 @@ describe("Context-Engine Integration - Tier 2 (Validated)", () => {
       // Create context state
       const contextState = await agent.getContext({
         context: messageContext,
-        args: { userId: "test-user-1" }
+        args: { userId: "test-user-1" },
       });
 
       // Create working memory and engine
@@ -257,7 +266,7 @@ describe("Context-Engine Integration - Tier 2 (Validated)", () => {
         ctxState: contextState,
         workingMemory,
         subscriptions,
-        __chunkSubscriptions: chunkSubscriptions
+        __chunkSubscriptions: chunkSubscriptions,
       });
 
       // Start engine
@@ -272,7 +281,7 @@ describe("Context-Engine Integration - Tier 2 (Validated)", () => {
         content: "Hello, this is a test message",
         data: "Hello, this is a test message",
         timestamp: Date.now(),
-        processed: false
+        processed: false,
       };
 
       // Process the input through the engine
@@ -299,16 +308,18 @@ describe("Context-Engine Integration - Tier 2 (Validated)", () => {
       const subscriptionContext = context({
         type: "subscription-test",
         schema: z.object({
-          channelId: z.string()
+          channelId: z.string(),
         }),
         create: () => ({ eventsReceived: 0 }),
-        instructions: "Test subscription notifications"
+        instructions: "Test subscription notifications",
       });
 
       // Create agent
       agent = createSilentTestAgent({
         model: createMockLanguageModel({
-          responses: ["<output name=\"text\">{\"content\": \"Subscription test response\"}</output>"]
+          responses: [
+            '<output name="text">{"content": "Subscription test response"}</output>',
+          ],
         }),
         memory: createTestMemory(),
         inputs: {
@@ -316,20 +327,20 @@ describe("Context-Engine Integration - Tier 2 (Validated)", () => {
             schema: z.string(),
             handler: async (content: string) => ({
               data: content,
-              params: {}
-            })
-          }
+              params: {},
+            }),
+          },
         },
         outputs: {
           text: {
             schema: z.string(),
             handler: async (data: string) => ({
               data,
-              processed: true
-            })
-          }
+              processed: true,
+            }),
+          },
         },
-        contexts: [subscriptionContext]
+        contexts: [subscriptionContext],
       });
 
       await agent.start();
@@ -337,7 +348,7 @@ describe("Context-Engine Integration - Tier 2 (Validated)", () => {
       // Create context state
       const contextState = await agent.getContext({
         context: subscriptionContext,
-        args: { channelId: "test-channel" }
+        args: { channelId: "test-channel" },
       });
 
       // Create working memory and subscriptions
@@ -356,7 +367,7 @@ describe("Context-Engine Integration - Tier 2 (Validated)", () => {
         ctxState: contextState,
         workingMemory,
         subscriptions,
-        __chunkSubscriptions: chunkSubscriptions
+        __chunkSubscriptions: chunkSubscriptions,
       });
 
       await engine.start();
@@ -365,21 +376,21 @@ describe("Context-Engine Integration - Tier 2 (Validated)", () => {
       const testMessage: InputRef = {
         id: randomUUIDv7(),
         ref: "input",
-        type: "text", 
+        type: "text",
         content: "Test subscription message",
         data: "Test subscription message",
         timestamp: Date.now(),
-        processed: false
+        processed: false,
       };
 
       await engine.push(testMessage);
 
       // Verify subscribers were called
       expect(logSubscriber).toHaveBeenCalledWith(
-        expect.objectContaining({ 
+        expect.objectContaining({
           ref: "input",
-          content: "Test subscription message"
-        }), 
+          content: "Test subscription message",
+        }),
         true // done flag
       );
 
@@ -387,9 +398,9 @@ describe("Context-Engine Integration - Tier 2 (Validated)", () => {
         type: "log",
         log: expect.objectContaining({
           ref: "input",
-          content: "Test subscription message"
+          content: "Test subscription message",
         }),
-        done: true
+        done: true,
       });
 
       // Wait for any async operations
@@ -402,24 +413,24 @@ describe("Context-Engine Integration - Tier 2 (Validated)", () => {
     it("should validate context state management across multiple operations", async () => {
       // Create a stateful context
       const statefulContext = context({
-        type: "stateful-operations", 
+        type: "stateful-operations",
         schema: z.object({
-          operationId: z.string()
+          operationId: z.string(),
         }),
-        create: () => ({ 
+        create: () => ({
           operationsCount: 0,
-          lastOperationTime: null as number | null
+          lastOperationTime: null as number | null,
         }),
-        instructions: "Track operations and maintain state"
+        instructions: "Track operations and maintain state",
       });
 
       // Create agent
       agent = createSilentTestAgent({
         model: createMockLanguageModel({
           responses: [
-            "<output name=\"text\">{\"content\": \"First operation completed\"}</output>",
-            "<output name=\"text\">{\"content\": \"Second operation completed\"}</output>"
-          ]
+            '<output name="text">{"content": "First operation completed"}</output>',
+            '<output name="text">{"content": "Second operation completed"}</output>',
+          ],
         }),
         memory: createTestMemory(),
         inputs: {
@@ -427,20 +438,20 @@ describe("Context-Engine Integration - Tier 2 (Validated)", () => {
             schema: z.string(),
             handler: async (content: string) => ({
               data: content,
-              params: {}
-            })
-          }
+              params: {},
+            }),
+          },
         },
         outputs: {
           text: {
             schema: z.string(),
             handler: async (data: string) => ({
               data,
-              processed: true
-            })
-          }
+              processed: true,
+            }),
+          },
         },
-        contexts: [statefulContext]
+        contexts: [statefulContext],
       });
 
       await agent.start();
@@ -448,7 +459,7 @@ describe("Context-Engine Integration - Tier 2 (Validated)", () => {
       // Create context state
       const contextState = await agent.getContext({
         context: statefulContext,
-        args: { operationId: "multi-op-test" }
+        args: { operationId: "multi-op-test" },
       });
 
       // Verify initial state
@@ -462,7 +473,7 @@ describe("Context-Engine Integration - Tier 2 (Validated)", () => {
         ctxState: contextState,
         workingMemory,
         subscriptions: new Set(),
-        __chunkSubscriptions: new Set()
+        __chunkSubscriptions: new Set(),
       });
 
       await engine.start();
@@ -475,7 +486,7 @@ describe("Context-Engine Integration - Tier 2 (Validated)", () => {
         content: "First operation",
         data: "First operation",
         timestamp: Date.now(),
-        processed: false
+        processed: false,
       };
 
       await engine.push(operation1);
@@ -489,10 +500,10 @@ describe("Context-Engine Integration - Tier 2 (Validated)", () => {
         id: randomUUIDv7(),
         ref: "input",
         type: "text",
-        content: "Second operation", 
+        content: "Second operation",
         data: "Second operation",
         timestamp: Date.now(),
-        processed: false
+        processed: false,
       };
 
       await engine.push(operation2);

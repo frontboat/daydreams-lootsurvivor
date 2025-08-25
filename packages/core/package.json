@@ -27,9 +27,6 @@
     }
   },
   "devDependencies": {
-    "@ai-sdk/anthropic": "catalog:",
-    "@ai-sdk/groq": "catalog:",
-    "@ai-sdk/openai": "catalog:",
     "@types/bun": "latest",
     "tsup": "catalog:",
     "vitest": "catalog:"
@@ -52,7 +49,6 @@
     "dotenv": "catalog:",
     "p-defer": "^4.0.1",
     "uuid": "catalog:",
-    "zod": "catalog:",
-    "zod-to-json-schema": "catalog:"
+    "zod": "catalog:"
   }
 }

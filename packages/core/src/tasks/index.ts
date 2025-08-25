@@ -14,7 +14,7 @@ import type {
   Output,
 } from "../types";
 import type { Logger } from "../logger";
-import { modelsResponseConfig, reasoningModels } from "../configs";
+import { modelsResponseConfig, reasoningModels } from "../config";
 import { generateText } from "ai";
 import { createEngine } from "../engine";
 import { createContextStreamHandler } from "../streaming";
@@ -475,7 +475,9 @@ export const runAgentContext = task({
           outputs: state.outputs,
           workingMemory,
           chainOfThoughtSize: 0,
-          settings: { maxWorkingMemorySize: ctxState.settings.maxWorkingMemorySize },
+          settings: {
+            maxWorkingMemorySize: ctxState.settings.maxWorkingMemorySize,
+          },
           agent,
         });
 
@@ -530,7 +532,8 @@ export const runAgentContext = task({
             tags,
             streamHandler: (el: unknown) => streamHandler(el as StackElement),
             __streamChunkHandler: __streamChunkHandler
-              ? (chunk: unknown) => __streamChunkHandler(chunk as StackElementChunk)
+              ? (chunk: unknown) =>
+                  __streamChunkHandler(chunk as StackElementChunk)
               : undefined,
           },
         });
