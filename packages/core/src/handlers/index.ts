@@ -11,3 +11,4 @@ export * from "./prepare-output";
 export * from "./prepare-output-ref";
 export * from "./resolve-action-call";
 export * from "./resolvers";
+export * from "./handle-stream";

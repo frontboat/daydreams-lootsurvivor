@@ -1,3 +1,5 @@
+export * from "./simple-tracker";
+
 import * as z from "zod";
 import type {
   Action,

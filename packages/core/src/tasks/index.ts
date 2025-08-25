@@ -7,7 +7,6 @@ import type {
   AnyAgent,
   AnyContext,
   WorkingMemory,
-  ContextState,
   Log,
   LogChunk,
   AnyRef,
@@ -17,8 +16,8 @@ import type { Logger } from "../logger";
 import { modelsResponseConfig, reasoningModels } from "../config";
 import { generateText } from "ai";
 import { createEngine } from "../engine";
-import { createContextStreamHandler } from "../streaming";
-import type { StackElement, StackElementChunk } from "../streaming";
+import { createContextStreamHandler } from "../handlers";
+import type { StackElement, StackElementChunk } from "../handlers";
 import type { ResponseAdapter, PromptBuildResult } from "../types";
 import { saveContextWorkingMemory } from "../context";
 

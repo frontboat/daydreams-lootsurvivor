@@ -1,7 +1,7 @@
 import { v7 as randomUUIDv7 } from "uuid";
-import type { MaybePromise } from "./types";
+import type { MaybePromise } from "../types";
 import pDefer, { type DeferredPromise } from "p-defer";
-import type { Logger } from "./logger";
+import type { Logger } from "../logger";
 
 type TaskContext = {
   taskId: string;
