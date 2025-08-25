@@ -3,7 +3,7 @@ import { handleEpisodeHooks } from '../episode-hooks';
 import type { AnyRef, WorkingMemory } from '../../types';
 
 describe('Episode hooks integration (handleEpisodeHooks)', () => {
-  it('default hooks start on input and end on processed output, calling memory.remember', async () => {
+  it('default hooks start on input and end on processed output, storing an episode', async () => {
     const now = Date.now();
     const workingMemory: WorkingMemory = {
       inputs: [],
@@ -31,11 +31,13 @@ describe('Episode hooks integration (handleEpisodeHooks)', () => {
       processed: true,
     } as any;
 
-    const rememberCalls: any[] = [];
+    const storedEpisodes: any[] = [];
     const agent = {
       memory: {
-        remember: async (content: any, options: any) => {
-          rememberCalls.push({ content, options });
+        episodes: {
+          store: async (episode: any) => {
+            storedEpisodes.push(episode);
+          },
         },
       },
       logger: { debug: () => {}, warn: () => {} },
@@ -52,11 +54,10 @@ describe('Episode hooks integration (handleEpisodeHooks)', () => {
     // End and store episode on processed output
     await handleEpisodeHooks(workingMemory, outputRef, contextState, agent);
 
-    expect(rememberCalls.length).toBe(1);
-    const call = rememberCalls[0];
-    expect(call.options?.type).toBe('episode');
-    expect(call.options?.contextId).toBe('ctx-ep');
-    expect(call.options?.metadata?.logCount).toBeGreaterThan(0);
+    expect(storedEpisodes.length).toBe(1);
+    const ep = storedEpisodes[0];
+    expect(ep?.contextId).toBe('ctx-ep');
+    expect(ep?.type).toBe('conversation');
+    expect(Array.isArray(ep?.logs) && ep.logs.length).toBeGreaterThan(0);
   });
 });
-
