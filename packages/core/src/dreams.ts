@@ -45,7 +45,7 @@ import { defaultPromptBuilder } from "./prompts/default-builder";
 import { defaultXmlResponseAdapter } from "./response/default-xml-adapter";
 import type { DeferredPromise } from "p-defer";
 import { runAgentContext } from "./tasks";
-import { SimpleTracker } from "./simple-tracker";
+import { SimpleTracker } from "./utils";
 
 /**
  * Creates and configures a new Dreams AI agent instance

@@ -4,13 +4,13 @@ import {
   type StreamTextResult,
   type ToolSet,
 } from "ai";
-import pDefer, { type DeferredPromise } from "p-defer";
+import { type DeferredPromise } from "p-defer";
 import { z, ZodObject, ZodType, type ZodRawShape } from "zod";
 import type { Container } from "./container";
 import type { ServiceProvider } from "./service-provider";
 import type { TaskRunner } from "./task";
 import type { Logger } from "./logger";
-import type { SimpleTracker } from "./simple-tracker";
+import type { SimpleTracker } from "./utils";
 
 import type {
   EpisodeHooks,

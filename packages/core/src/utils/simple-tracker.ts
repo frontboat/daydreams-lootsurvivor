@@ -1,4 +1,4 @@
-import type { Logger, LogEntry, EventType } from "./logger";
+import type { Logger, LogEntry, EventType } from "../logger";
 
 /**
  * Simple request and cost tracking using logger events

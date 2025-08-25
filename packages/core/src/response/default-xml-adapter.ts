@@ -4,7 +4,7 @@ import {
   handleStream,
   type StackElement,
   type StackElementChunk,
-} from "../streaming";
+} from "../handlers";
 import { modelsResponseConfig } from "../config";
 
 export const defaultXmlResponseAdapter: ResponseAdapter = {

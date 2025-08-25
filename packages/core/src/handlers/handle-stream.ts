@@ -1,6 +1,6 @@
-import type { Log, LogChunk } from "./types";
-import { randomUUIDv7 } from "./utils";
-import { xmlStreamParser } from "./parsing";
+import type { Log, LogChunk } from "../types";
+import { randomUUIDv7 } from "../utils";
+import { xmlStreamParser } from "../parsing";
 
 type PartialLog = Partial<Log> &
   Pick<Log, "ref" | "id" | "timestamp" | "processed">;
