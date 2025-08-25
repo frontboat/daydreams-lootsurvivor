@@ -1,6 +1,6 @@
 {
   "name": "@daydreamsai/create-agent",
-  "version": "0.3.20",
+  "version": "0.3.21",
   "description": "CLI to bootstrap Daydreams agents",
   "license": "MIT",
   "type": "module",
