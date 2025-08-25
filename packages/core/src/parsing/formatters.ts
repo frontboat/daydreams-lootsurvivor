@@ -7,7 +7,7 @@ import type {
   OutputRef,
   TemplateVariables,
   XMLElement,
-} from "./types";
+} from "../types";
 import * as z from "zod";
 import { type Schema } from "@ai-sdk/ui-utils";
 

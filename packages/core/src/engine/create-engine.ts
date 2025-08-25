@@ -2,90 +2,38 @@ import {
   createResultsTemplateResolver,
   getValueByPath,
   handleActionCall,
-  handleInput,
   handleOutput,
-  NotFoundError,
-  ParsingError,
   prepareActionCall,
   prepareContexts,
   prepareOutputRef,
   resolveActionCall,
-} from "./handlers";
-import type {
-  ActionCall,
-  ActionCtxRef,
-  ActionResult,
-  AnyAction,
-  AnyAgent,
-  AnyContext,
-  AnyRef,
-  ContextRef,
-  ContextState,
-  ContextStateApi,
-  EventRef,
-  Handlers,
-  Input,
-  InputConfig,
-  InputRef,
-  Log,
-  Output,
-  OutputCtxRef,
-  OutputRef,
-  RunRef,
-  StepRef,
-  TemplateResolver,
-  WorkingMemory,
-  LogChunk,
-  ActionCallContext,
-} from "./types";
-import pDefer, { type DeferredPromise } from "p-defer";
-import { pushToWorkingMemory } from "./context";
-import { createEventRef, randomUUIDv7 } from "./utils";
-import { ZodError, type ZodIssue } from "zod";
-import { handleEpisodeHooks } from "./memory/episode-hooks";
-
-type CallOptions = Partial<{
-  templateResolvers: Record<string, TemplateResolver>;
-  queueKey: string;
-}>;
-
-interface Router {
-  input(ref: InputRef): Promise<void>;
-  output(ref: OutputRef): Promise<OutputRef[]>;
-  action_call(call: ActionCall, options: CallOptions): Promise<ActionResult>;
-}
-
-type ErrorRef = {
-  log: AnyRef;
-  error: unknown;
-};
-
-type State = {
-  running: boolean;
-  step: number;
-  chain: AnyRef[];
-  ctxState: ContextState;
-
-  inputs: Input[];
-  outputs: OutputCtxRef[];
-  actions: ActionCtxRef[];
-  contexts: ContextState[];
-
-  promises: Promise<any>[];
-
-  errors: ErrorRef[];
-
-  results: Promise<ActionResult>[];
-
-  params?: Partial<{
-    outputs: Record<string, Omit<Output, "name">>;
-    inputs: Record<string, InputConfig>;
-    actions: AnyAction[];
-    contexts: ContextRef[];
-  }>;
-
-  defer: DeferredPromise<AnyRef[]>;
-};
+} from "../handlers";
+import {
+  type ActionResult,
+  type AnyAgent,
+  type AnyContext,
+  type AnyRef,
+  type ContextState,
+  type ContextStateApi,
+  type EventRef,
+  type Handlers,
+  type Log,
+  type RunRef,
+  type StepRef,
+  type TemplateResolver,
+  type WorkingMemory,
+  type LogChunk,
+  type ActionCallContext,
+  type State,
+  type Router,
+  ParsingError,
+} from "../types";
+import pDefer from "p-defer";
+import { pushToWorkingMemory } from "../memory/utils";
+import { randomUUIDv7 } from "../utils";
+import { handleEpisodeHooks } from "../memory/episode-hooks";
+import { createErrorEvent, formatError } from "./prettify-error";
+import { handleInput } from "../handlers";
 
 export function createEngine({
   agent,
@@ -247,9 +195,13 @@ export function createEngine({
         contextId: ctxState.id,
         options,
         ...(error instanceof ParsingError && {
-          parsingError: error.parsingError instanceof Error 
-            ? { message: error.parsingError.message, name: error.parsingError.constructor.name }
-            : error.parsingError
+          parsingError:
+            error.parsingError instanceof Error
+              ? {
+                  message: error.parsingError.message,
+                  name: error.parsingError.constructor.name,
+                }
+              : error.parsingError,
         }),
       });
 
@@ -352,7 +304,6 @@ export function createEngine({
 
     async action_call(call, options = {}) {
       if (call.processed) throw new Error("Already processed");
-      call.processed = true;
 
       const defer = pDefer<ActionResult>();
 
@@ -364,6 +315,8 @@ export function createEngine({
         actions: state.actions,
         logger: agent.logger,
       });
+
+      call.processed = true;
 
       const actionCtxState =
         state.contexts.find(
@@ -610,108 +563,4 @@ export function createEngine({
       return pendingResults.length > 0;
     },
   };
-}
-
-function prettifyZodError(error: ZodError): string {
-  if (!error || !error.issues || error.issues.length === 0) {
-    return "Validation failed, but no specific issues were provided.";
-  }
-
-  const errorMessages = error.issues.map((issue: ZodIssue) => {
-    const pathString = issue.path.join(".");
-    return `- Field \`${pathString || "object root"}\`: ${
-      issue.message
-    } (Code: ${issue.code})`;
-  });
-
-  return `Validation Errors:\n${errorMessages.join("\n")}`;
-}
-
-function formatError(error: unknown) {
-  if (error instanceof Error) {
-    return {
-      name: error.name,
-      message: error.message,
-      cause: error.cause,
-      // stack: error.stack,
-    };
-  }
-
-  return JSON.stringify(error);
-}
-
-function createErrorEvent(errorRef: ErrorRef) {
-  if (errorRef.error instanceof NotFoundError) {
-    if (
-      errorRef.error.ref.ref === "input" ||
-      errorRef.error.ref.ref === "output"
-    ) {
-      return createEventRef({
-        name: "error",
-        data: {
-          ref: {
-            ref: errorRef.log.ref,
-            id: errorRef.log.id,
-            type: errorRef.error.ref.ref === "output" ? errorRef.error.ref.name : errorRef.error.ref.type,
-          },
-          error: {
-            name: "NotFoundError",
-            message: "Invalid type",
-          },
-        },
-        processed: false,
-      });
-    } else if (errorRef.error.ref.ref === "action_call") {
-      return createEventRef({
-        name: "error",
-        data: {
-          ref: {
-            ref: errorRef.log.ref,
-            id: errorRef.log.id,
-            name: errorRef.error.ref.name,
-          },
-          error: {
-            name: "NotFoundError",
-            message: "Invalid action name",
-          },
-        },
-        processed: false,
-      });
-    }
-  }
-
-  if (errorRef.error instanceof ParsingError) {
-    return createEventRef({
-      name: "error",
-      data: {
-        ref: {
-          ref: errorRef.log.ref,
-          id: errorRef.log.id,
-          data: errorRef.error.ref.content,
-        },
-        error: {
-          name: "ParsingError",
-          message:
-            errorRef.error.parsingError instanceof ZodError
-              ? prettifyZodError(errorRef.error.parsingError)
-              : errorRef.error.parsingError instanceof Error
-              ? errorRef.error.parsingError.message
-              : String(errorRef.error.parsingError),
-        },
-      },
-      processed: false,
-    });
-  }
-
-  return createEventRef({
-    name: "error",
-    data: {
-      ref: {
-        type: errorRef.log.ref,
-        id: errorRef.log.id,
-      },
-      error: formatError(errorRef.error),
-    },
-    processed: false,
-  });
 }

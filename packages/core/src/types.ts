@@ -1,4 +1,10 @@
-import { type LanguageModel, type Schema, type StreamTextResult, type ToolSet } from "ai";
+import {
+  type LanguageModel,
+  type Schema,
+  type StreamTextResult,
+  type ToolSet,
+} from "ai";
+import pDefer, { type DeferredPromise } from "p-defer";
 import { z, ZodObject, ZodType, type ZodRawShape } from "zod";
 import type { Container } from "./container";
 import type { ServiceProvider } from "./service-provider";
@@ -1409,4 +1415,80 @@ export type Extension<
   install?: (agent: AnyAgent) => Promise<void> | void;
   contexts?: Contexts;
   inputs: Inputs;
+};
+
+export type CallOptions = Partial<{
+  templateResolvers: Record<string, TemplateResolver>;
+  queueKey: string;
+}>;
+
+export interface Router {
+  input(ref: InputRef): Promise<void>;
+  output(ref: OutputRef): Promise<OutputRef[]>;
+  action_call(call: ActionCall, options: CallOptions): Promise<ActionResult>;
+}
+
+export type ErrorRef = {
+  log: AnyRef;
+  error: unknown;
+};
+
+export type State = {
+  running: boolean;
+  step: number;
+  chain: AnyRef[];
+  ctxState: ContextState;
+  inputs: Input[];
+  outputs: OutputCtxRef[];
+  actions: ActionCtxRef[];
+  contexts: ContextState[];
+  promises: Promise<any>[];
+  errors: ErrorRef[];
+  results: Promise<ActionResult>[];
+  params?: Partial<{
+    outputs: Record<string, Omit<Output, "name">>;
+    inputs: Record<string, InputConfig>;
+    actions: AnyAction[];
+    contexts: ContextRef[];
+  }>;
+
+  defer: DeferredPromise<AnyRef[]>;
+};
+
+export class NotFoundError extends Error {
+  name = "NotFoundError";
+  constructor(public ref: ActionCall | OutputRef | InputRef) {
+    super(`${ref.ref} not found: ${ref.ref || "unknown"}`);
+  }
+}
+
+export class ParsingError extends Error {
+  name = "ParsingError";
+  constructor(
+    public ref: ActionCall | OutputRef | InputRef,
+    public parsingError: unknown
+  ) {
+    super(
+      `Parsing failed for ${ref.ref}: ${
+        parsingError instanceof Error
+          ? parsingError.message
+          : String(parsingError)
+      }`
+    );
+  }
+}
+
+export type ContextStateSnapshot = {
+  /** Unique context identifier */
+  id: string;
+  /** Context type name */
+  type: string;
+  /** Context arguments */
+  args: any;
+  /** Optional context key */
+  key?: string;
+  /** Context settings with model stored as string ID */
+  settings: Omit<ContextSettings, "model"> & { model?: string };
+  /** Array of related context IDs */
+  contexts: string[];
 };

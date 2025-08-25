@@ -20,8 +20,9 @@ import type {
   PromptBuildContext,
   PromptBuildResult,
   MaybePromise,
-} from "./types";
+} from "../types";
 import { v7 as randomUUIDv7 } from "uuid";
+import { parse } from "../parsing";
 
 export { randomUUIDv7 };
 /**
@@ -287,4 +288,38 @@ export function createActionCall(
     timestamp: Date.now(),
     ...ref,
   };
+}
+
+export function parseJSONContent(content: string): unknown {
+  if (content.startsWith("```json")) {
+    content = content.slice("```json".length, -3);
+  }
+
+  return JSON.parse(content);
+}
+
+export function parseXMLContent(content: string): Record<string, string> {
+  const nodes = parse(content, (node) => {
+    return node;
+  });
+
+  const data = nodes.reduce((data, node) => {
+    if (node.type === "element") {
+      data[node.name] = node.content;
+    }
+    return data;
+  }, {} as Record<string, string>);
+
+  return data;
+}
+
+export function resolve<Value = unknown, Ctx = unknown>(
+  value: Value,
+  ctx: Ctx
+): Promise<Value extends (ctx: Ctx) => infer R ? R : Value> {
+  return typeof value === "function"
+    ? value(ctx)
+    : (Promise.resolve(value) as Promise<
+        Value extends (ctx: Ctx) => infer R ? R : Value
+      >);
 }

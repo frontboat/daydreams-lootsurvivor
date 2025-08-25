@@ -69,9 +69,6 @@ catalogs:
     zod:
       specifier: 4.0.16
       version: 4.0.16
-    zod-to-json-schema:
-      specifier: 3.24.3
-      version: 3.24.3
 
 overrides:
   '@mysten/sui': 1.7.0
@@ -491,19 +488,7 @@ importers:
       zod:
         specifier: 'catalog:'
         version: 4.0.16
-      zod-to-json-schema:
-        specifier: 'catalog:'
-        version: 3.24.3(zod@4.0.16)
     devDependencies:
-      '@ai-sdk/anthropic':
-        specifier: 'catalog:'
-        version: 2.0.0-beta.13(zod@4.0.16)
-      '@ai-sdk/groq':
-        specifier: 'catalog:'
-        version: 2.0.0-beta.12(zod@4.0.16)
-      '@ai-sdk/openai':
-        specifier: 'catalog:'
-        version: 2.0.0-beta.16(zod@4.0.16)
       '@types/bun':
         specifier: latest
         version: 1.2.20(@types/react@19.1.10)

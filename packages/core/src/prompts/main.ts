@@ -1,4 +1,3 @@
-import { formatWorkingMemory } from "../context";
 import {
   formatAction,
   formatContextLog,
@@ -6,8 +5,8 @@ import {
   formatOutputInterface,
   render,
   xml,
-} from "../formatters";
-import type { Prompt } from "../prompt";
+} from "../parsing";
+
 import type {
   AnyAction,
   AnyContext,
@@ -184,7 +183,8 @@ export function formatPromptSections({
   chainOfThoughtSize?: number;
 }) {
   // Get unprocessed user inputs that need responses
-  const unprocessedInputs = workingMemory.inputs?.filter((log) => !log.processed) ?? [];
+  const unprocessedInputs =
+    workingMemory.inputs?.filter((log) => !log.processed) ?? [];
 
   // Get pending action calls (calls without results)
   const pendingActions =
