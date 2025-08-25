@@ -18,7 +18,7 @@ import {
   createTestAction,
   createTestContext,
 } from "./test-utilities";
-import { createWorkingMemory } from "../context";
+import { createWorkingMemory } from "../memory/utils";
 
 describe("Engine State Management - Tier 1", () => {
   let mockAgent: AnyAgent;
@@ -258,22 +258,26 @@ describe("Engine State Management - Tier 1", () => {
       await engine.push(outputRef);
 
       // The output gets modified during processing (formatted property added)
-      expect(engine.state.chain).toContainEqual(expect.objectContaining({
-        id: "output-test",
-        ref: "output", 
-        name: "text",
-        content: "test output",
-        data: "test output",
-        processed: true
-      }));
-      expect(mockWorkingMemory.outputs).toContainEqual(expect.objectContaining({
-        id: "output-test",
-        ref: "output",
-        name: "text", 
-        content: "test output",
-        data: "test output",
-        processed: true
-      }));
+      expect(engine.state.chain).toContainEqual(
+        expect.objectContaining({
+          id: "output-test",
+          ref: "output",
+          name: "text",
+          content: "test output",
+          data: "test output",
+          processed: true,
+        })
+      );
+      expect(mockWorkingMemory.outputs).toContainEqual(
+        expect.objectContaining({
+          id: "output-test",
+          ref: "output",
+          name: "text",
+          content: "test output",
+          data: "test output",
+          processed: true,
+        })
+      );
     });
 
     it("should handle action calls and create results", async () => {
