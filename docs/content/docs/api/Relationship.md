@@ -10,11 +10,7 @@ title: "Relationship"
 
 # Interface: Relationship
 
-Defined in: [packages/core/src/memory/types.ts:301](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L301)
-
-## Extended by
-
-- [`SemanticRelationship`](./SemanticRelationship.md)
+Defined in: [packages/core/src/memory/types.ts:308](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L308)
 
 ## Properties
 
@@ -22,7 +18,7 @@ Defined in: [packages/core/src/memory/types.ts:301](https://github.com/dojoengin
 
 > **from**: `string`
 
-Defined in: [packages/core/src/memory/types.ts:303](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L303)
+Defined in: [packages/core/src/memory/types.ts:310](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L310)
 
 ***
 
@@ -30,7 +26,7 @@ Defined in: [packages/core/src/memory/types.ts:303](https://github.com/dojoengin
 
 > **id**: `string`
 
-Defined in: [packages/core/src/memory/types.ts:302](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L302)
+Defined in: [packages/core/src/memory/types.ts:309](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L309)
 
 ***
 
@@ -38,7 +34,7 @@ Defined in: [packages/core/src/memory/types.ts:302](https://github.com/dojoengin
 
 > `optional` **properties**: `Record`\<`string`, `unknown`\>
 
-Defined in: [packages/core/src/memory/types.ts:306](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L306)
+Defined in: [packages/core/src/memory/types.ts:313](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L313)
 
 ***
 
@@ -46,7 +42,7 @@ Defined in: [packages/core/src/memory/types.ts:306](https://github.com/dojoengin
 
 > `optional` **semantics**: `object`
 
-Defined in: [packages/core/src/memory/types.ts:309](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L309)
+Defined in: [packages/core/src/memory/types.ts:316](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L316)
 
 Semantic metadata for this relationship
 
@@ -110,7 +106,7 @@ Human-readable verb describing the relationship
 
 > `optional` **strength**: `number`
 
-Defined in: [packages/core/src/memory/types.ts:307](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L307)
+Defined in: [packages/core/src/memory/types.ts:314](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L314)
 
 ***
 
@@ -118,7 +114,7 @@ Defined in: [packages/core/src/memory/types.ts:307](https://github.com/dojoengin
 
 > **to**: `string`
 
-Defined in: [packages/core/src/memory/types.ts:304](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L304)
+Defined in: [packages/core/src/memory/types.ts:311](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L311)
 
 ***
 
@@ -126,4 +122,4 @@ Defined in: [packages/core/src/memory/types.ts:304](https://github.com/dojoengin
 
 > **type**: `string`
 
-Defined in: [packages/core/src/memory/types.ts:305](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L305)
+Defined in: [packages/core/src/memory/types.ts:312](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L312)

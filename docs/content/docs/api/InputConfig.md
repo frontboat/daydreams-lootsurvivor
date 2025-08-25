@@ -12,7 +12,7 @@ title: "InputConfig"
 
 > **InputConfig**\<`Schema`, `TContext`, `TAgent`\> = `Omit`\<[`Input`](./Input.md)\<`Schema`, `TContext`, `TAgent`\>, `"type"`\>
 
-Defined in: [packages/core/src/types.ts:913](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L913)
+Defined in: [packages/core/src/types.ts:897](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L897)
 
 Configuration type for inputs without type field
 

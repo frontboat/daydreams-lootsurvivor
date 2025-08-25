@@ -10,7 +10,7 @@ title: "GraphTraversal"
 
 # Interface: GraphTraversal
 
-Defined in: [packages/core/src/memory/types.ts:187](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L187)
+Defined in: [packages/core/src/memory/types.ts:194](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L194)
 
 ## Properties
 
@@ -18,7 +18,7 @@ Defined in: [packages/core/src/memory/types.ts:187](https://github.com/dojoengin
 
 > **direction**: `"out"` \| `"in"` \| `"both"`
 
-Defined in: [packages/core/src/memory/types.ts:189](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L189)
+Defined in: [packages/core/src/memory/types.ts:196](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L196)
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: [packages/core/src/memory/types.ts:189](https://github.com/dojoengin
 
 > `optional` **filter**: [`GraphFilter`](./GraphFilter.md)
 
-Defined in: [packages/core/src/memory/types.ts:191](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L191)
+Defined in: [packages/core/src/memory/types.ts:198](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L198)
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: [packages/core/src/memory/types.ts:191](https://github.com/dojoengin
 
 > `optional` **maxDepth**: `number`
 
-Defined in: [packages/core/src/memory/types.ts:190](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L190)
+Defined in: [packages/core/src/memory/types.ts:197](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L197)
 
 ***
 
@@ -42,4 +42,4 @@ Defined in: [packages/core/src/memory/types.ts:190](https://github.com/dojoengin
 
 > **start**: `string`
 
-Defined in: [packages/core/src/memory/types.ts:188](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L188)
+Defined in: [packages/core/src/memory/types.ts:195](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L195)

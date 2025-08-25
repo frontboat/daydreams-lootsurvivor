@@ -10,7 +10,7 @@ title: "Episode"
 
 # Interface: Episode
 
-Defined in: [packages/core/src/memory/episodic-memory.ts:4](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/episodic-memory.ts#L4)
+Defined in: [packages/core/src/memory/episodic-memory.ts:4](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/episodic-memory.ts#L4)
 
 ## Properties
 
@@ -18,7 +18,7 @@ Defined in: [packages/core/src/memory/episodic-memory.ts:4](https://github.com/d
 
 > `optional` **context**: `string`
 
-Defined in: [packages/core/src/memory/episodic-memory.ts:17](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/episodic-memory.ts#L17)
+Defined in: [packages/core/src/memory/episodic-memory.ts:17](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/episodic-memory.ts#L17)
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: [packages/core/src/memory/episodic-memory.ts:17](https://github.com/
 
 > **contextId**: `string`
 
-Defined in: [packages/core/src/memory/episodic-memory.ts:6](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/episodic-memory.ts#L6)
+Defined in: [packages/core/src/memory/episodic-memory.ts:6](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/episodic-memory.ts#L6)
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: [packages/core/src/memory/episodic-memory.ts:6](https://github.com/d
 
 > `optional` **duration**: `number`
 
-Defined in: [packages/core/src/memory/episodic-memory.ts:14](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/episodic-memory.ts#L14)
+Defined in: [packages/core/src/memory/episodic-memory.ts:14](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/episodic-memory.ts#L14)
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: [packages/core/src/memory/episodic-memory.ts:14](https://github.com/
 
 > **endTime**: `number`
 
-Defined in: [packages/core/src/memory/episodic-memory.ts:13](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/episodic-memory.ts#L13)
+Defined in: [packages/core/src/memory/episodic-memory.ts:13](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/episodic-memory.ts#L13)
 
 ***
 
@@ -50,7 +50,7 @@ Defined in: [packages/core/src/memory/episodic-memory.ts:13](https://github.com/
 
 > **id**: `string`
 
-Defined in: [packages/core/src/memory/episodic-memory.ts:5](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/episodic-memory.ts#L5)
+Defined in: [packages/core/src/memory/episodic-memory.ts:5](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/episodic-memory.ts#L5)
 
 ***
 
@@ -58,7 +58,7 @@ Defined in: [packages/core/src/memory/episodic-memory.ts:5](https://github.com/d
 
 > `optional` **input**: `any`
 
-Defined in: [packages/core/src/memory/episodic-memory.ts:15](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/episodic-memory.ts#L15)
+Defined in: [packages/core/src/memory/episodic-memory.ts:15](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/episodic-memory.ts#L15)
 
 ***
 
@@ -66,7 +66,7 @@ Defined in: [packages/core/src/memory/episodic-memory.ts:15](https://github.com/
 
 > **logs**: [`AnyRef`](./AnyRef.md)[]
 
-Defined in: [packages/core/src/memory/episodic-memory.ts:9](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/episodic-memory.ts#L9)
+Defined in: [packages/core/src/memory/episodic-memory.ts:9](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/episodic-memory.ts#L9)
 
 ***
 
@@ -74,7 +74,7 @@ Defined in: [packages/core/src/memory/episodic-memory.ts:9](https://github.com/d
 
 > **metadata**: `Record`\<`string`, `any`\>
 
-Defined in: [packages/core/src/memory/episodic-memory.ts:10](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/episodic-memory.ts#L10)
+Defined in: [packages/core/src/memory/episodic-memory.ts:10](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/episodic-memory.ts#L10)
 
 ***
 
@@ -82,7 +82,7 @@ Defined in: [packages/core/src/memory/episodic-memory.ts:10](https://github.com/
 
 > `optional` **output**: `any`
 
-Defined in: [packages/core/src/memory/episodic-memory.ts:16](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/episodic-memory.ts#L16)
+Defined in: [packages/core/src/memory/episodic-memory.ts:16](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/episodic-memory.ts#L16)
 
 ***
 
@@ -90,7 +90,7 @@ Defined in: [packages/core/src/memory/episodic-memory.ts:16](https://github.com/
 
 > **startTime**: `number`
 
-Defined in: [packages/core/src/memory/episodic-memory.ts:12](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/episodic-memory.ts#L12)
+Defined in: [packages/core/src/memory/episodic-memory.ts:12](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/episodic-memory.ts#L12)
 
 ***
 
@@ -98,7 +98,7 @@ Defined in: [packages/core/src/memory/episodic-memory.ts:12](https://github.com/
 
 > **summary**: `string`
 
-Defined in: [packages/core/src/memory/episodic-memory.ts:8](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/episodic-memory.ts#L8)
+Defined in: [packages/core/src/memory/episodic-memory.ts:8](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/episodic-memory.ts#L8)
 
 ***
 
@@ -106,7 +106,7 @@ Defined in: [packages/core/src/memory/episodic-memory.ts:8](https://github.com/d
 
 > **timestamp**: `number`
 
-Defined in: [packages/core/src/memory/episodic-memory.ts:11](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/episodic-memory.ts#L11)
+Defined in: [packages/core/src/memory/episodic-memory.ts:11](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/episodic-memory.ts#L11)
 
 ***
 
@@ -114,4 +114,4 @@ Defined in: [packages/core/src/memory/episodic-memory.ts:11](https://github.com/
 
 > **type**: `string`
 
-Defined in: [packages/core/src/memory/episodic-memory.ts:7](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/episodic-memory.ts#L7)
+Defined in: [packages/core/src/memory/episodic-memory.ts:7](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/episodic-memory.ts#L7)

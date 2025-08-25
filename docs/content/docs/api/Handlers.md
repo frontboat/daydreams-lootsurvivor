@@ -10,7 +10,7 @@ title: "Handlers"
 
 # Interface: Handlers
 
-Defined in: [packages/core/src/types.ts:558](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L558)
+Defined in: [packages/core/src/types.ts:542](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L542)
 
 Event handlers for agent operations
 
@@ -20,7 +20,7 @@ Event handlers for agent operations
 
 > **onLogStream**: (`log`, `done`) => `void`
 
-Defined in: [packages/core/src/types.ts:560](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L560)
+Defined in: [packages/core/src/types.ts:544](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L544)
 
 Handler for streaming log events
 
@@ -44,7 +44,7 @@ Handler for streaming log events
 
 > **onThinking**: (`thought`) => `void`
 
-Defined in: [packages/core/src/types.ts:562](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L562)
+Defined in: [packages/core/src/types.ts:546](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L546)
 
 Handler for thinking/reasoning events
 

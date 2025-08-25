@@ -10,7 +10,7 @@ title: "ExportManager"
 
 # Class: ExportManager
 
-Defined in: [packages/core/src/memory/exporters/export-manager.ts:12](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/exporters/export-manager.ts#L12)
+Defined in: [packages/core/src/memory/exporters/export-manager.ts:12](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/exporters/export-manager.ts#L12)
 
 Manages episode export operations
 
@@ -30,7 +30,7 @@ Manages episode export operations
 
 > **cleanup**(): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/exporters/export-manager.ts:176](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/exporters/export-manager.ts#L176)
+Defined in: [packages/core/src/memory/exporters/export-manager.ts:176](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/exporters/export-manager.ts#L176)
 
 Cleanup all registered exporters
 
@@ -44,7 +44,7 @@ Cleanup all registered exporters
 
 > **export**(`params`): `Promise`\<`ExportResult`\>
 
-Defined in: [packages/core/src/memory/exporters/export-manager.ts:47](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/exporters/export-manager.ts#L47)
+Defined in: [packages/core/src/memory/exporters/export-manager.ts:47](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/exporters/export-manager.ts#L47)
 
 Export episodes using specified exporter
 
@@ -64,7 +64,7 @@ Export episodes using specified exporter
 
 > **listExporters**(): `object`[]
 
-Defined in: [packages/core/src/memory/exporters/export-manager.ts:32](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/exporters/export-manager.ts#L32)
+Defined in: [packages/core/src/memory/exporters/export-manager.ts:32](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/exporters/export-manager.ts#L32)
 
 Get list of available exporters
 
@@ -78,7 +78,7 @@ Get list of available exporters
 
 > **registerExporter**(`exporter`): `void`
 
-Defined in: [packages/core/src/memory/exporters/export-manager.ts:18](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/exporters/export-manager.ts#L18)
+Defined in: [packages/core/src/memory/exporters/export-manager.ts:18](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/exporters/export-manager.ts#L18)
 
 Register an exporter
 
@@ -98,7 +98,7 @@ Register an exporter
 
 > **unregisterExporter**(`name`): `void`
 
-Defined in: [packages/core/src/memory/exporters/export-manager.ts:25](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/exporters/export-manager.ts#L25)
+Defined in: [packages/core/src/memory/exporters/export-manager.ts:25](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/exporters/export-manager.ts#L25)
 
 Unregister an exporter
 

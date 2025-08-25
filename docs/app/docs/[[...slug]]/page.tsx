@@ -9,7 +9,6 @@ import { notFound } from "next/navigation";
 import defaultMdxComponents, { createRelativeLink } from "fumadocs-ui/mdx";
 import { LLMCopyButton } from "@/components/ai/page-actions";
 import { APIPage } from "fumadocs-openapi/ui";
-import * as Twoslash from "fumadocs-twoslash/ui";
 
 export default async function Page(props: {
   params: Promise<{ slug?: string[] }>;
@@ -31,7 +30,6 @@ export default async function Page(props: {
         <MDXContent
           components={{
             ...defaultMdxComponents,
-            // ...Twoslash,
             // this allows you to link to other pages with relative file paths
             a: createRelativeLink(source, page),
             APIPage: (props) => <APIPage {...openapi.getAPIPageProps(props)} />,

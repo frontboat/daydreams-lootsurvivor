@@ -12,7 +12,7 @@ title: "ContextSettings"
 
 > **ContextSettings** = `object`
 
-Defined in: [packages/core/src/types.ts:1212](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1212)
+Defined in: [packages/core/src/types.ts:1217](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L1217)
 
 Configuration settings for a context
 
@@ -22,7 +22,7 @@ Configuration settings for a context
 
 > `optional` **maxSteps**: `number`
 
-Defined in: [packages/core/src/types.ts:1216](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1216)
+Defined in: [packages/core/src/types.ts:1221](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L1221)
 
 Maximum number of execution steps
 
@@ -32,7 +32,7 @@ Maximum number of execution steps
 
 > `optional` **maxWorkingMemorySize**: `number`
 
-Defined in: [packages/core/src/types.ts:1218](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1218)
+Defined in: [packages/core/src/types.ts:1223](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L1223)
 
 Maximum size of working memory
 
@@ -42,7 +42,7 @@ Maximum size of working memory
 
 > `optional` **model**: `LanguageModel`
 
-Defined in: [packages/core/src/types.ts:1214](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1214)
+Defined in: [packages/core/src/types.ts:1219](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L1219)
 
 Language model to use for this context
 
@@ -52,7 +52,7 @@ Language model to use for this context
 
 > `optional` **modelSettings**: `object`
 
-Defined in: [packages/core/src/types.ts:1220](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1220)
+Defined in: [packages/core/src/types.ts:1225](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L1225)
 
 Model-specific settings
 

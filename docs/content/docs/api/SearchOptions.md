@@ -10,7 +10,7 @@ title: "SearchOptions"
 
 # Interface: SearchOptions
 
-Defined in: [packages/core/src/memory/types.ts:388](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L388)
+Defined in: [packages/core/src/memory/types.ts:411](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L411)
 
 ## Properties
 
@@ -18,7 +18,7 @@ Defined in: [packages/core/src/memory/types.ts:388](https://github.com/dojoengin
 
 > `optional` **filter**: `Record`\<`string`, `unknown`\>
 
-Defined in: [packages/core/src/memory/types.ts:392](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L392)
+Defined in: [packages/core/src/memory/types.ts:415](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L415)
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: [packages/core/src/memory/types.ts:392](https://github.com/dojoengin
 
 > `optional` **limit**: `number`
 
-Defined in: [packages/core/src/memory/types.ts:389](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L389)
+Defined in: [packages/core/src/memory/types.ts:412](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L412)
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: [packages/core/src/memory/types.ts:389](https://github.com/dojoengin
 
 > `optional` **offset**: `number`
 
-Defined in: [packages/core/src/memory/types.ts:390](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L390)
+Defined in: [packages/core/src/memory/types.ts:413](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L413)
 
 ***
 
@@ -42,4 +42,4 @@ Defined in: [packages/core/src/memory/types.ts:390](https://github.com/dojoengin
 
 > `optional` **sort**: `"relevance"` \| `"timestamp"` \| `"confidence"`
 
-Defined in: [packages/core/src/memory/types.ts:391](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L391)
+Defined in: [packages/core/src/memory/types.ts:414](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L414)

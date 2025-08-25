@@ -10,57 +10,17 @@ title: "MemoryConfig"
 
 # Interface: MemoryConfig
 
-Defined in: [packages/core/src/memory/types.ts:46](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L46)
+Defined in: [packages/core/src/memory/types.ts:64](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L64)
 
 Memory system configuration
 
 ## Properties
 
-### knowledge?
-
-> `optional` **knowledge**: `object`
-
-Defined in: [packages/core/src/memory/types.ts:53](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L53)
-
-#### enabled?
-
-> `optional` **enabled**: `boolean`
-
-#### extraction?
-
-> `optional` **extraction**: `object`
-
-##### extraction.maxTokens?
-
-> `optional` **maxTokens**: `number`
-
-##### extraction.minConfidence?
-
-> `optional` **minConfidence**: `number`
-
-##### extraction.temperature?
-
-> `optional` **temperature**: `number`
-
-##### extraction.usePatternFallback?
-
-> `optional` **usePatternFallback**: `boolean`
-
-#### model?
-
-> `optional` **model**: `LanguageModel`
-
-#### schema?
-
-> `optional` **schema**: [`KnowledgeSchema`](./KnowledgeSchema.md)
-
-***
-
 ### logger?
 
-> `optional` **logger**: `any`
+> `optional` **logger**: `Logger`
 
-Defined in: [packages/core/src/memory/types.ts:52](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L52)
+Defined in: [packages/core/src/memory/types.ts:70](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L70)
 
 ***
 
@@ -68,7 +28,7 @@ Defined in: [packages/core/src/memory/types.ts:52](https://github.com/dojoengine
 
 > **providers**: `object`
 
-Defined in: [packages/core/src/memory/types.ts:47](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L47)
+Defined in: [packages/core/src/memory/types.ts:65](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L65)
 
 #### graph
 

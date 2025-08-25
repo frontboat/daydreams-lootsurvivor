@@ -12,7 +12,7 @@ title: "ContextsRefRecord"
 
 > **ContextsRefRecord**\<`T`\> = `{ [K in keyof T]: ContextRef<T[K]> }`
 
-Defined in: [packages/core/src/types.ts:1244](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1244)
+Defined in: [packages/core/src/types.ts:1249](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L1249)
 
 Record of context references mapped by key
 
