@@ -12,7 +12,7 @@ title: "TemplateResolver"
 
 > **TemplateResolver**\<`Ctx`\> = (`path`, `ctx`) => [`MaybePromise`](./MaybePromise.md)\<`any`\>
 
-Defined in: [packages/core/src/types.ts:1281](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1281)
+Defined in: [packages/core/src/types.ts:1286](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L1286)
 
 Function type for resolving template variables in context
 

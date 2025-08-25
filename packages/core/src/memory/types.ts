@@ -1,6 +1,4 @@
-import type { LanguageModel } from "ai";
-import type { z } from "zod";
-
+import type { Logger } from "../logger";
 import type {
   ActionCall,
   ActionResult,
@@ -16,7 +14,7 @@ import type {
   AnyAgent,
   ContextState,
   EpisodicMemory,
-  KnowledgeSchema,
+  Episode,
 } from "../types";
 
 /**
@@ -32,12 +30,32 @@ export interface Memory {
 
   // Basic operations
   remember(content: unknown, options?: RememberOptions): Promise<void>;
-  recall(query: string, options?: RecallOptions): Promise<MemoryResult[]>;
+  /** Vector/hybrid recall. Accepts string or structured query. */
+  recall(
+    query: string | RecallQuery,
+    options?: RecallOptions
+  ): Promise<MemoryResult[]>;
+  /** Convenience helper returning the top match or null */
+  recallOne(
+    query: string | RecallQuery,
+    options?: RecallOptions
+  ): Promise<MemoryResult | null>;
   forget(criteria: ForgetCriteria): Promise<void>;
 
   // System
   initialize(): Promise<void>;
   close(): Promise<void>;
+
+  /** Store a structured record into memory */
+  rememberRecord(
+    record: MemoryRecord,
+    options?: { upsert?: boolean }
+  ): Promise<{ id: string }>;
+  /** Store multiple records efficiently, with optional chunking */
+  rememberBatch(
+    records: MemoryRecord[],
+    options?: { upsert?: boolean; chunk?: { size?: number; overlap?: number } }
+  ): Promise<{ ids: string[]; warnings?: string[] }>;
 }
 
 /**
@@ -49,18 +67,7 @@ export interface MemoryConfig {
     vector: VectorProvider;
     graph: GraphProvider;
   };
-  logger?: any;
-  knowledge?: {
-    enabled?: boolean;
-    model?: LanguageModel;
-    schema?: KnowledgeSchema;
-    extraction?: {
-      maxTokens?: number;
-      temperature?: number;
-      minConfidence?: number;
-      usePatternFallback?: boolean;
-    };
-  };
+  logger?: Logger;
 }
 
 /**
@@ -361,20 +368,36 @@ export interface VectorMemory {
 export interface RememberOptions {
   key?: string;
   type?: string;
-  scope?: "context" | "user" | "global";
+  scope?: "context" | "global";
   contextId?: string;
-  userId?: string;
   metadata?: Record<string, unknown>;
   ttl?: number;
+  /** Optional logical namespace for vector indices */
+  namespace?: string;
 }
 
 export interface RecallOptions {
   contextId?: string;
-  userId?: string;
-  scope?: "context" | "user" | "global" | "all";
+  scope?: "context" | "global" | "all";
   limit?: number;
   minRelevance?: number;
   filter?: Record<string, unknown>;
+  /** Preferred results count */
+  topK?: number;
+  /** Minimum score threshold (alias of minRelevance) */
+  minScore?: number;
+  /** Restrict search to a namespace */
+  namespace?: string;
+  /** Filter by time range (milliseconds epoch) */
+  timeRange?: { from?: number; to?: number };
+  /** Post-processing grouping */
+  groupBy?: "docId" | "source" | "none";
+  /** Deduplication strategy */
+  dedupeBy?: "id" | "docId" | "none";
+  /** Include flags */
+  include?: { content?: boolean; metadata?: boolean; diagnostics?: boolean };
+  /** Simple weighting controls */
+  weighting?: { salience?: number; recencyHalfLifeMs?: number };
 }
 
 export interface ForgetCriteria {
@@ -403,6 +426,16 @@ export interface MemoryResult {
   confidence?: number;
   metadata?: Record<string, unknown>;
   timestamp?: number;
+  /** Provider raw score before post-weighting */
+  rawScore?: number;
+  /** Diagnostics for scoring pipeline */
+  diagnostics?: {
+    salience?: number;
+    recencyBoost?: number;
+    rerankDelta?: number;
+  };
+  /** Optional grouping key */
+  groupKey?: string;
 }
 
 /**
@@ -431,10 +464,49 @@ export interface WorkingMemory extends WorkingMemoryData {
   currentImage?: URL;
 }
 
+/** Structured record for storage */
+export interface MemoryRecord {
+  id?: string;
+  text?: string;
+  metadata?: Record<string, any>;
+  scope?: "context" | "global";
+  contextId?: string;
+  namespace?: string;
+  timestamp?: number;
+  confidence?: number;
+  salience?: number;
+  source?: { kind: "ingest" | "tool" | "user" | "agent"; ref?: string };
+  embedding?: number[];
+}
+
+/** Structured query for recall */
+export interface RecallQuery {
+  text?: string;
+  embedding?: number[];
+  keywords?: string[];
+  filters?: Record<string, any>;
+  namespace?: string;
+}
+
 /**
  * Episode detection and creation hooks for contexts
  * Allows developers to customize when and how episodes are stored
  */
+export interface CreateEpisodeResult {
+  /** Optional explicit episode type */
+  type?: string;
+  /** Optional summary; if omitted and logs provided, a summary will be auto-generated */
+  summary?: string;
+  /** Optional logs; if omitted, the collected logs for this episode will be used */
+  logs?: AnyRef[];
+  /** Optional structured fields copied into the stored episode */
+  input?: any;
+  output?: any;
+  context?: string;
+  /** Optional extra metadata merged into the stored episode metadata */
+  metadata?: Record<string, any>;
+}
+
 export interface EpisodeHooks<TContext extends AnyContext = AnyContext> {
   /**
    * Called to determine if a new episode should be started
@@ -477,7 +549,23 @@ export interface EpisodeHooks<TContext extends AnyContext = AnyContext> {
     logs: AnyRef[],
     contextState: ContextState<TContext>,
     agent: AnyAgent
-  ): Promise<any> | any;
+  ):
+    | Promise<CreateEpisodeResult | Episode | undefined>
+    | (CreateEpisodeResult | Episode | undefined);
+
+  /**
+   * Control which log refs are allowed to be stored in episodes.
+   * If omitted, defaults to ['input','output','action_call','action_result','event'] (excludes 'thought').
+   */
+  includeRefs?: Array<
+    'input' | 'output' | 'thought' | 'action_call' | 'action_result' | 'event' | 'step' | 'run'
+  >;
+
+  /** Max size (in bytes) allowed for action_result.data before truncation/redaction (default: 4096). */
+  maxActionResultBytes?: number;
+
+  /** Optional redactor for action_result data. If provided, overrides size-based truncation. */
+  actionResultRedactor?: (data: any) => any;
 
   /**
    * Called to classify the type of episode (optional)

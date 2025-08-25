@@ -12,7 +12,7 @@ title: "TaskConfiguration"
 
 > **TaskConfiguration** = `object`
 
-Defined in: [packages/core/src/types.ts:869](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L869)
+Defined in: [packages/core/src/types.ts:853](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L853)
 
 Configuration for task execution behavior
 
@@ -22,7 +22,7 @@ Configuration for task execution behavior
 
 > `optional` **concurrency**: `object`
 
-Defined in: [packages/core/src/types.ts:870](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L870)
+Defined in: [packages/core/src/types.ts:854](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L854)
 
 #### default?
 
@@ -42,7 +42,7 @@ Max concurrent LLM calls across all contexts (default: 3)
 
 > `optional` **priority**: `object`
 
-Defined in: [packages/core/src/types.ts:876](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L876)
+Defined in: [packages/core/src/types.ts:860](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L860)
 
 #### default?
 

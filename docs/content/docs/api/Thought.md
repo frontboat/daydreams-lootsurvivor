@@ -10,7 +10,7 @@ title: "Thought"
 
 # Interface: Thought
 
-Defined in: [packages/core/src/types.ts:385](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L385)
+Defined in: [packages/core/src/types.ts:385](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L385)
 
 Represents a thought or reasoning step
 
@@ -20,7 +20,7 @@ Represents a thought or reasoning step
 
 > `optional` **confidence**: `number`
 
-Defined in: [packages/core/src/types.ts:389](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L389)
+Defined in: [packages/core/src/types.ts:389](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L389)
 
 ***
 
@@ -28,7 +28,7 @@ Defined in: [packages/core/src/types.ts:389](https://github.com/dojoengine/daydr
 
 > **content**: `string`
 
-Defined in: [packages/core/src/types.ts:387](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L387)
+Defined in: [packages/core/src/types.ts:387](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L387)
 
 ***
 
@@ -36,7 +36,7 @@ Defined in: [packages/core/src/types.ts:387](https://github.com/dojoengine/daydr
 
 > **id**: `string`
 
-Defined in: [packages/core/src/types.ts:386](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L386)
+Defined in: [packages/core/src/types.ts:386](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L386)
 
 ***
 
@@ -44,7 +44,7 @@ Defined in: [packages/core/src/types.ts:386](https://github.com/dojoengine/daydr
 
 > `optional` **metadata**: `Record`\<`string`, `any`\>
 
-Defined in: [packages/core/src/types.ts:390](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L390)
+Defined in: [packages/core/src/types.ts:390](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L390)
 
 ***
 
@@ -52,4 +52,4 @@ Defined in: [packages/core/src/types.ts:390](https://github.com/dojoengine/daydr
 
 > **timestamp**: `number`
 
-Defined in: [packages/core/src/types.ts:388](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L388)
+Defined in: [packages/core/src/types.ts:388](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L388)

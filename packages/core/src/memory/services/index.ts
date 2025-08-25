@@ -1,1 +1,0 @@
-export { KnowledgeService, type KnowledgeServiceConfig } from './knowledge-service';

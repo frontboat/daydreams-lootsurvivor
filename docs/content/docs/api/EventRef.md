@@ -12,7 +12,7 @@ title: "EventRef"
 
 > **EventRef**\<`Data`\> = `object`
 
-Defined in: [packages/core/src/types.ts:458](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L458)
+Defined in: [packages/core/src/types.ts:458](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L458)
 
 Represents a event
 
@@ -28,7 +28,7 @@ Represents a event
 
 > **data**: `Data`
 
-Defined in: [packages/core/src/types.ts:463](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L463)
+Defined in: [packages/core/src/types.ts:463](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L463)
 
 ***
 
@@ -36,7 +36,7 @@ Defined in: [packages/core/src/types.ts:463](https://github.com/dojoengine/daydr
 
 > `optional` **formatted**: `string` \| `string`[] \| [`XMLElement`](./XMLElement.md)
 
-Defined in: [packages/core/src/types.ts:466](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L466)
+Defined in: [packages/core/src/types.ts:466](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L466)
 
 ***
 
@@ -44,7 +44,7 @@ Defined in: [packages/core/src/types.ts:466](https://github.com/dojoengine/daydr
 
 > **id**: `string`
 
-Defined in: [packages/core/src/types.ts:460](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L460)
+Defined in: [packages/core/src/types.ts:460](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L460)
 
 ***
 
@@ -52,7 +52,7 @@ Defined in: [packages/core/src/types.ts:460](https://github.com/dojoengine/daydr
 
 > **name**: `string`
 
-Defined in: [packages/core/src/types.ts:461](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L461)
+Defined in: [packages/core/src/types.ts:461](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L461)
 
 ***
 
@@ -60,7 +60,7 @@ Defined in: [packages/core/src/types.ts:461](https://github.com/dojoengine/daydr
 
 > `optional` **params**: `Record`\<`string`, `string`\>
 
-Defined in: [packages/core/src/types.ts:462](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L462)
+Defined in: [packages/core/src/types.ts:462](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L462)
 
 ***
 
@@ -68,7 +68,7 @@ Defined in: [packages/core/src/types.ts:462](https://github.com/dojoengine/daydr
 
 > **processed**: `boolean`
 
-Defined in: [packages/core/src/types.ts:465](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L465)
+Defined in: [packages/core/src/types.ts:465](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L465)
 
 ***
 
@@ -76,7 +76,7 @@ Defined in: [packages/core/src/types.ts:465](https://github.com/dojoengine/daydr
 
 > **ref**: `"event"`
 
-Defined in: [packages/core/src/types.ts:459](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L459)
+Defined in: [packages/core/src/types.ts:459](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L459)
 
 ***
 
@@ -84,4 +84,4 @@ Defined in: [packages/core/src/types.ts:459](https://github.com/dojoengine/daydr
 
 > **timestamp**: `number`
 
-Defined in: [packages/core/src/types.ts:464](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L464)
+Defined in: [packages/core/src/types.ts:464](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L464)

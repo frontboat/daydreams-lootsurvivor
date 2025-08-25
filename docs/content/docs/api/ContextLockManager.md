@@ -10,7 +10,7 @@ title: "ContextLockManager"
 
 # Class: ContextLockManager
 
-Defined in: [packages/core/src/memory/context-lock-manager.ts:5](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/context-lock-manager.ts#L5)
+Defined in: [packages/core/src/memory/context-lock-manager.ts:5](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/context-lock-manager.ts#L5)
 
 Context Lock Manager - Provides mutex-like locking for context operations
 Prevents race conditions when multiple operations access the same context simultaneously
@@ -31,7 +31,7 @@ Prevents race conditions when multiple operations access the same context simult
 
 > **acquireLock**(`contextId`): `Promise`\<() => `void`\>
 
-Defined in: [packages/core/src/memory/context-lock-manager.ts:14](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/context-lock-manager.ts#L14)
+Defined in: [packages/core/src/memory/context-lock-manager.ts:14](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/context-lock-manager.ts#L14)
 
 Acquire an exclusive lock for a context
 
@@ -55,7 +55,7 @@ Promise that resolves when lock is acquired
 
 > **clearAllLocks**(): `void`
 
-Defined in: [packages/core/src/memory/context-lock-manager.ts:76](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/context-lock-manager.ts#L76)
+Defined in: [packages/core/src/memory/context-lock-manager.ts:76](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/context-lock-manager.ts#L76)
 
 Clear all locks (should only be used for cleanup/testing)
 
@@ -69,7 +69,7 @@ Clear all locks (should only be used for cleanup/testing)
 
 > **getLockedCount**(): `number`
 
-Defined in: [packages/core/src/memory/context-lock-manager.ts:69](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/context-lock-manager.ts#L69)
+Defined in: [packages/core/src/memory/context-lock-manager.ts:69](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/context-lock-manager.ts#L69)
 
 Get count of currently locked contexts
 
@@ -85,7 +85,7 @@ Number of locked contexts
 
 > **isLocked**(`contextId`): `boolean`
 
-Defined in: [packages/core/src/memory/context-lock-manager.ts:61](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/context-lock-manager.ts#L61)
+Defined in: [packages/core/src/memory/context-lock-manager.ts:61](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/context-lock-manager.ts#L61)
 
 Check if a context is currently locked
 
@@ -109,7 +109,7 @@ true if locked
 
 > **withLock**\<`T`\>(`contextId`, `fn`): `Promise`\<`T`\>
 
-Defined in: [packages/core/src/memory/context-lock-manager.ts:47](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/context-lock-manager.ts#L47)
+Defined in: [packages/core/src/memory/context-lock-manager.ts:47](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/context-lock-manager.ts#L47)
 
 Execute a function with exclusive context lock
 

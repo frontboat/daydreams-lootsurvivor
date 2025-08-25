@@ -521,22 +521,6 @@ export type TemplateVariables<T extends string, V = any> = {
   [K in ExtractTemplateVariables<T>]: any;
 };
 
-/**
- * Represents an expert system with specialized knowledge and capabilities
- */
-export type Expert = {
-  /** Unique identifier for the expert type */
-  type: string;
-  /** Description of the expert's domain and capabilities */
-  description: string;
-  /** Detailed instructions for the expert's behavior */
-  instructions: string;
-  /** Optional language model specific to this expert */
-  model?: LanguageModel;
-  /** Optional actions available to this expert */
-  actions?: AnyAction[];
-};
-
 export interface AgentContext<TContext extends AnyContext = AnyContext> {
   id: string;
   context: TContext;
@@ -1258,6 +1242,12 @@ export interface Context<
     ContextState<this>
   >;
 
+  /**
+   * Retrieval configuration to adapt memory recall per-context.
+   * Can be a static object or a function of the current context state.
+   */
+  retrieval?: Resolver<RetrievalPolicy, ContextState<this>>;
+
   __composers?: BaseContextComposer<this>[];
 
   __templateResolvers?: Record<
@@ -1265,6 +1255,21 @@ export interface Context<
     TemplateResolver<AgentContext<this> & ContextStateApi<this>>
   >;
 }
+
+/**
+ * Configuration settings for a context
+ */
+export type RetrievalPolicy = {
+  topK?: number;
+  minScore?: number;
+  include?: { content?: boolean; metadata?: boolean; diagnostics?: boolean };
+  groupBy?: "docId" | "source" | "none";
+  dedupeBy?: "id" | "docId" | "none";
+  weighting?: { salience?: number; recencyHalfLifeMs?: number };
+  scope?: "context" | "global" | "all";
+  /** Ordered list of namespaces to search (e.g., [`episodes:${ctx.id}`, 'org', 'global']). */
+  namespaces?: string[];
+};
 
 /**
  * Configuration settings for a context

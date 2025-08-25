@@ -10,7 +10,7 @@ title: "Memory"
 
 # Interface: Memory
 
-Defined in: [packages/core/src/memory/types.ts:25](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L25)
+Defined in: [packages/core/src/memory/types.ts:23](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L23)
 
 Core Memory interface - simplified for basic storage
 
@@ -20,7 +20,7 @@ Core Memory interface - simplified for basic storage
 
 > `optional` **episodes**: [`EpisodicMemory`](./EpisodicMemory.md)
 
-Defined in: [packages/core/src/memory/types.ts:31](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L31)
+Defined in: [packages/core/src/memory/types.ts:29](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L29)
 
 ***
 
@@ -28,7 +28,7 @@ Defined in: [packages/core/src/memory/types.ts:31](https://github.com/dojoengine
 
 > **graph**: [`GraphMemory`](./GraphMemory.md)
 
-Defined in: [packages/core/src/memory/types.ts:30](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L30)
+Defined in: [packages/core/src/memory/types.ts:28](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L28)
 
 ***
 
@@ -36,7 +36,7 @@ Defined in: [packages/core/src/memory/types.ts:30](https://github.com/dojoengine
 
 > **kv**: [`KeyValueMemory`](./KeyValueMemory.md)
 
-Defined in: [packages/core/src/memory/types.ts:28](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L28)
+Defined in: [packages/core/src/memory/types.ts:26](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L26)
 
 ***
 
@@ -44,7 +44,7 @@ Defined in: [packages/core/src/memory/types.ts:28](https://github.com/dojoengine
 
 > **vector**: [`VectorMemory`](./VectorMemory.md)
 
-Defined in: [packages/core/src/memory/types.ts:29](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L29)
+Defined in: [packages/core/src/memory/types.ts:27](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L27)
 
 ***
 
@@ -52,7 +52,7 @@ Defined in: [packages/core/src/memory/types.ts:29](https://github.com/dojoengine
 
 > **working**: [`IWorkingMemory`](./IWorkingMemory.md)
 
-Defined in: [packages/core/src/memory/types.ts:27](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L27)
+Defined in: [packages/core/src/memory/types.ts:25](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L25)
 
 ## Methods
 
@@ -60,7 +60,7 @@ Defined in: [packages/core/src/memory/types.ts:27](https://github.com/dojoengine
 
 > **close**(): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/types.ts:40](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L40)
+Defined in: [packages/core/src/memory/types.ts:47](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L47)
 
 #### Returns
 
@@ -72,7 +72,7 @@ Defined in: [packages/core/src/memory/types.ts:40](https://github.com/dojoengine
 
 > **forget**(`criteria`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/types.ts:36](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L36)
+Defined in: [packages/core/src/memory/types.ts:43](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L43)
 
 #### Parameters
 
@@ -90,7 +90,7 @@ Defined in: [packages/core/src/memory/types.ts:36](https://github.com/dojoengine
 
 > **initialize**(): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/types.ts:39](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L39)
+Defined in: [packages/core/src/memory/types.ts:46](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L46)
 
 #### Returns
 
@@ -102,13 +102,15 @@ Defined in: [packages/core/src/memory/types.ts:39](https://github.com/dojoengine
 
 > **recall**(`query`, `options?`): `Promise`\<[`MemoryResult`](./MemoryResult.md)[]\>
 
-Defined in: [packages/core/src/memory/types.ts:35](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L35)
+Defined in: [packages/core/src/memory/types.ts:34](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L34)
+
+Vector/hybrid recall. Accepts string or structured query.
 
 #### Parameters
 
 ##### query
 
-`string`
+`string` | [`RecallQuery`](./RecallQuery.md)
 
 ##### options?
 
@@ -120,11 +122,35 @@ Defined in: [packages/core/src/memory/types.ts:35](https://github.com/dojoengine
 
 ***
 
+### recallOne()
+
+> **recallOne**(`query`, `options?`): `Promise`\<`null` \| [`MemoryResult`](./MemoryResult.md)\>
+
+Defined in: [packages/core/src/memory/types.ts:39](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L39)
+
+Convenience helper returning the top match or null
+
+#### Parameters
+
+##### query
+
+`string` | [`RecallQuery`](./RecallQuery.md)
+
+##### options?
+
+[`RecallOptions`](./RecallOptions.md)
+
+#### Returns
+
+`Promise`\<`null` \| [`MemoryResult`](./MemoryResult.md)\>
+
+***
+
 ### remember()
 
 > **remember**(`content`, `options?`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/types.ts:34](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L34)
+Defined in: [packages/core/src/memory/types.ts:32](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L32)
 
 #### Parameters
 
@@ -139,3 +165,67 @@ Defined in: [packages/core/src/memory/types.ts:34](https://github.com/dojoengine
 #### Returns
 
 `Promise`\<`void`\>
+
+***
+
+### rememberBatch()
+
+> **rememberBatch**(`records`, `options?`): `Promise`\<\{ `ids`: `string`[]; `warnings?`: `string`[]; \}\>
+
+Defined in: [packages/core/src/memory/types.ts:55](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L55)
+
+Store multiple records efficiently, with optional chunking
+
+#### Parameters
+
+##### records
+
+[`MemoryRecord`](./MemoryRecord.md)[]
+
+##### options?
+
+###### chunk?
+
+\{ `overlap?`: `number`; `size?`: `number`; \}
+
+###### chunk.overlap?
+
+`number`
+
+###### chunk.size?
+
+`number`
+
+###### upsert?
+
+`boolean`
+
+#### Returns
+
+`Promise`\<\{ `ids`: `string`[]; `warnings?`: `string`[]; \}\>
+
+***
+
+### rememberRecord()
+
+> **rememberRecord**(`record`, `options?`): `Promise`\<\{ `id`: `string`; \}\>
+
+Defined in: [packages/core/src/memory/types.ts:50](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L50)
+
+Store a structured record into memory
+
+#### Parameters
+
+##### record
+
+[`MemoryRecord`](./MemoryRecord.md)
+
+##### options?
+
+###### upsert?
+
+`boolean`
+
+#### Returns
+
+`Promise`\<\{ `id`: `string`; \}\>

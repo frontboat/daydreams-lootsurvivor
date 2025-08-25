@@ -10,7 +10,7 @@ title: "Context"
 
 # Interface: Context\<TMemory, Schema, Ctx, Actions, Events\>
 
-Defined in: [packages/core/src/types.ts:1093](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1093)
+Defined in: [packages/core/src/types.ts:1077](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L1077)
 
 ## Extends
 
@@ -44,7 +44,7 @@ Defined in: [packages/core/src/types.ts:1093](https://github.com/dojoengine/dayd
 
 > `optional` **\_\_composers**: `BaseContextComposer`\<`Context`\<`TMemory`, `Schema`, `Ctx`, `Actions`, `Events`\>\>[]
 
-Defined in: [packages/core/src/types.ts:1201](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1201)
+Defined in: [packages/core/src/types.ts:1191](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L1191)
 
 ***
 
@@ -52,7 +52,7 @@ Defined in: [packages/core/src/types.ts:1201](https://github.com/dojoengine/dayd
 
 > `optional` **\_\_templateResolvers**: `Record`\<`string`, [`TemplateResolver`](./TemplateResolver.md)\<[`AgentContext`](./AgentContext.md)\<`Context`\<`TMemory`, `Schema`, `Ctx`, `Actions`, `Events`\>\> & [`ContextStateApi`](./ContextStateApi.md)\<`Context`\<`TMemory`, `Schema`, `Ctx`, `Actions`, `Events`\>\>\>\>
 
-Defined in: [packages/core/src/types.ts:1203](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1203)
+Defined in: [packages/core/src/types.ts:1193](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L1193)
 
 ***
 
@@ -60,7 +60,7 @@ Defined in: [packages/core/src/types.ts:1203](https://github.com/dojoengine/dayd
 
 > `optional` **actions**: [`Resolver`](./Resolver.md)\<[`Action`](./Action.md)\<[`ActionSchema`](./ActionSchema.md), `any`, `unknown`, [`AnyContext`](./AnyContext.md), [`AnyAgent`](./AnyAgent.md), [`ActionState`](./ActionState.md)\>[], [`ContextState`](./ContextState.md)\<`Context`\<`TMemory`, `Schema`, `Ctx`, `Actions`, `Events`\>\>\>
 
-Defined in: [packages/core/src/types.ts:1181](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1181)
+Defined in: [packages/core/src/types.ts:1165](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L1165)
 
 ***
 
@@ -68,7 +68,7 @@ Defined in: [packages/core/src/types.ts:1181](https://github.com/dojoengine/dayd
 
 > `optional` **create**: (`params`, `agent`) => `TMemory` \| `Promise`\<`TMemory`\>
 
-Defined in: [packages/core/src/types.ts:1118](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1118)
+Defined in: [packages/core/src/types.ts:1102](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L1102)
 
 Optional function to create new memory for this context
 
@@ -110,7 +110,7 @@ Optional function to create new memory for this context
 
 > `optional` **description**: [`Resolver`](./Resolver.md)\<`string` \| `string`[], [`ContextState`](./ContextState.md)\<`Context`\<`TMemory`, `Schema`, `Ctx`, `Actions`, `Events`\>\>\>
 
-Defined in: [packages/core/src/types.ts:1133](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1133)
+Defined in: [packages/core/src/types.ts:1117](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L1117)
 
 Optional description of this context
 
@@ -120,7 +120,7 @@ Optional description of this context
 
 > `optional` **episodeHooks**: [`EpisodeHooks`](./EpisodeHooks.md)\<`Context`\<`TMemory`, `Schema`, `Ctx`, `Actions`, `Events`\>\>
 
-Defined in: [packages/core/src/types.ts:1179](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1179)
+Defined in: [packages/core/src/types.ts:1163](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L1163)
 
 Episode detection and creation hooks for this context
 
@@ -130,7 +130,7 @@ Episode detection and creation hooks for this context
 
 > `optional` **events**: [`Resolver`](./Resolver.md)\<`Events`, [`ContextState`](./ContextState.md)\<`Context`\<`TMemory`, `Schema`, `Ctx`, `Actions`, `Events`\>\>\>
 
-Defined in: [packages/core/src/types.ts:1183](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1183)
+Defined in: [packages/core/src/types.ts:1167](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L1167)
 
 ***
 
@@ -138,7 +138,7 @@ Defined in: [packages/core/src/types.ts:1183](https://github.com/dojoengine/dayd
 
 > `optional` **inputs**: [`Resolver`](./Resolver.md)\<`Record`\<`string`, [`InputConfig`](./InputConfig.md)\<`any`, `any`, [`AnyAgent`](./AnyAgent.md)\>\>, [`ContextState`](./ContextState.md)\<`Context`\<`TMemory`, `Schema`, `Ctx`, `Actions`, `Events`\>\>\>
 
-Defined in: [packages/core/src/types.ts:1188](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1188)
+Defined in: [packages/core/src/types.ts:1172](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L1172)
 
 A record of input configurations for the context.
 
@@ -148,7 +148,7 @@ A record of input configurations for the context.
 
 > `optional` **instructions**: [`Resolver`](./Resolver.md)\<[`Instruction`](./Instruction.md), [`ContextState`](./ContextState.md)\<`Context`\<`TMemory`, `Schema`, `Ctx`, `Actions`, `Events`\>\>\>
 
-Defined in: [packages/core/src/types.ts:1130](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1130)
+Defined in: [packages/core/src/types.ts:1114](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L1114)
 
 Optional instructions for this context
 
@@ -158,7 +158,7 @@ Optional instructions for this context
 
 > `optional` **key**: (`args`) => `string`
 
-Defined in: [packages/core/src/types.ts:1108](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1108)
+Defined in: [packages/core/src/types.ts:1092](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L1092)
 
 Function to generate a unique key from context arguments
 
@@ -178,7 +178,7 @@ Function to generate a unique key from context arguments
 
 > `optional` **load**: (`id`, `params`) => `Promise`\<`null` \| `TMemory`\>
 
-Defined in: [packages/core/src/types.ts:1136](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1136)
+Defined in: [packages/core/src/types.ts:1120](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L1120)
 
 Optional function to load existing memory
 
@@ -208,7 +208,7 @@ Optional function to load existing memory
 
 > `optional` **loader**: (`state`, `agent`) => `Promise`\<`void`\>
 
-Defined in: [packages/core/src/types.ts:1172](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1172)
+Defined in: [packages/core/src/types.ts:1156](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L1156)
 
 #### Parameters
 
@@ -230,7 +230,7 @@ Defined in: [packages/core/src/types.ts:1172](https://github.com/dojoengine/dayd
 
 > `optional` **maxSteps**: `number`
 
-Defined in: [packages/core/src/types.ts:1174](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1174)
+Defined in: [packages/core/src/types.ts:1158](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L1158)
 
 ***
 
@@ -238,7 +238,7 @@ Defined in: [packages/core/src/types.ts:1174](https://github.com/dojoengine/dayd
 
 > `optional` **maxWorkingMemorySize**: `number`
 
-Defined in: [packages/core/src/types.ts:1176](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1176)
+Defined in: [packages/core/src/types.ts:1160](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L1160)
 
 ***
 
@@ -246,7 +246,7 @@ Defined in: [packages/core/src/types.ts:1176](https://github.com/dojoengine/dayd
 
 > `optional` **model**: `LanguageModel`
 
-Defined in: [packages/core/src/types.ts:1148](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1148)
+Defined in: [packages/core/src/types.ts:1132](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L1132)
 
 ***
 
@@ -254,7 +254,7 @@ Defined in: [packages/core/src/types.ts:1148](https://github.com/dojoengine/dayd
 
 > `optional` **modelSettings**: `object`
 
-Defined in: [packages/core/src/types.ts:1150](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1150)
+Defined in: [packages/core/src/types.ts:1134](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L1134)
 
 #### Index Signature
 
@@ -290,7 +290,7 @@ Defined in: [packages/core/src/types.ts:1150](https://github.com/dojoengine/dayd
 
 > `optional` **onError**: (`error`, `ctx`, `agent`) => `Promise`\<`void`\>
 
-Defined in: [packages/core/src/types.ts:1166](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1166)
+Defined in: [packages/core/src/types.ts:1150](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L1150)
 
 #### Parameters
 
@@ -316,7 +316,7 @@ Defined in: [packages/core/src/types.ts:1166](https://github.com/dojoengine/dayd
 
 > `optional` **onRun**: (`ctx`, `agent`) => `Promise`\<`void`\>
 
-Defined in: [packages/core/src/types.ts:1160](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1160)
+Defined in: [packages/core/src/types.ts:1144](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L1144)
 
 #### Parameters
 
@@ -338,7 +338,7 @@ Defined in: [packages/core/src/types.ts:1160](https://github.com/dojoengine/dayd
 
 > `optional` **onStep**: (`ctx`, `agent`) => `Promise`\<`void`\>
 
-Defined in: [packages/core/src/types.ts:1162](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1162)
+Defined in: [packages/core/src/types.ts:1146](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L1146)
 
 #### Parameters
 
@@ -358,9 +358,9 @@ Defined in: [packages/core/src/types.ts:1162](https://github.com/dojoengine/dayd
 
 ### outputs?
 
-> `optional` **outputs**: [`Resolver`](./Resolver.md)\<`Record`\<`string`, `Omit`\<[`Output`](./Output.md)\<`any`, `any`, [`AnyContext`](./AnyContext.md), `any`\>, `"type"`\>\>, [`ContextState`](./ContextState.md)\<`Context`\<`TMemory`, `Schema`, `Ctx`, `Actions`, `Events`\>\>\>
+> `optional` **outputs**: [`Resolver`](./Resolver.md)\<`Record`\<`string`, `Omit`\<[`Output`](./Output.md)\<`any`, `any`, [`AnyContext`](./AnyContext.md), `any`\>, `"name"`\>\>, [`ContextState`](./ContextState.md)\<`Context`\<`TMemory`, `Schema`, `Ctx`, `Actions`, `Events`\>\>\>
 
-Defined in: [packages/core/src/types.ts:1196](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1196)
+Defined in: [packages/core/src/types.ts:1180](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L1180)
 
 A record of output configurations for the context.
 
@@ -370,7 +370,7 @@ A record of output configurations for the context.
 
 > `optional` **render**: (`state`) => `string` \| `string`[] \| [`XMLElement`](./XMLElement.md) \| [`XMLElement`](./XMLElement.md)[] \| (`string` \| [`XMLElement`](./XMLElement.md))[]
 
-Defined in: [packages/core/src/types.ts:1144](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1144)
+Defined in: [packages/core/src/types.ts:1128](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L1128)
 
 Optional function to render memory state
 
@@ -386,11 +386,22 @@ Optional function to render memory state
 
 ***
 
+### retrieval?
+
+> `optional` **retrieval**: [`Resolver`](./Resolver.md)\<[`RetrievalPolicy`](./RetrievalPolicy.md), [`ContextState`](./ContextState.md)\<`Context`\<`TMemory`, `Schema`, `Ctx`, `Actions`, `Events`\>\>\>
+
+Defined in: [packages/core/src/types.ts:1189](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L1189)
+
+Retrieval configuration to adapt memory recall per-context.
+Can be a static object or a function of the current context state.
+
+***
+
 ### save()?
 
 > `optional` **save**: (`state`) => `Promise`\<`void`\>
 
-Defined in: [packages/core/src/types.ts:1141](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1141)
+Defined in: [packages/core/src/types.ts:1125](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L1125)
 
 Optional function to save memory state
 
@@ -410,7 +421,7 @@ Optional function to save memory state
 
 > `optional` **schema**: `Schema`
 
-Defined in: [packages/core/src/types.ts:1106](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1106)
+Defined in: [packages/core/src/types.ts:1090](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L1090)
 
 Zod schema for validating context arguments
 
@@ -420,7 +431,7 @@ Zod schema for validating context arguments
 
 > `optional` **setup**: (`args`, `settings`, `agent`) => `Ctx` \| `Promise`\<`Ctx`\>
 
-Defined in: [packages/core/src/types.ts:1111](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1111)
+Defined in: [packages/core/src/types.ts:1095](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L1095)
 
 Setup function to initialize context data
 
@@ -448,7 +459,7 @@ Setup function to initialize context data
 
 > `optional` **shouldContinue**: (`ctx`) => `boolean`
 
-Defined in: [packages/core/src/types.ts:1164](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1164)
+Defined in: [packages/core/src/types.ts:1148](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L1148)
 
 #### Parameters
 
@@ -466,7 +477,7 @@ Defined in: [packages/core/src/types.ts:1164](https://github.com/dojoengine/dayd
 
 > **type**: `string`
 
-Defined in: [packages/core/src/types.ts:1104](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1104)
+Defined in: [packages/core/src/types.ts:1088](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L1088)
 
 Unique type identifier for this context
 
@@ -476,7 +487,7 @@ Unique type identifier for this context
 
 > **setActions**\<`TActions`\>(`actions`): `Context`\<`TMemory`, `Schema`, `Ctx`, `TActions`, `Events`\>
 
-Defined in: [packages/core/src/types.ts:1008](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1008)
+Defined in: [packages/core/src/types.ts:992](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L992)
 
 #### Type Parameters
 
@@ -504,7 +515,7 @@ Defined in: [packages/core/src/types.ts:1008](https://github.com/dojoengine/dayd
 
 > **setInputs**\<`TSchemas`\>(`inputs`): `Context`\<`TMemory`, `Schema`, `Ctx`, `Actions`, `Events`\>
 
-Defined in: [packages/core/src/types.ts:1015](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1015)
+Defined in: [packages/core/src/types.ts:999](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L999)
 
 #### Type Parameters
 
@@ -532,7 +543,7 @@ Defined in: [packages/core/src/types.ts:1015](https://github.com/dojoengine/dayd
 
 > **setOutputs**\<`TSchemas`\>(`outputs`): `Context`\<`TMemory`, `Schema`, `Ctx`, `Actions`, `Events`\>
 
-Defined in: [packages/core/src/types.ts:1024](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1024)
+Defined in: [packages/core/src/types.ts:1008](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L1008)
 
 #### Type Parameters
 
@@ -560,7 +571,7 @@ Defined in: [packages/core/src/types.ts:1024](https://github.com/dojoengine/dayd
 
 > **use**\<`Refs`\>(`composer`): `Context`\<`TMemory`, `Schema`, `Ctx`, `Actions`, `Events`\>
 
-Defined in: [packages/core/src/types.ts:1035](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L1035)
+Defined in: [packages/core/src/types.ts:1019](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L1019)
 
 #### Type Parameters
 

@@ -10,7 +10,7 @@ title: "VectorResult"
 
 # Interface: VectorResult
 
-Defined in: [packages/core/src/memory/types.ts:135](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L135)
+Defined in: [packages/core/src/memory/types.ts:142](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L142)
 
 ## Properties
 
@@ -18,7 +18,7 @@ Defined in: [packages/core/src/memory/types.ts:135](https://github.com/dojoengin
 
 > `optional` **content**: `string`
 
-Defined in: [packages/core/src/memory/types.ts:138](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L138)
+Defined in: [packages/core/src/memory/types.ts:145](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L145)
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: [packages/core/src/memory/types.ts:138](https://github.com/dojoengin
 
 > **id**: `string`
 
-Defined in: [packages/core/src/memory/types.ts:136](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L136)
+Defined in: [packages/core/src/memory/types.ts:143](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L143)
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: [packages/core/src/memory/types.ts:136](https://github.com/dojoengin
 
 > `optional` **metadata**: `Record`\<`string`, `unknown`\>
 
-Defined in: [packages/core/src/memory/types.ts:139](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L139)
+Defined in: [packages/core/src/memory/types.ts:146](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L146)
 
 ***
 
@@ -42,4 +42,4 @@ Defined in: [packages/core/src/memory/types.ts:139](https://github.com/dojoengin
 
 > **score**: `number`
 
-Defined in: [packages/core/src/memory/types.ts:137](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L137)
+Defined in: [packages/core/src/memory/types.ts:144](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L144)

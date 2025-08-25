@@ -12,7 +12,7 @@ title: "Output"
 
 > **Output**\<`Schema`, `Response`, `TContext`, `TAgent`\> = `object`
 
-Defined in: [packages/core/src/types.ts:272](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L272)
+Defined in: [packages/core/src/types.ts:272](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L272)
 
 ## Type Parameters
 
@@ -38,7 +38,7 @@ Defined in: [packages/core/src/types.ts:272](https://github.com/dojoengine/daydr
 
 > `optional` **attributes**: [`OutputSchema`](./OutputSchema.md)
 
-Defined in: [packages/core/src/types.ts:283](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L283)
+Defined in: [packages/core/src/types.ts:283](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L283)
 
 ***
 
@@ -46,7 +46,7 @@ Defined in: [packages/core/src/types.ts:283](https://github.com/dojoengine/daydr
 
 > `optional` **context**: `TContext`
 
-Defined in: [packages/core/src/types.ts:284](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L284)
+Defined in: [packages/core/src/types.ts:284](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L284)
 
 ***
 
@@ -54,7 +54,7 @@ Defined in: [packages/core/src/types.ts:284](https://github.com/dojoengine/daydr
 
 > `optional` **description**: `string`
 
-Defined in: [packages/core/src/types.ts:279](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L279)
+Defined in: [packages/core/src/types.ts:279](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L279)
 
 ***
 
@@ -62,7 +62,7 @@ Defined in: [packages/core/src/types.ts:279](https://github.com/dojoengine/daydr
 
 > `optional` **enabled**: (`ctx`) => `boolean`
 
-Defined in: [packages/core/src/types.ts:286](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L286)
+Defined in: [packages/core/src/types.ts:286](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L286)
 
 #### Parameters
 
@@ -80,7 +80,7 @@ Defined in: [packages/core/src/types.ts:286](https://github.com/dojoengine/daydr
 
 > `optional` **examples**: `string`[]
 
-Defined in: [packages/core/src/types.ts:296](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L296)
+Defined in: [packages/core/src/types.ts:296](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L296)
 
 ***
 
@@ -88,7 +88,7 @@ Defined in: [packages/core/src/types.ts:296](https://github.com/dojoengine/daydr
 
 > `optional` **format**: (`res`) => `string` \| `string`[] \| [`XMLElement`](./XMLElement.md)
 
-Defined in: [packages/core/src/types.ts:294](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L294)
+Defined in: [packages/core/src/types.ts:294](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L294)
 
 #### Parameters
 
@@ -106,7 +106,7 @@ Defined in: [packages/core/src/types.ts:294](https://github.com/dojoengine/daydr
 
 > `optional` **handler**: (`data`, `ctx`, `agent`) => [`MaybePromise`](./MaybePromise.md)\<`Response` \| `Response`[]\>
 
-Defined in: [packages/core/src/types.ts:287](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L287)
+Defined in: [packages/core/src/types.ts:287](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L287)
 
 #### Parameters
 
@@ -132,7 +132,7 @@ Defined in: [packages/core/src/types.ts:287](https://github.com/dojoengine/daydr
 
 > `optional` **install**: (`agent`) => [`MaybePromise`](./MaybePromise.md)\<`void`\>
 
-Defined in: [packages/core/src/types.ts:285](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L285)
+Defined in: [packages/core/src/types.ts:285](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L285)
 
 #### Parameters
 
@@ -150,7 +150,15 @@ Defined in: [packages/core/src/types.ts:285](https://github.com/dojoengine/daydr
 
 > `optional` **instructions**: `string`
 
-Defined in: [packages/core/src/types.ts:280](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L280)
+Defined in: [packages/core/src/types.ts:280](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L280)
+
+***
+
+### name
+
+> **name**: `string`
+
+Defined in: [packages/core/src/types.ts:278](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L278)
 
 ***
 
@@ -158,7 +166,7 @@ Defined in: [packages/core/src/types.ts:280](https://github.com/dojoengine/daydr
 
 > `optional` **required**: `boolean`
 
-Defined in: [packages/core/src/types.ts:281](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L281)
+Defined in: [packages/core/src/types.ts:281](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L281)
 
 ***
 
@@ -166,12 +174,4 @@ Defined in: [packages/core/src/types.ts:281](https://github.com/dojoengine/daydr
 
 > `optional` **schema**: `Schema`
 
-Defined in: [packages/core/src/types.ts:282](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L282)
-
-***
-
-### type
-
-> **type**: `string`
-
-Defined in: [packages/core/src/types.ts:278](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L278)
+Defined in: [packages/core/src/types.ts:282](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L282)

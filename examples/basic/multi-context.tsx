@@ -3,7 +3,7 @@
  *
  * This example demonstrates Daydreams' powerful context composition pattern where
  * contexts can include other contexts to create rich, modular experiences.
- * 
+ *
  * Updated for the new output system with JSON structured data and 'name' attributes.
  *
  * What's included:
@@ -42,6 +42,7 @@ import {
   input,
   type EpisodeHooks,
 } from "@daydreamsai/core";
+import { createChromaMemory } from "@daydreamsai/chroma";
 
 import * as z from "zod";
 import * as readline from "readline";
@@ -63,7 +64,7 @@ const personalAssistantHooks: EpisodeHooks = {
 
     // Handle new JSON structure - check both content field and data.content
     let content = "";
-    if (typeof ref.data === 'object' && ref.data?.content) {
+    if (typeof ref.data === "object" && ref.data?.content) {
       content = ref.data.content.toString().toLowerCase();
     } else if (ref.content) {
       content = ref.content.toString().toLowerCase();
@@ -125,6 +126,7 @@ const personalAssistantHooks: EpisodeHooks = {
       } user messages, ${actions.length} memory actions, ${Math.round(
         (logs[logs.length - 1]?.timestamp - logs[0]?.timestamp) / 1000
       )}s duration`,
+      logs,
     };
   },
 
@@ -149,6 +151,11 @@ const personalAssistantHooks: EpisodeHooks = {
       episodeData.assistant?.personalizedResponses > 0 ? "yes" : "no",
   }),
 };
+
+const memory = createChromaMemory({
+  path: "http://localhost:8000",
+  collectionName: "daydreams_vectors",
+});
 
 // Define what our analytics context tracks
 interface AnalyticsMemory {
@@ -368,13 +375,14 @@ const textInput = input({
 const agent = createDreams({
   logLevel: LogLevel.TRACE,
   model: dreamsrouter("google-vertex/gemini-2.5-flash"),
+  memory,
   contexts: [assistantContext],
   inputs: {
     text: textInput,
   },
   outputs: {
     text: {
-      description: "Text response to the user", 
+      description: "Text response to the user",
       schema: z.object({
         content: z.string().describe("The text content to send to the user"),
       }),
@@ -497,9 +505,10 @@ async function main() {
       const output = result.find((r) => r.ref === "output");
       if (output && "data" in output) {
         // Handle the new JSON structure - extract content from the structured data
-        const content = typeof output.data === 'object' && output.data?.content 
-          ? output.data.content 
-          : output.data;
+        const content =
+          typeof output.data === "object" && output.data?.content
+            ? output.data.content
+            : output.data;
         console.log("\n🤖:", content);
       }
     } catch (error) {

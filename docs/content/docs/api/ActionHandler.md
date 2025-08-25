@@ -12,7 +12,7 @@ title: "ActionHandler"
 
 > **ActionHandler**\<`Schema`, `Result`, `TContext`, `TAgent`, `TMemory`\> = `Schema` *extends* `undefined` ? (`ctx`, `agent`) => [`MaybePromise`](./MaybePromise.md)\<`Result`\> : (`args`, `ctx`, `agent`) => [`MaybePromise`](./MaybePromise.md)\<`Result`\>
 
-Defined in: [packages/core/src/types.ts:108](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L108)
+Defined in: [packages/core/src/types.ts:108](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L108)
 
 ## Type Parameters
 

@@ -17,6 +17,8 @@ export interface ChromaMemoryConfig {
   collectionName?: string;
   /** Custom embedding function from chromadb */
   embeddingFunction?: any;
+  /** Opt-in to OpenAI embeddings when OPENAI_API_KEY is set */
+  useOpenAI?: boolean;
   /** Auth configuration for ChromaDB */
   auth?: {
     provider?: string;
@@ -42,6 +44,7 @@ export function createChromaMemory(
     path,
     collectionName = "daydreams_vectors",
     embeddingFunction,
+    useOpenAI,
     auth,
     metadata,
   } = config;
@@ -51,6 +54,7 @@ export function createChromaMemory(
     path,
     collectionName,
     embeddingFunction,
+    useOpenAI,
     auth,
     metadata,
   });

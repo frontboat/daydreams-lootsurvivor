@@ -10,7 +10,7 @@ title: "SetOptions"
 
 # Interface: SetOptions
 
-Defined in: [packages/core/src/memory/types.ts:99](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L99)
+Defined in: [packages/core/src/memory/types.ts:106](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L106)
 
 ## Properties
 
@@ -18,7 +18,7 @@ Defined in: [packages/core/src/memory/types.ts:99](https://github.com/dojoengine
 
 > `optional` **ifNotExists**: `boolean`
 
-Defined in: [packages/core/src/memory/types.ts:101](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L101)
+Defined in: [packages/core/src/memory/types.ts:108](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L108)
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: [packages/core/src/memory/types.ts:101](https://github.com/dojoengin
 
 > `optional` **tags**: `Record`\<`string`, `string`\>
 
-Defined in: [packages/core/src/memory/types.ts:102](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L102)
+Defined in: [packages/core/src/memory/types.ts:109](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L109)
 
 ***
 
@@ -34,4 +34,4 @@ Defined in: [packages/core/src/memory/types.ts:102](https://github.com/dojoengin
 
 > `optional` **ttl**: `number`
 
-Defined in: [packages/core/src/memory/types.ts:100](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L100)
+Defined in: [packages/core/src/memory/types.ts:107](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L107)

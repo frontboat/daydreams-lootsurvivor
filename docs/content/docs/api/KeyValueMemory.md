@@ -10,7 +10,7 @@ title: "KeyValueMemory"
 
 # Interface: KeyValueMemory
 
-Defined in: [packages/core/src/memory/types.ts:334](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L334)
+Defined in: [packages/core/src/memory/types.ts:341](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L341)
 
 Key-Value Memory interface
 
@@ -20,7 +20,7 @@ Key-Value Memory interface
 
 > **count**(`pattern?`): `Promise`\<`number`\>
 
-Defined in: [packages/core/src/memory/types.ts:340](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L340)
+Defined in: [packages/core/src/memory/types.ts:347](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L347)
 
 #### Parameters
 
@@ -38,7 +38,7 @@ Defined in: [packages/core/src/memory/types.ts:340](https://github.com/dojoengin
 
 > **delete**(`key`): `Promise`\<`boolean`\>
 
-Defined in: [packages/core/src/memory/types.ts:337](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L337)
+Defined in: [packages/core/src/memory/types.ts:344](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L344)
 
 #### Parameters
 
@@ -56,7 +56,7 @@ Defined in: [packages/core/src/memory/types.ts:337](https://github.com/dojoengin
 
 > **deleteBatch**(`keys`): `Promise`\<`number`\>
 
-Defined in: [packages/core/src/memory/types.ts:346](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L346)
+Defined in: [packages/core/src/memory/types.ts:353](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L353)
 
 #### Parameters
 
@@ -74,7 +74,7 @@ Defined in: [packages/core/src/memory/types.ts:346](https://github.com/dojoengin
 
 > **exists**(`key`): `Promise`\<`boolean`\>
 
-Defined in: [packages/core/src/memory/types.ts:338](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L338)
+Defined in: [packages/core/src/memory/types.ts:345](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L345)
 
 #### Parameters
 
@@ -92,7 +92,7 @@ Defined in: [packages/core/src/memory/types.ts:338](https://github.com/dojoengin
 
 > **get**\<`T`\>(`key`): `Promise`\<`null` \| `T`\>
 
-Defined in: [packages/core/src/memory/types.ts:335](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L335)
+Defined in: [packages/core/src/memory/types.ts:342](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L342)
 
 #### Type Parameters
 
@@ -116,7 +116,7 @@ Defined in: [packages/core/src/memory/types.ts:335](https://github.com/dojoengin
 
 > **getBatch**\<`T`\>(`keys`): `Promise`\<`Map`\<`string`, `T`\>\>
 
-Defined in: [packages/core/src/memory/types.ts:344](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L344)
+Defined in: [packages/core/src/memory/types.ts:351](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L351)
 
 #### Type Parameters
 
@@ -140,7 +140,7 @@ Defined in: [packages/core/src/memory/types.ts:344](https://github.com/dojoengin
 
 > **keys**(`pattern?`): `Promise`\<`string`[]\>
 
-Defined in: [packages/core/src/memory/types.ts:339](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L339)
+Defined in: [packages/core/src/memory/types.ts:346](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L346)
 
 #### Parameters
 
@@ -158,7 +158,7 @@ Defined in: [packages/core/src/memory/types.ts:339](https://github.com/dojoengin
 
 > **scan**(`pattern?`): `AsyncIterator`\<\[`string`, `unknown`\]\>
 
-Defined in: [packages/core/src/memory/types.ts:341](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L341)
+Defined in: [packages/core/src/memory/types.ts:348](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L348)
 
 #### Parameters
 
@@ -176,7 +176,7 @@ Defined in: [packages/core/src/memory/types.ts:341](https://github.com/dojoengin
 
 > **set**\<`T`\>(`key`, `value`, `options?`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/types.ts:336](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L336)
+Defined in: [packages/core/src/memory/types.ts:343](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L343)
 
 #### Type Parameters
 
@@ -208,7 +208,7 @@ Defined in: [packages/core/src/memory/types.ts:336](https://github.com/dojoengin
 
 > **setBatch**\<`T`\>(`entries`, `options?`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/memory/types.ts:345](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L345)
+Defined in: [packages/core/src/memory/types.ts:352](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L352)
 
 #### Type Parameters
 

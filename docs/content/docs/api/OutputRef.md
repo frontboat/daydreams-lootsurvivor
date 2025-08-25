@@ -12,7 +12,7 @@ title: "OutputRef"
 
 > **OutputRef**\<`Data`\> = `object`
 
-Defined in: [packages/core/src/types.ts:420](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L420)
+Defined in: [packages/core/src/types.ts:420](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L420)
 
 Reference to an output event in the system
 
@@ -28,7 +28,7 @@ Reference to an output event in the system
 
 > **content**: `string`
 
-Defined in: [packages/core/src/types.ts:425](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L425)
+Defined in: [packages/core/src/types.ts:425](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L425)
 
 ***
 
@@ -36,7 +36,7 @@ Defined in: [packages/core/src/types.ts:425](https://github.com/dojoengine/daydr
 
 > **data**: `Data`
 
-Defined in: [packages/core/src/types.ts:426](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L426)
+Defined in: [packages/core/src/types.ts:426](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L426)
 
 ***
 
@@ -44,7 +44,7 @@ Defined in: [packages/core/src/types.ts:426](https://github.com/dojoengine/daydr
 
 > `optional` **error**: `unknown`
 
-Defined in: [packages/core/src/types.ts:430](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L430)
+Defined in: [packages/core/src/types.ts:430](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L430)
 
 ***
 
@@ -52,7 +52,7 @@ Defined in: [packages/core/src/types.ts:430](https://github.com/dojoengine/daydr
 
 > `optional` **formatted**: `string` \| `string`[] \| [`XMLElement`](./XMLElement.md)
 
-Defined in: [packages/core/src/types.ts:429](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L429)
+Defined in: [packages/core/src/types.ts:429](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L429)
 
 ***
 
@@ -60,7 +60,15 @@ Defined in: [packages/core/src/types.ts:429](https://github.com/dojoengine/daydr
 
 > **id**: `string`
 
-Defined in: [packages/core/src/types.ts:421](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L421)
+Defined in: [packages/core/src/types.ts:421](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L421)
+
+***
+
+### name
+
+> **name**: `string`
+
+Defined in: [packages/core/src/types.ts:423](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L423)
 
 ***
 
@@ -68,7 +76,7 @@ Defined in: [packages/core/src/types.ts:421](https://github.com/dojoengine/daydr
 
 > `optional` **params**: `Record`\<`string`, `string`\>
 
-Defined in: [packages/core/src/types.ts:424](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L424)
+Defined in: [packages/core/src/types.ts:424](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L424)
 
 ***
 
@@ -76,7 +84,7 @@ Defined in: [packages/core/src/types.ts:424](https://github.com/dojoengine/daydr
 
 > **processed**: `boolean`
 
-Defined in: [packages/core/src/types.ts:428](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L428)
+Defined in: [packages/core/src/types.ts:428](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L428)
 
 ***
 
@@ -84,7 +92,7 @@ Defined in: [packages/core/src/types.ts:428](https://github.com/dojoengine/daydr
 
 > **ref**: `"output"`
 
-Defined in: [packages/core/src/types.ts:422](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L422)
+Defined in: [packages/core/src/types.ts:422](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L422)
 
 ***
 
@@ -92,12 +100,4 @@ Defined in: [packages/core/src/types.ts:422](https://github.com/dojoengine/daydr
 
 > **timestamp**: `number`
 
-Defined in: [packages/core/src/types.ts:427](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L427)
-
-***
-
-### type
-
-> **type**: `string`
-
-Defined in: [packages/core/src/types.ts:423](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L423)
+Defined in: [packages/core/src/types.ts:427](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L427)

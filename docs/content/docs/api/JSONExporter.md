@@ -10,7 +10,7 @@ title: "JSONExporter"
 
 # Class: JSONExporter
 
-Defined in: [packages/core/src/memory/exporters/json-exporter.ts:14](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/exporters/json-exporter.ts#L14)
+Defined in: [packages/core/src/memory/exporters/json-exporter.ts:14](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/exporters/json-exporter.ts#L14)
 
 Exports episodes to JSON or JSONL format
 
@@ -34,7 +34,7 @@ Exports episodes to JSON or JSONL format
 
 > **description**: `string` = `"Export episodes as JSON or JSONL format"`
 
-Defined in: [packages/core/src/memory/exporters/json-exporter.ts:16](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/exporters/json-exporter.ts#L16)
+Defined in: [packages/core/src/memory/exporters/json-exporter.ts:16](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/exporters/json-exporter.ts#L16)
 
 Human-readable description
 
@@ -48,7 +48,7 @@ Human-readable description
 
 > **formats**: `string`[]
 
-Defined in: [packages/core/src/memory/exporters/json-exporter.ts:17](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/exporters/json-exporter.ts#L17)
+Defined in: [packages/core/src/memory/exporters/json-exporter.ts:17](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/exporters/json-exporter.ts#L17)
 
 Supported export formats
 
@@ -62,7 +62,7 @@ Supported export formats
 
 > **name**: `string` = `"json"`
 
-Defined in: [packages/core/src/memory/exporters/json-exporter.ts:15](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/exporters/json-exporter.ts#L15)
+Defined in: [packages/core/src/memory/exporters/json-exporter.ts:15](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/exporters/json-exporter.ts#L15)
 
 Unique name for this exporter
 
@@ -76,7 +76,7 @@ Unique name for this exporter
 
 > **exportBatch**(`episodes`, `options?`): `Promise`\<`ExportResult`\>
 
-Defined in: [packages/core/src/memory/exporters/json-exporter.ts:44](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/exporters/json-exporter.ts#L44)
+Defined in: [packages/core/src/memory/exporters/json-exporter.ts:44](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/exporters/json-exporter.ts#L44)
 
 Export multiple episodes
 
@@ -104,7 +104,7 @@ Export multiple episodes
 
 > **exportEpisode**(`episode`, `options?`): `Promise`\<`ExportResult`\>
 
-Defined in: [packages/core/src/memory/exporters/json-exporter.ts:19](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/exporters/json-exporter.ts#L19)
+Defined in: [packages/core/src/memory/exporters/json-exporter.ts:19](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/exporters/json-exporter.ts#L19)
 
 Export a single episode
 
@@ -132,7 +132,7 @@ Export a single episode
 
 > **validate**(`options`): `Promise`\<`boolean`\>
 
-Defined in: [packages/core/src/memory/exporters/json-exporter.ts:79](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/exporters/json-exporter.ts#L79)
+Defined in: [packages/core/src/memory/exporters/json-exporter.ts:79](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/exporters/json-exporter.ts#L79)
 
 Validate options before export
 

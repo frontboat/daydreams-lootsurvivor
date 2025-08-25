@@ -26,6 +26,8 @@
   "dependencies": {
     "@daydreamsai/core": "workspace:*",
     "chromadb": "^1.10.5",
+    "chromadb-default-embed": "2.14.0",
+    "openai": "5.15.0",
     "zod": "catalog:"
   }
 }

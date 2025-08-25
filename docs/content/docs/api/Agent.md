@@ -10,7 +10,7 @@ title: "Agent"
 
 # Interface: Agent\<TContext\>
 
-Defined in: [packages/core/src/types.ts:688](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L688)
+Defined in: [packages/core/src/types.ts:672](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L672)
 
 Represents an agent with various configurations and methods for handling contexts, inputs, outputs, and more.
 
@@ -36,7 +36,7 @@ The type of context used by the agent.
 
 > **actions**: [`Action`](./Action.md)\<`any`, `any`, `unknown`, [`AnyContext`](./AnyContext.md), `Agent`\<`TContext`\>, [`ActionState`](./ActionState.md)\<`any`\>\>[]
 
-Defined in: [packages/core/src/types.ts:654](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L654)
+Defined in: [packages/core/src/types.ts:638](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L638)
 
 An array of actions available to the agent.
 
@@ -50,7 +50,7 @@ An array of actions available to the agent.
 
 > **container**: `Container`
 
-Defined in: [packages/core/src/types.ts:611](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L611)
+Defined in: [packages/core/src/types.ts:595](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L595)
 
 The container used by the agent.
 
@@ -64,7 +64,7 @@ The container used by the agent.
 
 > `optional` **context**: `TContext`
 
-Defined in: [packages/core/src/types.ts:601](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L601)
+Defined in: [packages/core/src/types.ts:585](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L585)
 
 The current context of the agent.
 
@@ -78,7 +78,7 @@ The current context of the agent.
 
 > **debugger**: [`Debugger`](./Debugger.md)
 
-Defined in: [packages/core/src/types.ts:606](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L606)
+Defined in: [packages/core/src/types.ts:590](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L590)
 
 Debugger function for the agent.
 
@@ -92,7 +92,7 @@ Debugger function for the agent.
 
 > **emit**: (...`args`) => `void`
 
-Defined in: [packages/core/src/types.ts:722](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L722)
+Defined in: [packages/core/src/types.ts:706](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L706)
 
 Emits an event with the provided arguments.
 
@@ -114,7 +114,7 @@ Arguments to pass to the event handler.
 
 > **events**: `Record`\<`string`, `z.ZodObject`\>
 
-Defined in: [packages/core/src/types.ts:649](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L649)
+Defined in: [packages/core/src/types.ts:633](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L633)
 
 A record of event schemas for the agent.
 
@@ -128,7 +128,7 @@ A record of event schemas for the agent.
 
 > `optional` **exports**: [`ExportManager`](./ExportManager.md)
 
-Defined in: [packages/core/src/types.ts:727](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L727)
+Defined in: [packages/core/src/types.ts:711](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L711)
 
 Export manager for episodes
 
@@ -138,7 +138,7 @@ Export manager for episodes
 
 > `optional` **exportTrainingData**: `boolean`
 
-Defined in: [packages/core/src/types.ts:666](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L666)
+Defined in: [packages/core/src/types.ts:650](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L650)
 
 Whether to export training data for episodes
 
@@ -152,7 +152,7 @@ Whether to export training data for episodes
 
 > **inputs**: `Record`\<`string`, [`InputConfig`](./InputConfig.md)\<`any`, [`AnyContext`](./AnyContext.md), `Agent`\<`TContext`\>\>\>
 
-Defined in: [packages/core/src/types.ts:639](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L639)
+Defined in: [packages/core/src/types.ts:623](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L623)
 
 A record of input configurations for the agent.
 
@@ -166,7 +166,7 @@ A record of input configurations for the agent.
 
 > **logger**: `Logger`
 
-Defined in: [packages/core/src/types.ts:586](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L586)
+Defined in: [packages/core/src/types.ts:570](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L570)
 
 #### Inherited from
 
@@ -178,7 +178,7 @@ Defined in: [packages/core/src/types.ts:586](https://github.com/dojoengine/daydr
 
 > **memory**: [`MemorySystem`](./MemorySystem.md)
 
-Defined in: [packages/core/src/types.ts:596](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L596)
+Defined in: [packages/core/src/types.ts:580](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L580)
 
 The memory store and vector store used by the agent.
 
@@ -192,7 +192,7 @@ The memory store and vector store used by the agent.
 
 > `optional` **model**: `LanguageModel`
 
-Defined in: [packages/core/src/types.ts:621](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L621)
+Defined in: [packages/core/src/types.ts:605](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L605)
 
 The primary language model used by the agent.
 
@@ -206,7 +206,7 @@ The primary language model used by the agent.
 
 > `optional` **modelSettings**: `object`
 
-Defined in: [packages/core/src/types.ts:626](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L626)
+Defined in: [packages/core/src/types.ts:610](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L610)
 
 Model settings for the agent.
 
@@ -246,9 +246,9 @@ Model settings for the agent.
 
 ### outputs
 
-> **outputs**: `Record`\<`string`, `Omit`\<[`Output`](./Output.md)\<`any`, `any`, `TContext`, `any`\>, `"type"`\>\>
+> **outputs**: `Record`\<`string`, `Omit`\<[`Output`](./Output.md)\<`any`, `any`, `TContext`, `any`\>, `"name"`\>\>
 
-Defined in: [packages/core/src/types.ts:644](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L644)
+Defined in: [packages/core/src/types.ts:628](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L628)
 
 A record of output configurations for the agent.
 
@@ -262,7 +262,7 @@ A record of output configurations for the agent.
 
 > **registry**: [`Registry`](./Registry.md)
 
-Defined in: [packages/core/src/types.ts:690](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L690)
+Defined in: [packages/core/src/types.ts:674](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L674)
 
 ***
 
@@ -270,7 +270,7 @@ Defined in: [packages/core/src/types.ts:690](https://github.com/dojoengine/daydr
 
 > **run**: \<`TContext`, `SubContextRefs`\>(`opts`) => `Promise`\<[`AnyRef`](./AnyRef.md)[]\>
 
-Defined in: [packages/core/src/types.ts:734](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L734)
+Defined in: [packages/core/src/types.ts:718](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L718)
 
 Runs the agent with the provided options.
 
@@ -352,7 +352,7 @@ Options for running the agent.
 
 ###### outputs?
 
-`Record`\<`string`, `Omit`\<[`Output`](./Output.md)\<`any`, `any`, `TContext`, `any`\>, `"type"`\>\>
+`Record`\<`string`, `Omit`\<[`Output`](./Output.md)\<`any`, `any`, `TContext`, `any`\>, `"name"`\>\>
 
 ###### priority?
 
@@ -372,7 +372,7 @@ A promise that resolves to an array of logs.
 
 > **send**: \<`SContext`, `SubContextRefs`\>(`opts`) => `Promise`\<[`AnyRef`](./AnyRef.md)[]\>
 
-Defined in: [packages/core/src/types.ts:765](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L765)
+Defined in: [packages/core/src/types.ts:749](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L749)
 
 Sends an input to the agent with the provided options.
 
@@ -438,7 +438,7 @@ Options for sending input to the agent.
 
 ###### outputs?
 
-`Record`\<`string`, `Omit`\<[`Output`](./Output.md)\<`any`, `any`, `SContext`, `any`\>, `"type"`\>\>
+`Record`\<`string`, `Omit`\<[`Output`](./Output.md)\<`any`, `any`, `SContext`, `any`\>, `"name"`\>\>
 
 #### Returns
 
@@ -452,7 +452,7 @@ A promise that resolves to an array of logs.
 
 > **taskRunner**: `TaskRunner`
 
-Defined in: [packages/core/src/types.ts:616](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L616)
+Defined in: [packages/core/src/types.ts:600](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L600)
 
 The task runner used by the agent.
 
@@ -466,7 +466,7 @@ The task runner used by the agent.
 
 > **tracker**: `SimpleTracker`
 
-Defined in: [packages/core/src/types.ts:591](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L591)
+Defined in: [packages/core/src/types.ts:575](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L575)
 
 Analytics tracker automatically extracts metrics from logger events
 
@@ -480,7 +480,7 @@ Analytics tracker automatically extracts metrics from logger events
 
 > `optional` **trainingDataPath**: `string`
 
-Defined in: [packages/core/src/types.ts:671](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L671)
+Defined in: [packages/core/src/types.ts:655](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L655)
 
 Path to save training data
 
@@ -494,7 +494,7 @@ Path to save training data
 
 > **\_\_subscribeChunk**(`contextId`, `handler`): () => `void`
 
-Defined in: [packages/core/src/types.ts:852](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L852)
+Defined in: [packages/core/src/types.ts:836](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L836)
 
 #### Parameters
 
@@ -520,7 +520,7 @@ Defined in: [packages/core/src/types.ts:852](https://github.com/dojoengine/daydr
 
 > **deleteContext**(`contextId`): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/types.ts:845](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L845)
+Defined in: [packages/core/src/types.ts:829](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L829)
 
 #### Parameters
 
@@ -538,7 +538,7 @@ Defined in: [packages/core/src/types.ts:845](https://github.com/dojoengine/daydr
 
 > **getAgentContext**(): `Promise`\<`undefined` \| [`ContextState`](./ContextState.md)\<`TContext`\>\>
 
-Defined in: [packages/core/src/types.ts:812](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L812)
+Defined in: [packages/core/src/types.ts:796](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L796)
 
 #### Returns
 
@@ -550,7 +550,7 @@ Defined in: [packages/core/src/types.ts:812](https://github.com/dojoengine/daydr
 
 > **getContext**\<`TContext`\>(`params`): `Promise`\<[`ContextState`](./ContextState.md)\<`TContext`\>\>
 
-Defined in: [packages/core/src/types.ts:819](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L819)
+Defined in: [packages/core/src/types.ts:803](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L803)
 
 Retrieves the state of a given context and arguments.
 
@@ -586,7 +586,7 @@ A promise that resolves to the context state.
 
 > **getContextById**\<`TContext`\>(`id`): `Promise`\<`null` \| [`ContextState`](./ContextState.md)\<`TContext`\>\>
 
-Defined in: [packages/core/src/types.ts:834](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L834)
+Defined in: [packages/core/src/types.ts:818](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L818)
 
 #### Type Parameters
 
@@ -610,7 +610,7 @@ Defined in: [packages/core/src/types.ts:834](https://github.com/dojoengine/daydr
 
 > **getContextId**\<`TContext`\>(`params`): `string`
 
-Defined in: [packages/core/src/types.ts:807](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L807)
+Defined in: [packages/core/src/types.ts:791](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L791)
 
 Retrieves the ID for a given context and arguments.
 
@@ -646,7 +646,7 @@ The context ID.
 
 > **getContexts**(): `Promise`\<`object`[]\>
 
-Defined in: [packages/core/src/types.ts:798](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L798)
+Defined in: [packages/core/src/types.ts:782](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L782)
 
 Retrieves the contexts managed by the agent.
 
@@ -662,7 +662,7 @@ A promise that resolves to an array of context objects.
 
 > **getPriorityLevels**(): `object`
 
-Defined in: [packages/core/src/types.ts:697](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L697)
+Defined in: [packages/core/src/types.ts:681](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L681)
 
 Gets the configured task priority levels
 
@@ -688,7 +688,7 @@ Gets the configured task priority levels
 
 > **getTaskConfig**(): `object`
 
-Defined in: [packages/core/src/types.ts:706](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L706)
+Defined in: [packages/core/src/types.ts:690](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L690)
 
 Gets the current task configuration
 
@@ -730,7 +730,7 @@ Gets the current task configuration
 
 > **getWorkingMemory**(`contextId`): `Promise`\<[`WorkingMemory`](./WorkingMemory.md)\>
 
-Defined in: [packages/core/src/types.ts:843](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L843)
+Defined in: [packages/core/src/types.ts:827](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L827)
 
 Retrieves the working memory for a given context ID.
 
@@ -754,7 +754,7 @@ A promise that resolves to the working memory.
 
 > **isBooted**(): `boolean`
 
-Defined in: [packages/core/src/types.ts:692](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L692)
+Defined in: [packages/core/src/types.ts:676](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L676)
 
 #### Returns
 
@@ -766,7 +766,7 @@ Defined in: [packages/core/src/types.ts:692](https://github.com/dojoengine/daydr
 
 > **loadContext**\<`TContext`\>(`params`): `Promise`\<`null` \| [`ContextState`](./ContextState.md)\<`TContext`\>\>
 
-Defined in: [packages/core/src/types.ts:824](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L824)
+Defined in: [packages/core/src/types.ts:808](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L808)
 
 #### Type Parameters
 
@@ -796,7 +796,7 @@ Defined in: [packages/core/src/types.ts:824](https://github.com/dojoengine/daydr
 
 > **saveContext**(`state`, `workingMemory?`): `Promise`\<`boolean`\>
 
-Defined in: [packages/core/src/types.ts:829](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L829)
+Defined in: [packages/core/src/types.ts:813](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L813)
 
 #### Parameters
 
@@ -818,7 +818,7 @@ Defined in: [packages/core/src/types.ts:829](https://github.com/dojoengine/daydr
 
 > **start**(`args?`): `Promise`\<`Agent`\<`TContext`\>\>
 
-Defined in: [packages/core/src/types.ts:786](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L786)
+Defined in: [packages/core/src/types.ts:770](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L770)
 
 Starts the agent with the provided arguments.
 
@@ -842,7 +842,7 @@ A promise that resolves to the agent instance.
 
 > **stop**(): `Promise`\<`void`\>
 
-Defined in: [packages/core/src/types.ts:792](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L792)
+Defined in: [packages/core/src/types.ts:776](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L776)
 
 Stops the agent.
 
@@ -858,7 +858,7 @@ A promise that resolves when the agent is stopped.
 
 > **subscribeContext**(`contextId`, `handler`): () => `void`
 
-Defined in: [packages/core/src/types.ts:847](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/types.ts#L847)
+Defined in: [packages/core/src/types.ts:831](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/types.ts#L831)
 
 #### Parameters
 

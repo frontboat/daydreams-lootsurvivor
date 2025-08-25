@@ -10,7 +10,7 @@ title: "HealthStatus"
 
 # Interface: HealthStatus
 
-Defined in: [packages/core/src/memory/types.ts:75](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L75)
+Defined in: [packages/core/src/memory/types.ts:82](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L82)
 
 ## Properties
 
@@ -18,7 +18,7 @@ Defined in: [packages/core/src/memory/types.ts:75](https://github.com/dojoengine
 
 > `optional` **details**: `Record`\<`string`, `any`\>
 
-Defined in: [packages/core/src/memory/types.ts:78](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L78)
+Defined in: [packages/core/src/memory/types.ts:85](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L85)
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: [packages/core/src/memory/types.ts:78](https://github.com/dojoengine
 
 > **message**: `string`
 
-Defined in: [packages/core/src/memory/types.ts:77](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L77)
+Defined in: [packages/core/src/memory/types.ts:84](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L84)
 
 ***
 
@@ -34,4 +34,4 @@ Defined in: [packages/core/src/memory/types.ts:77](https://github.com/dojoengine
 
 > **status**: `"healthy"` \| `"unhealthy"` \| `"degraded"`
 
-Defined in: [packages/core/src/memory/types.ts:76](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L76)
+Defined in: [packages/core/src/memory/types.ts:83](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L83)

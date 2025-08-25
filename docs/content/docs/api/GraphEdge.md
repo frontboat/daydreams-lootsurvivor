@@ -10,7 +10,7 @@ title: "GraphEdge"
 
 # Interface: GraphEdge
 
-Defined in: [packages/core/src/memory/types.ts:173](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L173)
+Defined in: [packages/core/src/memory/types.ts:180](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L180)
 
 ## Properties
 
@@ -18,7 +18,7 @@ Defined in: [packages/core/src/memory/types.ts:173](https://github.com/dojoengin
 
 > **from**: `string`
 
-Defined in: [packages/core/src/memory/types.ts:175](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L175)
+Defined in: [packages/core/src/memory/types.ts:182](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L182)
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: [packages/core/src/memory/types.ts:175](https://github.com/dojoengin
 
 > **id**: `string`
 
-Defined in: [packages/core/src/memory/types.ts:174](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L174)
+Defined in: [packages/core/src/memory/types.ts:181](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L181)
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: [packages/core/src/memory/types.ts:174](https://github.com/dojoengin
 
 > `optional` **properties**: `Record`\<`string`, `unknown`\>
 
-Defined in: [packages/core/src/memory/types.ts:178](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L178)
+Defined in: [packages/core/src/memory/types.ts:185](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L185)
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: [packages/core/src/memory/types.ts:178](https://github.com/dojoengin
 
 > **to**: `string`
 
-Defined in: [packages/core/src/memory/types.ts:176](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L176)
+Defined in: [packages/core/src/memory/types.ts:183](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L183)
 
 ***
 
@@ -50,4 +50,4 @@ Defined in: [packages/core/src/memory/types.ts:176](https://github.com/dojoengin
 
 > **type**: `string`
 
-Defined in: [packages/core/src/memory/types.ts:177](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L177)
+Defined in: [packages/core/src/memory/types.ts:184](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L184)

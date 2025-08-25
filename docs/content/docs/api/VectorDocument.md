@@ -10,7 +10,7 @@ title: "VectorDocument"
 
 # Interface: VectorDocument
 
-Defined in: [packages/core/src/memory/types.ts:116](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L116)
+Defined in: [packages/core/src/memory/types.ts:123](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L123)
 
 ## Properties
 
@@ -18,7 +18,7 @@ Defined in: [packages/core/src/memory/types.ts:116](https://github.com/dojoengin
 
 > **content**: `string`
 
-Defined in: [packages/core/src/memory/types.ts:118](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L118)
+Defined in: [packages/core/src/memory/types.ts:125](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L125)
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: [packages/core/src/memory/types.ts:118](https://github.com/dojoengin
 
 > `optional` **embedding**: `number`[]
 
-Defined in: [packages/core/src/memory/types.ts:119](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L119)
+Defined in: [packages/core/src/memory/types.ts:126](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L126)
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: [packages/core/src/memory/types.ts:119](https://github.com/dojoengin
 
 > **id**: `string`
 
-Defined in: [packages/core/src/memory/types.ts:117](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L117)
+Defined in: [packages/core/src/memory/types.ts:124](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L124)
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: [packages/core/src/memory/types.ts:117](https://github.com/dojoengin
 
 > `optional` **metadata**: `Record`\<`string`, `unknown`\>
 
-Defined in: [packages/core/src/memory/types.ts:120](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L120)
+Defined in: [packages/core/src/memory/types.ts:127](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L127)
 
 ***
 
@@ -50,4 +50,4 @@ Defined in: [packages/core/src/memory/types.ts:120](https://github.com/dojoengin
 
 > `optional` **namespace**: `string`
 
-Defined in: [packages/core/src/memory/types.ts:121](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L121)
+Defined in: [packages/core/src/memory/types.ts:128](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L128)

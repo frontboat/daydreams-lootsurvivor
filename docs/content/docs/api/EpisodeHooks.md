@@ -10,10 +10,7 @@ title: "EpisodeHooks"
 
 # Interface: EpisodeHooks\<TContext\>
 
-Defined in: [packages/core/src/memory/types.ts:438](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L438)
-
-Episode detection and creation hooks for contexts
-Allows developers to customize when and how episodes are stored
+Defined in: [packages/core/src/memory/types.ts:510](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L510)
 
 ## Type Parameters
 
@@ -21,13 +18,54 @@ Allows developers to customize when and how episodes are stored
 
 `TContext` *extends* [`AnyContext`](./AnyContext.md) = [`AnyContext`](./AnyContext.md)
 
+## Properties
+
+### actionResultRedactor()?
+
+> `optional` **actionResultRedactor**: (`data`) => `any`
+
+Defined in: [packages/core/src/memory/types.ts:568](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L568)
+
+Optional redactor for action_result data. If provided, overrides size-based truncation.
+
+#### Parameters
+
+##### data
+
+`any`
+
+#### Returns
+
+`any`
+
+***
+
+### includeRefs?
+
+> `optional` **includeRefs**: (`"output"` \| `"run"` \| `"thought"` \| `"step"` \| `"input"` \| `"action_call"` \| `"action_result"` \| `"event"`)[]
+
+Defined in: [packages/core/src/memory/types.ts:560](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L560)
+
+Control which log refs are allowed to be stored in episodes.
+If omitted, defaults to ['input','output','action_call','action_result','event'] (excludes 'thought').
+
+***
+
+### maxActionResultBytes?
+
+> `optional` **maxActionResultBytes**: `number`
+
+Defined in: [packages/core/src/memory/types.ts:565](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L565)
+
+Max size (in bytes) allowed for action_result.data before truncation/redaction (default: 4096).
+
 ## Methods
 
 ### classifyEpisode()?
 
 > `optional` **classifyEpisode**(`episodeData`, `contextState`): `string`
 
-Defined in: [packages/core/src/memory/types.ts:488](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L488)
+Defined in: [packages/core/src/memory/types.ts:576](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L576)
 
 Called to classify the type of episode (optional)
 
@@ -55,9 +93,9 @@ Episode type/classification string
 
 ### createEpisode()?
 
-> `optional` **createEpisode**(`logs`, `contextState`, `agent`): `any`
+> `optional` **createEpisode**(`logs`, `contextState`, `agent`): `undefined` \| [`CreateEpisodeResult`](./CreateEpisodeResult.md) \| [`Episode`](./Episode.md) \| `Promise`\<`undefined` \| [`CreateEpisodeResult`](./CreateEpisodeResult.md) \| [`Episode`](./Episode.md)\>
 
-Defined in: [packages/core/src/memory/types.ts:476](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L476)
+Defined in: [packages/core/src/memory/types.ts:548](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L548)
 
 Called to create episode data from collected logs
 
@@ -83,7 +121,7 @@ Agent instance
 
 #### Returns
 
-`any`
+`undefined` \| [`CreateEpisodeResult`](./CreateEpisodeResult.md) \| [`Episode`](./Episode.md) \| `Promise`\<`undefined` \| [`CreateEpisodeResult`](./CreateEpisodeResult.md) \| [`Episode`](./Episode.md)\>
 
 Episode data to be stored
 
@@ -93,7 +131,7 @@ Episode data to be stored
 
 > `optional` **extractMetadata**(`episodeData`, `logs`, `contextState`): `Record`\<`string`, `any`\>
 
-Defined in: [packages/core/src/memory/types.ts:500](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L500)
+Defined in: [packages/core/src/memory/types.ts:588](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L588)
 
 Called to extract additional metadata for the episode (optional)
 
@@ -129,7 +167,7 @@ Metadata object
 
 > `optional` **shouldEndEpisode**(`ref`, `workingMemory`, `contextState`, `agent`): `boolean` \| `Promise`\<`boolean`\>
 
-Defined in: [packages/core/src/memory/types.ts:462](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L462)
+Defined in: [packages/core/src/memory/types.ts:534](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L534)
 
 Called to determine if the current episode should be ended and stored
 
@@ -171,7 +209,7 @@ true if the current episode should be stored
 
 > `optional` **shouldStartEpisode**(`ref`, `workingMemory`, `contextState`, `agent`): `boolean` \| `Promise`\<`boolean`\>
 
-Defined in: [packages/core/src/memory/types.ts:447](https://github.com/dojoengine/daydreams/blob/95678f46ea3908883ec80d853a28c9f23ca4f5c2/packages/core/src/memory/types.ts#L447)
+Defined in: [packages/core/src/memory/types.ts:519](https://github.com/dojoengine/daydreams/blob/612e9304717c546d301f9cac8c204de734cac957/packages/core/src/memory/types.ts#L519)
 
 Called to determine if a new episode should be started
 
