@@ -1054,8 +1054,6 @@ export async function handleInput({
     throw new ParsingError(inputRef, error);
   }
 
-  logger.debug("agent:send", "Querying relevant memories");
-
   const queryText =
     typeof inputRef.data === "string"
       ? inputRef.data
@@ -1073,7 +1071,7 @@ export async function handleInput({
     include: policy?.include ?? { content: true, metadata: true },
     groupBy: policy?.groupBy ?? "docId",
     dedupeBy: policy?.dedupeBy ?? "docId",
-    topK: policy?.topK ?? 20,
+    topK: policy?.topK ?? 4,
     minScore: policy?.minScore ?? 0,
     weighting:
       policy?.weighting ??
@@ -1088,6 +1086,13 @@ export async function handleInput({
     Array.isArray(policy?.namespaces) && policy.namespaces.length > 0
       ? policy.namespaces
       : [`episodes:${ctxState.id}`, undefined]; // undefined => general (no namespace filter)
+
+  logger.debug("agent:send", "Querying relevant memories", {
+    inputRef,
+    namespaces,
+    queryText,
+    baseRecall,
+  });
 
   // Query namespaces in order, stopping after filling topK, while deduping as we go
   const collected: MemoryResult[] = [];
