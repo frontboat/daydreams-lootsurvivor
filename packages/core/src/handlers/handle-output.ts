@@ -38,8 +38,8 @@ export async function handleOutput({
         const ref: OutputRef = {
           ...outputRef,
           id: randomUUIDv7(),
-          processed: res.processed ?? true,
-          ...res,
+          processed: (res as any).processed ?? true,
+          ...(res as any),
         };
 
         ref.formatted = output.format ? output.format(ref) : undefined;
@@ -49,8 +49,8 @@ export async function handleOutput({
     } else if (response) {
       const ref: OutputRef = {
         ...outputRef,
-        ...response,
-        processed: response.processed ?? true,
+        ...(response as any),
+        processed: (response as any).processed ?? true,
       };
 
       ref.formatted = output.format ? output.format(ref) : undefined;

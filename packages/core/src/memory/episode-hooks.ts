@@ -208,7 +208,38 @@ function sanitizeEpisodeLogs(logs: AnyRef[], hooks?: HooksType): AnyRef[] {
   ] as const;
   const includeRefs = hooks?.includeRefs || (defaultAllowed as any);
   const allowed = new Set(includeRefs);
-  return logs.filter((l) => allowed.has(l.ref)).map((l) => sanitizeLogEntry(l, hooks));
+
+  // First pass: filter by allowed refs and sanitize
+  const filtered = logs
+    .filter((l) => allowed.has(l.ref))
+    .map((l) => sanitizeLogEntry(l, hooks));
+
+  // Second pass: dedupe near-identical outputs that sometimes appear twice
+  // Key by (name + content or data JSON). Keep the first occurrence.
+  const seen = new Set<string>();
+  const deduped: AnyRef[] = [];
+  for (const l of filtered) {
+    if (l.ref !== "output") {
+      deduped.push(l);
+      continue;
+    }
+    const name = (l as any).name ?? "";
+    const dataStr = safeStringify((l as any).data ?? (l as any).content ?? "");
+    const key = `out:${name}:${dataStr}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(l);
+  }
+
+  return deduped;
+}
+
+function safeStringify(v: unknown): string {
+  try {
+    return typeof v === "string" ? v : JSON.stringify(v);
+  } catch {
+    return String(v);
+  }
 }
 
 function sanitizeLogEntry<T extends AnyRef>(log: T, hooks?: HooksType): T {

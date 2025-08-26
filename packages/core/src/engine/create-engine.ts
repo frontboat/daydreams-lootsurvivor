@@ -54,6 +54,17 @@ export function createEngine({
 }) {
   const controller = new AbortController();
 
+  function __getOutputContentKey(o: any): string {
+    try {
+      const v = o?.data ?? o?.content ?? "";
+      const s = typeof v === "string" ? v : JSON.stringify(v);
+      const name = o?.name ?? "";
+      return `${name}:${s}`;
+    } catch {
+      return String(o?.name ?? "") + ":[unserializable]";
+    }
+  }
+
   const state: State = {
     running: false,
     step: -1,
@@ -157,14 +168,14 @@ export function createEngine({
       throw new Error("not running!");
     }
 
-    // todo: still push?
-    controller.signal.throwIfAborted();
-
-    if (log.ref !== "output") {
-      state.chain.push(log);
-    }
-
     try {
+      // Respect aborts but handle them via error catch to generate error event
+      controller.signal.throwIfAborted();
+
+      if (log.ref !== "output") {
+        state.chain.push(log);
+      }
+
       let res: any;
 
       switch (log.ref) {
@@ -172,6 +183,13 @@ export function createEngine({
           await router.input(log);
           break;
         case "output":
+          // Trace incoming output stub for duplicate investigation
+          agent.logger.trace("engine:output", "Routing output stub", {
+            id: (log as any).id,
+            name: (log as any).name,
+            step: state.step,
+            contentKey: __getOutputContentKey(log as any),
+          });
           res = await router.output(log);
           break;
         case "action_call":
@@ -210,14 +228,35 @@ export function createEngine({
       }
 
       const errorRef = { log, error };
-
       state.errors.push(errorRef);
 
-      __push(createErrorEvent(errorRef), true, true);
+      const eventRef = createErrorEvent(errorRef);
+
+      // If aborted or not running, avoid re-entering router; notify directly
+      if (controller.signal.aborted || !state.running) {
+        try {
+          pushLogToSubscribers(eventRef, true);
+        } catch {}
+        try {
+          __pushLogChunkToSubscribers({ type: "log", done: true, log: eventRef });
+        } catch {}
+        // Optionally persist the error event
+        try {
+          pushToWorkingMemory(workingMemory, eventRef);
+        } catch {}
+      } else {
+        // Normal path: push via router; swallow errors to avoid unhandled rejections
+        try {
+          await __push(eventRef, true, true);
+        } catch {}
+      }
 
       pushToWorkingMemory(workingMemory, log);
     } finally {
-      pushLogToSubscribers(log, true);
+      // Avoid streaming the initial output stub; only stream processed outputs
+      if (log.ref !== "output") {
+        pushLogToSubscribers(log, true);
+      }
     }
   }
 
@@ -408,6 +447,41 @@ export function createEngine({
         state.chain.push(ref);
 
         pushToWorkingMemory(workingMemory, ref);
+
+        // Trace processed output for potential duplication
+        agent.logger.trace("engine:output", "Processed output", {
+          id: (ref as any).id,
+          name: (ref as any).name,
+          step: state.step,
+          contentKey: __getOutputContentKey(ref as any),
+        });
+
+        // Stream processed output refs to subscribers and chunk listeners without re-entering router
+        try {
+          pushLogToSubscribers(ref as any, true);
+        } catch (error) {
+          agent.logger.error(
+            "engine:subscriber",
+            "Failed to notify subscribers for output",
+            {
+              error: error instanceof Error ? error.message : String(error),
+              logRef: (ref as any).ref,
+              logId: (ref as any).id,
+              contextId: ctxState.id,
+            }
+          );
+        }
+
+        try {
+          __pushLogChunkToSubscribers({ type: "log", done: true, log: ref as any });
+        } catch (error) {
+          agent.logger.error("engine:chunk", "Failed to emit chunk for output", {
+            error: error instanceof Error ? error.message : String(error),
+            logRef: (ref as any).ref,
+            logId: (ref as any).id,
+            contextId: ctxState.id,
+          });
+        }
       }
 
       return refs;
@@ -472,6 +546,7 @@ export function createEngine({
         pendingPromises: state.promises.length,
         errors: state.errors.length,
       });
+      state.running = false;
       controller.abort("stop");
     },
 
