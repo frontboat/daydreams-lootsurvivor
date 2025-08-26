@@ -89,16 +89,10 @@ const agent = createDreams({
     },
   },
 });
-
 // Start the agent runtime
 await agent.start();
-
 // HTTP server
 const app = new Hono();
-
-console.log("AI Assistant nano service is running on port 4021");
-console.log(`Payment required: $0.01 per request to ${payTo}`);
-
 // Payment guard: charge $0.01 for /assistant; other routes are free
 app.use(
   paymentMiddleware(
@@ -114,15 +108,6 @@ app.use(
     }
   )
 );
-
-// Health check (free)
-app.get("/health", (c) => {
-  return c.json({
-    status: "ok",
-    service: "AI Assistant Nano Service",
-    timestamp: new Date().toISOString(),
-  });
-});
 
 // Main assistant endpoint (paid)
 app.post("/assistant", async (c) => {
@@ -167,6 +152,15 @@ app.post("/assistant", async (c) => {
     console.error("Error processing request:", error);
     return c.json({ error: "Internal server error" }, 500);
   }
+});
+
+// Health check (free)
+app.get("/health", (c) => {
+  return c.json({
+    status: "ok",
+    service: "AI Assistant Nano Service",
+    timestamp: new Date().toISOString(),
+  });
 });
 
 // Usage info (free)
