@@ -8,46 +8,47 @@ import * as z from "zod";
 import { privateKeyToAccount } from "viem/accounts";
 import { createDreamsRouterAuth } from "@daydreamsai/ai-sdk-provider";
 
+// Simple paid nanoservice exposing an AI assistant.
+// - Paid: POST /assistant (guarded by x402)
+// - Free:  GET /health, GET /
+
 config();
 
-const { dreamsRouter, user } = await createDreamsRouterAuth(
+// Authenticated Dreams router used as the model provider.
+const { dreamsRouter } = await createDreamsRouterAuth(
   privateKeyToAccount(Bun.env.PRIVATE_KEY as `0x${string}`),
   {
-    baseURL: "http://localhost:8080" + "/v1",
+    baseURL: "http://localhost:8080/v1",
     payments: {
-      amount: "100000", // $0.10 USDC
+      amount: "100000", // $0.10 USDC to access the router
       network: "base-sepolia",
     },
   }
 );
 
+// x402 facilitator and payment parameters
 const facilitatorUrl = "https://facilitator.x402.rs";
 const payTo =
   (process.env.ADDRESS as `0x${string}`) ||
   "0xb308ed39d67D0d4BAe5BC2FAEF60c66BBb6AE429";
 const network = (process.env.NETWORK as Network) || "base-sepolia";
-const openaiKey = process.env.OPENAI_API_KEY;
 
-if (!facilitatorUrl || !payTo || !network || !openaiKey) {
-  console.error("Missing required environment variables");
-  process.exit(1);
-}
-
-// Define a context for our AI assistant
+// Per-session memory tracked by the assistant
 interface AssistantMemory {
   requestCount: number;
   lastQuery?: string;
   history: Array<{ query: string; response: string; timestamp: Date }>;
 }
 
-const assistantContext = context<AssistantMemory>({
+// Context: defines args, memory shape, and a short render for debugging
+const assistantContext = context({
   type: "ai-assistant",
 
   schema: z.object({
     sessionId: z.string().describe("Session identifier"),
   }),
 
-  create: () => ({
+  create: (): AssistantMemory => ({
     requestCount: 0,
     history: [],
   }),
@@ -67,11 +68,10 @@ Recent History: ${
   },
 
   instructions: `You are a helpful AI assistant providing a paid nano service.
-You should provide concise, valuable responses to user queries.
-Remember the conversation history and context.`,
+Provide concise, valuable responses and use conversation history when helpful.`,
 });
 
-// Create the agent
+// Agent configuration
 const agent = createDreams({
   logLevel: LogLevel.INFO,
   model: dreamsRouter("google-vertex/gemini-2.5-flash"),
@@ -90,16 +90,16 @@ const agent = createDreams({
   },
 });
 
-// Initialize the agent
+// Start the agent runtime
 await agent.start();
 
-// Create Hono app
+// HTTP server
 const app = new Hono();
 
 console.log("AI Assistant nano service is running on port 4021");
 console.log(`Payment required: $0.01 per request to ${payTo}`);
 
-// Apply payment middleware
+// Payment guard: charge $0.01 for /assistant; other routes are free
 app.use(
   paymentMiddleware(
     payTo,
@@ -115,7 +115,7 @@ app.use(
   )
 );
 
-// Health check endpoint (free)
+// Health check (free)
 app.get("/health", (c) => {
   return c.json({
     status: "ok",
@@ -134,24 +134,24 @@ app.post("/assistant", async (c) => {
       return c.json({ error: "Query is required" }, 400);
     }
 
-    // Get the context state
+    // Load session-scoped memory
     const contextState = await agent.getContext({
       context: assistantContext,
       args: { sessionId },
     });
 
-    // Update request count
+    // Update memory
     contextState.memory.requestCount++;
     contextState.memory.lastQuery = query;
 
-    // Send the query to the agent
+    // Query the agent
     const result = await agent.send({
       context: assistantContext,
       args: { sessionId },
       input: { type: "text", data: query },
     });
 
-    // Extract the response
+    // Extract text output
     const output = result.find((r) => r.ref === "output");
     const response =
       output && "data" in output
@@ -169,7 +169,7 @@ app.post("/assistant", async (c) => {
   }
 });
 
-// Usage info endpoint (free)
+// Usage info (free)
 app.get("/", (c) => {
   return c.json({
     service: "AI Assistant Nano Service",
