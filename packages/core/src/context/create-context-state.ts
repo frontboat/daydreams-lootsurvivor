@@ -11,6 +11,7 @@ import type {
 } from "../types";
 
 import type { Logger } from "../logger";
+import { tryAsync } from "../utils";
 
 export function context<
   TMemory = any,
@@ -101,14 +102,10 @@ export async function createContextState<TContext extends AnyContext>({
   const key = context.key ? context.key(args) : undefined;
   const id = key ? [context.type, key].join(":") : context.type;
 
-  // Log context create event
-  const logger = agent.container?.resolve<Logger>("logger");
-  if (logger) {
-    logger.event("CONTEXT_CREATE", {
-      contextType: context.type,
-      contextId: id,
-    });
-  }
+  agent.logger.event("CONTEXT_CREATE", {
+    contextType: context.type,
+    contextId: id,
+  });
 
   const settings: ContextSettings = {
     model: context.model,
@@ -131,7 +128,7 @@ export async function createContextState<TContext extends AnyContext>({
       ? await context.load(id, { options, settings })
       : await agent.memory.kv.get(`memory:${id}`)) ??
     (context.create
-      ? await Promise.try(
+      ? await tryAsync(
           context.create,
           { key, args, id, options, settings },
           agent

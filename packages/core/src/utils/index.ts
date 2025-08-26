@@ -240,9 +240,10 @@ export function trimWorkingMemory(
  * @param ...args The arguments to pass to the function
  * @returns A promise that resolves with the result of the function
  */
+// Reverted to simpler, permissive signature to avoid type friction
 export async function tryAsync<T>(fn: Function, ...args: any[]): Promise<T> {
   try {
-    return await fn(...args);
+    return (await fn(...args)) as T;
   } catch (error) {
     return Promise.reject(error);
   }
