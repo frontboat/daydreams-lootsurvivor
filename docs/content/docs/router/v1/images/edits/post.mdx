@@ -13,7 +13,8 @@ _openapi:
 
 
           Edit existing images using AI models with text prompts and optional
-          masks.
+          masks. Supports single or multiple input images for models that accept
+          multi-image context.
 
 
           ## Supported Models
@@ -29,7 +30,9 @@ _openapi:
 
           - **model**: The model to use for editing
 
-          - **image**: Base64-encoded source image to edit
+          - **image / images**: Base64-encoded source image, or an array of
+          images. For multipart, pass one or more image files or use an images
+          array field.
 
           - **prompt**: Text description of the edits to make
 
@@ -53,7 +56,7 @@ _openapi:
 
 # Image Editing API
 
-Edit existing images using AI models with text prompts and optional masks.
+Edit existing images using AI models with text prompts and optional masks. Supports single or multiple input images for models that accept multi-image context.
 
 ## Supported Models
 - **gemini-25-flash-image-preview**: Google Gemini model for image editing
@@ -61,7 +64,7 @@ Edit existing images using AI models with text prompts and optional masks.
 
 ## Request Parameters
 - **model**: The model to use for editing
-- **image**: Base64-encoded source image to edit
+- **image / images**: Base64-encoded source image, or an array of images. For multipart, pass one or more image files or use an images array field.
 - **prompt**: Text description of the edits to make
 - **mask**: Optional base64-encoded mask image (areas to edit)
 - **n**: Number of edited variations to generate (1-8)
