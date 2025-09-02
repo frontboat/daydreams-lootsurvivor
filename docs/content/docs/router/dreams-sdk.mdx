@@ -1,204 +1,175 @@
 ---
 title: Dreams SDK Integration
-description: Use the Dreams Router with Vercel AI SDK and Daydreams framework
+description: Dreams Router provider for Vercel AI SDK with built‑in x402 payments
 ---
 
-# Dreams SDK Integration
+## Dreams Router Provider for Vercel AI SDK
 
-Integrate the Dreams Router with [Vercel AI SDK](https://sdk.vercel.ai/docs) and the Daydreams framework for TypeScript/JavaScript applications.
+Dreams Router is an AI model router with built‑in x402 payments for the
+[Vercel AI SDK](https://sdk.vercel.ai/docs). It supports EVM and Solana, API
+keys or wallet auth, and auto‑generates exact payment headers from server
+requirements.
+
+### Key Features
+
+- Payment‑integrated AI using the x402 protocol (USDC)
+- Multiple auth methods: API key, JWT, or inline payments
+- Unified LLM router across providers and models
+- Manage your account at
+  [router.daydreams.systems](https://router.daydreams.systems)
 
 ## Installation
 
-Install the router SDK alongside the AI SDK:
-
 ```bash
-npm install @daydreamsai/ai-sdk-provider ai
+npm install @daydreamsai/ai-sdk-provider viem x402
 ```
 
-## Using with Vercel AI SDK
+## Quick Start
 
-### Quick Start
+### Separated Auth (EVM/Solana helpers)
 
-Set your API key:
+```ts
+import { generateText } from 'ai';
+import {
+  createEVMAuthFromPrivateKey,
+  createSolanaAuthFromPublicKey,
+} from '@daydreamsai/ai-sdk-provider';
 
-```bash
-DREAMSROUTER_API_KEY=your_api_key_here
-```
+// EVM (Ethereum, Base, etc.)
+const { dreamsRouter } = await createEVMAuthFromPrivateKey(
+  process.env.EVM_PRIVATE_KEY as `0x${string}`,
+  {
+    payments: { network: 'base-sepolia' },
+  }
+);
 
-Generate text:
-
-```typescript
-import { generateText } from "ai";
-import { dreamsRouter } from "@daydreamsai/ai-sdk-provider";
+// Solana (browser/wallet-style: publicKey + signMessage)
+const { dreamsRouter: solanaRouter } = await createSolanaAuthFromPublicKey(
+  process.env.SOL_PUBLIC_KEY!,
+  async ({ message }) => wallet.signMessage(message),
+  {
+    payments: {
+      network: 'solana-devnet',
+      rpcUrl: 'https://api.devnet.solana.com',
+    },
+  }
+);
 
 const { text } = await generateText({
-  model: dreamsRouter("google-vertex/gemini-2.5-flash"),
-  prompt: "What is love?",
+  model: dreamsRouter('google-vertex/gemini-2.5-flash'),
+  prompt: 'Hello from Dreams Router!',
 });
 ```
 
-## Using with Daydreams Framework
+Why separated helpers?
 
-### Basic Agent Setup
+- Type safety per chain; chain‑specific options stay clear
+- Explicit intent (EVM vs Solana), smaller bundles
 
-```typescript
-import { dreamsRouter } from "@daydreamsai/ai-sdk-provider";
-import { createDreams } from "@daydreamsai/core";
+### API Key Auth
 
-const agent = createDreams({
-  model: dreamsRouter("google-vertex/gemini-2.5-flash"),
-  systemPrompt: "You are a helpful AI assistant",
+```ts
+import { createDreamsRouter } from '@daydreamsai/ai-sdk-provider';
+import { generateText } from 'ai';
+
+const dreamsRouter = createDreamsRouter({
+  apiKey: process.env.DREAMSROUTER_API_KEY,
+});
+
+const { text } = await generateText({
+  model: dreamsRouter('google-vertex/gemini-2.5-flash'),
+  prompt: 'Hello, Dreams Router!',
 });
 ```
 
-### With x402 Payments
+### Namespace .evm / .solana (Node)
 
-The SDK automatically handles X-Payment header generation for x402-compliant payments:
+```ts
+import {
+  createDreamsRouter,
+  type SolanaSigner,
+} from '@daydreamsai/ai-sdk-provider';
+import { privateKeyToAccount } from 'viem/accounts';
 
-```typescript
-import { createDreamsRouterAuth } from "@daydreamsai/ai-sdk-provider";
-import { privateKeyToAccount } from "viem/accounts";
-
-const { dreamsRouter, user } = await createDreamsRouterAuth(
-  privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`),
-  {
-    payments: {
-      amount: "100000", // $0.10 USDC
-      network: "base-sepolia",
-    },
-  }
+// EVM via viem Account
+const evm = createDreamsRouter.evm(
+  privateKeyToAccount(process.env.EVM_PRIVATE_KEY as `0x${string}`),
+  { network: 'base-sepolia' }
 );
 
-// The dreamsRouter automatically adds X-Payment header to requests
-const agent = createDreams({
-  model: dreamsRouter("google-vertex/gemini-2.5-flash"),
-  systemPrompt: "You are a helpful AI assistant",
-});
-```
-
-#### Manual X-Payment Header
-
-For direct API calls without the SDK:
-
-```typescript
-import { generateX402Payment } from "@daydreamsai/ai-sdk-provider";
-import { privateKeyToAccount } from "viem/accounts";
-
-const account = privateKeyToAccount("0x...your-private-key");
-
-// Generate the payment header
-const paymentHeader = await generateX402Payment(account, {
-  amount: "100000",
-  network: "base-sepolia",
-});
-
-// Include in your request
-fetch("https://router.daydreams.systems/v1/chat/completions", {
-  headers: {
-    "X-Payment": paymentHeader, // Required for x402 payments
-    "Content-Type": "application/json",
-  },
-  // ... rest of request
-});
-```
-
-See the [Daydreams core documentation](/docs/core) for complete agent configuration options.
-
-### Streaming
-
-```typescript
-import { streamText } from "ai";
-import { dreamsRouter } from "@daydreamsai/ai-sdk-provider";
-
-const { textStream } = await streamText({
-  model: dreamsRouter("anthropic/claude-3-5-sonnet-20241022"),
-  prompt: "Write a short story",
-});
-
-for await (const chunk of textStream) {
-  process.stdout.write(chunk);
-}
-```
-
-### Tool Calling
-
-```typescript
-import { generateText } from "ai";
-import { dreamsRouter } from "@daydreamsai/ai-sdk-provider";
-import { z } from "zod";
-
-const { text, toolCalls } = await generateText({
-  model: dreamsRouter("openai/gpt-4-turbo"),
-  prompt: "What's the weather?",
-  tools: {
-    getWeather: {
-      description: "Get weather information",
-      parameters: z.object({
-        location: z.string(),
-      }),
-      execute: async ({ location }) => {
-        return `72°F and sunny in ${location}`;
-      },
-    },
-  },
-});
-```
-
-### Structured Output
-
-```typescript
-import { generateObject } from "ai";
-import { dreamsRouter } from "@daydreamsai/ai-sdk-provider";
-import { z } from "zod";
-
-const { object } = await generateObject({
-  model: dreamsRouter("google-vertex/gemini-2.5-flash"),
-  schema: z.object({
-    name: z.string(),
-    ingredients: z.array(z.string()),
-  }),
-  prompt: "Generate a pasta recipe",
-});
-```
-
-## Complete Example: Paid AI Service
-
-```typescript
-import { createDreamsRouterAuth } from "@daydreamsai/ai-sdk-provider";
-import { createDreams, context } from "@daydreamsai/core";
-import { privateKeyToAccount } from "viem/accounts";
-
-// Define context for conversation
-const assistantContext = context({
-  type: "assistant",
-  create: () => ({ conversationHistory: [] }),
-});
-
-// Setup payment-enabled router
-const { dreamsRouter } = await createDreamsRouterAuth(
-  privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`),
+// Solana via Node signer (base58 secret)
+const solana = createDreamsRouter.solana(
   {
-    payments: {
-      amount: "100000", // $0.10 per request
-      network: "base-sepolia",
-    },
-  }
+    type: 'node',
+    secretKeyBase58: process.env.SOLANA_SECRET_KEY!,
+    rpcUrl: process.env.SOLANA_RPC_URL,
+  },
+  { network: 'solana-devnet' }
 );
-
-// Create agent
-const agent = createDreams({
-  model: dreamsRouter("google-vertex/gemini-2.5-flash"),
-  contexts: [assistantContext],
-});
-
-// Handle requests
-app.post("/chat", async (req, res) => {
-  const result = await agent.send({
-    input: { type: "text", data: req.body.message },
-  });
-  res.json(result);
-});
 ```
+
+## Authentication Methods
+
+- x402 payments (wallet‑based, EVM or Solana)
+- API key
+- Session token (JWT) from wallet login
+
+## Configuration
+
+### Environment
+
+```bash
+# API key auth
+DREAMSROUTER_API_KEY=...
+
+# EVM auth
+EVM_PRIVATE_KEY=0x...
+
+# Solana (Node signer)
+SOLANA_SECRET_KEY=base58-encoded-64-byte-secret
+SOLANA_RPC_URL=https://api.devnet.solana.com
+
+# Solana (wallet-style)
+SOL_PUBLIC_KEY=...
+ROUTER_BASE_URL=https://api-beta.daydreams.systems
+```
+
+## Advanced
+
+### Payment config (auto‑requirements)
+
+```ts
+type DreamsRouterPaymentConfig = {
+  network?: 'base' | 'base-sepolia' | 'solana' | 'solana-devnet';
+  validityDuration?: number; // default 600s
+  mode?: 'lazy' | 'eager'; // default 'lazy'
+  rpcUrl?: string; // Solana only
+};
+```
+
+Amounts and pay‑to addresses come from the router’s 402 response and are signed
+automatically; you do not set them manually.
+
+### Solana signer interface (Node)
+
+```ts
+type SolanaSigner = {
+  type: 'node';
+  secretKeyBase58: string; // 64‑byte secret, base58
+  rpcUrl?: string;
+};
+```
+
+### Model selection
+
+Use any model available in the dashboard; e.g.
+`google-vertex/gemini-2.5-flash`.
+
+## Links
+
+- Dreams Router Dashboard: https://router.daydreams.systems
+- x402 Protocol: https://github.com/x402
+- Vercel AI SDK: https://sdk.vercel.ai/docs
 
 ## Resources
 
