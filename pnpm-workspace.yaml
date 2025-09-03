@@ -7,9 +7,9 @@ packages:
   - bot
 
 catalog:
-  zod: 4.0.16
+  zod: 4.1.5
   typescript: 5.9.2
-  ai: 5.0.0
+  ai: 5.0.30
   tsup: 8.3.6
   vitest: 3.0.5
   "@ai-sdk/anthropic": 2.0.0-beta.13
@@ -27,7 +27,6 @@ catalog:
   hyperliquid: 1.7.5
   composio-core: 0.5.18
   chalk: 5.4.1
-  zod-to-json-schema: 3.24.3
   uuid: 11.1.0
   h3: 1.15.1
   unstorage: 1.15.0
