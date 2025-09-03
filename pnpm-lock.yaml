@@ -37,8 +37,8 @@ catalogs:
       specifier: latest
       version: 1.2.20
     ai:
-      specifier: 5.0.0
-      version: 5.0.0
+      specifier: 5.0.30
+      version: 5.0.30
     discord.js:
       specifier: 14.18.0
       version: 14.18.0
@@ -67,8 +67,8 @@ catalogs:
       specifier: 3.0.5
       version: 3.0.5
     zod:
-      specifier: 4.0.16
-      version: 4.0.16
+      specifier: 4.1.5
+      version: 4.1.5
 
 overrides:
   '@mysten/sui': 1.7.0
@@ -94,7 +94,7 @@ importers:
         version: 1.2.3(zod@3.25.76)
       ai:
         specifier: 'catalog:'
-        version: 5.0.0(zod@3.25.76)
+        version: 5.0.30(zod@3.25.76)
     devDependencies:
       '@types/bun':
         specifier: ^1.2.2
@@ -276,16 +276,16 @@ importers:
     dependencies:
       '@ai-sdk/anthropic':
         specifier: 2.0.0-beta.13
-        version: 2.0.0-beta.13(zod@4.0.16)
+        version: 2.0.0-beta.13(zod@4.1.5)
       '@ai-sdk/google':
         specifier: 2.0.0-beta.19
-        version: 2.0.0-beta.19(zod@4.0.16)
+        version: 2.0.0-beta.19(zod@4.1.5)
       '@ai-sdk/groq':
         specifier: 2.0.0-beta.12
-        version: 2.0.0-beta.12(zod@4.0.16)
+        version: 2.0.0-beta.12(zod@4.1.5)
       '@ai-sdk/openai':
         specifier: 2.0.0-beta.16
-        version: 2.0.0-beta.16(zod@4.0.16)
+        version: 2.0.0-beta.16(zod@4.1.5)
       '@ai-sdk/provider':
         specifier: 2.0.0-beta.2
         version: 2.0.0-beta.2
@@ -297,7 +297,7 @@ importers:
         version: 0.5.1(@tanstack/query-core@5.85.3)(@tanstack/react-query@5.85.3(react@19.1.1))(@types/react@19.1.10)(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(react@19.1.1)(typescript@5.9.2)(utf-8-validate@5.0.10)
       '@daydreamsai/ai-sdk-provider':
         specifier: ^0.1.2
-        version: 0.1.2(ai@5.0.15(zod@4.0.16))(zod@4.0.16)
+        version: 0.1.2(ai@5.0.15(zod@4.1.5))(zod@4.1.5)
       '@daydreamsai/chromadb':
         specifier: workspace:*
         version: link:../packages/chroma
@@ -333,19 +333,19 @@ importers:
         version: 0.3.1
       ai:
         specifier: ^5.0.12
-        version: 5.0.15(zod@4.0.16)
+        version: 5.0.15(zod@4.1.5)
       dotenv:
         specifier: 'catalog:'
         version: 16.4.7
       viem:
         specifier: ^2.31.7
-        version: 2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.0.16)
+        version: 2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.1.5)
       x402:
         specifier: ^0.5.2
         version: 0.5.2(@tanstack/query-core@5.85.3)(@tanstack/react-query@5.85.3(react@19.1.1))(@types/react@19.1.10)(bufferutil@4.0.9)(react@19.1.1)(typescript@5.9.2)(utf-8-validate@5.0.10)
       zod:
         specifier: 'catalog:'
-        version: 4.0.16
+        version: 4.1.5
     devDependencies:
       '@types/bun':
         specifier: 'catalog:'
@@ -373,7 +373,7 @@ importers:
         version: 1.15.0(idb-keyval@6.2.2)
       zod:
         specifier: 'catalog:'
-        version: 4.0.16
+        version: 4.1.5
     devDependencies:
       '@types/bun':
         specifier: 'catalog:'
@@ -383,7 +383,7 @@ importers:
     dependencies:
       '@ai-sdk/openai':
         specifier: 'catalog:'
-        version: 2.0.0-beta.16(zod@4.0.16)
+        version: 2.0.0-beta.16(zod@4.1.5)
       '@daydreamsai/core':
         specifier: workspace:*
         version: link:../../../packages/core
@@ -392,7 +392,7 @@ importers:
         version: 1.18.2(hono@4.9.2)
       ai:
         specifier: 'catalog:'
-        version: 5.0.0(zod@4.0.16)
+        version: 5.0.30(zod@4.1.5)
       dotenv:
         specifier: 'catalog:'
         version: 16.4.7
@@ -401,7 +401,7 @@ importers:
         version: 4.9.2
       viem:
         specifier: 2.33.3
-        version: 2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.0.16)
+        version: 2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.1.5)
       x402-fetch:
         specifier: ^0.5.1
         version: 0.5.1(@types/react@18.3.23)(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)
@@ -410,7 +410,7 @@ importers:
         version: 0.5.2(@types/react@18.3.23)(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)
       zod:
         specifier: 'catalog:'
-        version: 4.0.16
+        version: 4.1.5
 
   packages/chroma:
     dependencies:
@@ -419,16 +419,16 @@ importers:
         version: link:../core
       chromadb:
         specifier: ^1.10.5
-        version: 1.10.5(openai@5.15.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@4.0.16))
+        version: 1.10.5(openai@5.15.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@4.1.5))
       chromadb-default-embed:
         specifier: 2.14.0
         version: 2.14.0
       openai:
         specifier: 5.15.0
-        version: 5.15.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@4.0.16)
+        version: 5.15.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@4.1.5)
       zod:
         specifier: 'catalog:'
-        version: 4.0.16
+        version: 4.1.5
     devDependencies:
       '@types/bun':
         specifier: latest
@@ -450,7 +450,7 @@ importers:
         version: 5.9.2
       zod:
         specifier: 'catalog:'
-        version: 4.0.16
+        version: 4.1.5
     devDependencies:
       '@types/bun':
         specifier: latest
@@ -469,10 +469,10 @@ importers:
         version: 2.0.0-beta.2
       '@ai-sdk/ui-utils':
         specifier: 'catalog:'
-        version: 1.2.3(zod@4.0.16)
+        version: 1.2.3(zod@4.1.5)
       ai:
         specifier: 'catalog:'
-        version: 5.0.0(zod@4.0.16)
+        version: 5.0.30(zod@4.1.5)
       dotenv:
         specifier: 'catalog:'
         version: 16.4.7
@@ -487,7 +487,7 @@ importers:
         version: 11.1.0
       zod:
         specifier: 'catalog:'
-        version: 4.0.16
+        version: 4.1.5
     devDependencies:
       '@types/bun':
         specifier: latest
@@ -585,7 +585,7 @@ importers:
         version: 5.9.2
       zod:
         specifier: 'catalog:'
-        version: 4.0.16
+        version: 4.1.5
     devDependencies:
       '@types/bun':
         specifier: latest
@@ -674,7 +674,7 @@ importers:
         version: 5.9.2
       zod:
         specifier: 'catalog:'
-        version: 4.0.16
+        version: 4.1.5
     devDependencies:
       '@types/bun':
         specifier: latest
@@ -699,7 +699,7 @@ importers:
         version: 13.4.0
       zod:
         specifier: 'catalog:'
-        version: 4.0.16
+        version: 4.1.5
     devDependencies:
       '@types/bun':
         specifier: latest
@@ -727,7 +727,7 @@ importers:
         version: 5.9.2
       zod:
         specifier: 'catalog:'
-        version: 4.0.16
+        version: 4.1.5
     devDependencies:
       '@types/bun':
         specifier: latest
@@ -752,7 +752,7 @@ importers:
         version: 5.9.2
       zod:
         specifier: 'catalog:'
-        version: 4.0.16
+        version: 4.1.5
     devDependencies:
       '@types/bun':
         specifier: latest
@@ -780,7 +780,7 @@ importers:
         version: 5.9.2
       zod:
         specifier: 'catalog:'
-        version: 4.0.16
+        version: 4.1.5
     devDependencies:
       '@types/bun':
         specifier: latest
@@ -802,13 +802,13 @@ importers:
         version: 2.55.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       ai:
         specifier: 'catalog:'
-        version: 5.0.0(zod@4.0.16)
+        version: 5.0.30(zod@4.1.5)
       typescript:
         specifier: 'catalog:'
         version: 5.9.2
       zod:
         specifier: 'catalog:'
-        version: 4.0.16
+        version: 4.1.5
     devDependencies:
       '@types/bun':
         specifier: latest
@@ -836,7 +836,7 @@ importers:
         version: 5.9.2
       zod:
         specifier: 'catalog:'
-        version: 4.0.16
+        version: 4.1.5
     devDependencies:
       '@types/bun':
         specifier: latest
@@ -861,7 +861,7 @@ importers:
         version: 5.9.2
       zod:
         specifier: 'catalog:'
-        version: 4.0.16
+        version: 4.1.5
     devDependencies:
       '@types/bun':
         specifier: latest
@@ -903,6 +903,12 @@ packages:
 
   '@ai-sdk/gateway@1.0.0':
     resolution: {integrity: sha512-VEm87DyRx1yIPywbTy8ntoyh4jEDv1rJ88m+2I7zOm08jJI5BhFtAWh0OF6YzZu1Vu4NxhOWO4ssGdsqydDQ3A==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4
+
+  '@ai-sdk/gateway@1.0.15':
+    resolution: {integrity: sha512-xySXoQ29+KbGuGfmDnABx+O6vc7Gj7qugmj1kGpn0rW0rQNn6UKUuvscKMzWyv1Uv05GyC1vqHq8ZhEOLfXscQ==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4
@@ -957,6 +963,12 @@ packages:
 
   '@ai-sdk/provider-utils@3.0.3':
     resolution: {integrity: sha512-kAxIw1nYmFW1g5TvE54ZB3eNtgZna0RnLjPUp1ltz1+t9xkXJIuDT4atrwfau9IbS0BOef38wqrI8CjFfQrxhw==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4
+
+  '@ai-sdk/provider-utils@3.0.7':
+    resolution: {integrity: sha512-o3BS5/t8KnBL3ubP8k3w77AByOypLm+pkIL/DCw0qKkhDbvhCy+L3hRTGPikpdb8WHcylAeKsjgwOxhj4cqTUA==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4
@@ -4499,6 +4511,12 @@ packages:
     peerDependencies:
       zod: ^3.25.76 || ^4
 
+  ai@5.0.30:
+    resolution: {integrity: sha512-u7WdsDde9BasP+h8Q64CtU32GFShCYmxVtBa2h5dxM1f0w/AMKwzpmIDI1t3M3ean+L6uBiwOtRs8B2KA+OHgQ==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4
+
   ajv-draft-04@1.0.0:
     resolution: {integrity: sha512-mv00Te6nmYbRp5DCwclxtt7yV/joXJPGS7nM+97GdxvuttCOfgI3K4U25zboyeX0O+myI8ERluxQe5wljMmVIw==}
     peerDependencies:
@@ -5495,6 +5513,10 @@ packages:
   eventsource-parser@3.0.3:
     resolution: {integrity: sha512-nVpZkTMM9rF6AQ9gPJpFsNAMt48wIzB5TQgiTLdHiuO8XEDhUgZEhqKlZWXbIzo9VmJ/HvysHqEaVeD5v9TPvA==}
     engines: {node: '>=20.0.0'}
+
+  eventsource-parser@3.0.6:
+    resolution: {integrity: sha512-Vo1ab+QXPzZ4tCa8SwIHJFaSzy4R6SHf7BY79rFBDf0idraZWAkYrDjDj8uWaSm3S2TK+hJ7/t1CEmZ7jXw+pg==}
+    engines: {node: '>=18.0.0'}
 
   eventsource@3.0.7:
     resolution: {integrity: sha512-CRT1WTyuQoD771GW56XEZFQ/ZoSfWid1alKGDYMmkt2yl8UXrVR4pspqWNEcqKvVIzg6PAltWjxcSSPrboA4iA==}
@@ -9381,6 +9403,9 @@ packages:
   zod@4.0.17:
     resolution: {integrity: sha512-1PHjlYRevNxxdy2JZ8JcNAw7rX8V9P1AKkP+x/xZfxB0K5FYfuV+Ug6P/6NVSR2jHQ+FzDDoDHS04nYUsOIyLQ==}
 
+  zod@4.1.5:
+    resolution: {integrity: sha512-rcUUZqlLJgBC33IT3PNMgsCq6TzLQEG/Ei/KTCU0PedSWRMAXoOUN+4t/0H+Q8bdnLPdqUYnvboJT0bn/229qg==}
+
   zustand@4.5.7:
     resolution: {integrity: sha512-CHOUy7mu3lbD6o6LJLfllpjkzhHXSBlX8B9+qPddUsIfeF5S/UZ5q0kmCsnRqT1UHFQZchNFDDzMbQsuesHWlw==}
     engines: {node: '>=12.7.0'}
@@ -9475,17 +9500,11 @@ snapshots:
       '@ai-sdk/provider-utils': 3.0.0-beta.10(zod@3.25.76)
       zod: 3.25.76
 
-  '@ai-sdk/anthropic@2.0.0-beta.13(zod@4.0.16)':
+  '@ai-sdk/anthropic@2.0.0-beta.13(zod@4.1.5)':
     dependencies:
       '@ai-sdk/provider': 2.0.0-beta.2
-      '@ai-sdk/provider-utils': 3.0.0-beta.10(zod@4.0.16)
-      zod: 4.0.16
-
-  '@ai-sdk/gateway@1.0.0(zod@3.25.76)':
-    dependencies:
-      '@ai-sdk/provider': 2.0.0
-      '@ai-sdk/provider-utils': 3.0.0(zod@3.25.76)
-      zod: 3.25.76
+      '@ai-sdk/provider-utils': 3.0.0-beta.10(zod@4.1.5)
+      zod: 4.1.5
 
   '@ai-sdk/gateway@1.0.0(zod@4.0.16)':
     dependencies:
@@ -9493,11 +9512,17 @@ snapshots:
       '@ai-sdk/provider-utils': 3.0.0(zod@4.0.16)
       zod: 4.0.16
 
-  '@ai-sdk/gateway@1.0.7(zod@4.0.16)':
+  '@ai-sdk/gateway@1.0.15(zod@3.25.76)':
     dependencies:
       '@ai-sdk/provider': 2.0.0
-      '@ai-sdk/provider-utils': 3.0.3(zod@4.0.16)
-      zod: 4.0.16
+      '@ai-sdk/provider-utils': 3.0.7(zod@3.25.76)
+      zod: 3.25.76
+
+  '@ai-sdk/gateway@1.0.15(zod@4.1.5)':
+    dependencies:
+      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider-utils': 3.0.7(zod@4.1.5)
+      zod: 4.1.5
 
   '@ai-sdk/gateway@1.0.7(zod@4.0.17)':
     dependencies:
@@ -9505,11 +9530,17 @@ snapshots:
       '@ai-sdk/provider-utils': 3.0.3(zod@4.0.17)
       zod: 4.0.17
 
-  '@ai-sdk/google@2.0.0-beta.19(zod@4.0.16)':
+  '@ai-sdk/gateway@1.0.7(zod@4.1.5)':
+    dependencies:
+      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider-utils': 3.0.3(zod@4.1.5)
+      zod: 4.1.5
+
+  '@ai-sdk/google@2.0.0-beta.19(zod@4.1.5)':
     dependencies:
       '@ai-sdk/provider': 2.0.0-beta.2
-      '@ai-sdk/provider-utils': 3.0.0-beta.10(zod@4.0.16)
-      zod: 4.0.16
+      '@ai-sdk/provider-utils': 3.0.0-beta.10(zod@4.1.5)
+      zod: 4.1.5
 
   '@ai-sdk/groq@2.0.0-beta.12(zod@3.25.76)':
     dependencies:
@@ -9517,11 +9548,11 @@ snapshots:
       '@ai-sdk/provider-utils': 3.0.0-beta.10(zod@3.25.76)
       zod: 3.25.76
 
-  '@ai-sdk/groq@2.0.0-beta.12(zod@4.0.16)':
+  '@ai-sdk/groq@2.0.0-beta.12(zod@4.1.5)':
     dependencies:
       '@ai-sdk/provider': 2.0.0-beta.2
-      '@ai-sdk/provider-utils': 3.0.0-beta.10(zod@4.0.16)
-      zod: 4.0.16
+      '@ai-sdk/provider-utils': 3.0.0-beta.10(zod@4.1.5)
+      zod: 4.1.5
 
   '@ai-sdk/openai-compatible@1.0.7(zod@4.0.17)':
     dependencies:
@@ -9535,11 +9566,11 @@ snapshots:
       '@ai-sdk/provider-utils': 3.0.0-beta.10(zod@3.25.76)
       zod: 3.25.76
 
-  '@ai-sdk/openai@2.0.0-beta.16(zod@4.0.16)':
+  '@ai-sdk/openai@2.0.0-beta.16(zod@4.1.5)':
     dependencies:
       '@ai-sdk/provider': 2.0.0-beta.2
-      '@ai-sdk/provider-utils': 3.0.0-beta.10(zod@4.0.16)
-      zod: 4.0.16
+      '@ai-sdk/provider-utils': 3.0.0-beta.10(zod@4.1.5)
+      zod: 4.1.5
 
   '@ai-sdk/provider-utils@2.2.2(zod@3.25.76)':
     dependencies:
@@ -9555,13 +9586,12 @@ snapshots:
       secure-json-parse: 2.7.0
       zod: 4.0.16
 
-  '@ai-sdk/provider-utils@3.0.0(zod@3.25.76)':
+  '@ai-sdk/provider-utils@2.2.2(zod@4.1.5)':
     dependencies:
-      '@ai-sdk/provider': 2.0.0
-      '@standard-schema/spec': 1.0.0
-      eventsource-parser: 3.0.3
-      zod: 3.25.76
-      zod-to-json-schema: 3.24.6(zod@3.25.76)
+      '@ai-sdk/provider': 1.1.0
+      nanoid: 3.3.11
+      secure-json-parse: 2.7.0
+      zod: 4.1.5
 
   '@ai-sdk/provider-utils@3.0.0(zod@4.0.16)':
     dependencies:
@@ -9579,21 +9609,13 @@ snapshots:
       zod: 3.25.76
       zod-to-json-schema: 3.24.6(zod@3.25.76)
 
-  '@ai-sdk/provider-utils@3.0.0-beta.10(zod@4.0.16)':
+  '@ai-sdk/provider-utils@3.0.0-beta.10(zod@4.1.5)':
     dependencies:
       '@ai-sdk/provider': 2.0.0-beta.2
       '@standard-schema/spec': 1.0.0
       eventsource-parser: 3.0.3
-      zod: 4.0.16
-      zod-to-json-schema: 3.24.6(zod@4.0.16)
-
-  '@ai-sdk/provider-utils@3.0.3(zod@4.0.16)':
-    dependencies:
-      '@ai-sdk/provider': 2.0.0
-      '@standard-schema/spec': 1.0.0
-      eventsource-parser: 3.0.3
-      zod: 4.0.16
-      zod-to-json-schema: 3.24.6(zod@4.0.16)
+      zod: 4.1.5
+      zod-to-json-schema: 3.24.6(zod@4.1.5)
 
   '@ai-sdk/provider-utils@3.0.3(zod@4.0.17)':
     dependencies:
@@ -9602,6 +9624,28 @@ snapshots:
       eventsource-parser: 3.0.3
       zod: 4.0.17
       zod-to-json-schema: 3.24.6(zod@4.0.17)
+
+  '@ai-sdk/provider-utils@3.0.3(zod@4.1.5)':
+    dependencies:
+      '@ai-sdk/provider': 2.0.0
+      '@standard-schema/spec': 1.0.0
+      eventsource-parser: 3.0.3
+      zod: 4.1.5
+      zod-to-json-schema: 3.24.6(zod@4.1.5)
+
+  '@ai-sdk/provider-utils@3.0.7(zod@3.25.76)':
+    dependencies:
+      '@ai-sdk/provider': 2.0.0
+      '@standard-schema/spec': 1.0.0
+      eventsource-parser: 3.0.6
+      zod: 3.25.76
+
+  '@ai-sdk/provider-utils@3.0.7(zod@4.1.5)':
+    dependencies:
+      '@ai-sdk/provider': 2.0.0
+      '@standard-schema/spec': 1.0.0
+      eventsource-parser: 3.0.6
+      zod: 4.1.5
 
   '@ai-sdk/provider@1.1.0':
     dependencies:
@@ -9638,6 +9682,13 @@ snapshots:
       '@ai-sdk/provider-utils': 2.2.2(zod@4.0.16)
       zod: 4.0.16
       zod-to-json-schema: 3.24.6(zod@4.0.16)
+
+  '@ai-sdk/ui-utils@1.2.3(zod@4.1.5)':
+    dependencies:
+      '@ai-sdk/provider': 1.1.0
+      '@ai-sdk/provider-utils': 2.2.2(zod@4.1.5)
+      zod: 4.1.5
+      zod-to-json-schema: 3.24.6(zod@4.1.5)
 
   '@alloc/quick-lru@5.2.0': {}
 
@@ -10607,10 +10658,10 @@ snapshots:
     dependencies:
       '@bufbuild/protobuf': 2.6.3
 
-  '@daydreamsai/ai-sdk-provider@0.1.2(ai@5.0.15(zod@4.0.16))(zod@4.0.16)':
+  '@daydreamsai/ai-sdk-provider@0.1.2(ai@5.0.15(zod@4.1.5))(zod@4.1.5)':
     dependencies:
-      ai: 5.0.15(zod@4.0.16)
-      zod: 4.0.16
+      ai: 5.0.15(zod@4.1.5)
+      zod: 4.1.5
 
   '@daydreamsai/core@0.3.13(typescript@5.9.2)':
     dependencies:
@@ -11254,11 +11305,11 @@ snapshots:
       js-yaml: 4.1.0
       prettier: 3.6.2
 
-  '@gemini-wallet/core@0.1.1(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.0.16))':
+  '@gemini-wallet/core@0.1.1(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.1.5))':
     dependencies:
       '@metamask/rpc-errors': 7.0.2
       eventemitter3: 5.0.1
-      viem: 2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.0.16)
+      viem: 2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.1.5)
     transitivePeerDependencies:
       - supports-color
 
@@ -14139,18 +14190,18 @@ snapshots:
 
   '@vladfrangu/async_event_emitter@2.4.6': {}
 
-  '@wagmi/connectors@5.9.3(@types/react@18.3.23)(@wagmi/core@2.19.0(@types/react@18.3.23)(typescript@5.9.2)(use-sync-external-store@1.4.0)(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.0.16)))(bufferutil@4.0.9)(typescript@5.9.2)(use-sync-external-store@1.4.0)(utf-8-validate@5.0.10)(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.0.16))(zod@3.25.76)':
+  '@wagmi/connectors@5.9.3(@types/react@18.3.23)(@wagmi/core@2.19.0(@types/react@18.3.23)(typescript@5.9.2)(use-sync-external-store@1.4.0)(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.1.5)))(bufferutil@4.0.9)(typescript@5.9.2)(use-sync-external-store@1.4.0)(utf-8-validate@5.0.10)(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.1.5))(zod@3.25.76)':
     dependencies:
       '@base-org/account': 1.1.1(@types/react@18.3.23)(bufferutil@4.0.9)(typescript@5.9.2)(use-sync-external-store@1.4.0)(utf-8-validate@5.0.10)(zod@3.25.76)
       '@coinbase/wallet-sdk': 4.3.6(@types/react@18.3.23)(bufferutil@4.0.9)(typescript@5.9.2)(use-sync-external-store@1.4.0)(utf-8-validate@5.0.10)(zod@3.25.76)
-      '@gemini-wallet/core': 0.1.1(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.0.16))
+      '@gemini-wallet/core': 0.1.1(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.1.5))
       '@metamask/sdk': 0.32.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       '@safe-global/safe-apps-provider': 0.18.6(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       '@safe-global/safe-apps-sdk': 9.1.0(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
-      '@wagmi/core': 2.19.0(@types/react@18.3.23)(typescript@5.9.2)(use-sync-external-store@1.4.0)(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.0.16))
+      '@wagmi/core': 2.19.0(@types/react@18.3.23)(typescript@5.9.2)(use-sync-external-store@1.4.0)(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.1.5))
       '@walletconnect/ethereum-provider': 2.21.1(@types/react@18.3.23)(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       cbw-sdk: '@coinbase/wallet-sdk@3.9.3'
-      viem: 2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.0.16)
+      viem: 2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.1.5)
     optionalDependencies:
       typescript: 5.9.2
     transitivePeerDependencies:
@@ -14182,18 +14233,18 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@wagmi/connectors@5.9.3(@types/react@19.1.10)(@wagmi/core@2.19.0(@tanstack/query-core@5.85.3)(@types/react@19.1.10)(react@19.1.1)(typescript@5.9.2)(use-sync-external-store@1.4.0(react@19.1.1))(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.0.16)))(bufferutil@4.0.9)(react@19.1.1)(typescript@5.9.2)(use-sync-external-store@1.4.0(react@19.1.1))(utf-8-validate@5.0.10)(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.0.16))(zod@3.25.76)':
+  '@wagmi/connectors@5.9.3(@types/react@19.1.10)(@wagmi/core@2.19.0(@tanstack/query-core@5.85.3)(@types/react@19.1.10)(react@19.1.1)(typescript@5.9.2)(use-sync-external-store@1.4.0(react@19.1.1))(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.1.5)))(bufferutil@4.0.9)(react@19.1.1)(typescript@5.9.2)(use-sync-external-store@1.4.0(react@19.1.1))(utf-8-validate@5.0.10)(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.1.5))(zod@3.25.76)':
     dependencies:
       '@base-org/account': 1.1.1(@types/react@19.1.10)(bufferutil@4.0.9)(react@19.1.1)(typescript@5.9.2)(use-sync-external-store@1.4.0(react@19.1.1))(utf-8-validate@5.0.10)(zod@3.25.76)
       '@coinbase/wallet-sdk': 4.3.6(@types/react@19.1.10)(bufferutil@4.0.9)(react@19.1.1)(typescript@5.9.2)(use-sync-external-store@1.4.0(react@19.1.1))(utf-8-validate@5.0.10)(zod@3.25.76)
-      '@gemini-wallet/core': 0.1.1(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.0.16))
+      '@gemini-wallet/core': 0.1.1(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.1.5))
       '@metamask/sdk': 0.32.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       '@safe-global/safe-apps-provider': 0.18.6(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       '@safe-global/safe-apps-sdk': 9.1.0(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
-      '@wagmi/core': 2.19.0(@tanstack/query-core@5.85.3)(@types/react@19.1.10)(react@19.1.1)(typescript@5.9.2)(use-sync-external-store@1.4.0(react@19.1.1))(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.0.16))
+      '@wagmi/core': 2.19.0(@tanstack/query-core@5.85.3)(@types/react@19.1.10)(react@19.1.1)(typescript@5.9.2)(use-sync-external-store@1.4.0(react@19.1.1))(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.1.5))
       '@walletconnect/ethereum-provider': 2.21.1(@types/react@19.1.10)(bufferutil@4.0.9)(react@19.1.1)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       cbw-sdk: '@coinbase/wallet-sdk@3.9.3'
-      viem: 2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.0.16)
+      viem: 2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.1.5)
     optionalDependencies:
       typescript: 5.9.2
     transitivePeerDependencies:
@@ -14225,11 +14276,11 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@wagmi/core@2.19.0(@tanstack/query-core@5.85.3)(@types/react@19.1.10)(react@19.1.1)(typescript@5.9.2)(use-sync-external-store@1.4.0(react@19.1.1))(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.0.16))':
+  '@wagmi/core@2.19.0(@tanstack/query-core@5.85.3)(@types/react@19.1.10)(react@19.1.1)(typescript@5.9.2)(use-sync-external-store@1.4.0(react@19.1.1))(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.1.5))':
     dependencies:
       eventemitter3: 5.0.1
       mipd: 0.0.7(typescript@5.9.2)
-      viem: 2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.0.16)
+      viem: 2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.1.5)
       zustand: 5.0.0(@types/react@19.1.10)(react@19.1.1)(use-sync-external-store@1.4.0(react@19.1.1))
     optionalDependencies:
       '@tanstack/query-core': 5.85.3
@@ -14240,11 +14291,11 @@ snapshots:
       - react
       - use-sync-external-store
 
-  '@wagmi/core@2.19.0(@types/react@18.3.23)(typescript@5.9.2)(use-sync-external-store@1.4.0)(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.0.16))':
+  '@wagmi/core@2.19.0(@types/react@18.3.23)(typescript@5.9.2)(use-sync-external-store@1.4.0)(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.1.5))':
     dependencies:
       eventemitter3: 5.0.1
       mipd: 0.0.7(typescript@5.9.2)
-      viem: 2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.0.16)
+      viem: 2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.1.5)
       zustand: 5.0.0(@types/react@18.3.23)(use-sync-external-store@1.4.0)
     optionalDependencies:
       typescript: 5.9.2
@@ -14843,10 +14894,10 @@ snapshots:
       typescript: 5.9.2
       zod: 3.25.76
 
-  abitype@1.0.8(typescript@5.9.2)(zod@4.0.16):
+  abitype@1.0.8(typescript@5.9.2)(zod@4.1.5):
     optionalDependencies:
       typescript: 5.9.2
-      zod: 4.0.16
+      zod: 4.1.5
 
   abort-controller@3.0.0:
     dependencies:
@@ -14897,27 +14948,11 @@ snapshots:
     dependencies:
       humanize-ms: 1.2.1
 
-  ai@5.0.0(zod@3.25.76):
-    dependencies:
-      '@ai-sdk/gateway': 1.0.0(zod@3.25.76)
-      '@ai-sdk/provider': 2.0.0
-      '@ai-sdk/provider-utils': 3.0.0(zod@3.25.76)
-      '@opentelemetry/api': 1.9.0
-      zod: 3.25.76
-
   ai@5.0.0(zod@4.0.16):
     dependencies:
       '@ai-sdk/gateway': 1.0.0(zod@4.0.16)
       '@ai-sdk/provider': 2.0.0
       '@ai-sdk/provider-utils': 3.0.0(zod@4.0.16)
-      '@opentelemetry/api': 1.9.0
-      zod: 4.0.16
-
-  ai@5.0.15(zod@4.0.16):
-    dependencies:
-      '@ai-sdk/gateway': 1.0.7(zod@4.0.16)
-      '@ai-sdk/provider': 2.0.0
-      '@ai-sdk/provider-utils': 3.0.3(zod@4.0.16)
       '@opentelemetry/api': 1.9.0
       zod: 4.0.16
 
@@ -14928,6 +14963,30 @@ snapshots:
       '@ai-sdk/provider-utils': 3.0.3(zod@4.0.17)
       '@opentelemetry/api': 1.9.0
       zod: 4.0.17
+
+  ai@5.0.15(zod@4.1.5):
+    dependencies:
+      '@ai-sdk/gateway': 1.0.7(zod@4.1.5)
+      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider-utils': 3.0.3(zod@4.1.5)
+      '@opentelemetry/api': 1.9.0
+      zod: 4.1.5
+
+  ai@5.0.30(zod@3.25.76):
+    dependencies:
+      '@ai-sdk/gateway': 1.0.15(zod@3.25.76)
+      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider-utils': 3.0.7(zod@3.25.76)
+      '@opentelemetry/api': 1.9.0
+      zod: 3.25.76
+
+  ai@5.0.30(zod@4.1.5):
+    dependencies:
+      '@ai-sdk/gateway': 1.0.15(zod@4.1.5)
+      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider-utils': 3.0.7(zod@4.1.5)
+      '@opentelemetry/api': 1.9.0
+      zod: 4.1.5
 
   ajv-draft-04@1.0.0(ajv@8.17.1):
     optionalDependencies:
@@ -15393,12 +15452,12 @@ snapshots:
     transitivePeerDependencies:
       - bare-buffer
 
-  chromadb@1.10.5(openai@5.15.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@4.0.16)):
+  chromadb@1.10.5(openai@5.15.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@4.1.5)):
     dependencies:
       cliui: 8.0.1
       isomorphic-fetch: 3.0.0
     optionalDependencies:
-      openai: 5.15.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@4.0.16)
+      openai: 5.15.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@4.1.5)
     transitivePeerDependencies:
       - encoding
 
@@ -15991,6 +16050,8 @@ snapshots:
   events@3.3.0: {}
 
   eventsource-parser@3.0.3: {}
+
+  eventsource-parser@3.0.6: {}
 
   eventsource@3.0.7:
     dependencies:
@@ -18476,10 +18537,10 @@ snapshots:
       onnxruntime-common: 1.14.0
       platform: 1.3.6
 
-  openai@5.15.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@4.0.16):
+  openai@5.15.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@4.1.5):
     optionalDependencies:
       ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)
-      zod: 4.0.16
+      zod: 4.1.5
 
   openapi-fetch@0.9.8:
     dependencies:
@@ -18567,7 +18628,7 @@ snapshots:
     transitivePeerDependencies:
       - zod
 
-  ox@0.8.6(typescript@5.9.2)(zod@4.0.16):
+  ox@0.8.6(typescript@5.9.2)(zod@4.1.5):
     dependencies:
       '@adraffy/ens-normalize': 1.11.0
       '@noble/ciphers': 1.3.0
@@ -18575,7 +18636,7 @@ snapshots:
       '@noble/hashes': 1.8.0
       '@scure/bip32': 1.7.0
       '@scure/bip39': 1.6.0
-      abitype: 1.0.8(typescript@5.9.2)(zod@4.0.16)
+      abitype: 1.0.8(typescript@5.9.2)(zod@4.1.5)
       eventemitter3: 5.0.1
     optionalDependencies:
       typescript: 5.9.2
@@ -20310,15 +20371,15 @@ snapshots:
       - utf-8-validate
       - zod
 
-  viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.0.16):
+  viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.1.5):
     dependencies:
       '@noble/curves': 1.9.2
       '@noble/hashes': 1.8.0
       '@scure/bip32': 1.7.0
       '@scure/bip39': 1.6.0
-      abitype: 1.0.8(typescript@5.9.2)(zod@4.0.16)
+      abitype: 1.0.8(typescript@5.9.2)(zod@4.1.5)
       isows: 1.0.7(ws@8.18.2(bufferutil@4.0.9)(utf-8-validate@5.0.10))
-      ox: 0.8.6(typescript@5.9.2)(zod@4.0.16)
+      ox: 0.8.6(typescript@5.9.2)(zod@4.1.5)
       ws: 8.18.2(bufferutil@4.0.9)(utf-8-validate@5.0.10)
     optionalDependencies:
       typescript: 5.9.2
@@ -20563,14 +20624,14 @@ snapshots:
       - tsx
       - yaml
 
-  wagmi@2.16.3(@tanstack/query-core@5.85.3)(@tanstack/react-query@5.85.3(react@19.1.1))(@types/react@19.1.10)(bufferutil@4.0.9)(react@19.1.1)(typescript@5.9.2)(utf-8-validate@5.0.10)(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.0.16))(zod@3.25.76):
+  wagmi@2.16.3(@tanstack/query-core@5.85.3)(@tanstack/react-query@5.85.3(react@19.1.1))(@types/react@19.1.10)(bufferutil@4.0.9)(react@19.1.1)(typescript@5.9.2)(utf-8-validate@5.0.10)(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.1.5))(zod@3.25.76):
     dependencies:
       '@tanstack/react-query': 5.85.3(react@19.1.1)
-      '@wagmi/connectors': 5.9.3(@types/react@19.1.10)(@wagmi/core@2.19.0(@tanstack/query-core@5.85.3)(@types/react@19.1.10)(react@19.1.1)(typescript@5.9.2)(use-sync-external-store@1.4.0(react@19.1.1))(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.0.16)))(bufferutil@4.0.9)(react@19.1.1)(typescript@5.9.2)(use-sync-external-store@1.4.0(react@19.1.1))(utf-8-validate@5.0.10)(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.0.16))(zod@3.25.76)
-      '@wagmi/core': 2.19.0(@tanstack/query-core@5.85.3)(@types/react@19.1.10)(react@19.1.1)(typescript@5.9.2)(use-sync-external-store@1.4.0(react@19.1.1))(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.0.16))
+      '@wagmi/connectors': 5.9.3(@types/react@19.1.10)(@wagmi/core@2.19.0(@tanstack/query-core@5.85.3)(@types/react@19.1.10)(react@19.1.1)(typescript@5.9.2)(use-sync-external-store@1.4.0(react@19.1.1))(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.1.5)))(bufferutil@4.0.9)(react@19.1.1)(typescript@5.9.2)(use-sync-external-store@1.4.0(react@19.1.1))(utf-8-validate@5.0.10)(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.1.5))(zod@3.25.76)
+      '@wagmi/core': 2.19.0(@tanstack/query-core@5.85.3)(@types/react@19.1.10)(react@19.1.1)(typescript@5.9.2)(use-sync-external-store@1.4.0(react@19.1.1))(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.1.5))
       react: 19.1.1
       use-sync-external-store: 1.4.0(react@19.1.1)
-      viem: 2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.0.16)
+      viem: 2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.1.5)
     optionalDependencies:
       typescript: 5.9.2
     transitivePeerDependencies:
@@ -20601,12 +20662,12 @@ snapshots:
       - utf-8-validate
       - zod
 
-  wagmi@2.16.3(@types/react@18.3.23)(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.0.16))(zod@3.25.76):
+  wagmi@2.16.3(@types/react@18.3.23)(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.1.5))(zod@3.25.76):
     dependencies:
-      '@wagmi/connectors': 5.9.3(@types/react@18.3.23)(@wagmi/core@2.19.0(@types/react@18.3.23)(typescript@5.9.2)(use-sync-external-store@1.4.0)(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.0.16)))(bufferutil@4.0.9)(typescript@5.9.2)(use-sync-external-store@1.4.0)(utf-8-validate@5.0.10)(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.0.16))(zod@3.25.76)
-      '@wagmi/core': 2.19.0(@types/react@18.3.23)(typescript@5.9.2)(use-sync-external-store@1.4.0)(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.0.16))
+      '@wagmi/connectors': 5.9.3(@types/react@18.3.23)(@wagmi/core@2.19.0(@types/react@18.3.23)(typescript@5.9.2)(use-sync-external-store@1.4.0)(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.1.5)))(bufferutil@4.0.9)(typescript@5.9.2)(use-sync-external-store@1.4.0)(utf-8-validate@5.0.10)(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.1.5))(zod@3.25.76)
+      '@wagmi/core': 2.19.0(@types/react@18.3.23)(typescript@5.9.2)(use-sync-external-store@1.4.0)(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.1.5))
       use-sync-external-store: 1.4.0(react@19.1.1)
-      viem: 2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.0.16)
+      viem: 2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.1.5)
     optionalDependencies:
       typescript: 5.9.2
     transitivePeerDependencies:
@@ -20835,7 +20896,7 @@ snapshots:
   x402@0.5.2(@tanstack/query-core@5.85.3)(@tanstack/react-query@5.85.3(react@19.1.1))(@types/react@19.1.10)(bufferutil@4.0.9)(react@19.1.1)(typescript@5.9.2)(utf-8-validate@5.0.10):
     dependencies:
       viem: 2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
-      wagmi: 2.16.3(@tanstack/query-core@5.85.3)(@tanstack/react-query@5.85.3(react@19.1.1))(@types/react@19.1.10)(bufferutil@4.0.9)(react@19.1.1)(typescript@5.9.2)(utf-8-validate@5.0.10)(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.0.16))(zod@3.25.76)
+      wagmi: 2.16.3(@tanstack/query-core@5.85.3)(@tanstack/react-query@5.85.3(react@19.1.1))(@types/react@19.1.10)(bufferutil@4.0.9)(react@19.1.1)(typescript@5.9.2)(utf-8-validate@5.0.10)(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.1.5))(zod@3.25.76)
       zod: 3.25.76
     transitivePeerDependencies:
       - '@azure/app-configuration'
@@ -20870,7 +20931,7 @@ snapshots:
   x402@0.5.2(@types/react@18.3.23)(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10):
     dependencies:
       viem: 2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
-      wagmi: 2.16.3(@types/react@18.3.23)(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.0.16))(zod@3.25.76)
+      wagmi: 2.16.3(@types/react@18.3.23)(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@4.1.5))(zod@3.25.76)
       zod: 3.25.76
     transitivePeerDependencies:
       - '@azure/app-configuration'
@@ -20973,6 +21034,10 @@ snapshots:
     dependencies:
       zod: 4.0.17
 
+  zod-to-json-schema@3.24.6(zod@4.1.5):
+    dependencies:
+      zod: 4.1.5
+
   zod-validation-error@3.5.3(zod@3.25.76):
     dependencies:
       zod: 3.25.76
@@ -20986,6 +21051,8 @@ snapshots:
   zod@4.0.16: {}
 
   zod@4.0.17: {}
+
+  zod@4.1.5: {}
 
   zustand@4.5.7(@types/react@19.1.10)(react@19.1.1):
     dependencies:
